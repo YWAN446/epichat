@@ -1,0 +1,332 @@
+[
+  {
+    "id": "S01",
+    "difficulty": "simple",
+    "query": "Run a default SIR model",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 10000,
+      "n_contacts": 4,
+      "beta_range": [0.01, 0.1],
+      "interventions": []
+    }
+  },
+  {
+    "id": "S02",
+    "difficulty": "simple",
+    "query": "SIR model in 10,000 people with R0 of 2",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 10000,
+      "beta_range": [0.04, 0.06],
+      "interventions": []
+    }
+  },
+  {
+    "id": "S03",
+    "difficulty": "simple",
+    "query": "Simulate an epidemic with R0=3 in a population of 5000",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 5000,
+      "beta_range": [0.06, 0.09],
+      "interventions": []
+    }
+  },
+  {
+    "id": "S04",
+    "difficulty": "simple",
+    "query": "Basic SIR with 50,000 people",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 50000,
+      "interventions": []
+    }
+  },
+  {
+    "id": "S05",
+    "difficulty": "simple",
+    "query": "Run a 2-year SIR simulation in 20,000 people",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 20000,
+      "sim_dur_years": 2.0,
+      "interventions": []
+    }
+  },
+  {
+    "id": "S06",
+    "difficulty": "simple",
+    "query": "SIR epidemic with R0=1.5 and 10% initial infected",
+    "expected_params": {
+      "disease_type": "sir",
+      "beta_range": [0.02, 0.05],
+      "init_prev_range": [0.09, 0.11],
+      "interventions": []
+    }
+  },
+  {
+    "id": "S07",
+    "difficulty": "simple",
+    "query": "Simulate 1% of 100,000 people infected initially, R0=2, SIR",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 100000,
+      "init_prev_range": [0.009, 0.011],
+      "beta_range": [0.04, 0.06],
+      "interventions": []
+    }
+  },
+  {
+    "id": "S08",
+    "difficulty": "simple",
+    "query": "Run a flu-like SIR model",
+    "expected_params": {
+      "disease_type": "sir",
+      "dur_inf_range": [4.0, 7.0],
+      "interventions": []
+    }
+  },
+  {
+    "id": "S09",
+    "difficulty": "simple",
+    "query": "SIR simulation with 1% case fatality rate",
+    "expected_params": {
+      "disease_type": "sir",
+      "p_death_range": [0.009, 0.011],
+      "interventions": []
+    }
+  },
+  {
+    "id": "S10",
+    "difficulty": "simple",
+    "query": "Model a highly transmissible disease with R0=5 in 30,000 people",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 30000,
+      "beta_range": [0.10, 0.15],
+      "interventions": []
+    }
+  },
+  {
+    "id": "M01",
+    "difficulty": "medium",
+    "query": "Simulate COVID-like spread in 50,000 people with R0 of 2.5 over 2 years",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 50000,
+      "beta_range": [0.04, 0.06],
+      "sim_dur_years": 2.0,
+      "interventions": []
+    }
+  },
+  {
+    "id": "M02",
+    "difficulty": "medium",
+    "query": "SEIR model with a 5-day latent period and R0=3 in 20,000 people",
+    "expected_params": {
+      "disease_type": "seir",
+      "n_agents": 20000,
+      "dur_exp_range": [4.0, 6.0],
+      "beta_range": [0.06, 0.09],
+      "interventions": []
+    }
+  },
+  {
+    "id": "M03",
+    "difficulty": "medium",
+    "query": "Model an Ebola-like outbreak: R0=2, 60% fatality rate, population 10,000",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 10000,
+      "p_death_range": [0.55, 0.65],
+      "beta_range": [0.04, 0.06],
+      "interventions": []
+    }
+  },
+  {
+    "id": "M04",
+    "difficulty": "medium",
+    "query": "What happens if 50% of a 100K population gets vaccinated against a disease with R0=4?",
+    "expected_params": {
+      "n_agents": 100000,
+      "beta_range": [0.08, 0.12],
+      "interventions": [{"type": "vaccine", "coverage_range": [0.45, 0.55]}]
+    }
+  },
+  {
+    "id": "M05",
+    "difficulty": "medium",
+    "query": "Simulate an SIR epidemic that starts with 5 infected people in a city of 500,000",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 500000,
+      "init_prev_range": [0.000005, 0.00002]
+    }
+  },
+  {
+    "id": "M06",
+    "difficulty": "medium",
+    "query": "COVID SEIR in 200,000 people: 5-day incubation, 8-day infectious, R0=2.5, 1% IFR",
+    "expected_params": {
+      "disease_type": "seir",
+      "n_agents": 200000,
+      "dur_exp_range": [4.0, 6.0],
+      "dur_inf_range": [7.0, 9.0],
+      "p_death_range": [0.009, 0.011]
+    }
+  },
+  {
+    "id": "M07",
+    "difficulty": "medium",
+    "query": "Run a 6-month SIR simulation in 50,000 people with R0=2",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 50000,
+      "sim_dur_years": 0.5,
+      "beta_range": [0.04, 0.06]
+    }
+  },
+  {
+    "id": "M08",
+    "difficulty": "medium",
+    "query": "How does R0=4 change the outcome compared to R0=2 for SIR in 10,000?",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 10000,
+      "beta_range": [0.08, 0.12]
+    }
+  },
+  {
+    "id": "M09",
+    "difficulty": "medium",
+    "query": "Simulate an SEIR disease with 2-week incubation and 1-week infectious period",
+    "expected_params": {
+      "disease_type": "seir",
+      "dur_exp_range": [12.0, 16.0],
+      "dur_inf_range": [6.0, 8.0]
+    }
+  },
+  {
+    "id": "M10",
+    "difficulty": "medium",
+    "query": "Model influenza in a school of 1,000 students with R0=3 over one semester",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 1000,
+      "beta_range": [0.06, 0.09],
+      "sim_dur_years_max": 0.6
+    }
+  },
+  {
+    "id": "C01",
+    "difficulty": "complex",
+    "query": "Model measles in a population of 100,000 where 85% are vaccinated, R0 is 15",
+    "expected_params": {
+      "disease_type": "seir",
+      "n_agents": 100000,
+      "beta_range": [0.15, 0.22],
+      "interventions": [{"type": "vaccine", "coverage_range": [0.80, 0.90]}]
+    }
+  },
+  {
+    "id": "C02",
+    "difficulty": "complex",
+    "query": "Simulate COVID in 500K with 70% vaccination at day 30, R0=2.5, 2-year run",
+    "expected_params": {
+      "n_agents": 500000,
+      "sim_dur_years": 2.0,
+      "interventions": [{"type": "vaccine", "coverage_range": [0.65, 0.75], "start_day_range": [25, 35]}]
+    }
+  },
+  {
+    "id": "C03",
+    "difficulty": "complex",
+    "query": "SEIR model for a new pathogen: R0=8, 4-day latent, 6-day infectious, 3% mortality, population 1 million",
+    "expected_params": {
+      "disease_type": "seir",
+      "n_agents": 1000000,
+      "dur_exp_range": [3.0, 5.0],
+      "dur_inf_range": [5.0, 7.0],
+      "p_death_range": [0.025, 0.035]
+    }
+  },
+  {
+    "id": "C04",
+    "difficulty": "complex",
+    "query": "What's the epidemic impact of 60% vaccine coverage starting at day 0 for a disease with R0=5 in 200K people, run for 3 years?",
+    "expected_params": {
+      "n_agents": 200000,
+      "sim_dur_years": 3.0,
+      "beta_range": [0.10, 0.14],
+      "interventions": [{"type": "vaccine", "coverage_range": [0.55, 0.65], "start_day_range": [0, 5]}]
+    }
+  },
+  {
+    "id": "C05",
+    "difficulty": "complex",
+    "query": "Simulate a smallpox-like outbreak (R0=5, 30% fatality) in a naive population of 50,000",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 50000,
+      "p_death_range": [0.25, 0.35],
+      "beta_range": [0.10, 0.15]
+    }
+  },
+  {
+    "id": "C06",
+    "difficulty": "complex",
+    "query": "Model polio reemergence: SEIR, R0=6, 4-day incubation, 10 days infectious, 75% vaccinated, 100K population",
+    "expected_params": {
+      "disease_type": "seir",
+      "n_agents": 100000,
+      "dur_exp_range": [3.0, 5.0],
+      "dur_inf_range": [8.0, 12.0],
+      "interventions": [{"type": "vaccine", "coverage_range": [0.70, 0.80]}]
+    }
+  },
+  {
+    "id": "C07",
+    "difficulty": "complex",
+    "query": "How many people die if Ebola (R0=2, 60% CFR) spreads in a 20,000-person community with no intervention?",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 20000,
+      "p_death_range": [0.55, 0.65],
+      "interventions": []
+    }
+  },
+  {
+    "id": "C08",
+    "difficulty": "complex",
+    "query": "Simulate a COVID-like SEIR epidemic in 1 million people, R0=3, 5-day incubation, 8-day infectious, 0.5% IFR, 90% vaccination at day 60",
+    "expected_params": {
+      "disease_type": "seir",
+      "n_agents": 1000000,
+      "p_death_range": [0.004, 0.006],
+      "interventions": [{"type": "vaccine", "coverage_range": [0.85, 0.95], "start_day_range": [55, 65]}]
+    }
+  },
+  {
+    "id": "C09",
+    "difficulty": "complex",
+    "query": "Model dengue fever spread: SIR, R0=4, 5-day infectious period, 1% severe case rate, 100,000 population, 2-year simulation",
+    "expected_params": {
+      "disease_type": "sir",
+      "n_agents": 100000,
+      "dur_inf_range": [4.0, 6.0],
+      "sim_dur_years": 2.0
+    }
+  },
+  {
+    "id": "C10",
+    "difficulty": "complex",
+    "query": "What is the epidemic curve for a disease with R0=10, 70% of the population pre-immune (vaccinated), in 500,000 people over 18 months?",
+    "expected_params": {
+      "n_agents": 500000,
+      "beta_range": [0.20, 0.30],
+      "sim_dur_years_range": [1.4, 1.6],
+      "interventions": [{"type": "vaccine", "coverage_range": [0.65, 0.75]}]
+    }
+  }
+]

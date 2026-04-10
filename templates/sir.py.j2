@@ -1,0 +1,47 @@
+import starsim as ss
+import matplotlib
+matplotlib.use('Agg')
+import json
+import numpy as np
+
+# beta is already in per-year units (= R0 / (n_contacts * dur_inf_years))
+# dur_inf is passed as days and converted to timestep units via ss.constant
+pars = dict(
+    n_agents={{ n_agents }},
+    networks=dict(type='random', n_contacts={{ n_contacts }}),
+    diseases=dict(
+        type='sir',
+        init_prev={{ init_prev }},
+        beta={{ beta }},
+        dur_inf=ss.constant({{ dur_inf }}),
+        p_death={{ p_death }},
+    ),
+    dur={{ sim_dur_years }},
+    dt=1/365,
+)
+
+sim = ss.Sim(pars)
+sim.run()
+fig = sim.plot()
+fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
+
+res = sim.results
+sir = res['sir']
+
+n_infected = sir['n_infected'].values
+cum_infections = sir['cum_infections'].values
+cum_deaths = res['cum_deaths'].values
+
+peak_infections = int(n_infected.max())
+peak_day = int(n_infected.argmax())
+total_infected = int(cum_infections[-1])
+total_deaths = int(cum_deaths[-1])
+
+print(json.dumps({
+    'peak_infections': peak_infections,
+    'peak_day': peak_day,
+    'total_infected': total_infected,
+    'total_deaths': total_deaths,
+    'n_agents': {{ n_agents }},
+    'sim_days': len(res['timevec']),
+}))

@@ -1,0 +1,124 @@
+"""
+Custom SEIR implementation for Starsim (SEIR is not a built-in disease type in Starsim 3.x).
+Extends ss.SIR by adding an Exposed (E) compartment before becoming infectious.
+"""
+import starsim as ss
+import matplotlib
+matplotlib.use('Agg')
+import json
+import numpy as np
+
+
+class SEIR(ss.SIR):
+    """
+    SEIR disease model with a latent/exposed period before becoming infectious.
+    Durations are specified in timestep units (days at dt=1/365).
+    """
+
+    def __init__(self, pars=None, **kwargs):
+        super().__init__(pars=pars, **kwargs)
+        self.define_pars(
+            dur_exp=ss.constant(5),  # default 5-day latent period
+        )
+        self.update_pars(pars, **kwargs)
+        self.define_states(
+            ss.BoolState('susceptible', default=True, label='Susceptible'),
+            ss.BoolState('exposed', label='Exposed'),
+            ss.BoolState('infected', label='Infectious'),
+            ss.BoolState('recovered', label='Recovered'),
+            ss.FloatArr('ti_infected', label='Time of infection'),
+            ss.FloatArr('ti_infectious', label='Time of becoming infectious'),
+            ss.FloatArr('ti_recovered', label='Time of recovery'),
+            ss.FloatArr('ti_dead', label='Time of death'),
+            ss.FloatArr('rel_sus', default=1.0, label='Relative susceptibility'),
+            ss.FloatArr('rel_trans', default=1.0, label='Relative transmission'),
+            reset=True,
+        )
+
+    def step_state(self):
+        sim = self.sim
+        # Exposed → Infectious
+        newly_infectious = (self.exposed & (self.ti_infectious <= sim.ti)).uids
+        self.exposed[newly_infectious] = False
+        self.infected[newly_infectious] = True
+
+        # Infectious → Recovered
+        recovered = (self.infected & (self.ti_recovered <= sim.ti)).uids
+        self.infected[recovered] = False
+        self.recovered[recovered] = True
+
+        # Deaths
+        deaths = (self.ti_dead <= sim.ti).uids
+        if len(deaths):
+            sim.people.request_death(deaths)
+
+    def set_prognoses(self, uids, sources=None):
+        ti = self.t.ti
+        self.susceptible[uids] = False
+        self.exposed[uids] = True
+        self.ti_infected[uids] = ti
+
+        p = self.pars
+        dur_exp = p.dur_exp.rvs(uids)
+        dur_inf = p.dur_inf.rvs(uids)
+
+        self.ti_infectious[uids] = ti + dur_exp
+
+        will_die = p.p_death.rvs(uids)
+        dead_uids = uids[will_die]
+        rec_uids = uids[~will_die]
+        self.ti_dead[dead_uids] = ti + dur_exp[will_die] + dur_inf[will_die]
+        self.ti_recovered[rec_uids] = ti + dur_exp[~will_die] + dur_inf[~will_die]
+
+    @property
+    def infectious(self):
+        """Only infectious (not exposed) agents transmit."""
+        return self.infected
+
+
+# ── Simulation ────────────────────────────────────────────────────────────────
+
+disease = SEIR(
+    init_prev={{ init_prev }},
+    beta={{ beta }},
+    dur_exp=ss.constant({{ dur_exp }}),
+    dur_inf=ss.constant({{ dur_inf }}),
+    p_death={{ p_death }},
+)
+
+pars = dict(
+    n_agents={{ n_agents }},
+    networks=dict(type='random', n_contacts={{ n_contacts }}),
+    diseases=[disease],
+    dur={{ sim_dur_years }},
+    dt=1/365,
+)
+
+sim = ss.Sim(pars)
+sim.run()
+fig = sim.plot()
+fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
+
+res = sim.results
+# The custom SEIR class is stored under 'seir' key
+disease_key = [k for k in res.keys() if k not in ('timevec', 'n_alive', 'n_female',
+               'new_deaths', 'new_emigrants', 'cum_deaths', 'randomnet')][0]
+seir_res = res[disease_key]
+
+n_infected = seir_res['n_infected'].values
+cum_infections = seir_res['cum_infections'].values
+cum_deaths = res['cum_deaths'].values
+
+peak_infections = int(n_infected.max())
+peak_day = int(n_infected.argmax())
+total_infected = int(cum_infections[-1])
+total_deaths = int(cum_deaths[-1])
+
+print(json.dumps({
+    'peak_infections': peak_infections,
+    'peak_day': peak_day,
+    'total_infected': total_infected,
+    'total_deaths': total_deaths,
+    'n_agents': {{ n_agents }},
+    'sim_days': len(res['timevec']),
+}))
