@@ -49,7 +49,7 @@ interventions_list.append(ss.routine_vx(
 # ── Simulation parameters ─────────────────────────────────────────────────────
 pars = dict(
     n_agents={{ n_agents }},
-    networks=dict(type='random', n_contacts={{ n_contacts }}),
+    networks=dict(type='random', n_contacts={{ n_contacts }}, beta={{ network_beta }}),
     diseases=disease_pars,
 {% if use_demographics %}
     demographics=[

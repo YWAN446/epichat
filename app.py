@@ -39,6 +39,7 @@ def _init_review_state(p: SimParams) -> None:
         "f_disease_type":   p.disease_type,
         "f_n_agents":       p.n_agents,
         "f_n_contacts":     p.n_contacts,
+        "f_network_beta":   float(p.network_beta),
         "f_beta":           float(p.beta),
         "f_init_prev":      float(p.init_prev),
         "f_dur_inf":        float(p.dur_inf),
@@ -96,6 +97,7 @@ def _build_params_from_form() -> SimParams:
         disease_type=s.f_disease_type,
         n_agents=int(s.f_n_agents),
         n_contacts=int(s.f_n_contacts),
+        network_beta=float(s.f_network_beta),
         beta=float(s.f_beta),
         init_prev=float(s.f_init_prev),
         dur_inf=float(s.f_dur_inf),
@@ -211,15 +213,29 @@ elif step == "review":
     else:
         c6.markdown("")
 
+    # ── Network ───────────────────────────────────────────────────────────────
+    st.subheader("Network")
+    n1, n2, n3 = st.columns(3)
+    n1.selectbox("Network type", ["Random (Erdős–Rényi)"], index=0,
+                 help="Household and age-structured networks require external data and are not yet supported.")
+    s.f_n_contacts = n2.number_input(
+        "Avg contacts per person/day", min_value=1, max_value=100, value=s.f_n_contacts,
+        help="Typical values: household-only ≈ 3–5, community ≈ 8–15, high-contact settings ≈ 15–30")
+    s.f_network_beta = n3.number_input(
+        "Network transmission multiplier", min_value=0.01, max_value=10.0,
+        value=s.f_network_beta, format="%.2f",
+        help="Scales transmission per contact. 1.0 = default. Reduce (e.g. 0.5) to model masks or distancing.")
+
     # ── Transmission ──────────────────────────────────────────────────────────
     st.subheader("Transmission")
     t1, t2, t3 = st.columns(3)
-    s.f_n_contacts = t1.number_input("Contacts per person/day", min_value=1, max_value=50,
-                                      value=s.f_n_contacts)
-    s.f_beta = t2.number_input("Beta (per-year rate)", min_value=0.001, max_value=1000.0,
-                                value=s.f_beta, format="%.4f")
-    approx_r0 = s.f_beta * (s.f_dur_inf / 365.0) * s.f_n_contacts
-    t3.metric("Approx R0", f"{approx_r0:.2f}")
+    s.f_beta = t1.number_input("Beta (per-year rate)", min_value=0.001, max_value=1000.0,
+                                value=s.f_beta, format="%.4f",
+                                help="Per-year transmission rate. Derived from R0 via: beta = R0 × 365 / (n_contacts × dur_inf_days)")
+    approx_r0 = s.f_beta * s.f_network_beta * (s.f_dur_inf / 365.0) * s.f_n_contacts
+    t2.metric("Effective R0", f"{approx_r0:.2f}",
+              help="R0 = beta × network_multiplier × (dur_inf/365) × n_contacts")
+    t3.markdown("")
 
     # ── Simulation settings ───────────────────────────────────────────────────
     st.subheader("Simulation Settings")
@@ -363,18 +379,21 @@ elif step == "results":
             interventions_display.append(d)
 
         st.json({
-            "disease_type":     p.disease_type,
-            "n_agents":         p.n_agents,
-            "beta":             p.beta,
-            "approx_R0":        round(p.approx_r0(), 2),
-            "init_prev":        p.init_prev,
-            "dur_inf_days":     p.dur_inf,
-            "dur_exp_days":     p.dur_exp,
-            "p_death":          p.p_death,
-            "sim_dur_years":    p.sim_dur_years,
-            "rand_seed":        p.rand_seed,
-            "use_demographics": p.use_demographics,
-            "interventions":    interventions_display,
+            "disease_type":         p.disease_type,
+            "n_agents":             p.n_agents,
+            "network_type":         p.network_type,
+            "n_contacts":           p.n_contacts,
+            "network_beta":         p.network_beta,
+            "beta":                 p.beta,
+            "effective_R0":         round(p.approx_r0(), 2),
+            "init_prev":            p.init_prev,
+            "dur_inf_days":         p.dur_inf,
+            "dur_exp_days":         p.dur_exp,
+            "p_death":              p.p_death,
+            "sim_dur_years":        p.sim_dur_years,
+            "rand_seed":            p.rand_seed,
+            "use_demographics":     p.use_demographics,
+            "interventions":        interventions_display,
         })
 
     st.divider()

@@ -20,8 +20,9 @@ class Intervention(BaseModel):
 class SimParams(BaseModel):
     disease_type: Literal["sir", "seir", "sis"] = "sir"
     n_agents: int = Field(default=10000, ge=10, le=1_000_000)
-    n_contacts: int = Field(default=4, ge=1, le=50)
+    n_contacts: int = Field(default=4, ge=1, le=100)
     network_type: Literal["random"] = "random"
+    network_beta: float = Field(default=1.0, gt=0.0, le=10.0)  # network-level transmission multiplier
     beta: float = Field(gt=0.0, le=1000.0)
     init_prev: float = Field(default=0.01, gt=0.0, lt=1.0)
     dur_inf: float = Field(default=10.0, gt=0.0)    # days
@@ -47,8 +48,8 @@ class SimParams(BaseModel):
         return v
 
     def approx_r0(self) -> float:
-        """Approximate R0 = beta * (dur_inf / 365) * n_contacts."""
-        return self.beta * (self.dur_inf / 365.0) * self.n_contacts
+        """Approximate R0 = beta * network_beta * (dur_inf / 365) * n_contacts."""
+        return self.beta * self.network_beta * (self.dur_inf / 365.0) * self.n_contacts
 
     def get_vaccine(self) -> Optional[Intervention]:
         return next((i for i in self.interventions if i.type == "vaccine"), None)

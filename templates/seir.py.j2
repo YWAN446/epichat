@@ -92,7 +92,7 @@ disease = SEIR(
 
 pars = dict(
     n_agents={{ n_agents }},
-    networks=dict(type='random', n_contacts={{ n_contacts }}),
+    networks=dict(type='random', n_contacts={{ n_contacts }}, beta={{ network_beta }}),
     diseases=[disease],
 {% if use_demographics %}
     demographics=[
