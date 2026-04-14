@@ -4,16 +4,6 @@ matplotlib.use('Agg')
 import json
 import numpy as np
 
-# routine_vx delivers vaccine on an ongoing basis starting from a given year.
-# vax_start_day (days from sim start) → convert to sim year
-product = ss.simple_vx(efficacy=1.0)
-vax_start_year = 2000 + {{ vax_start_day }} / 365
-vax = ss.routine_vx(
-    product=product,
-    prob={{ vax_coverage }},
-    start_year=vax_start_year,
-)
-
 pars = dict(
     n_agents={{ n_agents }},
     networks=dict(type='random', n_contacts={{ n_contacts }}),
@@ -24,13 +14,36 @@ pars = dict(
         dur_inf=ss.constant({{ dur_inf }}),
         p_death={{ p_death }},
     ),
-    interventions=[vax],
     dur={{ sim_dur_years }},
     dt=1/365,
 )
 
-sim = ss.Sim(pars)
+{% if vax_start_day <= 0 %}
+# Pre-existing vaccination: initialize sim then set vaccinated individuals as immune
+sim = ss.Sim(pars, verbose=0)
+sim.init()
+sir_mod = sim.diseases['sir']
+sus_uids = sir_mod.susceptible.uids
+n_vax = int({{ vax_coverage }} * len(sus_uids))
+rng = np.random.default_rng()
+vax_uids = rng.choice(sus_uids, size=n_vax, replace=False) if n_vax > 0 else np.array([], dtype=int)
+sir_mod.susceptible[vax_uids] = False
+sir_mod.recovered[vax_uids] = True
 sim.run()
+{% else %}
+# Ongoing vaccination campaign starting at day {{ vax_start_day }}
+product = ss.simple_vx(efficacy=1.0)
+vax_start_year = 2000 + {{ vax_start_day }} / 365
+vax = ss.routine_vx(
+    product=product,
+    prob={{ vax_coverage }},
+    start_year=vax_start_year,
+)
+pars['interventions'] = [vax]
+sim = ss.Sim(pars, verbose=0)
+sim.run()
+{% endif %}
+
 fig = sim.plot()
 fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
 

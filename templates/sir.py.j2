@@ -4,44 +4,106 @@ matplotlib.use('Agg')
 import json
 import numpy as np
 
-# beta is already in per-year units (= R0 / (n_contacts * dur_inf_years))
-# dur_inf is passed as days and converted to timestep units via ss.constant
+# ── Disease parameters ────────────────────────────────────────────────────────
+disease_pars = dict(
+    type='sir',
+    init_prev={{ init_prev }},
+    beta={{ beta }},
+    dur_inf=ss.constant({{ dur_inf }}),
+    p_death={{ p_death }},
+)
+
+# ── Interventions (non-vaccine) ───────────────────────────────────────────────
+interventions_list = []
+
+{% if seasonality_int %}
+interventions_list.append(ss.seasonality(
+    diseases='sir',
+    scale={{ seasonality_int.scale }},
+    shift={{ seasonality_int.shift }},
+))
+{% endif %}
+
+{% if treatment_int %}
+from starsim.interventions import treat_num as _treat_num
+_tx = ss.Tx()
+_treatment = _treat_num(
+    product=_tx,
+    prob={{ treatment_int.coverage if treatment_int.coverage is not none else 1.0 }},
+    {% if treatment_int.capacity is not none %}max_capacity={{ treatment_int.capacity }},{% endif %}
+)
+interventions_list.append(_treatment)
+{% endif %}
+
+{% if vaccine and vaccine.start_day > 0 %}
+# ── Ongoing vaccination campaign (starts day {{ vaccine.start_day }}) ─────────
+_product = ss.simple_vx(efficacy=1.0)
+_vax_start_year = 2000 + {{ vaccine.start_day }} / 365
+interventions_list.append(ss.routine_vx(
+    product=_product,
+    prob={{ vaccine.coverage }},
+    start_year=_vax_start_year,
+))
+{% endif %}
+
+# ── Simulation parameters ─────────────────────────────────────────────────────
 pars = dict(
     n_agents={{ n_agents }},
     networks=dict(type='random', n_contacts={{ n_contacts }}),
-    diseases=dict(
-        type='sir',
-        init_prev={{ init_prev }},
-        beta={{ beta }},
-        dur_inf=ss.constant({{ dur_inf }}),
-        p_death={{ p_death }},
-    ),
+    diseases=disease_pars,
+{% if use_demographics %}
+    demographics=[
+        ss.births(birth_rate={{ birth_rate }}),
+        ss.deaths(death_rate={{ death_rate }}),
+    ],
+{% endif %}
     dur={{ sim_dur_years }},
     dt=1/365,
+{% if rand_seed is not none %}
+    rand_seed={{ rand_seed }},
+{% endif %}
 )
 
-sim = ss.Sim(pars)
+if interventions_list:
+    pars['interventions'] = interventions_list
+
+{% if vaccine and vaccine.start_day <= 0 %}
+# ── Pre-existing vaccination: initialize then set immune ──────────────────────
+sim = ss.Sim(pars, verbose=0)
+sim.init()
+_sir = sim.diseases['sir']
+_sus = _sir.susceptible.uids
+_n_vax = int({{ vaccine.coverage }} * len(_sus))
+{% if rand_seed is not none %}
+_rng = np.random.default_rng({{ rand_seed }})
+{% else %}
+_rng = np.random.default_rng()
+{% endif %}
+_vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
+_sir.susceptible[_vax_uids] = False
+_sir.recovered[_vax_uids] = True
 sim.run()
+{% else %}
+# ── Run simulation ────────────────────────────────────────────────────────────
+sim = ss.Sim(pars, verbose=0)
+sim.run()
+{% endif %}
+
 fig = sim.plot()
 fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
 
 res = sim.results
 sir = res['sir']
 
-n_infected = sir['n_infected'].values
+n_infected   = sir['n_infected'].values
 cum_infections = sir['cum_infections'].values
-cum_deaths = res['cum_deaths'].values
-
-peak_infections = int(n_infected.max())
-peak_day = int(n_infected.argmax())
-total_infected = int(cum_infections[-1])
-total_deaths = int(cum_deaths[-1])
+cum_deaths   = res['cum_deaths'].values
 
 print(json.dumps({
-    'peak_infections': peak_infections,
-    'peak_day': peak_day,
-    'total_infected': total_infected,
-    'total_deaths': total_deaths,
-    'n_agents': {{ n_agents }},
-    'sim_days': len(res['timevec']),
+    'peak_infections': int(n_infected.max()),
+    'peak_day':        int(n_infected.argmax()),
+    'total_infected':  int(cum_infections[-1]),
+    'total_deaths':    int(cum_deaths[-1]),
+    'n_agents':        {{ n_agents }},
+    'sim_days':        len(res['timevec']),
 }))

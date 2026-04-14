@@ -1,7 +1,3 @@
-"""
-Custom SEIR implementation for Starsim (SEIR is not a built-in disease type in Starsim 3.x).
-Extends ss.SIR by adding an Exposed (E) compartment before becoming infectious.
-"""
 import starsim as ss
 import matplotlib
 matplotlib.use('Agg')
@@ -10,44 +6,36 @@ import numpy as np
 
 
 class SEIR(ss.SIR):
-    """
-    SEIR disease model with a latent/exposed period before becoming infectious.
-    Durations are specified in timestep units (days at dt=1/365).
-    """
+    """Custom SEIR: adds Exposed compartment before infectious. Starsim 3.x has no built-in SEIR."""
 
     def __init__(self, pars=None, **kwargs):
+        dur_exp_val = kwargs.pop('dur_exp', None)
         super().__init__(pars=pars, **kwargs)
         self.define_pars(
-            dur_exp=ss.constant(5),  # default 5-day latent period
+            dur_exp=dur_exp_val if dur_exp_val is not None else ss.constant(5),
         )
-        self.update_pars(pars, **kwargs)
         self.define_states(
             ss.BoolState('susceptible', default=True, label='Susceptible'),
-            ss.BoolState('exposed', label='Exposed'),
+            ss.BoolState('exposed',  label='Exposed'),
             ss.BoolState('infected', label='Infectious'),
             ss.BoolState('recovered', label='Recovered'),
-            ss.FloatArr('ti_infected', label='Time of infection'),
+            ss.FloatArr('ti_infected',   label='Time of infection'),
             ss.FloatArr('ti_infectious', label='Time of becoming infectious'),
-            ss.FloatArr('ti_recovered', label='Time of recovery'),
-            ss.FloatArr('ti_dead', label='Time of death'),
-            ss.FloatArr('rel_sus', default=1.0, label='Relative susceptibility'),
+            ss.FloatArr('ti_recovered',  label='Time of recovery'),
+            ss.FloatArr('ti_dead',       label='Time of death'),
+            ss.FloatArr('rel_sus',  default=1.0, label='Relative susceptibility'),
             ss.FloatArr('rel_trans', default=1.0, label='Relative transmission'),
             reset=True,
         )
 
     def step_state(self):
         sim = self.sim
-        # Exposed → Infectious
         newly_infectious = (self.exposed & (self.ti_infectious <= sim.ti)).uids
-        self.exposed[newly_infectious] = False
+        self.exposed[newly_infectious]  = False
         self.infected[newly_infectious] = True
-
-        # Infectious → Recovered
         recovered = (self.infected & (self.ti_recovered <= sim.ti)).uids
-        self.infected[recovered] = False
+        self.infected[recovered]  = False
         self.recovered[recovered] = True
-
-        # Deaths
         deaths = (self.ti_dead <= sim.ti).uids
         if len(deaths):
             sim.people.request_death(deaths)
@@ -55,29 +43,45 @@ class SEIR(ss.SIR):
     def set_prognoses(self, uids, sources=None):
         ti = self.t.ti
         self.susceptible[uids] = False
-        self.exposed[uids] = True
+        self.exposed[uids]     = True
         self.ti_infected[uids] = ti
-
         p = self.pars
         dur_exp = p.dur_exp.rvs(uids)
         dur_inf = p.dur_inf.rvs(uids)
-
         self.ti_infectious[uids] = ti + dur_exp
-
-        will_die = p.p_death.rvs(uids)
+        will_die  = p.p_death.rvs(uids)
         dead_uids = uids[will_die]
-        rec_uids = uids[~will_die]
-        self.ti_dead[dead_uids] = ti + dur_exp[will_die] + dur_inf[will_die]
-        self.ti_recovered[rec_uids] = ti + dur_exp[~will_die] + dur_inf[~will_die]
+        rec_uids  = uids[~will_die]
+        self.ti_dead[dead_uids]      = ti + dur_exp[will_die]  + dur_inf[will_die]
+        self.ti_recovered[rec_uids]  = ti + dur_exp[~will_die] + dur_inf[~will_die]
 
     @property
     def infectious(self):
-        """Only infectious (not exposed) agents transmit."""
         return self.infected
 
 
-# ── Simulation ────────────────────────────────────────────────────────────────
+# ── Interventions ─────────────────────────────────────────────────────────────
+interventions_list = []
 
+{% if seasonality_int %}
+interventions_list.append(ss.seasonality(
+    diseases='seir',
+    scale={{ seasonality_int.scale }},
+    shift={{ seasonality_int.shift }},
+))
+{% endif %}
+
+{% if vaccine and vaccine.start_day > 0 %}
+_product = ss.simple_vx(efficacy=1.0)
+_vax_start_year = 2000 + {{ vaccine.start_day }} / 365
+interventions_list.append(ss.routine_vx(
+    product=_product,
+    prob={{ vaccine.coverage }},
+    start_year=_vax_start_year,
+))
+{% endif %}
+
+# ── Simulation parameters ─────────────────────────────────────────────────────
 disease = SEIR(
     init_prev={{ init_prev }},
     beta={{ beta }},
@@ -90,35 +94,62 @@ pars = dict(
     n_agents={{ n_agents }},
     networks=dict(type='random', n_contacts={{ n_contacts }}),
     diseases=[disease],
+{% if use_demographics %}
+    demographics=[
+        ss.births(birth_rate={{ birth_rate }}),
+        ss.deaths(death_rate={{ death_rate }}),
+    ],
+{% endif %}
     dur={{ sim_dur_years }},
     dt=1/365,
+{% if rand_seed is not none %}
+    rand_seed={{ rand_seed }},
+{% endif %}
 )
 
-sim = ss.Sim(pars)
+if interventions_list:
+    pars['interventions'] = interventions_list
+
+{% if vaccine and vaccine.start_day <= 0 %}
+# Pre-existing vaccination
+sim = ss.Sim(pars, verbose=0)
+sim.init()
+_disease_obj = list(sim.diseases.values())[0]
+_sus = _disease_obj.susceptible.uids
+_n_vax = int({{ vaccine.coverage }} * len(_sus))
+{% if rand_seed is not none %}
+_rng = np.random.default_rng({{ rand_seed }})
+{% else %}
+_rng = np.random.default_rng()
+{% endif %}
+_vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
+_disease_obj.susceptible[_vax_uids] = False
+_disease_obj.recovered[_vax_uids]   = True
 sim.run()
+{% else %}
+sim = ss.Sim(pars, verbose=0)
+sim.run()
+{% endif %}
+
 fig = sim.plot()
 fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
 
 res = sim.results
-# The custom SEIR class is stored under 'seir' key
-disease_key = [k for k in res.keys() if k not in ('timevec', 'n_alive', 'n_female',
-               'new_deaths', 'new_emigrants', 'cum_deaths', 'randomnet')][0]
+disease_key = [k for k in res.keys() if k not in (
+    'timevec', 'n_alive', 'n_female', 'new_deaths', 'new_emigrants',
+    'cum_deaths', 'randomnet',
+)][0]
 seir_res = res[disease_key]
 
-n_infected = seir_res['n_infected'].values
+n_infected    = seir_res['n_infected'].values
 cum_infections = seir_res['cum_infections'].values
-cum_deaths = res['cum_deaths'].values
-
-peak_infections = int(n_infected.max())
-peak_day = int(n_infected.argmax())
-total_infected = int(cum_infections[-1])
-total_deaths = int(cum_deaths[-1])
+cum_deaths    = res['cum_deaths'].values
 
 print(json.dumps({
-    'peak_infections': peak_infections,
-    'peak_day': peak_day,
-    'total_infected': total_infected,
-    'total_deaths': total_deaths,
-    'n_agents': {{ n_agents }},
-    'sim_days': len(res['timevec']),
+    'peak_infections': int(n_infected.max()),
+    'peak_day':        int(n_infected.argmax()),
+    'total_infected':  int(cum_infections[-1]),
+    'total_deaths':    int(cum_deaths[-1]),
+    'n_agents':        {{ n_agents }},
+    'sim_days':        len(res['timevec']),
 }))
