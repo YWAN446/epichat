@@ -45,6 +45,9 @@ def _init_review_state(p: SimParams) -> None:
         "f_init_prev":      float(p.init_prev),
         "f_dur_inf":        float(p.dur_inf),
         "f_dur_exp":        float(p.dur_exp) if p.dur_exp else 5.0,
+        "f_dur_immune":     float(p.dur_immune) if p.dur_immune else 180.0,
+        "f_p_asymp":        float(p.p_asymp),
+        "f_rel_trans_asymp":float(p.rel_trans_asymp),
         "f_p_death":        float(p.p_death),
         "f_sim_dur_years":  float(p.sim_dur_years),
         "f_rand_seed_str":  str(p.rand_seed) if p.rand_seed is not None else "",
@@ -93,9 +96,11 @@ def _build_params_from_form() -> SimParams:
         ))
     seed_str = s.f_rand_seed_str.strip()
     rand_seed = int(seed_str) if seed_str.isdigit() else None
-    dur_exp = float(s.f_dur_exp) if s.f_disease_type == "seir" else None
+    dt = s.f_disease_type
+    dur_exp    = float(s.f_dur_exp)    if dt in ("seir", "seiar") else None
+    dur_immune = float(s.f_dur_immune) if dt == "sirs"            else None
     return SimParams(
-        disease_type=s.f_disease_type,
+        disease_type=dt,
         n_agents=int(s.f_n_agents),
         n_contacts=int(s.f_n_contacts),
         network_type=s.f_network_type,
@@ -104,6 +109,9 @@ def _build_params_from_form() -> SimParams:
         init_prev=float(s.f_init_prev),
         dur_inf=float(s.f_dur_inf),
         dur_exp=dur_exp,
+        dur_immune=dur_immune,
+        p_asymp=float(s.f_p_asymp),
+        rel_trans_asymp=float(s.f_rel_trans_asymp),
         p_death=float(s.f_p_death),
         sim_dur_years=float(s.f_sim_dur_years),
         interventions=interventions,
@@ -196,8 +204,11 @@ elif step == "review":
     st.subheader("Disease Model")
     c1, c2, c3 = st.columns(3)
     s.f_disease_type = c1.selectbox(
-        "Disease type", ["sir", "seir", "sis"],
-        index=["sir", "seir", "sis"].index(s.f_disease_type),
+        "Disease type",
+        ["sir", "seir", "sis", "sirs", "seiar"],
+        index=["sir", "seir", "sis", "sirs", "seiar"].index(s.f_disease_type),
+        help="SIR: permanent immunity | SEIR: + latent period | SIS: no immunity | "
+             "SIRS: waning immunity | SEIAR: + asymptomatic track",
     )
     s.f_n_agents = c2.number_input("Population size", min_value=10, max_value=1_000_000,
                                     value=s.f_n_agents, step=1000)
@@ -209,11 +220,24 @@ elif step == "review":
                                    value=s.f_p_death, format="%.4f")
     s.f_dur_inf = c5.number_input("Infectious period (days)", min_value=1.0, max_value=365.0,
                                    value=s.f_dur_inf)
-    if s.f_disease_type == "seir":
+    if s.f_disease_type in ("seir", "seiar"):
         s.f_dur_exp = c6.number_input("Latent period (days)", min_value=1.0, max_value=365.0,
                                        value=s.f_dur_exp)
+    elif s.f_disease_type == "sirs":
+        s.f_dur_immune = c6.number_input("Immunity duration (days)", min_value=1.0, max_value=3650.0,
+                                          value=s.f_dur_immune,
+                                          help="Days before recovered agents become susceptible again")
     else:
         c6.markdown("")
+
+    if s.f_disease_type == "seiar":
+        a1, a2 = st.columns(2)
+        s.f_p_asymp = a1.slider(
+            "Fraction asymptomatic", 0.0, 1.0, value=s.f_p_asymp, step=0.05,
+            help="Proportion of infections that are asymptomatic (e.g. 0.4 for COVID-19)")
+        s.f_rel_trans_asymp = a2.slider(
+            "Asymptomatic relative transmissibility", 0.0, 1.0, value=s.f_rel_trans_asymp, step=0.05,
+            help="Transmissibility of asymptomatic cases relative to symptomatic (e.g. 0.5 = half as infectious)")
 
     # ── Network ───────────────────────────────────────────────────────────────
     st.subheader("Network")

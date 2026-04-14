@@ -37,12 +37,17 @@ def parse_query(user_input: str) -> SimParams:
 
     raw = message.content[0].text.strip()
 
-    # Strip accidental markdown fences
-    if raw.startswith("```"):
+    # Strip markdown fences if present
+    if "```" in raw:
         raw = raw.split("```")[1]
         if raw.startswith("json"):
             raw = raw[4:]
         raw = raw.strip()
+
+    # Extract the first JSON object even if the LLM prepended reasoning text
+    brace = raw.find("{")
+    if brace > 0:
+        raw = raw[brace:]
 
     try:
         data = json.loads(raw)

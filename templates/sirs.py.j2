@@ -1,0 +1,170 @@
+import starsim as ss
+import matplotlib
+matplotlib.use('Agg')
+import json
+import numpy as np
+
+
+class SIRS(ss.SIR):
+    """SIR with waning immunity: recovered agents return to susceptible after dur_immune days."""
+
+    def __init__(self, pars=None, **kwargs):
+        dur_immune_val = kwargs.pop('dur_immune', None)
+        super().__init__(pars=pars, **kwargs)
+        self.define_pars(
+            dur_immune=dur_immune_val if dur_immune_val is not None else ss.constant(180),
+        )
+        self.define_states(
+            ss.BoolState('susceptible', default=True, label='Susceptible'),
+            ss.BoolState('infected',  label='Infectious'),
+            ss.BoolState('recovered', label='Recovered (immune)'),
+            ss.FloatArr('ti_infected'),
+            ss.FloatArr('ti_recovered'),
+            ss.FloatArr('ti_susceptible', label='Time of immunity waning'),
+            ss.FloatArr('ti_dead'),
+            ss.FloatArr('rel_sus',   default=1.0),
+            ss.FloatArr('rel_trans', default=1.0),
+            reset=True,
+        )
+
+    def step_state(self):
+        sim = self.sim
+        # I -> R
+        recovered = (self.infected & (self.ti_recovered <= sim.ti)).uids
+        self.infected[recovered]  = False
+        self.recovered[recovered] = True
+        # R -> S (waning immunity)
+        waned = (self.recovered & (self.ti_susceptible <= sim.ti)).uids
+        self.recovered[waned]   = False
+        self.susceptible[waned] = True
+        # Deaths
+        deaths = (self.ti_dead <= sim.ti).uids
+        if len(deaths):
+            sim.people.request_death(deaths)
+
+    def set_prognoses(self, uids, sources=None):
+        ti = self.t.ti
+        self.susceptible[uids] = False
+        self.infected[uids]    = True
+        self.ti_infected[uids] = ti
+        p = self.pars
+        dur_inf  = p.dur_inf.rvs(uids)
+        dur_imm  = p.dur_immune.rvs(uids)
+        will_die  = p.p_death.rvs(uids)
+        dead_uids = uids[will_die]
+        rec_uids  = uids[~will_die]
+        self.ti_dead[dead_uids]          = ti + dur_inf[will_die]
+        self.ti_recovered[rec_uids]      = ti + dur_inf[~will_die]
+        self.ti_susceptible[rec_uids]    = ti + dur_inf[~will_die] + dur_imm[~will_die]
+
+
+# ── Interventions ─────────────────────────────────────────────────────────────
+interventions_list = []
+
+{% if seasonality_int %}
+interventions_list.append(ss.seasonality(
+    diseases='sirs',
+    scale={{ seasonality_int.scale }},
+    shift={{ seasonality_int.shift }},
+))
+{% endif %}
+
+{% if vaccine and vaccine.start_day > 0 %}
+_product = ss.simple_vx(efficacy=1.0)
+_vax_start_year = 2000 + {{ vaccine.start_day }} / 365
+interventions_list.append(ss.routine_vx(
+    product=_product,
+    prob={{ vaccine.coverage }},
+    start_year=_vax_start_year,
+))
+{% endif %}
+
+# ── Network ───────────────────────────────────────────────────────────────────
+{% if network_type == 'age_structured' %}
+_age_groups = {
+    'children': ss.AgeGroup(0, 18),
+    'adults':   ss.AgeGroup(18, 65),
+    'elderly':  ss.AgeGroup(65, None),
+}
+_contact_matrix = np.array([
+    [7.0, 2.5, 0.5],
+    [2.5, 9.0, 1.5],
+    [0.5, 1.5, 3.5],
+]) * {{ network_beta }}
+_network = ss.MixingPools(diseases='sirs', src=_age_groups, dst=_age_groups,
+                          n_contacts=_contact_matrix, beta=1.0)
+{% else %}
+_network = dict(type='random', n_contacts={{ n_contacts }}, beta={{ network_beta }})
+{% endif %}
+
+# ── Simulation parameters ─────────────────────────────────────────────────────
+disease = SIRS(
+    init_prev={{ init_prev }},
+    beta={{ beta }},
+    dur_inf=ss.constant({{ dur_inf }}),
+    dur_immune=ss.constant({{ dur_immune }}),
+    p_death={{ p_death }},
+)
+
+pars = dict(
+    n_agents={{ n_agents }},
+    networks=_network,
+    diseases=[disease],
+{% if use_demographics %}
+    demographics=[
+        ss.births(birth_rate={{ birth_rate }}),
+        ss.deaths(death_rate={{ death_rate }}),
+    ],
+{% endif %}
+    dur={{ sim_dur_years }},
+    dt=1/365,
+{% if rand_seed is not none %}
+    rand_seed={{ rand_seed }},
+{% endif %}
+)
+
+if interventions_list:
+    pars['interventions'] = interventions_list
+
+{% if vaccine and vaccine.start_day <= 0 %}
+sim = ss.Sim(pars, verbose=0)
+sim.init()
+_d = list(sim.diseases.values())[0]
+_sus = _d.susceptible.uids
+_n_vax = int({{ vaccine.coverage }} * len(_sus))
+{% if rand_seed is not none %}
+_rng = np.random.default_rng({{ rand_seed }})
+{% else %}
+_rng = np.random.default_rng()
+{% endif %}
+_vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
+_d.susceptible[_vax_uids] = False
+_d.recovered[_vax_uids]   = True
+sim.run()
+{% else %}
+sim = ss.Sim(pars, verbose=0)
+sim.run()
+{% endif %}
+
+fig = sim.plot()
+fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
+
+res = sim.results
+disease_key = [k for k in res.keys() if k not in (
+    'timevec', 'n_alive', 'n_female', 'new_deaths', 'new_emigrants',
+    'cum_deaths', 'randomnet', 'mixingpools',
+) and not k.startswith('pool:')][0]
+dr = res[disease_key]
+
+n_infected     = dr['n_infected'].values
+cum_infections = dr['cum_infections'].values
+cum_deaths     = res['cum_deaths'].values
+
+print(json.dumps({
+    'peak_infections': int(n_infected.max()),
+    'peak_day':        int(n_infected.argmax()),
+    'total_infected':  int(cum_infections[-1]),
+    'total_deaths':    int(cum_deaths[-1]),
+    'n_agents':        {{ n_agents }},
+    'sim_days':        len(res['timevec']),
+}))

@@ -112,11 +112,14 @@ fig = sim.plot()
 fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
 
 res = sim.results
-sir = res['sir']
+_skip = {'timevec', 'n_alive', 'n_female', 'new_deaths', 'new_emigrants',
+         'cum_deaths', 'randomnet', 'mixingpools'}
+disease_key = next(k for k in res.keys() if k not in _skip and not k.startswith('pool:'))
+dr = res[disease_key]
 
-n_infected   = sir['n_infected'].values
-cum_infections = sir['cum_infections'].values
-cum_deaths   = res['cum_deaths'].values
+n_infected     = dr['n_infected'].values
+cum_infections = dr['cum_infections'].values
+cum_deaths     = res['cum_deaths'].values
 
 print(json.dumps({
     'peak_infections': int(n_infected.max()),

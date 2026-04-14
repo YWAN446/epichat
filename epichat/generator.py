@@ -18,11 +18,12 @@ class CodeGenerator:
         )
 
     def _select_template(self, params: SimParams) -> str:
-        if params.disease_type == "seir":
-            return "seir.py.j2"
-        if params.disease_type == "sis":
-            return "sis.py.j2"
-        return "sir.py.j2"
+        return {
+            "seir":  "seir.py.j2",
+            "sirs":  "sirs.py.j2",
+            "seiar": "seiar.py.j2",
+            "sis":   "sis.py.j2",
+        }.get(params.disease_type, "sir.py.j2")
 
     def generate(self, params: SimParams, output_path: str) -> str:
         """Render the appropriate Jinja2 template and return executable Python code."""
