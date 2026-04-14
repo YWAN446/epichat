@@ -39,6 +39,7 @@ def _init_review_state(p: SimParams) -> None:
         "f_disease_type":   p.disease_type,
         "f_n_agents":       p.n_agents,
         "f_n_contacts":     p.n_contacts,
+        "f_network_type":   p.network_type,
         "f_network_beta":   float(p.network_beta),
         "f_beta":           float(p.beta),
         "f_init_prev":      float(p.init_prev),
@@ -97,6 +98,7 @@ def _build_params_from_form() -> SimParams:
         disease_type=s.f_disease_type,
         n_agents=int(s.f_n_agents),
         n_contacts=int(s.f_n_contacts),
+        network_type=s.f_network_type,
         network_beta=float(s.f_network_beta),
         beta=float(s.f_beta),
         init_prev=float(s.f_init_prev),
@@ -215,16 +217,29 @@ elif step == "review":
 
     # ── Network ───────────────────────────────────────────────────────────────
     st.subheader("Network")
+    _net_options = ["random", "age_structured"]
+    _net_labels  = ["Random (Erdős–Rényi)", "Age-structured (POLYMOD)"]
     n1, n2, n3 = st.columns(3)
-    n1.selectbox("Network type", ["Random (Erdős–Rényi)"], index=0,
-                 help="Household and age-structured networks require external data and are not yet supported.")
-    s.f_n_contacts = n2.number_input(
-        "Avg contacts per person/day", min_value=1, max_value=100, value=s.f_n_contacts,
-        help="Typical values: household-only ≈ 3–5, community ≈ 8–15, high-contact settings ≈ 15–30")
+    _net_idx = _net_options.index(s.get("f_network_type", "random"))
+    _net_sel = n1.selectbox(
+        "Network type", _net_labels, index=_net_idx,
+        help="Random: every agent contacts n random others each day.\n"
+             "Age-structured: POLYMOD contact matrix — children/adults/elderly mix at realistic rates.")
+    s.f_network_type = _net_options[_net_labels.index(_net_sel)]
+
+    if s.f_network_type == "random":
+        s.f_n_contacts = n2.number_input(
+            "Avg contacts per person/day", min_value=1, max_value=100, value=s.f_n_contacts,
+            help="Typical values: household-only ≈ 3–5, community ≈ 8–15, high-contact ≈ 15–30")
+    else:
+        n2.info("Contact rates from POLYMOD matrix:\n"
+                "children↔children: 7/day · adults↔adults: 9/day · elderly↔elderly: 3.5/day")
+
     s.f_network_beta = n3.number_input(
-        "Network transmission multiplier", min_value=0.01, max_value=10.0,
+        "Transmission multiplier", min_value=0.01, max_value=10.0,
         value=s.f_network_beta, format="%.2f",
-        help="Scales transmission per contact. 1.0 = default. Reduce (e.g. 0.5) to model masks or distancing.")
+        help="Scales all contact-level transmission. 1.0 = default. "
+             "0.5 = 50% reduction (e.g. masks + distancing).")
 
     # ── Transmission ──────────────────────────────────────────────────────────
     st.subheader("Transmission")

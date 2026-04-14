@@ -21,7 +21,7 @@ class SimParams(BaseModel):
     disease_type: Literal["sir", "seir", "sis"] = "sir"
     n_agents: int = Field(default=10000, ge=10, le=1_000_000)
     n_contacts: int = Field(default=4, ge=1, le=100)
-    network_type: Literal["random"] = "random"
+    network_type: Literal["random", "age_structured"] = "random"
     network_beta: float = Field(default=1.0, gt=0.0, le=10.0)  # network-level transmission multiplier
     beta: float = Field(gt=0.0, le=1000.0)
     init_prev: float = Field(default=0.01, gt=0.0, lt=1.0)
@@ -48,7 +48,16 @@ class SimParams(BaseModel):
         return v
 
     def approx_r0(self) -> float:
-        """Approximate R0 = beta * network_beta * (dur_inf / 365) * n_contacts."""
+        """Approximate R0. For random network: beta * network_beta * (dur_inf/365) * n_contacts.
+        For age_structured: spectral radius of the POLYMOD next-generation matrix."""
+        if self.network_type == "age_structured":
+            import numpy as np
+            # Built-in POLYMOD contact matrix (children/adults/elderly)
+            C = np.array([[7.0, 2.5, 0.5],
+                          [2.5, 9.0, 1.5],
+                          [0.5, 1.5, 3.5]])
+            ngm = self.beta * self.network_beta * (self.dur_inf / 365.0) * C
+            return float(np.linalg.eigvals(ngm).real.max())
         return self.beta * self.network_beta * (self.dur_inf / 365.0) * self.n_contacts
 
     def get_vaccine(self) -> Optional[Intervention]:

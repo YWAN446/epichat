@@ -46,10 +46,29 @@ interventions_list.append(ss.routine_vx(
 ))
 {% endif %}
 
+# ── Network ───────────────────────────────────────────────────────────────────
+{% if network_type == 'age_structured' %}
+# POLYMOD-inspired age-structured contact network (children 0-17 / adults 18-64 / elderly 65+)
+_age_groups = {
+    'children': ss.AgeGroup(0, 18),
+    'adults':   ss.AgeGroup(18, 65),
+    'elderly':  ss.AgeGroup(65, None),
+}
+_contact_matrix = np.array([
+    [7.0, 2.5, 0.5],
+    [2.5, 9.0, 1.5],
+    [0.5, 1.5, 3.5],
+]) * {{ network_beta }}
+_network = ss.MixingPools(diseases='sir', src=_age_groups, dst=_age_groups,
+                          n_contacts=_contact_matrix, beta=1.0)
+{% else %}
+_network = dict(type='random', n_contacts={{ n_contacts }}, beta={{ network_beta }})
+{% endif %}
+
 # ── Simulation parameters ─────────────────────────────────────────────────────
 pars = dict(
     n_agents={{ n_agents }},
-    networks=dict(type='random', n_contacts={{ n_contacts }}, beta={{ network_beta }}),
+    networks=_network,
     diseases=disease_pars,
 {% if use_demographics %}
     demographics=[

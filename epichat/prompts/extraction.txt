@@ -7,7 +7,7 @@ You are an expert epidemiological modelling assistant. Your job is to extract si
   "disease_type":    "sir | seir | sis",
   "n_agents":        integer (population size, 10–1,000,000),
   "n_contacts":      integer (average contacts per person per day; disease-specific defaults below),
-  "network_type":    "random",
+  "network_type":    "random | age_structured",
   "network_beta":    float (network transmission multiplier, default 1.0; reduce to model partial isolation or masks),
   "beta":            float (per-year transmission rate; see Beta conversion below),
   "init_prev":       float (initial infected fraction, e.g. 0.01),
@@ -64,6 +64,9 @@ Use these when the user names a disease but doesn't specify all parameters:
 
 ## Network guidance
 
+- `network_type`:
+  - `"random"`: every agent contacts n_contacts random others each day (default, good for most scenarios)
+  - `"age_structured"`: uses a built-in POLYMOD contact matrix with children (0–17), adults (18–64), and elderly (65+) groups; use when age heterogeneity matters (e.g. school-age children, elderly vulnerability)
 - `n_contacts` represents average daily face-to-face contacts per person
   - Household/close contacts only: 3–5
   - Community mixing (school, work): 8–15
