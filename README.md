@@ -61,9 +61,9 @@ streamlit run app.py
 ```
 $ python cli.py "Measles in 100K people, 80% vaccinated, R0=15"
 
-🔬 EpiChat — Parsing query...
-📊 Running Starsim simulation (SEIR, n=100,000, β=0.1875)...
-📈 Generating plain-language summary...
+EpiChat — Parsing query...
+Running Starsim simulation (SEIR, n=100,000)...
+Generating plain-language summary...
 
 RESULTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -79,13 +79,168 @@ can still cause a substantial outbreak among the unvaccinated 20%...
 MODEL DETAILS
   Disease type:  SEIR
   Population:    100,000
-  Beta:          0.187500
+  Beta:          68.437500
   Approx R0:     15.0
   Duration:      1 year(s)
-  Interventions: vaccine
+  Interventions: vaccine (80% pre-existing)
 
 [Plot saved to: results/sim_20260415_143022.png]
 ```
+
+---
+
+## Supported Disease Models
+
+EpiChat supports six compartmental disease models. Each can be specified directly or inferred from a disease name (e.g. "COVID", "measles", "influenza").
+
+| Model | Compartments | Key Use Case | Required Extra Parameters |
+|-------|-------------|--------------|--------------------------|
+| **SIR** | Susceptible → Infectious → Recovered | Standard acute infections (flu, COVID acute) | — |
+| **SEIR** | Susceptible → **Exposed** → Infectious → Recovered | Diseases with a latent period (measles, SARS) | `dur_exp` |
+| **SIS** | Susceptible → Infectious → **Susceptible** | No lasting immunity (gonorrhea, some STIs) | — |
+| **SIRS** | Susceptible → Infectious → Recovered → **Susceptible** | Waning immunity (COVID endemic) | `dur_immune` |
+| **SEIRS** | S → **Exposed** → I → R → **S** | Latent period + waning immunity (COVID full) | `dur_exp`, `dur_immune` |
+| **SEIAR** | S → E → **Infectious or Asymptomatic** → R | Infections with asymptomatic transmission (flu, COVID) | `dur_exp`, `p_asymp`, `rel_trans_asymp` |
+
+### Built-in Disease Defaults
+
+When you name a disease without specifying all parameters, EpiChat uses these defaults:
+
+| Disease | Model | dur_inf | dur_exp | n_contacts | p_death | Notes |
+|---------|-------|---------|---------|------------|---------|-------|
+| Generic SIR | SIR | 10 days | — | 4 | 0.0 | R0=2.5 default |
+| COVID (acute) | SIR | 8 days | — | 6 | 0.01 | |
+| COVID (endemic) | SIRS | 8 days | — | 6 | 0.005 | dur_immune=180 days |
+| COVID (full endemic) | SEIRS | 8 days | 5 days | 6 | 0.005 | dur_immune=180 days |
+| COVID (with asymp) | SEIAR | 8 days | 5 days | 6 | 0.01 | p_asymp=0.4 |
+| Influenza | SIR | 5 days | — | 6 | 0.001 | |
+| Flu (with asymp) | SEIAR | 5 days | 2 days | 6 | 0.001 | p_asymp=0.3 |
+| Measles | SEIR | 8 days | 12 days | 10 | 0.001 | R0=15 typical |
+| SARS-like | SEIR | 10 days | 5 days | 5 | 0.05 | |
+| Ebola | SIR | 10 days | — | 3 | 0.5 | |
+| Gonorrhea | SIS | 90 days | — | 2 | 0.0 | R0=2 typical |
+
+---
+
+## Parameters Reference
+
+### Core Disease Parameters
+
+| Parameter | Type | Range | Default | Description |
+|-----------|------|-------|---------|-------------|
+| `disease_type` | string | sir, seir, sis, sirs, seirs, seiar | `sir` | Compartmental model |
+| `n_agents` | integer | 10–1,000,000 | 10,000 | Population size |
+| `beta` | float | 0–1000 | computed | Per-year transmission rate. EpiChat computes this from R0: `beta = R0 × 365 / (n_contacts × dur_inf_days)` |
+| `init_prev` | float | 0–1 | 0.01 | Initial fraction infected (seed cases) |
+| `dur_inf` | float | >0 | 10.0 | Infectious period (days) |
+| `dur_exp` | float or null | >0 | null | Latent/exposed period (days). **Required for SEIR, SEIRS, SEIAR** |
+| `dur_immune` | float or null | >0 | null | Days of immunity before waning back to susceptible. **Required for SIRS, SEIRS** |
+| `p_death` | float | 0–1 | 0.0 | Infection fatality rate |
+| `p_asymp` | float | 0–1 | 0.3 | Fraction of infections that are asymptomatic. **SEIAR only** |
+| `rel_trans_asymp` | float | 0–1 | 0.5 | Asymptomatic relative transmissibility (1.0 = same as symptomatic). **SEIAR only** |
+| `sim_dur_years` | float | 0–20 | 1.0 | Simulation duration in years |
+| `rand_seed` | integer or null | any | null | Random seed for reproducible runs |
+
+### Network Parameters
+
+| Parameter | Type | Options / Range | Default | Description |
+|-----------|------|----------------|---------|-------------|
+| `network_type` | string | `random`, `age_structured` | `random` | Contact network structure |
+| `n_contacts` | integer | 1–100 | 4 | Average daily contacts per person |
+| `network_beta` | float | 0–10 | 1.0 | Transmission multiplier per contact (use <1 for masks/distancing) |
+
+**`network_type` options:**
+
+- **`random`** — Each agent contacts `n_contacts` random others per day. Good default for most scenarios. Use higher `n_contacts` for crowded settings.
+- **`age_structured`** — Uses a built-in POLYMOD-style contact matrix with three age groups (children 0–17, adults 18–64, elderly 65+). Accounts for the fact that children mix more with children, adults with adults, etc. Use when age heterogeneity matters (school outbreaks, elderly vulnerability).
+
+**`n_contacts` guidance:**
+
+| Setting | Typical range |
+|---------|--------------|
+| Household/close contacts only | 3–5 |
+| Community mixing (school, work) | 8–15 |
+| High-contact (crowded city, hospital) | 15–30 |
+
+**`network_beta` examples:**
+
+| Scenario | network_beta |
+|----------|-------------|
+| No intervention | 1.0 |
+| 50% mask uptake, 50% efficacy | ~0.75 |
+| Strict physical distancing | ~0.4–0.6 |
+
+### Demographics Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `use_demographics` | bool | false | Enable births and deaths (useful for long-run endemic projections) |
+| `birth_rate` | float | 20.0 | Births per 1,000 per year |
+| `death_rate` | float | 10.0 | Deaths per 1,000 per year |
+
+---
+
+## Interventions
+
+Up to three intervention types can be combined in a single simulation.
+
+### Vaccine
+
+Removes a fraction of agents from the susceptible pool.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `coverage` | float (0–1) | Fraction of population vaccinated |
+| `start_day` | integer | `0` = pre-existing immunity (applied before simulation starts); `>0` = ongoing campaign starting on that day |
+
+**Examples in natural language:**
+- *"80% of the population is vaccinated"* → `coverage=0.8, start_day=0`
+- *"Vaccination campaign begins at month 3"* → `coverage=0.7, start_day=90`
+
+### Treatment
+
+Reduces infectious duration or mortality for a fraction of infected agents.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `coverage` | float (0–1) | Fraction of eligible infected agents who receive treatment |
+| `capacity` | integer or null | Maximum treatments administered per day; `null` = unlimited |
+| `start_day` | integer | Day treatment becomes available |
+
+**Examples in natural language:**
+- *"Treatment available from day 30 with 60% coverage"*
+- *"Hospital capacity of 100 treatments per day starting at month 2"*
+
+### Seasonality
+
+Modulates transmission rate sinusoidally over the year.
+
+| Field | Type | Range | Description |
+|-------|------|-------|-------------|
+| `scale` | float | 0–1 | Seasonal variation strength (0.2 = ±20% around the annual mean) |
+| `shift` | float | 0–1 | Phase offset (0.0 = peak in winter/Jan 1; 0.5 = peak in summer/Jul 1) |
+
+**Examples in natural language:**
+- *"Seasonal winter transmission"* → `scale=0.3, shift=0.0`
+- *"Mild seasonal variation with summer peak"* → `scale=0.2, shift=0.5`
+
+---
+
+## Natural Language Query Tips
+
+EpiChat's LLM parser understands a wide range of phrasing. A few patterns:
+
+| You say | What EpiChat does |
+|---------|------------------|
+| "R0 = 2.5" | Converts to beta using `R0 × 365 / (n_contacts × dur_inf)` |
+| "COVID", "flu", "measles", etc. | Applies built-in disease defaults |
+| "80% vaccinated" | Adds vaccine intervention, `start_day=0` |
+| "vaccination campaign starting month 3" | Vaccine intervention, `start_day=90` |
+| "seasonal transmission" or "winter peak" | Seasonality, `scale=0.3, shift=0.0` |
+| "endemic" or "long-run" | Sets `use_demographics=true` |
+| "age-structured" or "school-age children" | Sets `network_type=age_structured` |
+| "masks" or "50% mask uptake with 50% efficacy" | Sets `network_beta≈0.75` |
+| "reproducible" or "set seed 42" | Sets `rand_seed=42` |
 
 ---
 
@@ -96,52 +251,28 @@ epichat/
 ├── requirements.txt
 ├── cli.py                   # Command-line interface
 ├── app.py                   # Streamlit web interface
+├── ROADMAP.md               # Planned data integrations and future features
 ├── epichat/
-│   ├── schema.py            # Pydantic parameter model
+│   ├── schema.py            # Pydantic parameter model (single source of truth)
 │   ├── parser.py            # NL → SimParams (Claude API)
 │   ├── generator.py         # SimParams → Starsim code (Jinja2)
 │   ├── executor.py          # Sandboxed subprocess execution
 │   ├── narrator.py          # Results → plain-language (Claude API)
-│   ├── epichat.py           # Main orchestrator
+│   ├── epichat.py           # Main orchestrator + error recovery loop
 │   └── prompts/
 │       ├── extraction.txt   # System prompt for parameter parsing
 │       └── narration.txt    # System prompt for interpretation
 ├── templates/
-│   ├── sir.py.j2            # SIR simulation template
+│   ├── sir.py.j2            # SIR (+ SIS) simulation template
 │   ├── seir.py.j2           # SEIR simulation template
-│   └── sir_vaccine.py.j2    # SIR + vaccine template
+│   ├── sirs.py.j2           # SIRS (waning immunity) template
+│   ├── seirs.py.j2          # SEIRS (latent + waning) template
+│   ├── seiar.py.j2          # SEIAR (asymptomatic track) template
+│   └── sis.py.j2            # SIS (no immunity) template
 └── tests/
-    ├── test_queries.json    # 30 benchmark queries
+    ├── test_queries.json    # Benchmark queries
     └── test_parser.py       # Automated accuracy tests
 ```
-
----
-
-## Validation Benchmark
-
-To run the live accuracy benchmark (requires API key):
-
-```bash
-EPICHAT_TEST_LIVE=1 pytest tests/test_parser.py -v
-```
-
-**Target:** ≥80% exact parameter match on simple + medium queries.
-
-| Difficulty | Queries | Target |
-|-----------|---------|--------|
-| Simple    | 10      | ≥80%   |
-| Medium    | 10      | ≥80%   |
-| Complex   | 10      | best-effort |
-
----
-
-## Supported Disease Types
-
-| Type | Parameters |
-|------|-----------|
-| SIR  | beta, dur_inf, p_death |
-| SEIR | beta, dur_exp, dur_inf, p_death |
-| + Vaccine intervention | coverage, start_day |
 
 ---
 
