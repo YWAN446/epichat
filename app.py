@@ -97,8 +97,8 @@ def _build_params_from_form() -> SimParams:
     seed_str = s.f_rand_seed_str.strip()
     rand_seed = int(seed_str) if seed_str.isdigit() else None
     dt = s.f_disease_type
-    dur_exp    = float(s.f_dur_exp)    if dt in ("seir", "seiar") else None
-    dur_immune = float(s.f_dur_immune) if dt == "sirs"            else None
+    dur_exp    = float(s.f_dur_exp)    if dt in ("seir", "seirs", "seiar") else None
+    dur_immune = float(s.f_dur_immune) if dt in ("sirs", "seirs")          else None
     return SimParams(
         disease_type=dt,
         n_agents=int(s.f_n_agents),
@@ -205,10 +205,10 @@ elif step == "review":
     c1, c2, c3 = st.columns(3)
     s.f_disease_type = c1.selectbox(
         "Disease type",
-        ["sir", "seir", "sis", "sirs", "seiar"],
-        index=["sir", "seir", "sis", "sirs", "seiar"].index(s.f_disease_type),
+        ["sir", "seir", "sis", "sirs", "seirs", "seiar"],
+        index=["sir", "seir", "sis", "sirs", "seirs", "seiar"].index(s.f_disease_type),
         help="SIR: permanent immunity | SEIR: + latent period | SIS: no immunity | "
-             "SIRS: waning immunity | SEIAR: + asymptomatic track",
+             "SIRS: waning immunity | SEIRS: latent + waning | SEIAR: + asymptomatic track",
     )
     s.f_n_agents = c2.number_input("Population size", min_value=10, max_value=1_000_000,
                                     value=s.f_n_agents, step=1000)
@@ -220,7 +220,7 @@ elif step == "review":
                                    value=s.f_p_death, format="%.4f")
     s.f_dur_inf = c5.number_input("Infectious period (days)", min_value=1.0, max_value=365.0,
                                    value=s.f_dur_inf)
-    if s.f_disease_type in ("seir", "seiar"):
+    if s.f_disease_type in ("seir", "seirs", "seiar"):
         s.f_dur_exp = c6.number_input("Latent period (days)", min_value=1.0, max_value=365.0,
                                        value=s.f_dur_exp)
     elif s.f_disease_type == "sirs":
@@ -229,6 +229,12 @@ elif step == "review":
                                           help="Days before recovered agents become susceptible again")
     else:
         c6.markdown("")
+
+    if s.f_disease_type == "seirs":
+        d1, d2, d3 = st.columns(3)
+        s.f_dur_immune = d1.number_input("Immunity duration (days)", min_value=1.0, max_value=3650.0,
+                                          value=s.f_dur_immune,
+                                          help="Days before recovered agents become susceptible again")
 
     if s.f_disease_type == "seiar":
         a1, a2 = st.columns(2)

@@ -4,7 +4,7 @@ You are an expert epidemiological modelling assistant. Your job is to extract si
 
 ```json
 {
-  "disease_type":    "sir | seir | sis | sirs | seiar",
+  "disease_type":    "sir | seir | sis | sirs | seirs | seiar",
   "n_agents":        integer (population size, 10–1,000,000),
   "n_contacts":      integer (average contacts per person per day; disease-specific defaults below),
   "network_type":    "random | age_structured",
@@ -60,6 +60,7 @@ Use these when the user names a disease but doesn't specify all parameters:
 | Generic SIR      | sir   | 10 | —  | 4  | 0.0   | R0=2.5 default                           |
 | COVID-like (acute)| sir  | 8  | —  | 6  | 0.01  |                                          |
 | COVID endemic    | sirs  | 8  | —  | 6  | 0.005 | dur_immune=180; waning immunity          |
+| COVID endemic (full) | seirs | 8 | 5 | 6 | 0.005 | dur_immune=180; latent + waning         |
 | Influenza        | sir   | 5  | —  | 6  | 0.001 |                                          |
 | Flu with asymp   | seiar | 5  | 2  | 6  | 0.001 | p_asymp=0.3, rel_trans_asymp=0.5         |
 | COVID with asymp | seiar | 8  | 5  | 6  | 0.01  | p_asymp=0.4, rel_trans_asymp=0.5         |

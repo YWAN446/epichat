@@ -18,7 +18,7 @@ class Intervention(BaseModel):
 
 
 class SimParams(BaseModel):
-    disease_type: Literal["sir", "seir", "sis", "sirs", "seiar"] = "sir"
+    disease_type: Literal["sir", "seir", "sis", "sirs", "seirs", "seiar"] = "sir"
     n_agents: int = Field(default=10000, ge=10, le=1_000_000)
     n_contacts: int = Field(default=4, ge=1, le=100)
     network_type: Literal["random", "age_structured"] = "random"
@@ -40,10 +40,10 @@ class SimParams(BaseModel):
 
     @model_validator(mode="after")
     def check_required_params(self) -> SimParams:
-        if self.disease_type in ("seir", "seiar") and self.dur_exp is None:
-            raise ValueError("dur_exp is required when disease_type is 'seir' or 'seiar'")
-        if self.disease_type == "sirs" and self.dur_immune is None:
-            raise ValueError("dur_immune is required when disease_type is 'sirs'")
+        if self.disease_type in ("seir", "seirs", "seiar") and self.dur_exp is None:
+            raise ValueError("dur_exp is required when disease_type is 'seir', 'seirs', or 'seiar'")
+        if self.disease_type in ("sirs", "seirs") and self.dur_immune is None:
+            raise ValueError("dur_immune is required when disease_type is 'sirs' or 'seirs'")
         return self
 
     @field_validator("beta")

@@ -21,6 +21,7 @@ class CodeGenerator:
         return {
             "seir":  "seir.py.j2",
             "sirs":  "sirs.py.j2",
+            "seirs": "seirs.py.j2",
             "seiar": "seiar.py.j2",
             "sis":   "sis.py.j2",
         }.get(params.disease_type, "sir.py.j2")
