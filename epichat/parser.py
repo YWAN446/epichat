@@ -57,6 +57,9 @@ def parse_query(user_input: str) -> SimParams:
     if "clarification_needed" in data:
         raise ValueError(f"Query needs clarification: {data['clarification_needed']}")
 
+    # Drop null values so Pydantic uses field defaults (e.g. p_asymp, rel_trans_asymp)
+    data = {k: v for k, v in data.items() if v is not None or k in ("dur_exp", "dur_immune", "rand_seed", "capacity")}
+
     return SimParams(**data)
 
 
@@ -90,4 +93,5 @@ def fix_params(user_input: str, params: SimParams, error_message: str) -> SimPar
         raw = raw.strip()
 
     data = json.loads(raw)
+    data = {k: v for k, v in data.items() if v is not None or k in ("dur_exp", "dur_immune", "rand_seed", "capacity")}
     return SimParams(**data)

@@ -15,9 +15,10 @@ disease_pars = dict(
 
 # ── Interventions (non-vaccine) ───────────────────────────────────────────────
 interventions_list = []
+connectors_list = []
 
 {% if seasonality_int %}
-interventions_list.append(ss.seasonality(
+connectors_list.append(ss.seasonality(
     diseases='sir',
     scale={{ seasonality_int.scale }},
     shift={{ seasonality_int.shift }},
@@ -88,7 +89,7 @@ if interventions_list:
 
 {% if vaccine and vaccine.start_day <= 0 %}
 # ── Pre-existing vaccination: initialize then set immune ──────────────────────
-sim = ss.Sim(pars, verbose=0)
+sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
 sim.init()
 _sir = sim.diseases['sir']
 _sus = _sir.susceptible.uids
@@ -104,7 +105,7 @@ _sir.recovered[_vax_uids] = True
 sim.run()
 {% else %}
 # ── Run simulation ────────────────────────────────────────────────────────────
-sim = ss.Sim(pars, verbose=0)
+sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
 sim.run()
 {% endif %}
 
@@ -113,7 +114,7 @@ fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
 
 res = sim.results
 _skip = {'timevec', 'n_alive', 'n_female', 'new_deaths', 'new_emigrants',
-         'cum_deaths', 'randomnet', 'mixingpools'}
+         'cum_deaths', 'randomnet', 'mixingpools', 'seasonality'}
 disease_key = next(k for k in res.keys() if k not in _skip and not k.startswith('pool:'))
 dr = res[disease_key]
 
