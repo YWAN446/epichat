@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About · EpiChat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="about">
+<div data-mount="nav"></div>
+
+<main>
+
+<!-- HERO -->
+<section style="border-top: 0; padding-top: 4rem; padding-bottom: 3rem;">
+  <div class="wrap">
+    <div class="hero-kicker">
+      <span>● ABOUT</span>
+      <span>CIDMATH · EMORY</span>
+      <span>PROTOTYPE v0.1</span>
+    </div>
+
+    <h1 class="display" style="font-size: clamp(2.6rem, 5.5vw, 4.8rem);">
+      Widening <em>who</em><br>
+      gets to do<br>
+      epidemiology.
+    </h1>
+
+    <p class="lede" style="max-width: 60ch;">
+      EpiChat is a prototype from the Emory Disruptive Discovery Seed
+      Program (FY27). Its premise is simple — the engine for
+      simulation-based epidemiology already exists. What's missing is
+      an interface that non-modelers can actually use.
+    </p>
+  </div>
+</section>
+
+<!-- OPPORTUNITY -->
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[01 / opportunity]</div>
+        <div class="label" style="margin-top: 1.2rem;">LLM + structured API</div>
+      </div>
+      <h2 class="section-title">
+        The engine exists.<br>
+        What's missing is an <em>interface</em>.
+      </h2>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">01</div>
+        <p style="font-size: 1.02rem; line-height: 1.55; color: var(--ink); margin: 0.6rem 0 0; text-wrap: pretty;">
+          LLMs now reliably generate structured code from natural
+          language in scoped domains.
+        </p>
+      </div>
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">02</div>
+        <p style="font-size: 1.02rem; line-height: 1.55; color: var(--ink); margin: 0.6rem 0 0; text-wrap: pretty;">
+          Starsim's declarative, template-friendly parameter and model
+          interface is an ideal target for LLM-driven code generation.
+        </p>
+      </div>
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">03</div>
+        <p style="font-size: 1.02rem; line-height: 1.55; color: var(--ink); margin: 0.6rem 0 0; text-wrap: pretty;">
+          Most policy questions reduce to a handful of well-bounded
+          model classes — SIR, SEIR, SIS, etc.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PI -->
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[02 / principal investigator]</div>
+        <div class="label" style="margin-top: 1.2rem;">Yuke Wang, PhD, MSPH</div>
+      </div>
+      <h2 class="section-title">
+        Infectious disease epi<br>
+        at the <em>computational</em> edge.
+      </h2>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 260px 1fr; gap: 3rem; align-items: start;">
+      <div>
+        <div style="width: 240px; height: 280px; border: 1px solid var(--rule); background:
+          repeating-linear-gradient(135deg, var(--paper-2) 0 8px, var(--paper-3) 8px 16px);
+          display: flex; align-items: center; justify-content: center; border-radius: 2px;">
+          <div class="mono" style="font-size: 0.68rem; color: var(--ink-3); letter-spacing: 0.12em; text-transform: uppercase;">[headshot]</div>
+        </div>
+        <div style="margin-top: 1rem;">
+          <div class="leader"><span class="name">Role</span><span class="dots"></span><span class="val">PI</span></div>
+          <div class="leader"><span class="name">Email</span><span class="dots"></span><span class="val"><a href="mailto:yuke.wang@emory.edu" style="border:0; color: var(--accent);">yuke.wang@emory.edu</a></span></div>
+          <div class="leader"><span class="name">Dept</span><span class="dots"></span><span class="val">Global Health</span></div>
+          <div class="leader"><span class="name">School</span><span class="dots"></span><span class="val">Rollins</span></div>
+          <div class="leader"><span class="name">Lab</span><span class="dots"></span><span class="val">CIDMATH</span></div>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-family: var(--serif); font-size: 1.15rem; line-height: 1.55; color: var(--ink); max-width: 62ch; text-wrap: pretty;">
+          Yuke's research sits at the intersection of infectious disease
+          epidemiology, environmental health, and computational modeling.
+          Recent work has focused on diarrheal disease transmission,
+          WASH interventions, and the infrastructure that lets modelers
+          and non-modelers collaborate on policy-relevant questions.
+        </p>
+
+        <p style="font-family: var(--serif); font-size: 1.15rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; text-wrap: pretty; margin-top: 1.2rem;">
+          EpiChat grew out of repeated conversations with health
+          analysts and surveillance officers who could articulate
+          exactly the question they needed answered — but had no way
+          to get to a modeled answer in less than weeks.
+        </p>
+
+        <div style="margin-top: 2.5rem;">
+          <div class="label" style="margin-bottom: 0.8rem;">Selected focus areas</div>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <span class="tag">Infectious disease modeling</span>
+            <span class="tag">Environmental epidemiology</span>
+            <span class="tag">LMIC capacity-building</span>
+            <span class="tag">WASH interventions</span>
+            <span class="tag">Agent-based simulation</span>
+            <span class="tag">LLM-assisted science</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COLLABORATORS -->
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[03 / collaborators]</div>
+        <div class="label" style="margin-top: 1.2rem;">Seeking</div>
+      </div>
+      <h2 class="section-title">
+        This is a <em>collaboration</em><br>
+        in search of collaborators.
+      </h2>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel" style="padding: 1.8rem;">
+        <div class="mono" style="font-size: 0.72rem; letter-spacing: 0.14em; color: var(--accent);">DOMAIN EXPERT</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem;">
+          Disease-specific eyes
+        </h3>
+        <p style="font-size: 0.96rem; line-height: 1.5; color: var(--ink-2); margin: 0 0 1rem; text-wrap: pretty;">
+          For the benchmark queries and what a correct answer looks
+          like in your area.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.7;">
+          ▸ measles · HIV · flu<br>
+          ▸ COVID · TB · cholera<br>
+          ▸ anything else
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 1.8rem;">
+        <div class="mono" style="font-size: 0.72rem; letter-spacing: 0.14em; color: var(--accent);">DATA</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem;">
+          Layer 02 resolver
+        </h3>
+        <p style="font-size: 0.96rem; line-height: 1.5; color: var(--ink-2); margin: 0 0 1rem; text-wrap: pretty;">
+          Authoritative data streams so queries auto-load the right
+          local inputs.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.7;">
+          ▸ contact matrices<br>
+          ▸ surveillance feeds<br>
+          ▸ country demographics
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 1.8rem;">
+        <div class="mono" style="font-size: 0.72rem; letter-spacing: 0.14em; color: var(--accent);">MODELING</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem;">
+          Expert reference
+        </h3>
+        <p style="font-size: 0.96rem; line-height: 1.5; color: var(--ink-2); margin: 0 0 1rem; text-wrap: pretty;">
+          Other Epi packages to integrate; scenario validation support.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.7;">
+          ▸ Starsim · EpiModel<br>
+          ▸ Mesa · outbreak scenarios<br>
+          ▸ intervention evaluation
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 2.8rem; text-align: center;">
+      <a href="mailto:yuke.wang@emory.edu?subject=EpiChat%20collaboration" class="btn accent" style="padding: 1.1rem 1.6rem; font-size: 0.82rem;">
+        Start the conversation <span class="arrow">→</span>
+      </a>
+      <p style="font-family: var(--serif); font-style: italic; color: var(--ink-3); margin-top: 1rem; font-size: 0.98rem;">
+        Even a "let's grab coffee" level ask works.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- PROGRAM -->
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[04 / program]</div>
+        <div class="label" style="margin-top: 1.2rem;">Disruptive Discovery Seed · FY27</div>
+      </div>
+      <h2 class="section-title">
+        The program that funds this.
+      </h2>
+    </div>
+
+    <div class="grid-2" style="gap: 2.4rem;">
+      <div>
+        <p style="font-family: var(--serif); font-size: 1.1rem; line-height: 1.55; color: var(--ink); max-width: 52ch; text-wrap: pretty;">
+          Emory's Disruptive Discovery Seed Program funds early-stage,
+          high-risk projects that could meaningfully change how a
+          field works. EpiChat is funded under FY27 for prototype
+          development and collaborator recruitment.
+        </p>
+      </div>
+      <div class="panel">
+        <div class="label" style="margin-bottom: 1rem;">Timeline</div>
+        <div class="leader"><span class="name">v0.1 · prototype</span><span class="dots"></span><span class="val" style="color: var(--accent);">NOW</span></div>
+        <div class="leader"><span class="name">Data integration</span><span class="dots"></span><span class="val">MO 1–6</span></div>
+        <div class="leader"><span class="name">Benchmark + validation</span><span class="dots"></span><span class="val">MO 7–8</span></div>
+        <div class="leader"><span class="name">Usability study</span><span class="dots"></span><span class="val">MO 9–10</span></div>
+        <div class="leader"><span class="name">Open release + preprint</span><span class="dots"></span><span class="val">MO 11–12</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div data-mount="footer"></div>
+<script src="site.js?v=2"></script>
+</body>
+</html>

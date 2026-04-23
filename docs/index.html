@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EpiChat — A conversational AI agent for epidemiological simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="index">
+<div data-mount="nav"></div>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section style="border-top: 0; padding-top: 4rem;">
+  <div class="wrap">
+    <div class="hero-kicker">
+      <span><span class="status-dot"></span>PROTOTYPE v0.1 · LIVE</span>
+      <span>CIDMATH · ROLLINS · EMORY</span>
+      <span>DISRUPTIVE DISCOVERY · FY27</span>
+    </div>
+
+    <h1 class="display">
+      Ask an epidemic<br>
+      question. Get a<br>
+      <em>validated simulation</em>.
+    </h1>
+
+    <p class="lede">
+      EpiChat translates plain-language questions into data-informed
+      Starsim simulations — so the people who need answers don't have
+      to wait for a modeler.
+    </p>
+
+    <div style="display:flex; gap:0.75rem; margin-top: 2.4rem; flex-wrap: wrap;">
+      <a href="#how" class="btn">Read how it works <span class="arrow">→</span></a>
+      <a href="#demo" class="btn ghost">Launch demo ↗</a>
+      <a href="https://github.com/YWAN446/epichat" target="_blank" rel="noopener" class="btn ghost">GitHub ↗</a>
+    </div>
+
+    <!-- terminal preview -->
+    <div class="terminal" style="margin-top: 4rem;">
+      <div class="terminal-chrome">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <span class="label" style="letter-spacing:0.16em;">epichat · session 0x2f9a · measles · kenya</span>
+        <span class="title">00:00:04.21</span>
+      </div>
+      <div class="terminal-body">
+<span class="prompt user"></span><span style="color: var(--ink);">Simulate measles in Kenya with current vaccination coverage.</span>
+
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 01 · parse → </span><span style="color: var(--accent);">disease=measles, model=SEIR, R₀=15</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 02 · resolve → </span><span style="color: var(--accent);">country=KEN, MCV1=89%, contact_matrix=prem_2021_KEN</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 03 · generate → </span><span style="color: var(--accent);">seir.py.j2 · 217 lines</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 04 · execute → </span><span style="color: var(--accent);">n=1.2M, ensemble=500, t=3.8s</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 05 · narrate ↓</span>
+
+<span style="font-family: var(--serif); font-size: 1.02rem; color: var(--ink); display: block; margin: 0.8rem 0; line-height: 1.55; font-style: italic;">
+  "At 89% MCV1 coverage, the simulation projects a contained outbreak
+  peaking near day 94, with roughly 4.2% of susceptibles infected before
+  herd effects dominate."
+</span>
+
+<span class="prompt sys"></span><span style="color: var(--ink-3);">ready. </span><span style="color: var(--accent); animation: pulse 1.2s infinite;">█</span>
+      </div>
+    </div>
+
+    <!-- stats strip -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 3rem; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper-2);">
+      <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
+        <div class="label">Models supported</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">6</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">SIR · SEIR · SIS · SIRS · SEIRS · SEIAR</div>
+      </div>
+      <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
+        <div class="label">Typical round-trip</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">≈ 8s</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">query → curve → narration</div>
+      </div>
+      <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
+        <div class="label">Today's wait for a modeler</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--accent); margin-top: 0.3rem;">days–weeks</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">for a policy question</div>
+      </div>
+      <div style="padding: 1.2rem 1.4rem;">
+        <div class="label">Countries (roadmap)</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">177</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">contact matrices · demographics</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[01 / context]</div>
+        <div class="label" style="margin-top: 1.2rem;">The bottleneck</div>
+      </div>
+      <h2 class="section-title">
+        The bottleneck in computational epidemiology is
+        <em>expertise</em>, not compute.
+      </h2>
+    </div>
+
+    <div class="grid-2" style="align-items: start;">
+      <div>
+        <p style="font-size: 1.05rem; line-height: 1.55; color: var(--ink-2); max-width: 52ch; text-wrap: pretty;">
+          During COVID-19, demand for modeling vastly outpaced supply.
+          WHO and Africa CDC flagged this as a critical pandemic-preparedness
+          gap — especially in LMICs with limited domestic modeling capacity.
+        </p>
+        <p style="font-size: 1.05rem; line-height: 1.55; color: var(--ink-2); max-width: 52ch; text-wrap: pretty; margin-top: 1.2rem;">
+          Policy officers, surveillance teams, and health analysts need
+          fast, defensible answers — but the modelers who can give them
+          are a narrow bottleneck.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 2rem; letter-spacing: 0.06em;">
+          ▸ REF · ENEN ET AL. 2026
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 1.8rem;">
+        <div class="label" style="margin-bottom: 1.2rem;">Who can model / who needs answers</div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+          <div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.08em;">CAN</div>
+            <div style="font-family: var(--serif); font-size: 1.6rem; margin-top: 0.4rem; font-style: italic;">modelers</div>
+            <div class="mono" style="font-size: 2rem; color: var(--ink); margin-top: 0.6rem; font-weight: 500;">~12k</div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">epidemiologists in US</div>
+          </div>
+          <div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.08em;">CANNOT — BUT NEED</div>
+            <div style="font-family: var(--serif); font-size: 1.6rem; margin-top: 0.4rem; font-style: italic; color: var(--ink-2);">everyone else</div>
+            <div class="mono" style="font-size: 0.82rem; color: var(--ink-2); margin-top: 0.6rem; line-height: 1.6;">
+              health analysts<br>
+              surveillance officers<br>
+              policy teams<br>
+              local health ministries
+            </div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin: 1.6rem 0 1.2rem;">
+
+        <div class="leader">
+          <span class="name">Typical wait for a modeled answer</span>
+          <span class="dots"></span>
+          <span class="val" style="color: var(--accent);">days–weeks</span>
+        </div>
+        <div class="leader">
+          <span class="name">EpiChat typical turnaround</span>
+          <span class="dots"></span>
+          <span class="val" style="color: var(--ink);">≈ 8 seconds</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[02 / architecture]</div>
+        <div class="label" style="margin-top: 1.2rem;">Five layers</div>
+      </div>
+      <h2 class="section-title">
+        The LLM handles language.
+        <em>Templates handle the simulation.</em>
+      </h2>
+    </div>
+
+    <!-- Five-layer pipeline -->
+    <div style="border: 1px solid var(--rule); border-radius: 3px; background: var(--paper-2); overflow: hidden;">
+      <div id="layers"></div>
+    </div>
+
+    <!-- Epi curve -->
+    <div style="margin-top: 3rem;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.8rem;">
+        <div>
+          <div class="label">Layer 04 output · simulated epidemic curve</div>
+          <div style="font-family: var(--serif); font-size: 1.25rem; margin-top: 0.3rem; font-style: italic;">
+            Measles · SEIR · n=1.2M · 500 seeds
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.3rem;">
+          <button class="tag" data-scenario="measles" style="cursor:pointer;">Measles · KEN</button>
+          <button class="tag" data-scenario="covid" style="cursor:pointer;">COVID · US</button>
+          <button class="tag" data-scenario="flu" style="cursor:pointer;">Flu · seasonal</button>
+        </div>
+      </div>
+      <div id="curve-host"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BY EXAMPLE ============ -->
+<section id="example">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[03 / by example]</div>
+        <div class="label" style="margin-top: 1.2rem;">Natural language in. Validated simulation out.</div>
+      </div>
+      <h2 class="section-title">
+        A query, step by step.
+      </h2>
+    </div>
+
+    <div class="grid-2" style="gap: 2.8rem;">
+      <div class="terminal">
+        <div class="terminal-chrome">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <span class="label" style="letter-spacing:0.14em;">▸ USER QUERY</span>
+        </div>
+        <div class="terminal-body" style="font-family: var(--serif); font-size: 1.05rem; font-style: italic; line-height: 1.5;">
+          "Simulate measles in a population of 100,000 with 80% vaccination coverage and R₀ of 15."
+        </div>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-chrome">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <span class="label" style="letter-spacing:0.14em;">▼ EXTRACTED PARAMS</span>
+        </div>
+        <div class="terminal-body">
+          <dl class="kv">
+            <dt>disease</dt>      <dd>measles <span style="color: var(--ink-3);">(SEIR)</span></dd>
+            <dt>population</dt>   <dd>100,000</dd>
+            <dt>R₀</dt>           <dd>15 <span style="color: var(--ink-3);">→ β = 0.30 / day</span></dd>
+            <dt>vaccination</dt>  <dd>80% at t=0</dd>
+            <dt>horizon</dt>      <dd>365 days</dd>
+            <dt>network</dt>      <dd>age_structured</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; font-family: var(--mono); color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.14em; margin: 2rem 0 1.5rem;">
+      ── extract · validate · generate · execute · narrate ──
+    </div>
+
+    <div class="panel" style="padding: 2rem 2.4rem;">
+      <div class="label">▸ NARRATION</div>
+      <p style="font-family: var(--serif); font-size: 1.3rem; line-height: 1.5; margin: 0.8rem 0 0; font-style: italic; text-wrap: pretty; max-width: 60ch;">
+        "With 80% coverage, the epidemic peaks near day 112, infecting
+        roughly 11% of the population before the outbreak subsides."
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STATUS ============ -->
+<section id="status">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[04 / status]</div>
+        <div class="label" style="margin-top: 1.2rem;">Prototype v0.1 · shipped</div>
+      </div>
+      <h2 class="section-title">
+        It already works, <em>end-to-end</em>.
+      </h2>
+    </div>
+
+    <div class="grid-2" style="gap: 2.4rem;">
+      <div>
+        <div class="label" style="margin-bottom: 1rem;">▍ PROTOTYPE (v0.1)</div>
+        <div class="leader"><span class="name">Natural-language parameter extraction</span><span class="dots"></span><span class="val tag filled">LIVE</span></div>
+        <div class="leader"><span class="name">Template-based Starsim code generation</span><span class="dots"></span><span class="val tag filled">LIVE</span></div>
+        <div class="leader"><span class="name">Sandboxed execution + error recovery</span><span class="dots"></span><span class="val tag filled">LIVE</span></div>
+        <div class="leader"><span class="name">Plain-language results narration</span><span class="dots"></span><span class="val tag filled">LIVE</span></div>
+        <div class="leader"><span class="name">Editable parameter review step</span><span class="dots"></span><span class="val tag filled">LIVE</span></div>
+        <div class="leader"><span class="name">SIR · SEIR · SIS models</span><span class="dots"></span><span class="val tag filled">LIVE</span></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom: 1rem;">▍ NEXT (proposed project)</div>
+        <div class="leader"><span class="name">Country-specific data (177 countries)</span><span class="dots"></span><span class="val tag accent">MO 1–6</span></div>
+        <div class="leader"><span class="name">Ensemble simulations + credible intervals</span><span class="dots"></span><span class="val tag accent">MO 1–6</span></div>
+        <div class="leader"><span class="name">SIRS · SEIRS · SEIAR models</span><span class="dots"></span><span class="val tag accent">MO 1–6</span></div>
+        <div class="leader"><span class="name">50-query benchmark + validation study</span><span class="dots"></span><span class="val tag accent">MO 7–8</span></div>
+        <div class="leader"><span class="name">Usability study (SUS, task completion)</span><span class="dots"></span><span class="val tag accent">MO 9–10</span></div>
+        <div class="leader"><span class="name">Open release + hosted demo + preprint</span><span class="dots"></span><span class="val tag accent">MO 11–12</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEMO CTA ============ -->
+<section id="demo" style="background: var(--ink); color: var(--paper); border-top: 0;">
+  <div class="wrap">
+    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center;">
+      <div>
+        <div class="mono" style="font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: oklch(0.75 0.02 80); margin-bottom: 1.2rem;">
+          ● LIVE · STREAMLIT · V0.1
+        </div>
+        <h2 style="font-family: var(--serif); font-size: clamp(2.2rem, 4vw, 3.4rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em;">
+          Try it on your own<br>
+          <em style="color: oklch(0.78 0.12 var(--accent-h));">epidemic question.</em>
+        </h2>
+        <p style="font-family: var(--serif); font-size: 1.15rem; color: oklch(0.85 0.02 80); margin: 1.4rem 0 0; max-width: 50ch; line-height: 1.5;">
+          The demo is a Streamlit app. Type a question, review the
+          extracted parameters, run a Starsim simulation, and read the
+          narrated result.
+        </p>
+        <div style="display: flex; gap: 0.75rem; margin-top: 2.2rem; flex-wrap: wrap;">
+          <a href="#" onclick="alert('Will link to the hosted Streamlit app once deployed.'); return false;"
+             class="btn accent" style="font-size: 0.82rem; padding: 1rem 1.4rem;">
+            Launch demo app <span class="arrow">↗</span>
+          </a>
+          <a href="https://github.com/YWAN446/epichat" target="_blank" rel="noopener"
+             class="btn ghost" style="color: var(--paper); border-color: oklch(0.6 0.02 70);">
+            View source on GitHub
+          </a>
+        </div>
+      </div>
+      <div style="font-family: var(--mono); font-size: 0.8rem; line-height: 1.8; color: oklch(0.82 0.02 80); background: oklch(0.28 0.02 50); padding: 1.4rem 1.6rem; border-radius: 3px; border: 1px solid oklch(0.38 0.02 55);">
+        <div style="color: oklch(0.75 0.12 var(--accent-h));">$ pip install -r requirements.txt</div>
+        <div style="color: oklch(0.75 0.12 var(--accent-h));">$ streamlit run app.py</div>
+        <div style="color: oklch(0.65 0.02 70); margin-top: 0.8rem;"># or try a single query:</div>
+        <div style="color: oklch(0.75 0.12 var(--accent-h));">$ python cli.py \</div>
+        <div style="color: oklch(0.92 0.012 80); padding-left: 1.2rem;">"Flu in 50k people, R0=1.5"</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[05 / roadmap]</div>
+        <div class="label" style="margin-top: 1.2rem;">From prototype to research-grade tool</div>
+      </div>
+      <h2 class="section-title">
+        Seven phases, in priority order.
+      </h2>
+    </div>
+
+    <div style="border: 1px solid var(--rule); border-radius: 3px; overflow: hidden;">
+      <div style="display: grid; grid-template-columns: 60px 1fr 140px 140px; gap: 0; background: var(--paper-3); font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);">
+        <div style="padding: 0.8rem 1rem; border-right: 1px solid var(--rule);">#</div>
+        <div style="padding: 0.8rem 1rem; border-right: 1px solid var(--rule);">Phase</div>
+        <div style="padding: 0.8rem 1rem; border-right: 1px solid var(--rule);">Complexity</div>
+        <div style="padding: 0.8rem 1rem;">Impact</div>
+      </div>
+      <div id="roadmap-rows"></div>
+    </div>
+
+    <p style="font-family: var(--serif); font-size: 1rem; color: var(--ink-3); margin-top: 1.5rem; font-style: italic;">
+      Full data-source table and implementation notes in the
+      <a href="docs.html#roadmap">docs</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ============ TEAM / PI ============ -->
+<section id="team">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[06 / team]</div>
+        <div class="label" style="margin-top: 1.2rem;">Principal investigator</div>
+      </div>
+      <h2 class="section-title">
+        Built at <em>CIDMATH</em>, Emory Rollins.
+      </h2>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 220px 1fr; gap: 2.5rem; align-items: start;">
+      <!-- headshot placeholder -->
+      <div style="width: 200px; height: 240px; border: 1px solid var(--rule); background:
+        repeating-linear-gradient(135deg, var(--paper-2) 0 8px, var(--paper-3) 8px 16px);
+        display: flex; align-items: center; justify-content: center; border-radius: 2px;">
+        <div class="mono" style="font-size: 0.68rem; color: var(--ink-3); letter-spacing: 0.12em; text-transform: uppercase;">[headshot]</div>
+      </div>
+      <div>
+        <div class="label">PRINCIPAL INVESTIGATOR</div>
+        <h3 style="font-family: var(--serif); font-size: 2rem; font-weight: 400; margin: 0.4rem 0 0.2rem; letter-spacing: -0.01em;">
+          Yuke Wang, PhD, MSPH
+        </h3>
+        <div class="mono" style="font-size: 0.82rem; color: var(--ink-3); letter-spacing: 0.04em;">
+          Rollins · Global Health + Biostatistics · CIDMATH
+        </div>
+
+        <p style="font-family: var(--serif); font-size: 1.1rem; line-height: 1.55; color: var(--ink-2); max-width: 58ch; margin-top: 1.4rem; text-wrap: pretty;">
+          Yuke's research sits at the intersection of infectious disease
+          epidemiology, environmental health, and computational modeling.
+          EpiChat is a prototype from the Emory Disruptive Discovery Seed
+          Program (FY27), exploring whether LLMs can meaningfully widen
+          access to simulation-based epidemiology.
+        </p>
+
+        <div style="display: flex; gap: 2rem; margin-top: 1.8rem; flex-wrap: wrap;">
+          <div>
+            <div class="label">Contact</div>
+            <a href="mailto:yuke.wang@emory.edu" style="font-family: var(--mono); font-size: 0.88rem;">yuke.wang@emory.edu</a>
+          </div>
+          <div>
+            <div class="label">Affiliation</div>
+            <div class="mono" style="font-size: 0.88rem;">Emory University · Rollins</div>
+          </div>
+          <div>
+            <div class="label">Program</div>
+            <div class="mono" style="font-size: 0.88rem;">Disruptive Discovery · FY27</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[07 / faq]</div>
+        <div class="label" style="margin-top: 1.2rem;">Common questions</div>
+      </div>
+      <h2 class="section-title">
+        Questions you probably have.
+      </h2>
+    </div>
+
+    <div id="faq-rows"></div>
+  </div>
+</section>
+
+<!-- ============ ASK ============ -->
+<section id="ask" style="border-bottom: 1px solid var(--rule);">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[08 / the ask]</div>
+        <div class="label" style="margin-top: 1.2rem;">Three ways to collaborate</div>
+      </div>
+      <h2 class="section-title">
+        Help us <em>widen</em> who gets<br>to do epidemiology.
+      </h2>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">▍ 01</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem; letter-spacing: -0.01em;">Domain experts</h3>
+        <p style="font-size: 0.98rem; color: var(--ink-2); line-height: 1.5; margin: 0 0 1rem; text-wrap: pretty;">
+          Lend your eyes to benchmark queries and what a correct answer
+          should look like for the diseases you work on.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.6;">
+          ex · measles · HIV · influenza<br>
+          COVID-19 · TB · cholera
+        </div>
+      </div>
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">▍ 02</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem; letter-spacing: -0.01em;">Data contributors</h3>
+        <p style="font-size: 0.98rem; color: var(--ink-2); line-height: 1.5; margin: 0 0 1rem; text-wrap: pretty;">
+          Help integrate authoritative data streams into Layer 02 — so
+          queries auto-load the right local inputs.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.6;">
+          ex · contact matrices (Prem et al.)<br>
+          surveillance feeds · demographics
+        </div>
+      </div>
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">▍ 03</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem; letter-spacing: -0.01em;">Modelers for reference</h3>
+        <p style="font-size: 0.98rem; color: var(--ink-2); line-height: 1.5; margin: 0 0 1rem; text-wrap: pretty;">
+          Expand to other Epi modeling packages and provide
+          validation support.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.6;">
+          ex · Starsim · EpiModel · Mesa<br>
+          outbreak · intervention validation
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 3rem; text-align: center;">
+      <a href="mailto:yuke.wang@emory.edu?subject=EpiChat%20collaboration" class="btn accent" style="padding: 1.1rem 1.6rem; font-size: 0.82rem;">
+        Reach out · yuke.wang@emory.edu <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div data-mount="footer"></div>
+
+<script src="site.js?v=2"></script>
+<script src="landing.js?v=2"></script>
+</body>
+</html>

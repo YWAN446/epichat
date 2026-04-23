@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs · EpiChat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .docs-layout { display: grid; grid-template-columns: 220px 1fr; gap: 3rem; align-items: start; }
+  @media (max-width: 900px) { .docs-layout { grid-template-columns: 1fr; } }
+  .toc {
+    position: sticky; top: 80px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    border-left: 1px solid var(--rule);
+    padding: 0.4rem 0;
+  }
+  .toc a {
+    display: block;
+    padding: 0.4rem 1rem;
+    color: var(--ink-3);
+    border: 0;
+    letter-spacing: 0.04em;
+  }
+  .toc a:hover { color: var(--accent); }
+  .toc a.on { color: var(--ink); border-left: 2px solid var(--accent); margin-left: -1px; padding-left: calc(1rem - 1px); }
+  .toc-head {
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 0 1rem 0.5rem;
+  }
+
+  .doc h2 {
+    font-family: var(--serif);
+    font-size: 2rem;
+    font-weight: 500;
+    font-style: italic;
+    letter-spacing: -0.01em;
+    margin: 3.5rem 0 0.2rem;
+    scroll-margin-top: 80px;
+  }
+  .doc h2:first-child { margin-top: 0; }
+  .doc h3 {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    font-weight: 500;
+    margin: 2.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+  }
+  .doc p, .doc li {
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: var(--ink);
+    max-width: 68ch;
+    text-wrap: pretty;
+  }
+  .doc p + p { margin-top: 0.8rem; }
+  .doc code, .doc .k {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--paper-2);
+    padding: 1px 5px;
+    border-radius: 2px;
+    border: 1px solid var(--rule);
+    color: var(--accent);
+  }
+  .doc pre {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1rem 1.2rem;
+    overflow: auto;
+    color: var(--ink);
+  }
+  .doc pre code { background: transparent; border: 0; padding: 0; color: var(--ink); }
+  .doc .kicker {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  table.ref {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    margin: 1rem 0;
+  }
+  table.ref th, table.ref td {
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+    vertical-align: top;
+  }
+  table.ref th {
+    font-weight: 500;
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    background: var(--paper-3);
+    border-bottom: 1px solid var(--ink-3);
+  }
+  table.ref td .k { background: transparent; border: 0; padding: 0; color: var(--accent); }
+</style>
+</head>
+<body data-page="docs">
+<div data-mount="nav"></div>
+
+<main>
+
+<section style="border-top: 0; padding-top: 3.5rem; padding-bottom: 2rem;">
+  <div class="wrap">
+    <div class="hero-kicker">
+      <span>● DOCS · v0.1</span>
+      <span>LAST UPDATED · 2026-04</span>
+    </div>
+    <h1 class="display" style="font-size: clamp(2.4rem, 5vw, 4.2rem);">
+      Docs, parameters,<br>
+      <em>references</em>.
+    </h1>
+    <p class="lede" style="max-width: 58ch;">
+      Everything you need to reason about what EpiChat will and won't
+      do — architecture, parameters, disease defaults, and the
+      seven-phase data roadmap.
+    </p>
+  </div>
+</section>
+
+<section style="padding-top: 2rem;">
+<div class="wrap">
+<div class="docs-layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="toc-head">On this page</div>
+  <a href="#quickstart" class="on">Quickstart</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#models">Disease models</a>
+  <a href="#defaults">Built-in defaults</a>
+  <a href="#parameters">Parameters</a>
+  <a href="#interventions">Interventions</a>
+  <a href="#nl-tips">NL query tips</a>
+  <a href="#roadmap">Roadmap</a>
+  <a href="#risks">Risks · mitigations</a>
+</aside>
+
+<!-- CONTENT -->
+<div class="doc">
+
+<h2 id="quickstart">Quickstart</h2>
+<p class="kicker">▸ four commands to a first simulation</p>
+<pre><code><span style="color: var(--ink-3);"># 1. Clone and install</span>
+git clone https://github.com/YWAN446/epichat.git
+cd epichat
+pip install -r requirements.txt
+
+<span style="color: var(--ink-3);"># 2. Set API key</span>
+cp .env.example .env
+<span style="color: var(--ink-3"># edit .env and add your ANTHROPIC_API_KEY</span>
+
+<span style="color: var(--ink-3);"># 3. CLI — single query</span>
+python cli.py <span style="color: var(--accent);">"Simulate an SIR epidemic in 10,000 people with R0=2.5"</span>
+
+<span style="color: var(--ink-3);"># 4. Streamlit web app</span>
+streamlit run app.py</code></pre>
+
+<h2 id="architecture">Architecture</h2>
+<p>
+  EpiChat is a five-layer pipeline. The LLM handles language;
+  templates handle the simulation. Free-form code is never executed.
+</p>
+<pre><code>User NL query
+     │
+     ▼
+Layer 1  LLM Parameter Parser     <span style="color: var(--ink-3);">(Claude API + extraction prompt)</span>
+     │   Structured JSON (SimParams)
+     ▼
+Layer 2  Data-informed resolver   <span style="color: var(--ink-3);">(country data — proposed)</span>
+     │   Calibrated params
+     ▼
+Layer 3  Code generator           <span style="color: var(--ink-3);">(Jinja2 → Starsim Python)</span>
+     │   Python script
+     ▼
+Layer 4  Execution engine         <span style="color: var(--ink-3);">(subprocess sandbox, 90s timeout)</span>
+     │   Stats JSON + plot file
+     ▼
+Layer 5  Results narrator         <span style="color: var(--ink-3);">(Claude API + narration prompt)</span>
+     │   Plain-language summary
+     ▼
+User: epidemic curve + interpretation</code></pre>
+
+<h2 id="models">Disease models</h2>
+<p>Six compartmental models, each specified directly or inferred from a disease name.</p>
+<table class="ref">
+  <thead>
+    <tr><th>Model</th><th>Compartments</th><th>Use case</th><th>Required extras</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><span class="k">SIR</span></td><td>S → I → R</td><td>Standard acute (flu, COVID acute)</td><td>—</td></tr>
+    <tr><td><span class="k">SEIR</span></td><td>S → E → I → R</td><td>Latent period (measles, SARS)</td><td>dur_exp</td></tr>
+    <tr><td><span class="k">SIS</span></td><td>S → I → S</td><td>No lasting immunity (gonorrhea)</td><td>—</td></tr>
+    <tr><td><span class="k">SIRS</span></td><td>S → I → R → S</td><td>Waning immunity (COVID endemic)</td><td>dur_immune</td></tr>
+    <tr><td><span class="k">SEIRS</span></td><td>S → E → I → R → S</td><td>Latent + waning (COVID full)</td><td>dur_exp, dur_immune</td></tr>
+    <tr><td><span class="k">SEIAR</span></td><td>S → E → I|A → R</td><td>Asymptomatic transmission (flu, COVID)</td><td>dur_exp, p_asymp, rel_trans_asymp</td></tr>
+  </tbody>
+</table>
+
+<h2 id="defaults">Built-in disease defaults</h2>
+<p>Name a disease without full parameters and EpiChat fills these in.</p>
+<table class="ref">
+  <thead>
+    <tr><th>Disease</th><th>Model</th><th>dur_inf</th><th>dur_exp</th><th>n_contacts</th><th>p_death</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Generic SIR</td><td>SIR</td><td>10 d</td><td>—</td><td>4</td><td>0.0</td><td>R₀ = 2.5</td></tr>
+    <tr><td>COVID (acute)</td><td>SIR</td><td>8 d</td><td>—</td><td>6</td><td>0.01</td><td></td></tr>
+    <tr><td>COVID (endemic)</td><td>SIRS</td><td>8 d</td><td>—</td><td>6</td><td>0.005</td><td>immune = 180 d</td></tr>
+    <tr><td>COVID (full)</td><td>SEIRS</td><td>8 d</td><td>5 d</td><td>6</td><td>0.005</td><td>immune = 180 d</td></tr>
+    <tr><td>Influenza</td><td>SIR</td><td>5 d</td><td>—</td><td>6</td><td>0.001</td><td></td></tr>
+    <tr><td>Measles</td><td>SEIR</td><td>8 d</td><td>12 d</td><td>10</td><td>0.001</td><td>R₀ ≈ 15</td></tr>
+    <tr><td>SARS-like</td><td>SEIR</td><td>10 d</td><td>5 d</td><td>5</td><td>0.05</td><td></td></tr>
+    <tr><td>Ebola</td><td>SIR</td><td>10 d</td><td>—</td><td>3</td><td>0.5</td><td></td></tr>
+    <tr><td>Gonorrhea</td><td>SIS</td><td>90 d</td><td>—</td><td>2</td><td>0.0</td><td>R₀ ≈ 2</td></tr>
+  </tbody>
+</table>
+
+<h2 id="parameters">Parameters</h2>
+<p>Every parameter is validated by a Pydantic schema before the template layer sees it.</p>
+<table class="ref">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><span class="k">disease_type</span></td><td>string</td><td>sir</td><td>sir · seir · sis · sirs · seirs · seiar</td></tr>
+    <tr><td><span class="k">n_agents</span></td><td>int</td><td>10,000</td><td>Population size · 10 → 1,000,000</td></tr>
+    <tr><td><span class="k">beta</span></td><td>float</td><td>computed</td><td>β = R₀ × 365 / (n_contacts × dur_inf)</td></tr>
+    <tr><td><span class="k">init_prev</span></td><td>float</td><td>0.01</td><td>Seed fraction infected</td></tr>
+    <tr><td><span class="k">dur_inf</span></td><td>float</td><td>10.0</td><td>Infectious period (days)</td></tr>
+    <tr><td><span class="k">dur_exp</span></td><td>float?</td><td>null</td><td>Latent period · required for SEIR/SEIRS/SEIAR</td></tr>
+    <tr><td><span class="k">dur_immune</span></td><td>float?</td><td>null</td><td>Immunity days before waning · SIRS/SEIRS</td></tr>
+    <tr><td><span class="k">p_death</span></td><td>float</td><td>0.0</td><td>Infection fatality rate</td></tr>
+    <tr><td><span class="k">p_asymp</span></td><td>float</td><td>0.3</td><td>Asymptomatic fraction · SEIAR only</td></tr>
+    <tr><td><span class="k">sim_dur_years</span></td><td>float</td><td>1.0</td><td>Simulation horizon</td></tr>
+    <tr><td><span class="k">network_type</span></td><td>string</td><td>random</td><td>random · age_structured</td></tr>
+    <tr><td><span class="k">n_contacts</span></td><td>int</td><td>4</td><td>Avg daily contacts</td></tr>
+    <tr><td><span class="k">network_beta</span></td><td>float</td><td>1.0</td><td>Transmission multiplier per contact</td></tr>
+  </tbody>
+</table>
+
+<h2 id="interventions">Interventions</h2>
+<p>Up to three intervention types can combine in a single simulation.</p>
+
+<h3>Vaccine</h3>
+<p>Removes a fraction of agents from the susceptible pool. <code>start_day=0</code> = pre-existing immunity; <code>&gt;0</code> = ongoing campaign starting that day.</p>
+
+<h3>Treatment</h3>
+<p>Reduces infectious duration or mortality for a fraction of infected agents. Optional daily capacity cap.</p>
+
+<h3>Seasonality</h3>
+<p>Modulates transmission rate sinusoidally over the year — <code>scale</code> is variation strength, <code>shift</code> is phase (0.0 = winter peak, 0.5 = summer peak).</p>
+
+<h2 id="nl-tips">NL query tips</h2>
+<p>EpiChat's parser understands a wide range of phrasing. A few useful patterns:</p>
+<table class="ref">
+  <thead><tr><th>You say</th><th>EpiChat does</th></tr></thead>
+  <tbody>
+    <tr><td>"R0 = 2.5"</td><td>Converts to β via <span class="k">R₀ × 365 / (n_contacts × dur_inf)</span></td></tr>
+    <tr><td>"COVID", "flu", "measles"</td><td>Applies built-in disease defaults</td></tr>
+    <tr><td>"80% vaccinated"</td><td>Vaccine intervention, <span class="k">start_day=0</span></td></tr>
+    <tr><td>"campaign starting month 3"</td><td>Vaccine intervention, <span class="k">start_day=90</span></td></tr>
+    <tr><td>"winter peak" / "seasonal"</td><td>Seasonality · <span class="k">scale=0.3, shift=0.0</span></td></tr>
+    <tr><td>"endemic" / "long-run"</td><td>Enables demographics</td></tr>
+    <tr><td>"age-structured" / "school-age"</td><td><span class="k">network_type=age_structured</span></td></tr>
+    <tr><td>"masks" / "50% mask uptake"</td><td><span class="k">network_beta ≈ 0.75</span></td></tr>
+    <tr><td>"seed 42" / "reproducible"</td><td><span class="k">rand_seed=42</span></td></tr>
+  </tbody>
+</table>
+
+<h2 id="roadmap">Roadmap</h2>
+<p>Seven phases in priority order. Complexity is implementation effort; impact is how much it moves the scientific needle.</p>
+<table class="ref">
+  <thead><tr><th>#</th><th>Phase</th><th>Data</th><th>Complexity</th><th>Impact</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Country demographics</td><td>UN WPP · World Bank · WHO GHO</td><td>Low–Medium</td><td>High</td></tr>
+    <tr><td>2</td><td>Country contact matrices</td><td>Prem et al. 2021 · SOCRATES · CoMix</td><td>Medium</td><td>High</td></tr>
+    <tr><td>3</td><td>Age-specific severity</td><td>O'Driscoll 2021 · CDC COVID-NET · FluView</td><td>Medium</td><td>High</td></tr>
+    <tr><td>4</td><td>HouseholdNet</td><td>DHS · IPUMS · UN household data · ACS</td><td>High</td><td>Medium</td></tr>
+    <tr><td>5</td><td>Calibration vs surveillance</td><td>OWID · CDC Tracker · WHO FluNet · Tycho</td><td>High</td><td>Very High</td></tr>
+    <tr><td>6</td><td>STI networks</td><td>DHS sexual module · NATSAL · CDC NHBS</td><td>Very High</td><td>Medium</td></tr>
+    <tr><td>7</td><td>Geospatial metapopulation</td><td>WorldPop · OAG · OSM</td><td>Very High</td><td>High</td></tr>
+  </tbody>
+</table>
+
+<h2 id="risks">Risks · mitigations</h2>
+<table class="ref">
+  <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+  <tbody>
+    <tr><td>Invalid Starsim code</td><td>Template-based generation — no free-form LLM code</td></tr>
+    <tr><td>Parameter hallucination</td><td>Pydantic validation + plausibility checks</td></tr>
+    <tr><td>Execution failure</td><td>3-attempt recovery loop with LLM re-parameterization</td></tr>
+    <tr><td>Timeout</td><td>90-second subprocess limit</td></tr>
+    <tr><td>API instability</td><td>Starsim version pinned in requirements.txt</td></tr>
+  </tbody>
+</table>
+
+<div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--rule); display: flex; gap: 0.75rem; flex-wrap: wrap;">
+  <a href="https://github.com/YWAN446/epichat" target="_blank" rel="noopener" class="btn">View source on GitHub ↗</a>
+  <a href="mailto:yuke.wang@emory.edu" class="btn ghost">Email the PI</a>
+  <a href="index.html" class="btn ghost">← Back to overview</a>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+</main>
+
+<div data-mount="footer"></div>
+<script src="site.js?v=2"></script>
+<script>
+// TOC scrollspy
+const sections = document.querySelectorAll('.doc h2');
+const tocLinks = document.querySelectorAll('.toc a');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(a => a.classList.remove('on'));
+      const link = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('on');
+    }
+  });
+}, { rootMargin: "-80px 0px -70% 0px" });
+sections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>
