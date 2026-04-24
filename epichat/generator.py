@@ -8,6 +8,26 @@ from .schema import SimParams
 
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
+##added
+def resolve_demographics(params: SimParams) -> SimParams:
+    """
+    Auto-fill birth_rate and death_rate from World Bank / WHO / UN WPP
+    if country is set and auto_demographics is True.
+    User-supplied non-default values are never overwritten.
+    """
+    if not params.country or not params.auto_demographics:
+        return params
+    try:
+        demo = get_country_demographics(params.country, params.demographics_year)
+        if params.birth_rate == 20.0:
+            params.birth_rate = demo['birth_rate']
+        if params.death_rate == 10.0:
+            params.death_rate = demo['death_rate']
+        params.use_demographics    = True
+        params.demographics_source = demo['source']
+    except ValueError as e:
+        print(f"  ⚠ Demographics lookup failed: {e} — using schema defaults")
+    return params
 
 class CodeGenerator:
     def __init__(self) -> None:
@@ -28,8 +48,12 @@ class CodeGenerator:
 
     def generate(self, params: SimParams, output_path: str) -> str:
         """Render the appropriate Jinja2 template and return executable Python code."""
+        params = resolve_demographics(params)          # auto-fill country demographics
         template_name = self._select_template(params)
         template = self._env.get_template(template_name)
         context = params.to_template_dict()
         context["output_path"] = output_path.replace("\\", "/")
         return template.render(**context)
+
+
+

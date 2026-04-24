@@ -37,6 +37,12 @@ class SimParams(BaseModel):
     use_demographics: bool = False
     birth_rate: float = Field(default=20.0, gt=0.0)
     death_rate: float = Field(default=10.0, gt=0.0)
+    ##added
+    country:             Optional[str] = None
+    auto_demographics:   bool          = True
+    demographics_year:   int           = Field(default=2022)
+    demographics_source: Optional[str] = None
+
 
     @model_validator(mode="after")
     def check_required_params(self) -> SimParams:
@@ -49,6 +55,15 @@ class SimParams(BaseModel):
     @field_validator("beta")
     @classmethod
     def warn_high_r0(cls, v: float) -> float:
+        return v
+
+    @field_validator('country') ##added
+    @classmethod
+    def normalize_country(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            v = v.strip().upper()
+            if len(v) != 3:
+                raise ValueError(f"country must be an ISO3 code (3 letters), got: '{v}'")
         return v
 
     def approx_r0(self) -> float:
@@ -85,3 +100,4 @@ class SimParams(BaseModel):
         d["seasonality_int"]= seas.model_dump()  if seas  else None
         d["treatment_int"]  = treat.model_dump() if treat else None
         return d
+    
