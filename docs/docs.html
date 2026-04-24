@@ -145,8 +145,7 @@
 <!-- TOC -->
 <aside class="toc">
   <div class="toc-head">On this page</div>
-  <a href="#quickstart" class="on">Quickstart</a>
-  <a href="#architecture">Architecture</a>
+  <a href="#architecture" class="on">Architecture</a>
   <a href="#models">Disease models</a>
   <a href="#defaults">Built-in defaults</a>
   <a href="#parameters">Parameters</a>
@@ -158,23 +157,6 @@
 
 <!-- CONTENT -->
 <div class="doc">
-
-<h2 id="quickstart">Quickstart</h2>
-<p class="kicker">▸ four commands to a first simulation</p>
-<pre><code><span style="color: var(--ink-3);"># 1. Clone and install</span>
-git clone https://github.com/YWAN446/epichat.git
-cd epichat
-pip install -r requirements.txt
-
-<span style="color: var(--ink-3);"># 2. Set API key</span>
-cp .env.example .env
-<span style="color: var(--ink-3"># edit .env and add your ANTHROPIC_API_KEY</span>
-
-<span style="color: var(--ink-3);"># 3. CLI — single query</span>
-python cli.py <span style="color: var(--accent);">"Simulate an SIR epidemic in 10,000 people with R0=2.5"</span>
-
-<span style="color: var(--ink-3);"># 4. Streamlit web app</span>
-streamlit run app.py</code></pre>
 
 <h2 id="architecture">Architecture</h2>
 <p>
