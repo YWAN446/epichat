@@ -23,7 +23,7 @@
               <a href="${l.href}" class="${l.href === CURRENT ? "active" : ""}">${l.label}</a>
             `).join("")}
           </div>
-          <a href="#demo" class="nav-cta">Launch demo ↗</a>
+          <a href="#demo" class="nav-cta" style="opacity: 0.5; cursor: default;">Demo coming soon</a>
         </div>
       </nav>
     `;
