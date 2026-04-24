@@ -6,7 +6,7 @@ const LAYERS = [
   {
     idx: "01", status: "PROTOTYPE", title: "Parameter extraction",
     desc: "LLM with a purpose-built epi system prompt parses a query into a structured JSON schema.",
-    inLbl: "natural language", outLbl: "JSON params",
+    inLbl: "natural language query", outLbl: "JSON params",
   },
   {
     idx: "02", status: "PROPOSED", title: "Data-informed resolver",
@@ -16,17 +16,17 @@ const LAYERS = [
   {
     idx: "03", status: "PROTOTYPE", title: "Template code generation",
     desc: "Validated parameters injected into Jinja2 templates per disease model — no free-form simulation code.",
-    inLbl: "validated params", outLbl: "Starsim script",
+    inLbl: "calibrated params", outLbl: "script",
   },
   {
     idx: "04", status: "PROTOTYPE", title: "Sandboxed execution",
     desc: "Timeout-bounded run with an automated error-recovery loop that re-invokes the LLM on failure.",
-    inLbl: "script", outLbl: "raw results + traces",
+    inLbl: "script", outLbl: "simulation raw results",
   },
   {
     idx: "05", status: "PROTOTYPE", title: "Results summarization",
     desc: "Second LLM call translates peak timing, attack rate, intervention effect into plain language with uncertainty hedges.",
-    inLbl: "simulation output", outLbl: "readable summary",
+    inLbl: "simulation results", outLbl: "readable summary",
   },
 ];
 
@@ -85,15 +85,12 @@ function seir({ N, beta, sigma, gamma, vax, days, I0 = 100, noise = 0 }) {
 }
 
 const SCENARIOS = {
-  measles: { N: 1200000, beta: 1.4, sigma: 1/12, gamma: 1/8, vax: 0.65, days: 200, I0: 500,
-             label: "Measles · SEIR · n=1.2M · 500 seeds",
+  measles: { N: 1200000, beta: 1.5, sigma: 1/12, gamma: 1/8, vax: 0.80, days: 365, I0: 100,
+             label: "Measles · SEIR · n=1.2M · 100 seeds",
              peakCopy: "bell-shaped outbreak · growth damped by residual vaccination coverage" },
-  covid:   { N: 330000000, beta: 0.5, sigma: 1/5, gamma: 1/8, vax: 0.40, days: 200, I0: 10000,
-             label: "COVID-19 · SEIR · n=330M · 200 seeds",
+  covid:   { N: 330000000, beta: 0.5, sigma: 1/5, gamma: 1/8, vax: 0.40, days: 365, I0: 10000,
+             label: "COVID-19 · SEIR · n=330M · 10000 seeds",
              peakCopy: "wave peaks mid-window · IFR-weighted burden concentrated in 65+" },
-  flu:     { N: 50000, beta: 0.55, sigma: 1/2, gamma: 1/5, vax: 0.45, days: 200, I0: 5,
-             label: "Seasonal influenza · SEIR · n=50k · seasonal forcing",
-             peakCopy: "seasonal peak · attack rate scales with vax coverage" }
 };
 
 function drawCurve(scenario = "measles") {
@@ -233,9 +230,8 @@ if (roadmapHost) {
   roadmapHost.innerHTML = ROADMAP.map((r, i) => `
     <div style="display: grid; grid-template-columns: 60px 1fr 140px 140px; gap: 0; background: ${i % 2 ? "var(--paper-2)" : "var(--paper)"};
                 ${i < ROADMAP.length - 1 ? "border-bottom: 1px solid var(--rule);" : ""}">
-      <div style="padding: 1rem; border-right: 1px solid var(--rule); font-family: var(--mono); color: var(--ink-3); display: flex; align-items: center; gap: 0.4rem;">
+      <div style="padding: 1rem; border-right: 1px solid var(--rule); font-family: var(--mono); color: var(--ink-3); display: flex; align-items: center;">
         <span style="color: var(--accent); font-weight: 500;">${r.priority}</span>
-        <span style="font-size: 0.72rem;">${r.p}</span>
       </div>
       <div style="padding: 1rem 1.2rem; border-right: 1px solid var(--rule); font-family: var(--serif); font-size: 1rem;">${r.name}</div>
       <div style="padding: 1rem 1.2rem; border-right: 1px solid var(--rule); font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); display: flex; align-items: center;">${r.complexity}</div>
@@ -260,18 +256,18 @@ const FAQ = [
   },
   {
     q: "What diseases does it handle today?",
-    a: "SIR, SEIR, SIS — covering COVID (acute), influenza, measles, SARS-like diseases, Ebola, gonorrhea, and generic infections. SIRS, SEIRS, and SEIAR (waning immunity and asymptomatic transmission) land in months 1–6 of the proposed project.",
+    a: "SIR, SEIR, SIS — covering COVID (acute), influenza, measles, SARS-like diseases, Ebola, gonorrhea, and generic infections. SIRS, SEIRS, and SEIAR (waning immunity and asymptomatic transmission) land in near future.",
   },
   {
     q: "How do you validate accuracy?",
-    a: "Two studies. (1) Concordance study: EpiChat-generated Starsim scripts compared against expert-coded reference models across COVID, measles, influenza, and HIV scenarios. Scoring on parameter-match rate within ±10% (continuous) or exact (categorical) and compartmental-structure correctness. (2) Usability study: masters-level epidemiology students complete standardized tasks; SUS scoring plus task-completion rates.",
+    a: "We plan to conduct two studies. (1) Concordance study: EpiChat-generated Starsim scripts compared against expert-coded reference models across COVID, measles, influenza, and HIV scenarios. Scoring on parameter-match rate within ±10% (continuous) or exact (categorical) and compartmental-structure correctness. (2) Usability study: masters-level epidemiology students complete standardized tasks; SUS scoring plus task-completion rates.",
   },
   {
     q: "Will it be open source?",
-    a: "Yes. Open release under MIT license — plus a hosted demo and preprint — in month 11–12 of the proposed project.",
+    a: "Yes. Open release under MIT license — plus a hosted demo and preprint — in 2027.",
   },
   {
-    q: "How can I help?",
+    q: "How can I collaborate?",
     a: "Three roles: domain experts for benchmark queries, data contributors for Layer 02 resolver inputs (contact matrices, surveillance feeds, demographics), and modelers for expert reference code. Even a 'let's grab coffee' level ask works — email Yuke.",
   },
 ];

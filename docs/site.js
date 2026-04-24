@@ -2,7 +2,6 @@
 (function () {
   const NAV_LINKS = [
     { href: "index.html", label: "OVERVIEW" },
-    { href: "about.html", label: "ABOUT" },
     { href: "docs.html", label: "DOCS" },
   ];
 
@@ -44,16 +43,14 @@
               </p>
               <pre class="ascii" style="margin-top: 1rem;">
     S ──▶ E ──▶ I ──▶ R
-         ↑              │
-         └──── waning ──┘</pre>
+    ↑                  │
+    └───────── waning ──┘</pre>
             </div>
             <div>
               <h4>Project</h4>
               <ul>
                 <li><a href="index.html">Overview</a></li>
-                <li><a href="about.html">About</a></li>
                 <li><a href="docs.html">Docs</a></li>
-                <li><a href="docs.html#roadmap">Roadmap</a></li>
               </ul>
             </div>
             <div>
@@ -68,14 +65,13 @@
               <h4>Contact</h4>
               <ul>
                 <li><a href="mailto:yuke.wang@emory.edu">yuke.wang@emory.edu</a></li>
-                <li style="color: var(--ink-3);">Rollins · Emory</li>
+                <li style="color: var(--ink-3);">RSPH · Emory</li>
                 <li style="color: var(--ink-3);">CIDMATH</li>
               </ul>
             </div>
           </div>
           <div class="bottom">
-            <span>© 2026 · CIDMATH · Disruptive Discovery Seed Program FY27</span>
-            <span>build ${new Date().toISOString().slice(0,10)} · status: prototype</span>
+            <span>© Copyright 2026. Emory CIDMATH. All Rights Reserved.</span>
           </div>
         </div>
       </footer>

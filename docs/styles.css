@@ -113,7 +113,7 @@ a:hover {
 }
 .tag.filled {
   background: var(--ink);
-  color: var(--paper);
+  color: #fff;
   border-color: var(--ink);
 }
 
@@ -159,7 +159,7 @@ section {
 
 .section-index {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 1rem;
   letter-spacing: 0.12em;
   color: var(--ink-3);
   text-transform: uppercase;
