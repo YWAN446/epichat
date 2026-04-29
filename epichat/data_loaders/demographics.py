@@ -16,22 +16,22 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 WPP_FILE = DATA_PATH / 'WPP2024_Demographic_Indicators_Medium.csv'
 WHO_FILE = DATA_PATH / 'WHO_Mortality_Database.csv'
 
-# ── World Bank API fallback ### in progress need to update
-WB_INDICATORS = {
-    'birth_rate':      'SP.DYN.CBRT.IN',
-    'death_rate':      'SP.DYN.CDRT.IN',
-    'life_expectancy': 'SP.DYN.LE00.IN',
-}
-WB_BASE   = "https://api.worldbank.org/v2/country/{iso2}/indicator/{indicator}"
-ISO3_TO_ISO2 = {
-    'KEN': 'KE', 'NGA': 'NG', 'ZAF': 'ZA', 'ETH': 'ET', 'GHA': 'GH',
-    'TZA': 'TZ', 'UGA': 'UG', 'ZWE': 'ZW', 'MOZ': 'MZ', 'ZMB': 'ZM',
-    'USA': 'US', 'GBR': 'GB', 'DEU': 'DE', 'FRA': 'FR', 'BRA': 'BR',
-    'IND': 'IN', 'CHN': 'CN', 'JPN': 'JP', 'MEX': 'MX', 'COL': 'CO',
-    'PER': 'PE', 'ARG': 'AR', 'CHL': 'CL', 'IDN': 'ID', 'PHL': 'PH',
-    'THA': 'TH', 'VNM': 'VN', 'BGD': 'BD', 'PAK': 'PK', 'EGY': 'EG',
-    'MAR': 'MA', 'TUN': 'TN', 'SDN': 'SD', 'AGO': 'AO', 'CMR': 'CM',
-    'SEN': 'SN', 'CIV': 'CI', 'MDG': 'MG', 'MLI': 'ML', 'NER': 'NE',
+# ── World Bank Data360 API ────────────────────────────────────
+# Docs:   https://data360api.worldbank.org
+# OAS:    https://raw.githubusercontent.com/worldbank/open-api-specs/
+#         refs/heads/main/Data360%20Open_API.json
+# DB:     WB_WDI (World Development Indicators)
+# Note:   accepts ISO3 directly via REF_AREA — no ISO2 needed
+# Format: indicators use WB_WDI_ prefix with underscores
+
+DATA360_BASE = "https://data360api.worldbank.org/data360/data"
+
+DATA360_INDICATORS = {
+    'birth_rate':       'WB_WDI_SP_DYN_CBRT_IN',
+    'death_rate':       'WB_WDI_SP_DYN_CDRT_IN',
+    'life_expectancy':  'WB_WDI_SP_DYN_LE00_IN',
+    'fertility_rate':   'WB_WDI_SP_DYN_TFRT_IN',
+    'infant_mortality': 'WB_WDI_SP_DYN_IMRT_IN',
 }
 
 # ── WPP dataframe cache (load once per session) ───────────────
@@ -206,30 +206,77 @@ def get_who_age_distribution(iso3: str) -> Optional[pd.DataFrame]:
     return result.reset_index(drop=True)
 
 
-# ══════════════════════════════════════════════════════════════
-# SOURCE 3: WORLD BANK API (live fallback)
-# ══════════════════════════════════════════════════════════════
 
-def _fetch_worldbank(iso3: str, indicator_key: str, year: int = 2022) -> Optional[float]:
-    """Fetch one indicator from World Bank Open Data API."""
-    iso2 = ISO3_TO_ISO2.get(iso3.upper())
-    if not iso2:
+
+# ══════════════════════════════════════════════════════════════
+# SOURCE 3: WORLD BANK DATA360 API
+# ══════════════════════════════════════════════════════════════
+# Docs:    https://data360api.worldbank.org
+# OAS:     https://raw.githubusercontent.com/worldbank/open-api-specs/
+#          refs/heads/main/Data360%20Open_API.json
+# DB ID:   WB_WDI
+# Format:  INDICATOR uses underscores with WB_WDI_ prefix
+#          e.g. SP.DYN.CBRT.IN → WB_WDI_SP_DYN_CBRT_IN
+# Country: REF_AREA uses ISO3 directly
+
+DATA360_BASE = "https://data360api.worldbank.org/data360/data"
+
+DATA360_INDICATORS = {
+    'birth_rate':       'WB_WDI_SP_DYN_CBRT_IN',
+    'death_rate':       'WB_WDI_SP_DYN_CDRT_IN',
+    'life_expectancy':  'WB_WDI_SP_DYN_LE00_IN',
+    'fertility_rate':   'WB_WDI_SP_DYN_TFRT_IN',
+    'infant_mortality': 'WB_WDI_SP_DYN_IMRT_IN',
+}
+
+
+def _fetch_data360(iso3: str, indicator_key: str, year: int = 2022) -> Optional[float]:
+    """
+    Fetch demographic indicator from World Bank Data360 API.
+
+    Endpoint: GET /data360/data
+    Docs:     https://data360api.worldbank.org
+    Database: WB_WDI
+
+    Args:
+        iso3:          ISO3 country code e.g. 'KEN' — passed as REF_AREA
+        indicator_key: key from DATA360_INDICATORS dict
+        year:          reference year — passed as TIME_PERIOD
+
+    Returns:
+        float from OBS_VALUE or None if not found
+    """
+    indicator_id = DATA360_INDICATORS.get(indicator_key)
+    if not indicator_id:
         return None
-    url = WB_BASE.format(iso2=iso2, indicator=WB_INDICATORS[indicator_key])
-    try:
-        resp = requests.get(
-            url,
-            params={'format': 'json', 'mrv': 1, 'per_page': 5},
-            timeout=8
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        if len(data) >= 2 and data[1]:
-            for record in data[1]:
-                if record.get('value') is not None:
-                    return float(record['value'])
-    except Exception:
-        pass
+
+    for try_year in [year, year - 1, year - 2, year - 3]:
+        try:
+            resp = requests.get(
+                DATA360_BASE,
+                params={
+                    'DATABASE_ID': 'WB_WDI',
+                    'INDICATOR':   indicator_id,
+                    'REF_AREA':    iso3.upper(),
+                    'TIME_PERIOD': str(try_year),
+                    'FREQ':        'A',
+                },
+                headers={'Accept': 'application/json'},
+                timeout=10
+            )
+            resp.raise_for_status()
+            records = resp.json().get('value', [])
+            for record in records:
+                val = record.get('OBS_VALUE')
+                if val is not None:
+                    return float(val)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code != 404:
+                print(f"  ⚠ Data360 error ({indicator_key}, {iso3}): {e}")
+            break
+        except Exception:
+            break
+
     return None
 
 
@@ -291,34 +338,19 @@ def get_country_demographics(country_iso3: str, year: int = 2022) -> dict:
             result['death_rate'] = who['who_death_rate_per1000']
         sources.append(who['who_source'])
 
-    # ── 3. World Bank API (fallback for missing fields) ───────
+    # ── 3. World Bank Data360 API (fallback) ──────────────────
     missing = [k for k in ['birth_rate', 'death_rate', 'life_expectancy']
                if k not in result]
 
     if missing:
-        wb_map = {
-            'birth_rate':      'birth_rate',
-            'death_rate':      'death_rate',
-            'life_expectancy': 'life_expectancy',
-        }
-        wb_used = False
+        d360_used = False
         for key in missing:
-            val = _fetch_worldbank(iso3, wb_map[key], year)
+            val = _fetch_data360(iso3, key, year)
             if val is not None:
                 result[key] = round(val, 3)
-                wb_used = True
-        if wb_used:
-            sources.append('World Bank API')
-
-    if not result:
-        raise ValueError(
-            f"No demographic data found for '{iso3}'. "
-            f"Ensure WPP file is at: {WPP_FILE}"
-        )
-
-    result['source']  = ' + '.join(sources)
-    result['country'] = iso3
-    result['year']    = year
+                d360_used = True
+        if d360_used:
+            sources.append('World Bank Data360 (WB_WDI)')
 
     # ── Save to disk cache ────────────────────────────────────
     with open(cache_file, 'w') as f:

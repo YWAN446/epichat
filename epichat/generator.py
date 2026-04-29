@@ -6,6 +6,8 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from .schema import SimParams
 
+from .data_loaders.demographics import get_country_demographics
+
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
 ##added
