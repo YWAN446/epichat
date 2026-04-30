@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import datetime
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .adapters.un_wpp import UNWPPAdapter
 from .executor import SimExecutor
 from .generator import CodeGenerator
 from .narrator import narrate
-from .parser import fix_params, get_last_resolved, parse_query
+from .parser import configure_resolver, fix_params, get_last_resolved, parse_query
 from .resolver import ResolvedField
 from .schema import SimParams
 
@@ -88,6 +90,7 @@ class EpiChat:
         self.output_dir = Path(output_dir)
         self.generator = CodeGenerator()
         self.executor = SimExecutor()
+        configure_resolver(UNWPPAdapter(api_key=os.environ.get("UN_API_KEY")))
 
     def run(self, user_input: str) -> EpiChatResult:
         """Full pipeline: NL query → simulation → narration."""
