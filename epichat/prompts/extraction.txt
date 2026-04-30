@@ -112,3 +112,27 @@ User: "Model measles in a population of 100,000 where 80% are vaccinated, R0=15,
 
 User: "SEIR epidemic with seasonal transmission, 5-day latent period, R0=3 in 20,000 people over 3 years"
 {"disease_type":"seir","n_agents":20000,"n_contacts":4,"network_type":"random","network_beta":1.0,"beta":54.750000,"init_prev":0.01,"dur_inf":10.0,"dur_exp":5.0,"p_death":0.0,"sim_dur_years":3.0,"rand_seed":null,"use_demographics":false,"birth_rate":20.0,"death_rate":10.0,"interventions":[{"type":"seasonality","coverage":null,"start_day":0,"scale":0.3,"shift":0.0}]}
+
+## Output format
+
+When the user mentions a country, region, or geography, wrap your response in this envelope:
+
+{
+  "preliminary_params": { ...the SimParams fields as before... },
+  "data_queries": [
+    {
+      "source": "un_wpp",
+      "indicators": [55, 59, 71],
+      "location_id": <integer from the table below>,
+      "start_year": 2020,
+      "end_year": 2024
+    }
+  ]
+}
+
+When no geography is mentioned, you may still use this envelope with "data_queries": [],
+or return the SimParams object directly as before.
+
+## Location table (ISO3 → UN location_id)
+
+{location_table}
