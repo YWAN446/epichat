@@ -64,7 +64,6 @@ def test_iso3_table_contains_all_entries():
     assert table["IND"] == 356
 
 
-import urllib.error
 from epichat.resolver import DataQuery
 
 
