@@ -49,7 +49,10 @@ def _parse_json(raw: str) -> dict:
     brace = raw.find("{")
     if brace > 0:
         raw = raw[brace:]
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"LLM returned non-JSON response: {raw!r}") from e
 
 
 def _llm_call_1(user_input: str) -> IntentResult:
