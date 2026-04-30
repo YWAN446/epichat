@@ -1,8 +1,8 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from epichat.parser import IntentResult, _llm_call_1
-from epichat.resolver import DataQuery
+from epichat.parser import IntentResult, _llm_call_1, _llm_call_2
+from epichat.resolver import DataQuery, ResolvedField
 from epichat.schema import SimParams
 
 
@@ -75,10 +75,6 @@ def test_llm_call_1_handles_legacy_format():
     assert isinstance(result, IntentResult)
     assert result.data_queries == []
     assert isinstance(result.preliminary_params, SimParams)
-
-
-from epichat.parser import _llm_call_2
-from epichat.resolver import ResolvedField
 
 
 _REFINED_JSON = json.dumps({
