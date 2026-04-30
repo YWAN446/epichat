@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import csv
-import urllib.error
+import datetime
 import urllib.request
 
 from epichat.resolver import DataQuery, ResolvedField
 
 _BASE_URL = "https://population.un.org/dataportalapi/api/v1"
+
+_VARIANT_MEDIAN = "4"
+_SEX_BOTH = "3"
+_ESTIMATE_METHOD_INTERP = "2"  # actual estimate (not projection)
 
 
 def _fetch_text(url: str, api_key: str | None = None) -> str:
@@ -53,4 +57,67 @@ class UNWPPAdapter:
         return {k: v for k, v in self._loc_cache.items() if len(k) == 3 and k.isupper()}
 
     def fetch(self, query: DataQuery) -> list[ResolvedField]:
-        return []  # implemented in Task 3
+        current_year = datetime.date.today().year
+        ids = ",".join(str(i) for i in query.indicators)
+        url = (
+            f"{_BASE_URL}/data/indicators/{ids}"
+            f"/locations/{query.location_id}"
+            f"/start/{query.start_year}/end/{current_year}/?format=csv"
+        )
+        try:
+            text = _fetch_text(url, self._api_key)
+        except Exception:
+            return []
+        return self._map_rows(_parse_csv(text), query.location_id)
+
+    def _map_rows(self, rows: list[dict[str, str]], location_id: int) -> list[ResolvedField]:
+        rows = [
+            r for r in rows
+            if r.get("VariantId") == _VARIANT_MEDIAN
+            and r.get("SexId") == _SEX_BOTH
+            and r.get("EstimateMethodId") == _ESTIMATE_METHOD_INTERP
+        ]
+
+        results: list[ResolvedField] = []
+
+        for ind_id, field_name in [("55", "birth_rate"), ("59", "death_rate")]:
+            candidates = [
+                r for r in rows
+                if r.get("IndicatorId") == ind_id and r.get("AgeLabel", "").strip() == "Total"
+            ]
+            if not candidates:
+                continue
+            best = max(candidates, key=lambda r: int(r.get("TimeId", 0)))
+            year = best.get("TimeLabel", "")
+            iso3 = best.get("Iso3", str(location_id))
+            location_name = best.get("Location", str(location_id))
+            results.append(ResolvedField(
+                field=field_name,
+                value=round(float(best["Value"]), 3),
+                citation=f"UN WPP 2024, {location_name} ({iso3}), {year}",
+            ))
+
+        age_rows = [r for r in rows if r.get("IndicatorId") == "71"]
+        pct: dict[str, float] = {}
+        best_year: str = ""
+        iso3: str = ""
+        location_name: str = ""
+        for label in ("0-17", "65+"):
+            candidates = [r for r in age_rows if r.get("AgeLabel", "").strip() == label]
+            if not candidates:
+                continue
+            best = max(candidates, key=lambda r: int(r.get("TimeId", 0)))
+            pct[label] = round(float(best["Value"]), 3)
+            best_year = best.get("TimeLabel", "")
+            iso3 = best.get("Iso3", str(location_id))
+            location_name = best.get("Location", str(location_id))
+
+        if "0-17" in pct and "65+" in pct:
+            pct["18-64"] = round(100 - pct["0-17"] - pct["65+"], 3)
+            results.append(ResolvedField(
+                field="age_distribution_pct",
+                value=pct,
+                citation=f"UN WPP 2024, {location_name} ({iso3}), {best_year}",
+            ))
+
+        return results

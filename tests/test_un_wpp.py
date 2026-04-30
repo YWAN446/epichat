@@ -62,3 +62,68 @@ def test_iso3_table_contains_all_entries():
     assert table["USA"] == 840
     assert table["KEN"] == 404
     assert table["IND"] == 356
+
+
+import urllib.error
+from epichat.resolver import DataQuery
+
+
+def _make_adapter_with_data(data_csv):
+    """Adapter whose fetch() uses mock data CSV."""
+    def _side_effect(url, api_key=None):
+        if "locations" in url:
+            return _LOCATIONS_CSV
+        return data_csv
+    with patch("epichat.adapters.un_wpp._fetch_text", side_effect=_side_effect):
+        return UNWPPAdapter(api_key="test-token")
+
+
+def test_fetch_birth_and_death_rate():
+    adapter = _make_adapter_with_data(_DATA_CSV_BIRTH_DEATH)
+    query = DataQuery(source="un_wpp", indicators=[55, 59], location_id=840, start_year=2020, end_year=2024)
+    with patch("epichat.adapters.un_wpp._fetch_text", return_value=_DATA_CSV_BIRTH_DEATH):
+        results = adapter.fetch(query)
+    fields = {r.field: r for r in results}
+    assert "birth_rate" in fields
+    assert abs(fields["birth_rate"].value - 10.648) < 0.001
+    assert "death_rate" in fields
+    assert abs(fields["death_rate"].value - 8.663) < 0.001
+
+
+def test_fetch_uses_most_recent_estimate_year():
+    adapter = _make_adapter_with_data(_DATA_CSV_BIRTH_DEATH)
+    query = DataQuery(source="un_wpp", indicators=[55], location_id=840, start_year=2020, end_year=2024)
+    with patch("epichat.adapters.un_wpp._fetch_text", return_value=_DATA_CSV_BIRTH_DEATH):
+        results = adapter.fetch(query)
+    birth = next(r for r in results if r.field == "birth_rate")
+    assert abs(birth.value - 10.648) < 0.001  # 2023 value, not 2022 (10.981)
+
+
+def test_fetch_age_distribution():
+    adapter = _make_adapter_with_data(_DATA_CSV_AGE)
+    query = DataQuery(source="un_wpp", indicators=[71], location_id=840, start_year=2020, end_year=2024)
+    with patch("epichat.adapters.un_wpp._fetch_text", return_value=_DATA_CSV_AGE):
+        results = adapter.fetch(query)
+    age = next(r for r in results if r.field == "age_distribution_pct")
+    assert abs(age.value["0-17"] - 21.577) < 0.01
+    assert abs(age.value["65+"] - 17.432) < 0.01
+    assert abs(age.value["18-64"] - (100 - 21.577 - 17.432)) < 0.1
+
+
+def test_fetch_citation_format():
+    adapter = _make_adapter_with_data(_DATA_CSV_BIRTH_DEATH)
+    query = DataQuery(source="un_wpp", indicators=[55], location_id=840, start_year=2020, end_year=2024)
+    with patch("epichat.adapters.un_wpp._fetch_text", return_value=_DATA_CSV_BIRTH_DEATH):
+        results = adapter.fetch(query)
+    birth = next(r for r in results if r.field == "birth_rate")
+    assert "UN WPP" in birth.citation
+    assert "USA" in birth.citation
+    assert "2023" in birth.citation
+
+
+def test_fetch_returns_empty_on_http_error():
+    adapter = _make_adapter_with_data(_DATA_CSV_BIRTH_DEATH)
+    query = DataQuery(source="un_wpp", indicators=[55, 59], location_id=840, start_year=2020, end_year=2024)
+    with patch("epichat.adapters.un_wpp._fetch_text", side_effect=urllib.error.URLError("connection refused")):
+        results = adapter.fetch(query)
+    assert results == []
