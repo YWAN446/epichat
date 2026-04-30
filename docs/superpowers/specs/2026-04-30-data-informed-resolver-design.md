@@ -133,7 +133,7 @@ class Resolver:
 
 ### Age distribution output
 
-The three-group breakdown (children 0–17, adults 18–64, elderly 65+) matches EpiChat's existing age-structured POLYMOD matrix groups. This is delivered as a single `ResolvedField`:
+The three-group breakdown (children 0–17, adults 18–64, elderly 65+) is delivered as a single `ResolvedField`:
 
 ```python
 ResolvedField(
@@ -143,7 +143,7 @@ ResolvedField(
 )
 ```
 
-LLM-2 uses this to adjust contact matrix weights when `network_type = "age_structured"`.
+`age_distribution_pct` is **not** a `SimParams` field. In the MVP it is passed to LLM-2 as informational context only. Its practical effect is to help LLM-2 decide whether to set `network_type = "age_structured"` (e.g. a notably high elderly share suggests age-heterogeneous contacts matter). Population-weighted contact matrices that directly consume this data are deferred to Phase 1 (ROADMAP).
 
 ### Location resolution
 
@@ -198,6 +198,8 @@ Location table (name/ISO → UN location_id):
 
 The `{location_table_json}` placeholder is filled at runtime from the cached location lookup.
 
+**Year selection:** The adapter always requests the most recent completed calendar year. For the MVP this is hardcoded as `2023` (the latest year with confirmed WPP estimates as of 2026). A constants file (`epichat/adapters/un_wpp.py`) defines `UN_WPP_REFERENCE_YEAR = 2023`.
+
 ### New `refinement.txt`
 
 ```
@@ -226,11 +228,20 @@ Resolved data (use these to replace/improve the preliminary values):
 
 ## `parser.py` changes
 
+A new `IntentResult` dataclass captures LLM Call 1's output:
+
+```python
+@dataclass
+class IntentResult:
+    preliminary_params: SimParams
+    data_queries: list[DataQuery]   # empty list when no geography mentioned
+```
+
 `parse_query()` is restructured into three private helpers:
 
 ```python
 def parse_query(user_input: str) -> SimParams:
-    intent = _llm_call_1(user_input)            # → IntentResult
+    intent = _llm_call_1(user_input)               # → IntentResult
     resolved = _run_resolver(intent.data_queries)  # → list[ResolvedField]
     return _llm_call_2(user_input, intent.preliminary_params, resolved)
 ```
