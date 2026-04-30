@@ -119,7 +119,7 @@ def parse_query(user_input: str) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
 
-    Two-step process:
+    Three-step process:
       1. LLM-1 extracts intent (preliminary params + optional data queries).
       2. If data queries exist, the resolver fetches real-world values.
       3. LLM-2 refines preliminary params using resolved data (skipped when no queries).
