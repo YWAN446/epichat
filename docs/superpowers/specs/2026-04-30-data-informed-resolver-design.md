@@ -198,7 +198,7 @@ Location table (name/ISO → UN location_id):
 
 The `{location_table_json}` placeholder is filled at runtime from the cached location lookup.
 
-**Year selection:** The adapter always requests the most recent completed calendar year. For the MVP this is hardcoded as `2023` (the latest year with confirmed WPP estimates as of 2026). A constants file (`epichat/adapters/un_wpp.py`) defines `UN_WPP_REFERENCE_YEAR = 2023`.
+**Year selection:** The adapter requests a rolling window (e.g. `start=2020, end=<current_year>`) and selects the most recent row where `EstimateMethodId = 2` (Interpolation — actual estimate, not projection). This avoids hardcoding a year and automatically advances as WPP releases new revision data. Projection rows (`EstimateMethodId = 3`) are excluded.
 
 ### New `refinement.txt`
 
