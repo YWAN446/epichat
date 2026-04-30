@@ -8,12 +8,13 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
-from .resolver import DataQuery, ResolvedField, Resolver, SourceAdapter  # noqa: F401  ResolvedField used in Task 5
+from .resolver import DataQuery, ResolvedField, Resolver, SourceAdapter  # noqa: F401
 from .schema import SimParams
 
 load_dotenv()
 
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "extraction.txt"
+_REFINEMENT_PROMPT_PATH = Path(__file__).parent / "prompts" / "refinement.txt"
 _MODEL = "claude-sonnet-4-6"
 
 
@@ -79,6 +80,33 @@ def _llm_call_1(user_input: str) -> IntentResult:
     # Legacy format: raw SimParams JSON
     data = {k: v for k, v in data.items() if v is not None or k in ("dur_exp", "dur_immune", "rand_seed", "capacity")}
     return IntentResult(preliminary_params=SimParams(**data), data_queries=[])
+
+
+def _llm_call_2(user_input: str, prelim: SimParams, resolved: list[ResolvedField]) -> SimParams:
+    if not resolved:
+        return prelim
+
+    resolved_text = "\n".join(
+        f"- {rf.field}: {rf.value} — {rf.citation}" for rf in resolved
+    )
+    user_message = (
+        _REFINEMENT_PROMPT_PATH.read_text(encoding="utf-8")
+        .replace("{user_input}", user_input)
+        .replace("{preliminary_params}", json.dumps(prelim.model_dump(), indent=2))
+        .replace("{resolved_fields}", resolved_text)
+    )
+
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    message = client.messages.create(
+        model=_MODEL,
+        max_tokens=1024,
+        system="You are an epidemiological parameter assistant. Return only valid JSON.",
+        messages=[{"role": "user", "content": user_message}],
+    )
+    raw = message.content[0].text.strip()
+    data = _parse_json(raw)
+    data = {k: v for k, v in data.items() if v is not None or k in ("dur_exp", "dur_immune", "rand_seed", "capacity")}
+    return SimParams(**data)
 
 
 def parse_query(user_input: str) -> SimParams:

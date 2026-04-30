@@ -75,3 +75,57 @@ def test_llm_call_1_handles_legacy_format():
     assert isinstance(result, IntentResult)
     assert result.data_queries == []
     assert isinstance(result.preliminary_params, SimParams)
+
+
+from epichat.parser import _llm_call_2
+from epichat.resolver import ResolvedField
+
+
+_REFINED_JSON = json.dumps({
+    "disease_type": "sir",
+    "n_agents": 10000,
+    "n_contacts": 4,
+    "network_type": "random",
+    "network_beta": 1.0,
+    "beta": 22.8125,
+    "init_prev": 0.01,
+    "dur_inf": 10.0,
+    "p_death": 0.0,
+    "sim_dur_years": 1.0,
+    "use_demographics": True,
+    "birth_rate": 28.5,
+    "death_rate": 6.2,
+    "interventions": [],
+})
+
+
+def test_llm_call_2_passthrough_when_no_resolved():
+    prelim = SimParams(beta=22.8125, birth_rate=20.0, death_rate=10.0)
+    result = _llm_call_2("query", prelim, [])
+    assert result is prelim  # exact same object — no LLM call made
+
+
+def test_llm_call_2_calls_llm_when_resolved_present():
+    prelim = SimParams(beta=22.8125, birth_rate=20.0, death_rate=10.0)
+    resolved = [
+        ResolvedField(field="birth_rate", value=28.5, citation="UN WPP 2024, KEN, 2023"),
+        ResolvedField(field="death_rate", value=6.2, citation="UN WPP 2024, KEN, 2023"),
+    ]
+    client = _mock_llm(_REFINED_JSON)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = _llm_call_2("simulate in Kenya", prelim, resolved)
+    assert isinstance(result, SimParams)
+    assert abs(result.birth_rate - 28.5) < 0.01
+    assert abs(result.death_rate - 6.2) < 0.01
+
+
+def test_llm_call_2_formats_resolved_fields_in_prompt():
+    prelim = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="UN WPP 2024, KEN, 2023")]
+    client = _mock_llm(_REFINED_JSON)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        _llm_call_2("simulate in Kenya", prelim, resolved)
+    call_args = client.messages.create.call_args
+    user_content = call_args[1]["messages"][0]["content"]
+    assert "birth_rate: 28.5" in user_content
+    assert "UN WPP 2024, KEN, 2023" in user_content

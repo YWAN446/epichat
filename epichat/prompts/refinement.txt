@@ -1,0 +1,11 @@
+You are refining epidemic simulation parameters with real-world demographic data.
+User-stated values take precedence over resolved data.
+Return ONLY the final SimParams JSON — no prose, no markdown fences.
+
+Original query: {user_input}
+
+Preliminary parameters:
+{preliminary_params}
+
+Resolved data (use these to replace or improve the preliminary values):
+{resolved_fields}
