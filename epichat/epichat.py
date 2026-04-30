@@ -7,7 +7,8 @@ from pathlib import Path
 from .executor import SimExecutor
 from .generator import CodeGenerator
 from .narrator import narrate
-from .parser import fix_params, parse_query
+from .parser import fix_params, get_last_resolved, parse_query
+from .resolver import ResolvedField
 from .schema import SimParams
 
 _MAX_RETRIES = 3
@@ -21,6 +22,7 @@ class EpiChatResult:
     plot_path: str | None
     narration: dict  # {'summary': str, 'key_findings': list[str]}
     error: str | None = None
+    data_sources: list[ResolvedField] = field(default_factory=list)
 
     def format_cli(self) -> str:
         """Return a formatted string for CLI display."""
@@ -63,6 +65,16 @@ class EpiChatResult:
         lines.append(f"  Duration:      {p.sim_dur_years} year(s)")
         interv = [i.type for i in p.interventions]
         lines.append(f"  Interventions: {', '.join(interv) if interv else 'None'}")
+
+        if self.data_sources:
+            lines.append("")
+            lines.append("DATA SOURCES")
+            for rf in self.data_sources:
+                if isinstance(rf.value, dict):
+                    val_str = ", ".join(f"{k}: {v}%" for k, v in rf.value.items())
+                else:
+                    val_str = str(rf.value)
+                lines.append(f"  {rf.field}: {val_str} — {rf.citation}")
 
         if self.plot_path:
             lines.append(f"\n[Plot saved to: {self.plot_path}]")
@@ -119,6 +131,7 @@ class EpiChat:
             stats=exec_result["stats"],
             plot_path=exec_result["plot_path"],
             narration=narration,
+            data_sources=get_last_resolved(),
         )
 
     def _execute_with_retry(

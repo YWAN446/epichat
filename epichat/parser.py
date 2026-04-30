@@ -26,6 +26,11 @@ class IntentResult:
 
 _resolver: Resolver = Resolver()
 _LOCATION_TABLE: str = ""
+_last_resolved: list[ResolvedField] = []
+
+
+def get_last_resolved() -> list[ResolvedField]:
+    return list(_last_resolved)
 
 
 def configure_resolver(adapter: SourceAdapter) -> None:
@@ -127,8 +132,10 @@ def parse_query(user_input: str) -> SimParams:
     Raises:
         ValueError: if the LLM requests clarification or returns invalid JSON/schema.
     """
+    global _last_resolved
     intent = _llm_call_1(user_input)
     resolved = _run_resolver(intent.data_queries)
+    _last_resolved = resolved
     return _llm_call_2(user_input, intent.preliminary_params, resolved)
 
 
