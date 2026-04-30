@@ -51,3 +51,27 @@ def test_format_cli_data_sources_includes_all_fields():
     assert "age_distribution_pct" in output
     assert "src C" in output
     assert "0-17: 21.6%" in output
+
+
+from unittest.mock import MagicMock, patch
+from pydantic import ValidationError
+
+
+def test_epichat_run_handles_validation_error_gracefully():
+    """If LLM returns bad params, run() returns an error result instead of crashing."""
+    from epichat.epichat import EpiChat
+    from epichat.adapters.un_wpp import UNWPPAdapter
+
+    with patch("epichat.adapters.un_wpp._fetch_text", return_value="sep =|\nid|name|iso3|iso2|longitude|latitude\n840|USA|USA|US|0|0\n"):
+        chat = EpiChat()
+
+    mock_msg = MagicMock()
+    mock_msg.content = [MagicMock(text='{"disease_type": "invalid_type_xyz", "beta": -999}')]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_msg
+
+    with patch("epichat.parser.anthropic.Anthropic", return_value=mock_client), \
+         patch("epichat.executor.SimExecutor.run", return_value={"stats": {}, "plot_path": None}):
+        result = chat.run("run a model")
+
+    assert result.error is not None

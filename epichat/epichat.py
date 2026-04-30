@@ -5,6 +5,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from .adapters.un_wpp import UNWPPAdapter
 from .executor import SimExecutor
 from .generator import CodeGenerator
@@ -98,7 +100,7 @@ class EpiChat:
 
         try:
             params = parse_query(user_input)
-        except ValueError as e:
+        except (ValueError, ValidationError) as e:
             return EpiChatResult(
                 user_input=user_input,
                 params=None,  # type: ignore[arg-type]

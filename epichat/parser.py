@@ -35,8 +35,6 @@ def get_last_resolved() -> list[ResolvedField]:
 
 def configure_resolver(adapter: SourceAdapter) -> None:
     global _LOCATION_TABLE
-    if adapter.source_name in _resolver._adapters:
-        return
     _resolver.register(adapter)
     from .adapters.un_wpp import UNWPPAdapter
     if isinstance(adapter, UNWPPAdapter):
