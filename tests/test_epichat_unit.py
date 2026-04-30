@@ -50,3 +50,4 @@ def test_format_cli_data_sources_includes_all_fields():
     assert "death_rate" in output
     assert "age_distribution_pct" in output
     assert "src C" in output
+    assert "0-17: 21.6%" in output

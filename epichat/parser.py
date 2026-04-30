@@ -133,6 +133,7 @@ def parse_query(user_input: str) -> SimParams:
         ValueError: if the LLM requests clarification or returns invalid JSON/schema.
     """
     global _last_resolved
+    _last_resolved = []   # reset before any work
     intent = _llm_call_1(user_input)
     resolved = _run_resolver(intent.data_queries)
     _last_resolved = resolved
