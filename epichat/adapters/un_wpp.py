@@ -37,15 +37,15 @@ class UNWPPAdapter:
     def _load_locations(self) -> None:
         url = f"{_BASE_URL}/locations?format=csv"
         try:
-            text = _fetch_text(url)
+            text = _fetch_text(url, api_key=self._api_key)
+            for row in _parse_csv(text):
+                loc_id = int(row["id"])
+                for key in ("iso3", "iso2", "name"):
+                    val = row.get(key, "").strip()
+                    if val:
+                        self._loc_cache[val] = loc_id
         except Exception:
             return
-        for row in _parse_csv(text):
-            loc_id = int(row["id"])
-            for key in ("iso3", "iso2", "name"):
-                val = row.get(key, "").strip()
-                if val:
-                    self._loc_cache[val] = loc_id
 
     def location_id(self, key: str) -> int | None:
         return self._loc_cache.get(key)
