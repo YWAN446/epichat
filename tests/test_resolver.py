@@ -22,6 +22,8 @@ def test_data_query_attributes():
     assert dq.source == "un_wpp"
     assert dq.indicators == [55, 59]
     assert dq.location_id == 840
+    assert dq.start_year == 2020
+    assert dq.end_year == 2024
 
 
 def test_resolver_empty_queries_returns_empty():
@@ -35,6 +37,7 @@ def test_resolver_routes_to_registered_adapter():
     results = r.resolve([DataQuery(source="echo", indicators=[], location_id=1, start_year=2023, end_year=2023)])
     assert len(results) == 1
     assert results[0].field == "birth_rate"
+    assert results[0].citation == "echo"
 
 
 def test_resolver_unknown_source_skips():
