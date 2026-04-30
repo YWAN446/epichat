@@ -2,6 +2,7 @@ import urllib.error
 from unittest.mock import patch
 
 from epichat.adapters.un_wpp import UNWPPAdapter
+from epichat.resolver import DataQuery
 
 _LOCATIONS_CSV = """\
 sep =|
@@ -62,9 +63,6 @@ def test_iso3_table_contains_all_entries():
     assert table["USA"] == 840
     assert table["KEN"] == 404
     assert table["IND"] == 356
-
-
-from epichat.resolver import DataQuery
 
 
 def _make_adapter_with_data(data_csv):

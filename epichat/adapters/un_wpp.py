@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import datetime
+import logging
 import urllib.request
 
 from epichat.resolver import DataQuery, ResolvedField
@@ -11,6 +12,8 @@ _BASE_URL = "https://population.un.org/dataportalapi/api/v1"
 _VARIANT_MEDIAN = "4"
 _SEX_BOTH = "3"
 _ESTIMATE_METHOD_INTERP = "2"  # actual estimate (not projection)
+
+_logger = logging.getLogger(__name__)
 
 
 def _fetch_text(url: str, api_key: str | None = None) -> str:
@@ -57,7 +60,7 @@ class UNWPPAdapter:
         return {k: v for k, v in self._loc_cache.items() if len(k) == 3 and k.isupper()}
 
     def fetch(self, query: DataQuery) -> list[ResolvedField]:
-        current_year = datetime.date.today().year
+        current_year = datetime.date.today().year  # always fetch up to present; query.end_year is not used
         ids = ",".join(str(i) for i in query.indicators)
         url = (
             f"{_BASE_URL}/data/indicators/{ids}"
@@ -66,7 +69,8 @@ class UNWPPAdapter:
         )
         try:
             text = _fetch_text(url, self._api_key)
-        except Exception:
+        except Exception as exc:
+            _logger.warning("UNWPPAdapter fetch failed: %s", exc)
             return []
         return self._map_rows(_parse_csv(text), query.location_id)
 
@@ -99,25 +103,25 @@ class UNWPPAdapter:
 
         age_rows = [r for r in rows if r.get("IndicatorId") == "71"]
         pct: dict[str, float] = {}
-        best_year: str = ""
-        iso3: str = ""
-        location_name: str = ""
+        age_year: str = ""
+        age_iso3: str = ""
+        age_location_name: str = ""
         for label in ("0-17", "65+"):
             candidates = [r for r in age_rows if r.get("AgeLabel", "").strip() == label]
             if not candidates:
                 continue
             best = max(candidates, key=lambda r: int(r.get("TimeId", 0)))
             pct[label] = round(float(best["Value"]), 3)
-            best_year = best.get("TimeLabel", "")
-            iso3 = best.get("Iso3", str(location_id))
-            location_name = best.get("Location", str(location_id))
+            age_year = best.get("TimeLabel", "")
+            age_iso3 = best.get("Iso3", str(location_id))
+            age_location_name = best.get("Location", str(location_id))
 
         if "0-17" in pct and "65+" in pct:
             pct["18-64"] = round(100 - pct["0-17"] - pct["65+"], 3)
             results.append(ResolvedField(
                 field="age_distribution_pct",
                 value=pct,
-                citation=f"UN WPP 2024, {location_name} ({iso3}), {best_year}",
+                citation=f"UN WPP 2024, {age_location_name} ({age_iso3}), {age_year}",
             ))
 
         return results
