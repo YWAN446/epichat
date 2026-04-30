@@ -69,12 +69,13 @@ class EpiChatResult:
         if self.data_sources:
             lines.append("")
             lines.append("DATA SOURCES")
+            max_field_len = max(len(rf.field) for rf in self.data_sources)
             for rf in self.data_sources:
                 if isinstance(rf.value, dict):
                     val_str = ", ".join(f"{k}: {v}%" for k, v in rf.value.items())
                 else:
                     val_str = str(rf.value)
-                lines.append(f"  {rf.field}: {val_str} — {rf.citation}")
+                lines.append(f"  {rf.field:<{max_field_len}}  {val_str}  — {rf.citation}")
 
         if self.plot_path:
             lines.append(f"\n[Plot saved to: {self.plot_path}]")

@@ -45,6 +45,8 @@ def test_format_cli_data_sources_includes_all_fields():
         ),
     ])
     output = result.format_cli()
+    assert "birth_rate" in output
+    assert "src A" in output
     assert "death_rate" in output
     assert "age_distribution_pct" in output
     assert "src C" in output
