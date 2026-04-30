@@ -8,7 +8,7 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
-from .resolver import DataQuery, ResolvedField, Resolver, SourceAdapter  # noqa: F401
+from .resolver import DataQuery, ResolvedField, Resolver, SourceAdapter
 from .schema import SimParams
 
 load_dotenv()
