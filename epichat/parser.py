@@ -109,48 +109,27 @@ def _llm_call_2(user_input: str, prelim: SimParams, resolved: list[ResolvedField
     return SimParams(**data)
 
 
+def _run_resolver(queries: list[DataQuery]) -> list[ResolvedField]:
+    if not queries:
+        return []
+    return _resolver.resolve(queries)
+
+
 def parse_query(user_input: str) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
 
+    Two-step process:
+      1. LLM-1 extracts intent (preliminary params + optional data queries).
+      2. If data queries exist, the resolver fetches real-world values.
+      3. LLM-2 refines preliminary params using resolved data (skipped when no queries).
+
     Raises:
         ValueError: if the LLM requests clarification or returns invalid JSON/schema.
     """
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
-    message = client.messages.create(
-        model=_MODEL,
-        max_tokens=1024,
-        system=_load_system_prompt(),
-        messages=[{"role": "user", "content": user_input}],
-    )
-
-    raw = message.content[0].text.strip()
-
-    # Strip markdown fences if present
-    if "```" in raw:
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-        raw = raw.strip()
-
-    # Extract the first JSON object even if the LLM prepended reasoning text
-    brace = raw.find("{")
-    if brace > 0:
-        raw = raw[brace:]
-
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"LLM returned non-JSON response: {raw!r}") from e
-
-    if "clarification_needed" in data:
-        raise ValueError(f"Query needs clarification: {data['clarification_needed']}")
-
-    # Drop null values so Pydantic uses field defaults (e.g. p_asymp, rel_trans_asymp)
-    data = {k: v for k, v in data.items() if v is not None or k in ("dur_exp", "dur_immune", "rand_seed", "capacity")}
-
-    return SimParams(**data)
+    intent = _llm_call_1(user_input)
+    resolved = _run_resolver(intent.data_queries)
+    return _llm_call_2(user_input, intent.preliminary_params, resolved)
 
 
 def fix_params(user_input: str, params: SimParams, error_message: str) -> SimParams:

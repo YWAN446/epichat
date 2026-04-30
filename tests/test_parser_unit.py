@@ -1,8 +1,8 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from epichat.parser import IntentResult, _llm_call_1, _llm_call_2
-from epichat.resolver import DataQuery, ResolvedField
+from epichat.parser import IntentResult, _llm_call_1, _llm_call_2, parse_query, configure_resolver
+from epichat.resolver import DataQuery, ResolvedField, Resolver
 from epichat.schema import SimParams
 
 
@@ -125,3 +125,48 @@ def test_llm_call_2_formats_resolved_fields_in_prompt():
     user_content = call_args[1]["messages"][0]["content"]
     assert "birth_rate: 28.5" in user_content
     assert "UN WPP 2024, KEN, 2023" in user_content
+
+
+def test_parse_query_skips_resolver_when_no_queries():
+    """End-to-end: no geography → single LLM call, no resolver."""
+    client = _mock_llm(_INTENT_NO_QUERIES)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = parse_query("run a default SIR model")
+    assert isinstance(result, SimParams)
+    # Only one LLM call was made (LLM-1 only)
+    assert client.messages.create.call_count == 1
+
+
+def test_parse_query_uses_resolver_when_queries_present():
+    """End-to-end: geography present → resolver runs → LLM-2 refines."""
+    from dataclasses import dataclass
+
+    @dataclass
+    class _FixedAdapter:
+        source_name: str = "un_wpp"
+        def fetch(self, query: DataQuery) -> list[ResolvedField]:
+            return [
+                ResolvedField(field="birth_rate", value=28.5, citation="UN WPP 2024, KEN, 2023"),
+                ResolvedField(field="death_rate", value=6.2, citation="UN WPP 2024, KEN, 2023"),
+            ]
+
+    configure_resolver(_FixedAdapter())
+
+    lm1_response = _mock_llm(_INTENT_WITH_QUERIES)
+    lm2_response = _mock_llm(_REFINED_JSON)
+
+    call_count = [0]
+    def _side_effect(*args, **kwargs):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            return lm1_response.messages.create(*args, **kwargs)
+        return lm2_response.messages.create(*args, **kwargs)
+
+    combined_client = MagicMock()
+    combined_client.messages.create.side_effect = _side_effect
+
+    with patch("epichat.parser.anthropic.Anthropic", return_value=combined_client):
+        result = parse_query("simulate measles in Kenya")
+
+    assert isinstance(result, SimParams)
+    assert combined_client.messages.create.call_count == 2
