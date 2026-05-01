@@ -1,0 +1,42 @@
+import pytest
+from epichat.schema import SimParams
+
+
+def test_age_pct_fields_default_to_none():
+    p = SimParams(beta=10.0)
+    assert p.age_pct_under18 is None
+    assert p.age_pct_18_64 is None
+    assert p.age_pct_over65 is None
+
+
+def test_age_pct_fields_accept_valid_values():
+    p = SimParams(beta=10.0, age_pct_under18=40.0, age_pct_18_64=57.0, age_pct_over65=3.0)
+    assert p.age_pct_under18 == 40.0
+    assert p.age_pct_18_64 == 57.0
+    assert p.age_pct_over65 == 3.0
+
+
+def test_approx_r0_age_structured_without_age_pcts_unchanged():
+    """Existing behaviour: no age_pct fields → POLYMOD matrix with no column weighting."""
+    p = SimParams(beta=100.0, network_type="age_structured", network_beta=1.0, dur_inf=10.0)
+    r0 = p.approx_r0()
+    assert r0 > 0
+
+
+def test_approx_r0_age_structured_with_age_pcts_differs_from_uniform():
+    """When all age_pcts are set, R0 should reflect population-weighted NGM."""
+    uniform = SimParams(beta=100.0, network_type="age_structured", network_beta=1.0, dur_inf=10.0)
+    # Kenya-like: very young population, almost no elderly
+    weighted = SimParams(
+        beta=100.0, network_type="age_structured", network_beta=1.0, dur_inf=10.0,
+        age_pct_under18=42.0, age_pct_18_64=55.0, age_pct_over65=3.0,
+    )
+    assert abs(uniform.approx_r0() - weighted.approx_r0()) > 0.5
+
+
+def test_approx_r0_age_structured_partial_age_pcts_uses_uniform():
+    """If only some age_pct fields are set, fall back to uniform weighting (not a crash)."""
+    p = SimParams(beta=100.0, network_type="age_structured", age_pct_under18=40.0)
+    # Should not raise; uniform branch activates
+    r0 = p.approx_r0()
+    assert r0 > 0

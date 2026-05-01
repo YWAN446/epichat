@@ -37,6 +37,9 @@ class SimParams(BaseModel):
     use_demographics: bool = False
     birth_rate: float = Field(default=20.0, gt=0.0)
     death_rate: float = Field(default=10.0, gt=0.0)
+    age_pct_under18: Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    age_pct_18_64:   Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    age_pct_over65:  Optional[float] = Field(default=None, ge=0.0, le=100.0)
 
     @model_validator(mode="after")
     def check_required_params(self) -> SimParams:
@@ -52,8 +55,6 @@ class SimParams(BaseModel):
         return v
 
     def approx_r0(self) -> float:
-        """Approximate R0. Age-structured uses spectral radius of POLYMOD NGM."""
-        # SEIAR: asymptomatics are partially infectious, so effective beta is reduced
         asymp_factor = 1.0
         if self.disease_type == "seiar":
             asymp_factor = 1 - self.p_asymp * (1 - self.rel_trans_asymp)
@@ -63,7 +64,11 @@ class SimParams(BaseModel):
             C = np.array([[7.0, 2.5, 0.5],
                           [2.5, 9.0, 1.5],
                           [0.5, 1.5, 3.5]])
-            ngm = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * C
+            if all(x is not None for x in [self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]):
+                pop = np.array([self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]) / 100.0
+                ngm = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * (C * pop[np.newaxis, :])
+            else:
+                ngm = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * C
             return float(np.linalg.eigvals(ngm).real.max())
         return self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * self.n_contacts
 
