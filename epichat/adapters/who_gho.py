@@ -62,17 +62,17 @@ class WHOGHOAdapter:
             )
             try:
                 text = _fetch_text(url)
+                data = json.loads(text)
             except Exception as exc:
                 _logger.warning("WHOGHOAdapter fetch failed for %s: %s", code, exc)
                 continue
-            data = json.loads(text)
             rows = [
                 r for r in data.get("value", [])
                 if r.get("NumericValue") is not None
             ]
             if not rows:
                 continue
-            best = max(rows, key=lambda r: r.get("TimeDimensionValue", ""))
+            best = max(rows, key=lambda r: int(r.get("TimeDimensionValue") or 0))
             year = best["TimeDimensionValue"]
             value = best["NumericValue"]
             results.append(ResolvedField(

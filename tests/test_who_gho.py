@@ -137,3 +137,21 @@ def test_fetch_population_indicator():
 
 def test_source_name():
     assert WHOGHOAdapter.source_name == "who_gho"
+
+
+def test_fetch_handles_missing_time_dimension():
+    """A row missing TimeDimensionValue should not crash — the int(... or 0) fallback handles it."""
+    adapter = _make_adapter()
+    query = _make_query(indicator_codes=["WHS3_49"])
+    response = json.dumps({
+        "value": [
+            {"SpatialDimValueCode": "KEN", "NumericValue": 80.0},   # no TimeDimensionValue key
+            {"SpatialDimValueCode": "KEN", "TimeDimensionValue": "2022", "NumericValue": 76.0},
+        ]
+    })
+    with patch("epichat.adapters.who_gho._fetch_text", return_value=response):
+        results = adapter.fetch(query)
+    # The 2022 row should win; no crash
+    assert len(results) == 1
+    assert results[0].value == 76.0
+    assert results[0].citation == "WHO GHO, KEN, 2022"
