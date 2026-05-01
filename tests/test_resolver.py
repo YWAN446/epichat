@@ -81,11 +81,14 @@ def test_data_query_new_fields_explicit():
     )
     assert dq.indicator_codes == ["WHS3_49", "WHS3_62"]
     assert dq.location_code == "KEN"
+    assert dq.location_id == 0   # default when omitted
 
 
 def test_data_query_backward_compat_positional():
     """Existing positional construction still works after adding defaults."""
-    dq = DataQuery(source="un_wpp", indicators=[55, 59], location_id=840, start_year=2020, end_year=2024)
+    dq = DataQuery("un_wpp", [55, 59], 840, 2020, 2024)
     assert dq.source == "un_wpp"
     assert dq.indicators == [55, 59]
     assert dq.location_id == 840
+    assert dq.indicator_codes == []   # new fields not affected
+    assert dq.location_code == ""
