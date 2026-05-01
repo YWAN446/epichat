@@ -72,7 +72,7 @@ class WHOGHOAdapter:
             if not rows:
                 continue
             best = max(rows, key=lambda r: int(r.get("TimeDimensionValue") or 0))
-            year = best["TimeDimensionValue"]
+            year = best.get("TimeDimensionValue", "unknown")
             value = best["NumericValue"]
             results.append(ResolvedField(
                 field=field_name,

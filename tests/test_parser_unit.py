@@ -320,6 +320,27 @@ def test_apply_surveillance_no_op_when_population_is_zero():
     assert result is params
 
 
+def test_apply_surveillance_no_op_when_zero_cases():
+    """Zero cases → init_prev=0 would fail Pydantic gt=0 constraint; must skip."""
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [
+        ResolvedField(field="polio_cases", value=0, citation="x"),
+        ResolvedField(field="total_population", value=54000000, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
+def test_apply_vaccination_coverage_clamps_above_100_percent():
+    """WHO GHO occasionally reports coverage > 100%; must clamp to 1.0."""
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="mcv1_coverage", value=102.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    vaccine = result.get_vaccine()
+    assert vaccine is not None
+    assert vaccine.coverage == 1.0
+
+
 def test_parse_query_applies_all_post_processors_in_order():
     """parse_query() chains all three post-processors."""
     mock_resolver = MagicMock()

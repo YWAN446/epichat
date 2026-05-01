@@ -155,3 +155,19 @@ def test_fetch_handles_missing_time_dimension():
     assert len(results) == 1
     assert results[0].value == 76.0
     assert results[0].citation == "WHO GHO, KEN, 2022"
+
+
+def test_fetch_missing_time_dimension_in_winning_row():
+    """When the only row has no TimeDimensionValue key, citation falls back to 'unknown'."""
+    adapter = _make_adapter()
+    query = _make_query(indicator_codes=["WHS3_49"])
+    response = json.dumps({
+        "value": [
+            {"SpatialDimValueCode": "KEN", "NumericValue": 80.0},   # only row, no year key
+        ]
+    })
+    with patch("epichat.adapters.who_gho._fetch_text", return_value=response):
+        results = adapter.fetch(query)
+    assert len(results) == 1
+    assert results[0].value == 80.0
+    assert results[0].citation == "WHO GHO, KEN, unknown"
