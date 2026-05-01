@@ -63,3 +63,29 @@ def test_resolver_multiple_adapters():
     results = r.resolve(queries)
     fields = {rf.field for rf in results}
     assert fields == {"birth_rate", "death_rate"}
+
+
+def test_data_query_new_fields_default_empty():
+    dq = DataQuery(source="who_gho", indicators=[], location_id=0, start_year=2020, end_year=2024)
+    assert dq.indicator_codes == []
+    assert dq.location_code == ""
+
+
+def test_data_query_new_fields_explicit():
+    dq = DataQuery(
+        source="who_gho",
+        indicator_codes=["WHS3_49", "WHS3_62"],
+        location_code="KEN",
+        start_year=2020,
+        end_year=2024,
+    )
+    assert dq.indicator_codes == ["WHS3_49", "WHS3_62"]
+    assert dq.location_code == "KEN"
+
+
+def test_data_query_backward_compat_positional():
+    """Existing positional construction still works after adding defaults."""
+    dq = DataQuery(source="un_wpp", indicators=[55, 59], location_id=840, start_year=2020, end_year=2024)
+    assert dq.source == "un_wpp"
+    assert dq.indicators == [55, 59]
+    assert dq.location_id == 840

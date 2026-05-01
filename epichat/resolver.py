@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
 
 @dataclass
 class DataQuery:
     source: str
-    indicators: list[int]
-    location_id: int
-    start_year: int
-    end_year: int
+    indicators: list[int] = field(default_factory=list)
+    location_id: int = 0
+    start_year: int = 2020
+    end_year: int = 2024
+    indicator_codes: list[str] = field(default_factory=list)
+    location_code: str = ""
 
 
 @dataclass
