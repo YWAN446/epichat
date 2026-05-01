@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List, Literal, Optional
 
+import numpy as np
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -42,6 +43,15 @@ class SimParams(BaseModel):
     age_pct_over65:  Optional[float] = Field(default=None, ge=0.0, le=100.0)
 
     @model_validator(mode="after")
+    def check_age_pcts_sum(self) -> SimParams:
+        pcts = [self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]
+        if all(x is not None for x in pcts):
+            total = sum(pcts)
+            if abs(total - 100.0) > 1.0:
+                raise ValueError(f"age_pct fields must sum to 100 (got {total:.1f})")
+        return self
+
+    @model_validator(mode="after")
     def check_required_params(self) -> SimParams:
         if self.disease_type in ("seir", "seirs", "seiar") and self.dur_exp is None:
             raise ValueError("dur_exp is required when disease_type is 'seir', 'seirs', or 'seiar'")
@@ -60,15 +70,16 @@ class SimParams(BaseModel):
             asymp_factor = 1 - self.p_asymp * (1 - self.rel_trans_asymp)
 
         if self.network_type == "age_structured":
-            import numpy as np
             C = np.array([[7.0, 2.5, 0.5],
                           [2.5, 9.0, 1.5],
                           [0.5, 1.5, 3.5]])
+            scale = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0)
             if all(x is not None for x in [self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]):
                 pop = np.array([self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]) / 100.0
-                ngm = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * (C * pop[np.newaxis, :])
+                # NGM[i,j] = scale * C[i,j] * pop[j]; R0 = spectral radius
+                ngm = scale * (C * pop[np.newaxis, :])
             else:
-                ngm = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * C
+                ngm = scale * C
             return float(np.linalg.eigvals(ngm).real.max())
         return self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * self.n_contacts
 

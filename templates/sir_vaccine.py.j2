@@ -44,15 +44,36 @@ sim = ss.Sim(pars, verbose=0)
 sim.run()
 {% endif %}
 
-fig = sim.plot()
-fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
-
 res = sim.results
 sir = res['sir']
 
 n_infected = sir['n_infected'].values
 cum_infections = sir['cum_infections'].values
 cum_deaths = res['cum_deaths'].values
+
+import matplotlib.pyplot as plt
+_days = np.arange(len(n_infected))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+for _key, _color, _lbl in [
+    ('n_susceptible', 'steelblue', 'Susceptible'),
+    ('n_infected',    'firebrick', 'Infectious'),
+    ('n_recovered',   'seagreen',  'Recovered'),
+]:
+    if _key in sir:
+        ax1.plot(_days, sir[_key].values, color=_color, label=_lbl)
+ax1.set_xlabel('Day')
+ax1.set_ylabel('Count')
+ax1.set_title('SIR Compartments')
+ax1.legend()
+ax2.plot(_days, cum_infections, color='steelblue', label='Cumulative infections')
+ax2.plot(_days, cum_deaths,     color='firebrick', label='Cumulative deaths')
+ax2.set_xlabel('Day')
+ax2.set_ylabel('Count')
+ax2.set_title('Cumulative')
+ax2.legend()
+fig.tight_layout()
+fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
+plt.close(fig)
 
 peak_infections = int(n_infected.max())
 peak_day = int(n_infected.argmax())

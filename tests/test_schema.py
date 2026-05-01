@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from epichat.schema import SimParams
 
@@ -17,10 +18,16 @@ def test_age_pct_fields_accept_valid_values():
 
 
 def test_approx_r0_age_structured_without_age_pcts_unchanged():
-    """Existing behaviour: no age_pct fields → POLYMOD matrix with no column weighting."""
+    """No age_pct fields → spectral radius of unweighted POLYMOD matrix (dominant eigenvalue ≈ 11)."""
     p = SimParams(beta=100.0, network_type="age_structured", network_beta=1.0, dur_inf=10.0)
     r0 = p.approx_r0()
-    assert r0 > 0
+    # spectral radius of C ≈ 11.0; scale = 100 * 1.0 * (10/365) ≈ 2.74 → R0 ≈ 30.1
+    assert pytest.approx(r0, abs=1.0) == 30.1
+
+
+def test_age_pct_fields_reject_sum_not_100():
+    with pytest.raises(ValueError, match="sum to 100"):
+        SimParams(beta=10.0, age_pct_under18=10.0, age_pct_18_64=10.0, age_pct_over65=10.0)
 
 
 def test_approx_r0_age_structured_with_age_pcts_differs_from_uniform():
@@ -35,8 +42,7 @@ def test_approx_r0_age_structured_with_age_pcts_differs_from_uniform():
 
 
 def test_approx_r0_age_structured_partial_age_pcts_uses_uniform():
-    """If only some age_pct fields are set, fall back to uniform weighting (not a crash)."""
-    p = SimParams(beta=100.0, network_type="age_structured", age_pct_under18=40.0)
-    # Should not raise; uniform branch activates
-    r0 = p.approx_r0()
-    assert r0 > 0
+    """Partial age_pct fields (not all three set) must fall back to uniform POLYMOD weighting."""
+    partial = SimParams(beta=100.0, network_type="age_structured", age_pct_under18=40.0)
+    uniform = SimParams(beta=100.0, network_type="age_structured")
+    assert partial.approx_r0() == pytest.approx(uniform.approx_r0(), rel=1e-9)
