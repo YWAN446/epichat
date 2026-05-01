@@ -122,7 +122,7 @@ When the user mentions a country, region, or geography, wrap your response in th
   "data_queries": [
     {
       "source": "un_wpp",
-      "indicators": [55, 59, 71],
+      "indicators": [55, 59, 71, 49],
       "location_id": <integer from the table below>,
       "start_year": 2020,
       "end_year": 2024
@@ -132,6 +132,42 @@ When the user mentions a country, region, or geography, wrap your response in th
 
 When no geography is mentioned, you may still use this envelope with "data_queries": [],
 or return the SimParams object directly as before.
+
+## WHO GHO data queries
+
+When the user mentions a disease *and* a country, you may add a second `who_gho` query alongside the `un_wpp` query. Use `indicator_codes` (strings) and `location_code` (ISO3). Always include `"WHS9_86"` (total population) when requesting surveillance case data.
+
+Disease → indicator_codes to request:
+
+| Disease          | coverage codes    | cases codes                  |
+|------------------|-------------------|------------------------------|
+| measles/rubeola  | ["WHS3_49"]       | ["WHS3_62", "WHS9_86"]       |
+| rubella          | ["WHS3_49"]       | ["WHS3_51", "WHS9_86"]       |
+| polio            | ["WHS3_43"]       | ["WHS3_59", "WHS9_86"]       |
+| diphtheria       | ["WHS3_41"]       | ["WHS3_55", "WHS9_86"]       |
+| pertussis        | ["WHS3_41"]       | ["WHS3_56", "WHS9_86"]       |
+| mumps            | ["WHS3_49"]       | ["WHS3_54", "WHS9_86"]       |
+| yellow fever     | ["WHS3_48"]       | ["WHS3_60", "WHS9_86"]       |
+| hepatitis B      | ["WHS3_45"]       | []                            |
+| hib              | ["WHS3_46"]       | []                            |
+| pneumococcal     | ["PCV3"]          | []                            |
+| rotavirus        | ["ROTAC"]         | []                            |
+| HPV              | ["SDGHPV"]        | []                            |
+| meningococcal    | ["MENGA"]         | []                            |
+| japanese enc.    | []                | ["WHS3_61", "WHS9_86"]       |
+| neonatal tetanus | ["PAB"]           | ["WHS3_58", "WHS9_86"]       |
+
+Request both coverage and cases codes when simulating a disease with known surveillance. Example for measles in Kenya:
+
+```json
+{
+  "source": "who_gho",
+  "indicator_codes": ["WHS3_49", "WHS3_62", "WHS9_86"],
+  "location_code": "KEN",
+  "start_year": 2020,
+  "end_year": 2024
+}
+```
 
 ## Location table (ISO3 → UN location_id)
 
