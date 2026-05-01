@@ -164,7 +164,8 @@ def _apply_surveillance(params: SimParams, resolved: list[ResolvedField]) -> Sim
     pop_field   = next((rf for rf in resolved if rf.field == "total_population"), None)
     if cases_field is None or pop_field is None or pop_field.value == 0 or cases_field.value <= 0:
         return params
-    init_prev = min(0.5, cases_field.value / pop_field.value)
+    daily_incidence = cases_field.value / pop_field.value / 365
+    init_prev = min(0.5, daily_incidence * params.dur_inf)
     return SimParams.model_validate({**params.model_dump(), "init_prev": init_prev})
 
 
