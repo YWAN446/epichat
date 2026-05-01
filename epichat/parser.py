@@ -134,6 +134,30 @@ def _apply_age_distribution(params: SimParams, resolved: list[ResolvedField]) ->
     })
 
 
+def _apply_vaccination_coverage(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
+    coverage_field = next((rf for rf in resolved if rf.field.endswith("_coverage")), None)
+    if coverage_field is None:
+        return params
+    if params.get_vaccine() is not None:
+        return params
+    coverage = coverage_field.value / 100.0
+    from .schema import Intervention
+    vaccine = Intervention(type="vaccine", coverage=coverage, start_day=0)
+    return SimParams.model_validate({
+        **params.model_dump(),
+        "interventions": params.model_dump()["interventions"] + [vaccine.model_dump()],
+    })
+
+
+def _apply_surveillance(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
+    cases_field = next((rf for rf in resolved if rf.field.endswith("_cases")), None)
+    pop_field   = next((rf for rf in resolved if rf.field == "total_population"), None)
+    if cases_field is None or pop_field is None:
+        return params
+    init_prev = min(0.5, cases_field.value / pop_field.value)
+    return SimParams.model_validate({**params.model_dump(), "init_prev": init_prev})
+
+
 def parse_query(user_input: str) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
@@ -142,7 +166,8 @@ def parse_query(user_input: str) -> SimParams:
       1. LLM-1 extracts intent (preliminary params + optional data queries).
       2. If data queries exist, the resolver fetches real-world values.
       3. LLM-2 refines preliminary params using resolved data (skipped when no queries).
-      4. Deterministic post-processing applies age distribution if resolved.
+      4. Deterministic post-processing applies age distribution, vaccination coverage,
+         and disease surveillance if resolved.
 
     Raises:
         ValueError: if the LLM requests clarification or returns invalid JSON/schema.
@@ -153,7 +178,10 @@ def parse_query(user_input: str) -> SimParams:
     resolved = _run_resolver(intent.data_queries)
     _last_resolved = resolved
     params = _llm_call_2(user_input, intent.preliminary_params, resolved)
-    return _apply_age_distribution(params, resolved)
+    params = _apply_age_distribution(params, resolved)
+    params = _apply_vaccination_coverage(params, resolved)
+    params = _apply_surveillance(params, resolved)
+    return params
 
 
 def fix_params(user_input: str, params: SimParams, error_message: str) -> SimParams:

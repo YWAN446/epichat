@@ -1,7 +1,15 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from epichat.parser import IntentResult, _apply_age_distribution, _llm_call_1, _llm_call_2, parse_query
+from epichat.parser import (
+    IntentResult,
+    _apply_age_distribution,
+    _apply_vaccination_coverage,
+    _apply_surveillance,
+    _llm_call_1,
+    _llm_call_2,
+    parse_query,
+)
 from epichat.resolver import ResolvedField
 from epichat.schema import SimParams
 
@@ -222,3 +230,108 @@ def test_parse_query_applies_age_distribution_end_to_end():
 
     assert result.network_type == "age_structured"
     assert result.age_pct_under18 == 42.0
+
+
+# ── _apply_vaccination_coverage ───────────────────────────────────────────────
+
+def test_apply_vaccination_coverage_no_op_when_no_coverage_field():
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_vaccination_coverage(params, resolved)
+    assert result is params
+
+
+def test_apply_vaccination_coverage_no_op_when_llm_already_set_vaccine():
+    from epichat.schema import Intervention
+    vaccine = Intervention(type="vaccine", coverage=0.5, start_day=0)
+    params = SimParams(beta=22.8125, interventions=[vaccine])
+    resolved = [ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    # LLM set vaccine → post-processor must not override it
+    assert result is params
+
+
+def test_apply_vaccination_coverage_adds_vaccine_intervention():
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    assert result is not params
+    vaccine = result.get_vaccine()
+    assert vaccine is not None
+    assert abs(vaccine.coverage - 0.76) < 1e-9
+    assert vaccine.start_day == 0
+
+
+def test_apply_vaccination_coverage_returns_new_simparams_via_model_validate():
+    """model_validate must be used (not model_copy) so validators run."""
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="dtp3_coverage", value=85.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    assert isinstance(result, SimParams)
+    assert result.get_vaccine() is not None
+    assert abs(result.get_vaccine().coverage - 0.85) < 1e-9
+
+
+# ── _apply_surveillance ───────────────────────────────────────────────────────
+
+def test_apply_surveillance_no_op_when_no_cases_field():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [ResolvedField(field="total_population", value=54000000, citation="x")]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
+def test_apply_surveillance_no_op_when_no_population_field():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [ResolvedField(field="measles_cases", value=4810, citation="x")]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
+def test_apply_surveillance_sets_init_prev():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [
+        ResolvedField(field="measles_cases", value=4810.0, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="total_population", value=54027487, citation="UN WPP, KEN, 2023"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result is not params
+    expected = 4810.0 / 54027487
+    assert abs(result.init_prev - expected) < 1e-9
+
+
+def test_apply_surveillance_caps_at_0_5():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [
+        ResolvedField(field="measles_cases", value=99999999, citation="x"),
+        ResolvedField(field="total_population", value=100, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result.init_prev == 0.5
+
+
+def test_parse_query_applies_all_post_processors_in_order():
+    """parse_query() chains all three post-processors."""
+    mock_resolver = MagicMock()
+    mock_resolver.resolve.return_value = [
+        ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022"),
+        ResolvedField(field="measles_cases", value=4810.0, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="total_population", value=54027487, citation="UN WPP, KEN, 2023"),
+    ]
+
+    lm1_msg = MagicMock()
+    lm1_msg.content = [MagicMock(text=_INTENT_WITH_QUERIES)]
+    lm2_msg = MagicMock()
+    lm2_msg.content = [MagicMock(text=_REFINED_JSON)]
+    client = MagicMock()
+    client.messages.create.side_effect = [lm1_msg, lm2_msg]
+
+    with patch("epichat.parser._resolver", mock_resolver), \
+         patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = parse_query("simulate measles in Kenya")
+
+    vaccine = result.get_vaccine()
+    assert vaccine is not None
+    assert abs(vaccine.coverage - 0.76) < 1e-9
+    expected_prev = 4810.0 / 54027487
+    assert abs(result.init_prev - expected_prev) < 1e-9
