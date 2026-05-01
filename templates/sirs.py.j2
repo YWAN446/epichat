@@ -148,7 +148,7 @@ _d.recovered[_vax_uids]   = True
 _n = len(sim.people)
 _n_c = round({{ age_pct_under18 }} / 100 * _n)
 _n_e = round({{ age_pct_over65  }} / 100 * _n)
-_n_a = _n - _n_c - _n_e
+_n_a = max(0, _n - _n_c - _n_e)
 {% if rand_seed is not none %}
 _rng_age = np.random.default_rng({{ rand_seed }} + 1)
 {% else %}
@@ -156,8 +156,8 @@ _rng_age = np.random.default_rng()
 {% endif %}
 _ages = np.concatenate([
     _rng_age.uniform(0, 18, _n_c),
-    _rng_age.uniform(18, 65, max(0, _n_a)),
-    _rng_age.uniform(65, 95, max(0, _n_e)),
+    _rng_age.uniform(18, 65, _n_a),
+    _rng_age.uniform(65, 95, _n_e),
 ])
 _rng_age.shuffle(_ages)
 sim.people.age[:] = _ages[:_n]
