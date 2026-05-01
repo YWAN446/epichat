@@ -141,6 +141,7 @@ def test_fetch_total_population():
     pop = next(r for r in results if r.field == "total_population")
     # 334914.895 thousands × 1000 = 334,914,895
     assert pop.value == 334914895
+    assert isinstance(pop.value, int)
     assert "UN WPP" in pop.citation
     assert "USA" in pop.citation
     assert "2023" in pop.citation

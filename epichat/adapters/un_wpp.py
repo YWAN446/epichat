@@ -112,7 +112,7 @@ class UNWPPAdapter:
             location_name = best.get("Location", str(location_id))
             results.append(ResolvedField(
                 field="total_population",
-                value=round(float(best["Value"]) * 1000),
+                value=int(round(float(best["Value"]) * 1000)),
                 citation=f"UN WPP 2024, {location_name} ({iso3}), {year}",
             ))
 
