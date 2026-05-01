@@ -6,6 +6,7 @@ from epichat.parser import (
     _apply_age_distribution,
     _apply_vaccination_coverage,
     _apply_surveillance,
+    _apply_population_scale,
     _llm_call_1,
     _llm_call_2,
     parse_query,
@@ -339,6 +340,43 @@ def test_apply_vaccination_coverage_clamps_above_100_percent():
     vaccine = result.get_vaccine()
     assert vaccine is not None
     assert vaccine.coverage == 1.0
+
+
+# ── _apply_population_scale ───────────────────────────────────────────────────
+
+def test_apply_population_scale_no_op_when_no_population_field():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result is params
+
+
+def test_apply_population_scale_caps_at_100k_for_large_population():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="total_population", value=54_000_000, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result.n_agents == 100_000
+
+
+def test_apply_population_scale_uses_actual_count_for_small_population():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="total_population", value=50_000, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result.n_agents == 50_000
+
+
+def test_apply_population_scale_enforces_minimum_1000():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="total_population", value=500, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result.n_agents == 1_000
+
+
+def test_apply_population_scale_no_op_when_already_correct():
+    params = SimParams(beta=22.8125, n_agents=100_000)
+    resolved = [ResolvedField(field="total_population", value=54_000_000, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result is params
 
 
 def test_parse_query_applies_all_post_processors_in_order():

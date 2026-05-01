@@ -34,7 +34,7 @@ def _make_adapter():
 def _make_query(**kwargs):
     defaults = dict(
         source="who_gho",
-        indicator_codes=["WHS3_49"],
+        indicator_codes=["MCV1"],
         location_code="KEN",
         start_year=2020,
         end_year=2024,
@@ -54,7 +54,8 @@ def _mock_fetch(responses: dict[str, str]):
 
 
 def test_indicator_map_coverage_keys():
-    assert INDICATOR_MAP["WHS3_49"] == "mcv1_coverage"
+    assert INDICATOR_MAP["MCV1"] == "mcv1_coverage"
+    assert INDICATOR_MAP["MCV2"] == "mcv2_coverage"
     assert INDICATOR_MAP["WHS3_43"] == "polio_coverage"
     assert INDICATOR_MAP["WHS3_41"] == "dtp3_coverage"
 
@@ -66,9 +67,9 @@ def test_indicator_map_cases_keys():
 
 def test_fetch_returns_most_recent_non_null_year():
     adapter = _make_adapter()
-    query = _make_query(indicator_codes=["WHS3_49"])
+    query = _make_query(indicator_codes=["MCV1"])
     with patch("epichat.adapters.who_gho._fetch_text",
-               side_effect=_mock_fetch({"WHS3_49": _COVERAGE_RESPONSE})):
+               side_effect=_mock_fetch({"MCV1": _COVERAGE_RESPONSE})):
         results = adapter.fetch(query)
     assert len(results) == 1
     assert results[0].field == "mcv1_coverage"
@@ -77,18 +78,18 @@ def test_fetch_returns_most_recent_non_null_year():
 
 def test_fetch_citation_format():
     adapter = _make_adapter()
-    query = _make_query(indicator_codes=["WHS3_49"])
+    query = _make_query(indicator_codes=["MCV1"])
     with patch("epichat.adapters.who_gho._fetch_text",
-               side_effect=_mock_fetch({"WHS3_49": _COVERAGE_RESPONSE})):
+               side_effect=_mock_fetch({"MCV1": _COVERAGE_RESPONSE})):
         results = adapter.fetch(query)
     assert results[0].citation == "WHO GHO, KEN, 2022"
 
 
 def test_fetch_multiple_indicators():
     adapter = _make_adapter()
-    query = _make_query(indicator_codes=["WHS3_49", "WHS3_62"])
+    query = _make_query(indicator_codes=["MCV1", "WHS3_62"])
     with patch("epichat.adapters.who_gho._fetch_text",
-               side_effect=_mock_fetch({"WHS3_49": _COVERAGE_RESPONSE, "WHS3_62": _CASES_RESPONSE})):
+               side_effect=_mock_fetch({"MCV1": _COVERAGE_RESPONSE, "WHS3_62": _CASES_RESPONSE})):
         results = adapter.fetch(query)
     fields = {r.field for r in results}
     assert "mcv1_coverage" in fields
@@ -97,7 +98,7 @@ def test_fetch_multiple_indicators():
 
 def test_fetch_empty_response_returns_no_field():
     adapter = _make_adapter()
-    query = _make_query(indicator_codes=["WHS3_49"])
+    query = _make_query(indicator_codes=["MCV1"])
     with patch("epichat.adapters.who_gho._fetch_text", return_value=_EMPTY_RESPONSE):
         results = adapter.fetch(query)
     assert results == []
@@ -117,7 +118,7 @@ def test_fetch_unknown_indicator_code_skipped():
 def test_fetch_http_error_returns_empty():
     import urllib.error
     adapter = _make_adapter()
-    query = _make_query(indicator_codes=["WHS3_49"])
+    query = _make_query(indicator_codes=["MCV1"])
     with patch("epichat.adapters.who_gho._fetch_text",
                side_effect=urllib.error.URLError("timeout")):
         results = adapter.fetch(query)
@@ -142,7 +143,7 @@ def test_source_name():
 def test_fetch_handles_missing_time_dimension():
     """A row missing TimeDimensionValue should not crash — the int(... or 0) fallback handles it."""
     adapter = _make_adapter()
-    query = _make_query(indicator_codes=["WHS3_49"])
+    query = _make_query(indicator_codes=["MCV1"])
     response = json.dumps({
         "value": [
             {"SpatialDimValueCode": "KEN", "NumericValue": 80.0},   # no TimeDimensionValue key
@@ -160,7 +161,7 @@ def test_fetch_handles_missing_time_dimension():
 def test_fetch_missing_time_dimension_in_winning_row():
     """When the only row has no TimeDimensionValue key, citation falls back to 'unknown'."""
     adapter = _make_adapter()
-    query = _make_query(indicator_codes=["WHS3_49"])
+    query = _make_query(indicator_codes=["MCV1"])
     response = json.dumps({
         "value": [
             {"SpatialDimValueCode": "KEN", "NumericValue": 80.0},   # only row, no year key

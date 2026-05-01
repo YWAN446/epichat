@@ -18,7 +18,7 @@ INDICATOR_MAP: dict[str, str] = {
     "WHS3_43": "polio_coverage",
     "WHS3_45": "hepb3_coverage",
     "WHS3_46": "hib3_coverage",
-    "WHS3_49": "mcv1_coverage",
+    "MCV1":    "mcv1_coverage",
     "MCV2":    "mcv2_coverage",
     "PCV3":    "pcv3_coverage",
     "ROTAC":   "rotac_coverage",

@@ -149,6 +149,16 @@ def _apply_vaccination_coverage(params: SimParams, resolved: list[ResolvedField]
     })
 
 
+def _apply_population_scale(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
+    pop_field = next((rf for rf in resolved if rf.field == "total_population"), None)
+    if pop_field is None:
+        return params
+    n_agents = max(1_000, min(100_000, pop_field.value))
+    if n_agents == params.n_agents:
+        return params
+    return SimParams.model_validate({**params.model_dump(), "n_agents": n_agents})
+
+
 def _apply_surveillance(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
     cases_field = next((rf for rf in resolved if rf.field.endswith("_cases")), None)
     pop_field   = next((rf for rf in resolved if rf.field == "total_population"), None)
@@ -181,6 +191,7 @@ def parse_query(user_input: str) -> SimParams:
     params = _apply_age_distribution(params, resolved)
     params = _apply_vaccination_coverage(params, resolved)
     params = _apply_surveillance(params, resolved)
+    params = _apply_population_scale(params, resolved)
     return params
 
 
