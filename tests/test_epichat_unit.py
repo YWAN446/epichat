@@ -99,3 +99,49 @@ def test_format_cli_omits_age_distribution_when_not_set():
     result = _base_result()
     output = result.format_cli()
     assert "Age dist." not in output
+
+
+# ---------------------------------------------------------------------------
+# Vaccine coverage line tests
+# ---------------------------------------------------------------------------
+
+def test_format_cli_no_vaccine_coverage_line_when_no_coverage_source():
+    result = _base_result()
+    cli = result.format_cli()
+    assert "Vaccine coverage" not in cli
+
+
+def test_format_cli_no_vaccine_coverage_line_when_no_vaccine_intervention():
+    resolved = [ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022")]
+    result = _base_result(data_sources=resolved)
+    cli = result.format_cli()
+    assert "Vaccine coverage" not in cli
+
+
+def test_format_cli_shows_vaccine_coverage_line():
+    from epichat.schema import Intervention
+    vaccine = Intervention(type="vaccine", coverage=0.76, start_day=0)
+    params = SimParams(beta=22.8125, interventions=[vaccine])
+    resolved = [ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022")]
+    result = _base_result(params=params, data_sources=resolved)
+    cli = result.format_cli()
+    assert "Vaccine coverage: 76.0%" in cli
+    assert "MCV1" in cli
+    assert "pre-existing" in cli
+
+
+def test_format_cli_vaccine_label_derived_from_field_name():
+    from epichat.schema import Intervention
+    vaccine = Intervention(type="vaccine", coverage=0.85, start_day=0)
+    params = SimParams(beta=22.8125, interventions=[vaccine])
+    resolved = [ResolvedField(field="dtp3_coverage", value=85.0, citation="WHO GHO, KEN, 2022")]
+    result = _base_result(params=params, data_sources=resolved)
+    cli = result.format_cli()
+    assert "DTP3" in cli
+
+
+def test_who_gho_adapter_can_be_instantiated():
+    """WHOGHOAdapter requires no API key."""
+    from epichat.adapters.who_gho import WHOGHOAdapter
+    adapter = WHOGHOAdapter()
+    assert adapter.source_name == "who_gho"

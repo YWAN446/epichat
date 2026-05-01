@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from .adapters.un_wpp import UNWPPAdapter
+from .adapters.who_gho import WHOGHOAdapter
 from .executor import SimExecutor
 from .generator import CodeGenerator
 from .narrator import narrate
@@ -92,6 +93,12 @@ class EpiChatResult:
             lines.append(f"  Age dist. (0-17):  {p.age_pct_under18:.1f}%")
             lines.append(f"  Age dist. (18-64): {p.age_pct_18_64:.1f}%")
             lines.append(f"  Age dist. (65+):   {p.age_pct_over65:.1f}%")
+        coverage_source = next(
+            (rf for rf in self.data_sources if rf.field.endswith("_coverage")), None
+        )
+        if coverage_source is not None and p.get_vaccine() is not None:
+            label = coverage_source.field.replace("_coverage", "").upper()
+            lines.append(f"  Vaccine coverage: {p.get_vaccine().coverage * 100:.1f}%  (pre-existing, {label})")
 
         if self.data_sources:
             lines.append("")
@@ -116,6 +123,7 @@ class EpiChat:
         self.generator = CodeGenerator()
         self.executor = SimExecutor()
         configure_resolver(UNWPPAdapter(api_key=os.environ.get("UN_API_KEY")))
+        configure_resolver(WHOGHOAdapter())
 
     def run(self, user_input: str) -> EpiChatResult:
         """Full pipeline: NL query → simulation → narration."""
