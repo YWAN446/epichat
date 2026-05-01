@@ -125,7 +125,8 @@ def _apply_age_distribution(params: SimParams, resolved: list[ResolvedField]) ->
     if age_field is None:
         return params
     pct = age_field.value
-    return params.model_copy(update={
+    return SimParams.model_validate({
+        **params.model_dump(),
         "network_type": "age_structured",
         "age_pct_under18": pct.get("0-17"),
         "age_pct_18_64":   pct.get("18-64"),
