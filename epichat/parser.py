@@ -152,7 +152,7 @@ def _apply_vaccination_coverage(params: SimParams, resolved: list[ResolvedField]
 def _apply_surveillance(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
     cases_field = next((rf for rf in resolved if rf.field.endswith("_cases")), None)
     pop_field   = next((rf for rf in resolved if rf.field == "total_population"), None)
-    if cases_field is None or pop_field is None:
+    if cases_field is None or pop_field is None or pop_field.value == 0:
         return params
     init_prev = min(0.5, cases_field.value / pop_field.value)
     return SimParams.model_validate({**params.model_dump(), "init_prev": init_prev})

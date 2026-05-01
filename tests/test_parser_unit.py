@@ -310,6 +310,16 @@ def test_apply_surveillance_caps_at_0_5():
     assert result.init_prev == 0.5
 
 
+def test_apply_surveillance_no_op_when_population_is_zero():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [
+        ResolvedField(field="measles_cases", value=4810, citation="x"),
+        ResolvedField(field="total_population", value=0, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
 def test_parse_query_applies_all_post_processors_in_order():
     """parse_query() chains all three post-processors."""
     mock_resolver = MagicMock()
