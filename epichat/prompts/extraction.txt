@@ -141,12 +141,12 @@ Disease → indicator_codes to request:
 
 | Disease          | coverage codes    | cases codes                  |
 |------------------|-------------------|------------------------------|
-| measles/rubeola  | ["MCV1"]       | ["WHS3_62", "WHS9_86"]       |
-| rubella          | ["MCV1"]       | ["WHS3_51", "WHS9_86"]       |
+| measles/rubeola  | ["WHS8_110"]       | ["WHS3_62", "WHS9_86"]       |
+| rubella          | ["WHS8_110"]       | ["WHS3_51", "WHS9_86"]       |
 | polio            | ["WHS3_43"]       | ["WHS3_59", "WHS9_86"]       |
 | diphtheria       | ["WHS3_41"]       | ["WHS3_55", "WHS9_86"]       |
 | pertussis        | ["WHS3_41"]       | ["WHS3_56", "WHS9_86"]       |
-| mumps            | ["MCV1"]       | ["WHS3_54", "WHS9_86"]       |
+| mumps            | ["WHS8_110"]       | ["WHS3_54", "WHS9_86"]       |
 | yellow fever     | ["WHS3_48"]       | ["WHS3_60", "WHS9_86"]       |
 | hepatitis B      | ["WHS3_45"]       | []                            |
 | hib              | ["WHS3_46"]       | []                            |

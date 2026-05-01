@@ -133,6 +133,8 @@ cum_infections = dr['cum_infections'].values
 cum_deaths     = res['cum_deaths'].values
 
 import matplotlib.pyplot as plt
+_scale = {{ pop_scale }}
+_ylabel = '{{ "People" if pop_scale != 1.0 else "Count" }}'
 _days = np.arange(len(n_infected))
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 for _key, _color, _lbl in [
@@ -141,15 +143,15 @@ for _key, _color, _lbl in [
     ('n_recovered',   'seagreen',  'Recovered'),
 ]:
     if _key in dr:
-        ax1.plot(_days, dr[_key].values, color=_color, label=_lbl)
+        ax1.plot(_days, dr[_key].values * _scale, color=_color, label=_lbl)
 ax1.set_xlabel('Day')
-ax1.set_ylabel('Count')
+ax1.set_ylabel(_ylabel)
 ax1.set_title('SIR Compartments')
 ax1.legend()
-ax2.plot(_days, cum_infections, color='steelblue', label='Cumulative infections')
-ax2.plot(_days, cum_deaths,     color='firebrick', label='Cumulative deaths')
+ax2.plot(_days, cum_infections * _scale, color='steelblue', label='Cumulative infections')
+ax2.plot(_days, cum_deaths     * _scale, color='firebrick', label='Cumulative deaths')
 ax2.set_xlabel('Day')
-ax2.set_ylabel('Count')
+ax2.set_ylabel(_ylabel)
 ax2.set_title('Cumulative')
 ax2.legend()
 fig.tight_layout()

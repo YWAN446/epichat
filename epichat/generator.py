@@ -26,10 +26,11 @@ class CodeGenerator:
             "sis":   "sis.py.j2",
         }.get(params.disease_type, "sir.py.j2")
 
-    def generate(self, params: SimParams, output_path: str) -> str:
+    def generate(self, params: SimParams, output_path: str, pop_scale: float = 1.0) -> str:
         """Render the appropriate Jinja2 template and return executable Python code."""
         template_name = self._select_template(params)
         template = self._env.get_template(template_name)
         context = params.to_template_dict()
         context["output_path"] = output_path.replace("\\", "/")
+        context["pop_scale"] = pop_scale
         return template.render(**context)

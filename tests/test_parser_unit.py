@@ -290,15 +290,28 @@ def test_apply_surveillance_no_op_when_no_population_field():
 
 
 def test_apply_surveillance_sets_init_prev():
+    # Use enough cases that computed init_prev exceeds the 0.0001 floor
+    # 300_000 / 54027487 / 365 * 8 ≈ 0.000122 > 0.0001
     params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=8.0)
     resolved = [
-        ResolvedField(field="measles_cases", value=4810.0, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="measles_cases", value=300_000.0, citation="WHO GHO, KEN, 2023"),
         ResolvedField(field="total_population", value=54027487, citation="UN WPP, KEN, 2023"),
     ]
     result = _apply_surveillance(params, resolved)
     assert result is not params
-    expected = (4810.0 / 54027487 / 365) * 8.0
+    expected = (300_000.0 / 54027487 / 365) * 8.0
     assert abs(result.init_prev - expected) < 1e-12
+
+
+def test_apply_surveillance_enforces_minimum_init_prev():
+    """Very sparse case counts must not produce init_prev below 0.01%."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=8.0)
+    resolved = [
+        ResolvedField(field="polio_cases", value=1.0, citation="x"),   # near-eliminated disease
+        ResolvedField(field="total_population", value=54_000_000, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result.init_prev == 0.0001
 
 
 def test_apply_surveillance_caps_at_0_5():
@@ -382,9 +395,11 @@ def test_apply_population_scale_no_op_when_already_correct():
 def test_parse_query_applies_all_post_processors_in_order():
     """parse_query() chains all post-processors including the prevalence-incidence correction."""
     mock_resolver = MagicMock()
+    # Use enough cases that init_prev stays above the 0.0001 floor
+    # (4810 / 54M / 365 * 10 = 2.4e-6, below floor; use 500K cases instead)
     mock_resolver.resolve.return_value = [
         ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022"),
-        ResolvedField(field="measles_cases", value=4810.0, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="measles_cases", value=500_000.0, citation="WHO GHO, KEN, 2023"),
         ResolvedField(field="total_population", value=54027487, citation="UN WPP, KEN, 2023"),
     ]
 
@@ -404,5 +419,5 @@ def test_parse_query_applies_all_post_processors_in_order():
     assert abs(vaccine.coverage - 0.76) < 1e-9
     # init_prev = (cases / population / 365) * dur_inf
     dur_inf = result.dur_inf
-    expected_prev = (4810.0 / 54027487 / 365) * dur_inf
+    expected_prev = (500_000.0 / 54027487 / 365) * dur_inf
     assert abs(result.init_prev - expected_prev) < 1e-12

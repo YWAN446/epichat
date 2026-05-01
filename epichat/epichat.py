@@ -151,7 +151,11 @@ class EpiChat:
 
         print(f"[EpiChat] Running Starsim simulation ({params.disease_type.upper()}, n={params.n_agents:,}, beta={params.beta:.4f})...")
 
-        exec_result = self._execute_with_retry(user_input, params, plot_path)
+        resolved = get_last_resolved()
+        pop_field = next((rf for rf in resolved if rf.field == "total_population"), None)
+        pop_scale = pop_field.value / params.n_agents if pop_field is not None and params.n_agents > 0 else 1.0
+
+        exec_result = self._execute_with_retry(user_input, params, plot_path, pop_scale=pop_scale)
 
         if exec_result["error"]:
             return EpiChatResult(
@@ -176,13 +180,13 @@ class EpiChat:
         )
 
     def _execute_with_retry(
-        self, user_input: str, params: SimParams, plot_path: str
+        self, user_input: str, params: SimParams, plot_path: str, pop_scale: float = 1.0
     ) -> dict:
         current_params = params
         last_error = None
 
         for attempt in range(_MAX_RETRIES):
-            code = self.generator.generate(current_params, plot_path)
+            code = self.generator.generate(current_params, plot_path, pop_scale=pop_scale)
             result = self.executor.run(code, self.output_dir)
 
             if result["error"] is None:
