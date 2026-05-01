@@ -62,13 +62,36 @@ class EpiChatResult:
 
         p = self.params
         lines.append("MODEL DETAILS")
-        lines.append(f"  Disease type:  {p.disease_type.upper()}")
-        lines.append(f"  Population:    {p.n_agents:,}")
-        lines.append(f"  Beta:          {p.beta:.6f}")
-        lines.append(f"  Approx R0:     {p.approx_r0():.1f}")
-        lines.append(f"  Duration:      {p.sim_dur_years} year(s)")
+        lines.append(f"  Disease type:     {p.disease_type.upper()}")
+        lines.append(f"  Population:       {p.n_agents:,}")
+        lines.append(f"  Contacts/agent:   {p.n_contacts}")
+        lines.append(f"  Network:          {p.network_type}")
+        if p.network_type == "age_structured":
+            lines.append(f"  Network beta:     {p.network_beta:.4f}")
+        lines.append(f"  Beta:             {p.beta:.6f}")
+        lines.append(f"  Approx R0:        {p.approx_r0():.1f}")
+        lines.append(f"  Init prevalence:  {p.init_prev * 100:.2f}%")
+        lines.append(f"  Inf. duration:    {p.dur_inf:.1f} days")
+        if p.dur_exp is not None:
+            lines.append(f"  Exp. duration:    {p.dur_exp:.1f} days")
+        if p.dur_immune is not None:
+            lines.append(f"  Immunity dur.:    {p.dur_immune:.1f} days")
+        lines.append(f"  Case fatality:    {p.p_death * 100:.2f}%")
+        if p.disease_type == "seiar":
+            lines.append(f"  % asymptomatic:   {p.p_asymp * 100:.1f}%")
+            lines.append(f"  Rel. trans (A):   {p.rel_trans_asymp:.2f}")
+        lines.append(f"  Duration:         {p.sim_dur_years} year(s)")
+        if p.rand_seed is not None:
+            lines.append(f"  Random seed:      {p.rand_seed}")
         interv = [i.type for i in p.interventions]
-        lines.append(f"  Interventions: {', '.join(interv) if interv else 'None'}")
+        lines.append(f"  Interventions:    {', '.join(interv) if interv else 'None'}")
+        if p.use_demographics:
+            lines.append(f"  Birth rate:       {p.birth_rate:.2f} per 1,000/yr")
+            lines.append(f"  Death rate:       {p.death_rate:.2f} per 1,000/yr")
+        if p.age_pct_under18 is not None:
+            lines.append(f"  Age dist. (0-17):  {p.age_pct_under18:.1f}%")
+            lines.append(f"  Age dist. (18-64): {p.age_pct_18_64:.1f}%")
+            lines.append(f"  Age dist. (65+):   {p.age_pct_over65:.1f}%")
 
         if self.data_sources:
             lines.append("")

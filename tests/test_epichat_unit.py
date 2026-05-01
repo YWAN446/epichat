@@ -75,3 +75,27 @@ def test_epichat_run_handles_validation_error_gracefully():
         result = chat.run("run a model")
 
     assert result.error is not None
+
+
+def test_format_cli_shows_age_distribution_when_set():
+    result = _base_result(
+        params=SimParams(
+            beta=22.8125,
+            age_pct_under18=42.1,
+            age_pct_18_64=54.8,
+            age_pct_over65=3.1,
+        )
+    )
+    output = result.format_cli()
+    assert "Age dist. (0-17)" in output
+    assert "42.1%" in output
+    assert "Age dist. (18-64)" in output
+    assert "54.8%" in output
+    assert "Age dist. (65+)" in output
+    assert "3.1%" in output
+
+
+def test_format_cli_omits_age_distribution_when_not_set():
+    result = _base_result()
+    output = result.format_cli()
+    assert "Age dist." not in output
