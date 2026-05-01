@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import urllib.request
+from urllib.parse import quote
 
 from epichat.resolver import DataQuery, ResolvedField
 
@@ -56,10 +57,8 @@ class WHOGHOAdapter:
             field_name = INDICATOR_MAP.get(code)
             if field_name is None:
                 continue
-            url = (
-                f"{_BASE_URL}{code}"
-                f"?$filter=SpatialDimValueCode eq '{query.location_code}'"
-            )
+            filter_expr = f"SpatialDim eq '{query.location_code}'"
+            url = f"{_BASE_URL}{code}?$filter={quote(filter_expr, safe=chr(39))}"
             try:
                 text = _fetch_text(url)
                 data = json.loads(text)
