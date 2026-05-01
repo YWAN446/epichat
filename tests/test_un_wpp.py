@@ -31,8 +31,8 @@ LocationId|Location|Iso3|Iso2|LocationTypeId|IndicatorId|Indicator|IndicatorDisp
 _DATA_CSV_POPULATION = """\
 sep =|
 LocationId|Location|Iso3|Iso2|LocationTypeId|IndicatorId|Indicator|IndicatorDisplayName|SourceId|Source|Revision|VariantId|Variant|VariantShortName|VariantLabel|TimeId|TimeLabel|TimeMid|CategoryId|Category|EstimateTypeId|EstimateType|EstimateMethodId|EstimateMethod|SexId|Sex|AgeId|AgeLabel|AgeStart|AgeEnd|AgeMid|Value
-840|United States of America|USA|US|4|49|Total Population|Total Population, as of 1 July (thousands)|27|World Population Prospects|0|4|Median|Median|Median|73|2022|2022.5|0|Not applicable|1|Model-based Estimates|2|Interpolation|3|Both sexes|188|Total|0|-1|0|333287.558
-840|United States of America|USA|US|4|49|Total Population|Total Population, as of 1 July (thousands)|27|World Population Prospects|0|4|Median|Median|Median|74|2023|2023.5|0|Not applicable|1|Model-based Estimates|2|Interpolation|3|Both sexes|188|Total|0|-1|0|334914.895
+840|United States of America|USA|US|4|49|Total Population|Total Population, as of 1 July (thousands)|27|World Population Prospects|0|4|Median|Median|Median|73|2022|2022.5|0|Not applicable|1|Model-based Estimates|3|Original value|3|Both sexes|188|Total|0|-1|0|333287558
+840|United States of America|USA|US|4|49|Total Population|Total Population, as of 1 July (thousands)|27|World Population Prospects|0|4|Median|Median|Median|74|2023|2023.5|0|Not applicable|1|Model-based Estimates|3|Original value|3|Both sexes|188|Total|0|-1|0|334914895
 """
 
 

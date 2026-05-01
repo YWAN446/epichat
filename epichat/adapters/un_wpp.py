@@ -75,18 +75,22 @@ class UNWPPAdapter:
         return self._map_rows(_parse_csv(text), query.location_id)
 
     def _map_rows(self, rows: list[dict[str, str]], location_id: int) -> list[ResolvedField]:
+        # Shared pre-filter: median variant, both-sexes only
         rows = [
             r for r in rows
             if r.get("VariantId") == _VARIANT_MEDIAN
             and r.get("SexId") == _SEX_BOTH
-            and r.get("EstimateMethodId") == _ESTIMATE_METHOD_INTERP
         ]
+        # Birth/death rates and age distribution are interpolated estimates (method 2).
+        # Population (indicator 49) uses method 3 in the UN WPP API, so it must be
+        # extracted from the looser `rows` set rather than `interp_rows`.
+        interp_rows = [r for r in rows if r.get("EstimateMethodId") == _ESTIMATE_METHOD_INTERP]
 
         results: list[ResolvedField] = []
 
         for ind_id, field_name in [("55", "birth_rate"), ("59", "death_rate")]:
             candidates = [
-                r for r in rows
+                r for r in interp_rows
                 if r.get("IndicatorId") == ind_id and r.get("AgeLabel", "").strip() == "Total"
             ]
             if not candidates:
@@ -102,7 +106,7 @@ class UNWPPAdapter:
             ))
 
         pop_candidates = [
-            r for r in rows
+            r for r in rows  # not interp_rows — indicator 49 uses EstimateMethodId=3
             if r.get("IndicatorId") == "49" and r.get("AgeLabel", "").strip() == "Total"
         ]
         if pop_candidates:
@@ -110,13 +114,20 @@ class UNWPPAdapter:
             year = best.get("TimeLabel", "")
             iso3 = best.get("Iso3", str(location_id))
             location_name = best.get("Location", str(location_id))
+            raw = float(best["Value"])
+            # EstimateMethodId=2 (interpolated) returns value in thousands; method=3 (original)
+            # returns actual count — multiply by 1000 only for the former.
+            if best.get("EstimateMethodId") == _ESTIMATE_METHOD_INTERP:
+                population = int(round(raw * 1000))
+            else:
+                population = int(round(raw))
             results.append(ResolvedField(
                 field="total_population",
-                value=int(round(float(best["Value"]) * 1000)),
+                value=population,
                 citation=f"UN WPP 2024, {location_name} ({iso3}), {year}",
             ))
 
-        age_rows = [r for r in rows if r.get("IndicatorId") == "71"]
+        age_rows = [r for r in interp_rows if r.get("IndicatorId") == "71"]
         pct: dict[str, float] = {}
         age_year: str = ""
         age_iso3: str = ""
