@@ -101,6 +101,21 @@ class UNWPPAdapter:
                 citation=f"UN WPP 2024, {location_name} ({iso3}), {year}",
             ))
 
+        pop_candidates = [
+            r for r in rows
+            if r.get("IndicatorId") == "49" and r.get("AgeLabel", "").strip() == "Total"
+        ]
+        if pop_candidates:
+            best = max(pop_candidates, key=lambda r: int(r.get("TimeId", 0)))
+            year = best.get("TimeLabel", "")
+            iso3 = best.get("Iso3", str(location_id))
+            location_name = best.get("Location", str(location_id))
+            results.append(ResolvedField(
+                field="total_population",
+                value=round(float(best["Value"]) * 1000),
+                citation=f"UN WPP 2024, {location_name} ({iso3}), {year}",
+            ))
+
         age_rows = [r for r in rows if r.get("IndicatorId") == "71"]
         pct: dict[str, float] = {}
         age_year: str = ""

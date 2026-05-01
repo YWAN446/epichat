@@ -28,6 +28,13 @@ LocationId|Location|Iso3|Iso2|LocationTypeId|IndicatorId|Indicator|IndicatorDisp
 840|United States of America|USA|US|4|71|Percentage|Percentage of total population by broad age group|27|World Population Prospects|0|4|Median|Median|Median|74|2023|2023.5|0|Not applicable|1|Model-based Estimates|2|Interpolation|3|Both sexes|902|65+|65||82.5|17.432
 """
 
+_DATA_CSV_POPULATION = """\
+sep =|
+LocationId|Location|Iso3|Iso2|LocationTypeId|IndicatorId|Indicator|IndicatorDisplayName|SourceId|Source|Revision|VariantId|Variant|VariantShortName|VariantLabel|TimeId|TimeLabel|TimeMid|CategoryId|Category|EstimateTypeId|EstimateType|EstimateMethodId|EstimateMethod|SexId|Sex|AgeId|AgeLabel|AgeStart|AgeEnd|AgeMid|Value
+840|United States of America|USA|US|4|49|Total Population|Total Population, as of 1 July (thousands)|27|World Population Prospects|0|4|Median|Median|Median|73|2022|2022.5|0|Not applicable|1|Model-based Estimates|2|Interpolation|3|Both sexes|188|Total|0|-1|0|333287.558
+840|United States of America|USA|US|4|49|Total Population|Total Population, as of 1 July (thousands)|27|World Population Prospects|0|4|Median|Median|Median|74|2023|2023.5|0|Not applicable|1|Model-based Estimates|2|Interpolation|3|Both sexes|188|Total|0|-1|0|334914.895
+"""
+
 
 def _make_adapter(locations_csv=_LOCATIONS_CSV):
     with patch("epichat.adapters.un_wpp._fetch_text", return_value=locations_csv):
@@ -124,3 +131,16 @@ def test_fetch_returns_empty_on_http_error():
     with patch("epichat.adapters.un_wpp._fetch_text", side_effect=urllib.error.URLError("connection refused")):
         results = adapter.fetch(query)
     assert results == []
+
+
+def test_fetch_total_population():
+    adapter = _make_adapter_with_data(_DATA_CSV_POPULATION)
+    query = DataQuery(source="un_wpp", indicators=[49], location_id=840, start_year=2020, end_year=2024)
+    with patch("epichat.adapters.un_wpp._fetch_text", return_value=_DATA_CSV_POPULATION):
+        results = adapter.fetch(query)
+    pop = next(r for r in results if r.field == "total_population")
+    # 334914.895 thousands × 1000 = 334,914,895
+    assert pop.value == 334914895
+    assert "UN WPP" in pop.citation
+    assert "USA" in pop.citation
+    assert "2023" in pop.citation
