@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from epichat.parser import IntentResult, _llm_call_1, _llm_call_2, parse_query
+from epichat.parser import IntentResult, _apply_age_distribution, _llm_call_1, _llm_call_2, parse_query
 from epichat.resolver import ResolvedField
 from epichat.schema import SimParams
 
@@ -158,3 +158,67 @@ def test_parse_query_uses_resolver_when_queries_present():
 
     assert isinstance(result, SimParams)
     assert client.messages.create.call_count == 2
+
+
+def test_apply_age_distribution_no_op_when_absent():
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_age_distribution(params, resolved)
+    assert result is params  # exact same object — untouched
+
+
+def test_apply_age_distribution_sets_fields_and_network_type():
+    params = SimParams(beta=22.8125)
+    resolved = [
+        ResolvedField(
+            field="age_distribution_pct",
+            value={"0-17": 42.1, "18-64": 54.8, "65+": 3.1},
+            citation="UN WPP 2024, Kenya (KEN), 2023",
+        )
+    ]
+    result = _apply_age_distribution(params, resolved)
+    assert result.network_type == "age_structured"
+    assert abs(result.age_pct_under18 - 42.1) < 0.01
+    assert abs(result.age_pct_18_64   - 54.8) < 0.01
+    assert abs(result.age_pct_over65  -  3.1) < 0.01
+
+
+def test_apply_age_distribution_returns_new_simparams_object():
+    params = SimParams(beta=22.8125, network_type="random")
+    resolved = [
+        ResolvedField(
+            field="age_distribution_pct",
+            value={"0-17": 20.0, "18-64": 70.0, "65+": 10.0},
+            citation="x",
+        )
+    ]
+    result = _apply_age_distribution(params, resolved)
+    assert result is not params
+    assert params.network_type == "random"   # original unchanged
+
+
+def test_parse_query_applies_age_distribution_end_to_end():
+    """parse_query() sets network_type=age_structured when resolver returns age data."""
+    mock_resolver = MagicMock()
+    mock_resolver.resolve.return_value = [
+        ResolvedField(field="birth_rate", value=28.5, citation="x"),
+        ResolvedField(
+            field="age_distribution_pct",
+            value={"0-17": 42.0, "18-64": 55.0, "65+": 3.0},
+            citation="y",
+        ),
+    ]
+
+    lm1_msg = MagicMock()
+    lm1_msg.content = [MagicMock(text=_INTENT_WITH_QUERIES)]
+    lm2_msg = MagicMock()
+    lm2_msg.content = [MagicMock(text=_REFINED_JSON)]
+    client = MagicMock()
+    client.messages.create.side_effect = [lm1_msg, lm2_msg]
+
+    with patch("epichat.parser._resolver", mock_resolver), \
+         patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = parse_query("simulate measles in Kenya")
+
+    assert result.network_type == "age_structured"
+    assert result.age_pct_under18 == 42.0

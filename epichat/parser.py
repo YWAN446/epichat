@@ -120,14 +120,28 @@ def _run_resolver(queries: list[DataQuery]) -> list[ResolvedField]:
     return _resolver.resolve(queries)
 
 
+def _apply_age_distribution(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
+    age_field = next((rf for rf in resolved if rf.field == "age_distribution_pct"), None)
+    if age_field is None:
+        return params
+    pct = age_field.value
+    return params.model_copy(update={
+        "network_type": "age_structured",
+        "age_pct_under18": pct.get("0-17"),
+        "age_pct_18_64":   pct.get("18-64"),
+        "age_pct_over65":  pct.get("65+"),
+    })
+
+
 def parse_query(user_input: str) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
 
-    Three-step process:
+    Four-step process:
       1. LLM-1 extracts intent (preliminary params + optional data queries).
       2. If data queries exist, the resolver fetches real-world values.
       3. LLM-2 refines preliminary params using resolved data (skipped when no queries).
+      4. Deterministic post-processing applies age distribution if resolved.
 
     Raises:
         ValueError: if the LLM requests clarification or returns invalid JSON/schema.
@@ -137,7 +151,8 @@ def parse_query(user_input: str) -> SimParams:
     intent = _llm_call_1(user_input)
     resolved = _run_resolver(intent.data_queries)
     _last_resolved = resolved
-    return _llm_call_2(user_input, intent.preliminary_params, resolved)
+    params = _llm_call_2(user_input, intent.preliminary_params, resolved)
+    return _apply_age_distribution(params, resolved)
 
 
 def fix_params(user_input: str, params: SimParams, error_message: str) -> SimParams:
@@ -158,7 +173,7 @@ def fix_params(user_input: str, params: SimParams, error_message: str) -> SimPar
     message = client.messages.create(
         model=_MODEL,
         max_tokens=1024,
-        system=_load_system_prompt(),
+        system="You are an epidemiological parameter assistant. Return only valid JSON matching the SimParams schema.",
         messages=[{"role": "user", "content": recovery_prompt}],
     )
 
