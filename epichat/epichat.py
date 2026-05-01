@@ -96,9 +96,10 @@ class EpiChatResult:
         coverage_source = next(
             (rf for rf in self.data_sources if rf.field.endswith("_coverage")), None
         )
-        if coverage_source is not None and p.get_vaccine() is not None:
-            label = coverage_source.field.replace("_coverage", "").upper()
-            lines.append(f"  Vaccine coverage: {p.get_vaccine().coverage * 100:.1f}%  (pre-existing, {label})")
+        vaccine = p.get_vaccine()
+        if coverage_source is not None and vaccine is not None:
+            label = coverage_source.field.removesuffix("_coverage").upper()
+            lines.append(f"  Vaccine coverage: {vaccine.coverage * 100:.1f}%  (pre-existing, {label})")
 
         if self.data_sources:
             lines.append("")

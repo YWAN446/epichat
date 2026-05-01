@@ -70,8 +70,7 @@ def test_epichat_run_handles_validation_error_gracefully():
     mock_client = MagicMock()
     mock_client.messages.create.return_value = mock_msg
 
-    with patch("epichat.parser.anthropic.Anthropic", return_value=mock_client), \
-         patch("epichat.executor.SimExecutor.run", return_value={"stats": {}, "plot_path": None}):
+    with patch("epichat.parser.anthropic.Anthropic", return_value=mock_client):
         result = chat.run("run a model")
 
     assert result.error is not None
