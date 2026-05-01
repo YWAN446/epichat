@@ -62,9 +62,12 @@ class EpiChatResult:
             lines.append("")
 
         p = self.params
+        pop_field = next((rf for rf in self.data_sources if rf.field == "total_population"), None)
         lines.append("MODEL DETAILS")
         lines.append(f"  Disease type:     {p.disease_type.upper()}")
-        lines.append(f"  Population:       {p.n_agents:,}")
+        if pop_field is not None:
+            lines.append(f"  Population:       {int(pop_field.value):,}")
+        lines.append(f"  Num of agents:    {p.n_agents:,}")
         lines.append(f"  Contacts/agent:   {p.n_contacts}")
         lines.append(f"  Network:          {p.network_type}")
         if p.network_type == "age_structured":
