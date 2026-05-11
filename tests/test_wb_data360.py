@@ -225,6 +225,19 @@ def test_fetch_unknown_indicator_code_skipped():
     assert results == []
 
 
+def test_fetch_obs_value_null_string_skipped():
+    """API may return OBS_VALUE='null' string (not JSON null); must not crash."""
+    adapter = _make_adapter()
+    query = _make_query(indicator_codes=["WB_WDI_SH_MED_BEDS_ZS"])
+    null_string_response = json.dumps({
+        "count": 1,
+        "value": [{"OBS_VALUE": "null", "TIME_PERIOD": "2021", "REF_AREA": "KEN"}],
+    })
+    with patch("epichat.adapters.wb_data360._fetch_text", return_value=null_string_response):
+        results = adapter.fetch(query)
+    assert results == []
+
+
 # ── fetch — candidate grouping ────────────────────────────────────────────────
 
 def test_fetch_candidate_grouping_returns_primary_with_alternatives():

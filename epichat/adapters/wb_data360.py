@@ -89,7 +89,10 @@ class WorldBankData360Adapter:
             except Exception as exc:
                 _logger.warning("WorldBankData360Adapter fetch failed for %s: %s", code, exc)
                 continue
-            rows = [r for r in data.get("value", []) if r.get("OBS_VALUE") is not None]
+            rows = [
+                r for r in data.get("value", [])
+                if r.get("OBS_VALUE") is not None and r.get("OBS_VALUE") != "null"
+            ]
             if not rows:
                 continue
             best = max(rows, key=lambda r: r.get("TIME_PERIOD", "") or "")
