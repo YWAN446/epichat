@@ -113,7 +113,18 @@ class EpiChatResult:
                     val_str = ", ".join(f"{k}: {v}%" for k, v in rf.value.items())
                 else:
                     val_str = str(rf.value)
-                lines.append(f"  {rf.field:<{max_field_len}}  {val_str}  — {rf.citation}")
+                desc = f"  ({rf.description})" if rf.description else ""
+                used_marker = "  ★ used" if rf.alternatives else ""
+                lines.append(
+                    f"  {rf.field:<{max_field_len}}  {val_str}  — {rf.citation}{desc}{used_marker}"
+                )
+                for alt in rf.alternatives:
+                    if isinstance(alt.value, dict):
+                        alt_val = ", ".join(f"{k}: {v}%" for k, v in alt.value.items())
+                    else:
+                        alt_val = str(alt.value)
+                    alt_desc = f"  ({alt.description})" if alt.description else ""
+                    lines.append(f"    ↳ {alt_val}  — {alt.citation}{alt_desc}")
 
         if self.plot_path:
             lines.append(f"\n[Plot saved to: {self.plot_path}]")

@@ -144,3 +144,50 @@ def test_who_gho_adapter_can_be_instantiated():
     from epichat.adapters.who_gho import WHOGHOAdapter
     adapter = WHOGHOAdapter()
     assert adapter.source_name == "who_gho"
+
+
+# ── alternatives rendering ────────────────────────────────────────────────────
+
+def test_format_cli_single_value_no_star_marker():
+    result = _base_result(data_sources=[
+        ResolvedField(field="birth_rate", value=28.5, citation="UN WPP, KEN, 2023"),
+    ])
+    cli = result.format_cli()
+    assert "★" not in cli
+
+
+def test_format_cli_field_with_alternatives_shows_star_used():
+    alt = ResolvedField(field="treatment_capacity", value=0.2, citation="WB WDI, KEN, 2021",
+                        description="physicians/1,000")
+    primary = ResolvedField(field="treatment_capacity", value=2.3, citation="WB WDI, KEN, 2021",
+                            description="hospital beds/1,000", alternatives=[alt])
+    result = _base_result(data_sources=[primary])
+    cli = result.format_cli()
+    assert "★ used" in cli
+
+
+def test_format_cli_alternatives_shown_with_arrow():
+    alt = ResolvedField(field="treatment_capacity", value=0.2, citation="WB WDI, KEN, 2021",
+                        description="physicians/1,000")
+    primary = ResolvedField(field="treatment_capacity", value=2.3, citation="WB WDI, KEN, 2021",
+                            description="hospital beds/1,000", alternatives=[alt])
+    result = _base_result(data_sources=[primary])
+    cli = result.format_cli()
+    assert "↳" in cli
+    assert "0.2" in cli
+    assert "physicians/1,000" in cli
+
+
+def test_format_cli_description_shown_in_parentheses():
+    primary = ResolvedField(field="uhc_coverage", value=56.0, citation="WB WDI, KEN, 2022",
+                            description="UHC service coverage index 0–100")
+    result = _base_result(data_sources=[primary])
+    cli = result.format_cli()
+    assert "(UHC service coverage index 0–100)" in cli
+
+
+def test_format_cli_no_description_no_parentheses():
+    primary = ResolvedField(field="birth_rate", value=28.5, citation="UN WPP, KEN, 2023")
+    result = _base_result(data_sources=[primary])
+    cli = result.format_cli()
+    assert "()" not in cli
