@@ -588,3 +588,14 @@ def test_apply_health_system_returns_new_simparams_via_model_validate():
     assert isinstance(result, SimParams)
     assert result is not params
     assert params.get_treatment() is None   # original unchanged
+
+
+def test_apply_health_system_coverage_defaults_to_1_when_no_uhc():
+    """When only capacity is resolved and UHC is absent, coverage defaults to 1.0."""
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="x",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.coverage == 1.0
