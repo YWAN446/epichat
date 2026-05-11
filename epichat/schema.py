@@ -17,6 +17,13 @@ class Intervention(BaseModel):
     scale: float = Field(default=0.2, ge=0.0, le=1.0)
     shift: float = Field(default=0.0, ge=0.0, le=1.0)
 
+    @field_validator("capacity", mode="before")
+    @classmethod
+    def coerce_capacity_to_int(cls, v):
+        if isinstance(v, float):
+            return int(round(v))
+        return v
+
 
 class SimParams(BaseModel):
     disease_type: Literal["sir", "seir", "sis", "sirs", "seirs", "seiar"] = "sir"
