@@ -493,3 +493,22 @@ def test_apply_wb_disease_prevalence_enforces_minimum():
                               description="per 100,000/yr")]
     result = _apply_wb_disease_prevalence(params, resolved)
     assert result.init_prev == 0.0001
+
+
+def test_apply_wb_disease_prevalence_no_op_when_scale_missing():
+    """Disease field present but not in INCIDENCE_SCALE → silent no-op."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="unknown_prevalence", value=5.0, citation="x")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is params
+
+
+def test_apply_wb_disease_prevalence_first_disease_field_wins():
+    """When multiple disease fields are present, the first one in resolved is used."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [
+        ResolvedField(field="hiv_prevalence", value=6.3, citation="x"),
+        ResolvedField(field="diabetes_prevalence", value=9.0, citation="x"),
+    ]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert abs(result.init_prev - 0.063) < 1e-9  # hiv_prevalence wins (first)
