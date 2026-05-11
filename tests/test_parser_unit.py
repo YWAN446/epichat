@@ -458,13 +458,13 @@ def test_apply_wb_disease_prevalence_uses_prevalence_percent():
 
 
 def test_apply_wb_disease_prevalence_uses_incidence_per_100k():
-    """TB: 245/100k/yr, dur_inf=10 days → init_prev = 245/100000/365*10"""
+    """TB: 500/100k/yr, dur_inf=10 days → init_prev = 500/100000/365*10 = 1.37e-4 (above floor)"""
     params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
-    resolved = [ResolvedField(field="tb_incidence", value=245.0, citation="WB WDI, KEN, 2022",
+    resolved = [ResolvedField(field="tb_incidence", value=500.0, citation="WB WDI, KEN, 2022",
                               description="per 100,000/yr")]
     result = _apply_wb_disease_prevalence(params, resolved)
     assert result is not params
-    expected = 245.0 / 100_000 / 365 * 10.0
+    expected = 500.0 / 100_000 / 365 * 10.0
     assert abs(result.init_prev - expected) < 1e-12
 
 
