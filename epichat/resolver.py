@@ -10,9 +10,10 @@ class DataQuery:
     indicators: list[int] = field(default_factory=list)
     location_id: int = 0
     start_year: int = 2020
-    end_year: int = 2024
+    end_year: int = 2025
     indicator_codes: list[str] = field(default_factory=list)
     location_code: str = ""
+    database_id: str = "WB_WDI"
 
 
 @dataclass
@@ -20,6 +21,8 @@ class ResolvedField:
     field: str
     value: Any
     citation: str
+    description: str = ""
+    alternatives: list["ResolvedField"] = field(default_factory=list)
 
 
 @runtime_checkable

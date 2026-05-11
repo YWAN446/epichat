@@ -92,3 +92,40 @@ def test_data_query_backward_compat_positional():
     assert dq.location_id == 840
     assert dq.indicator_codes == []   # new fields not affected
     assert dq.location_code == ""
+
+
+def test_resolved_field_description_defaults_to_empty():
+    rf = ResolvedField(field="birth_rate", value=10.5, citation="x")
+    assert rf.description == ""
+
+
+def test_resolved_field_alternatives_defaults_to_empty_list():
+    rf = ResolvedField(field="birth_rate", value=10.5, citation="x")
+    assert rf.alternatives == []
+
+
+def test_resolved_field_with_alternatives():
+    alt = ResolvedField(field="treatment_capacity", value=0.2, citation="WB WDI, KEN, 2022",
+                        description="physicians/1,000")
+    primary = ResolvedField(field="treatment_capacity", value=2.3, citation="WB WDI, KEN, 2022",
+                            description="hospital beds/1,000", alternatives=[alt])
+    assert len(primary.alternatives) == 1
+    assert primary.alternatives[0].value == 0.2
+    assert primary.alternatives[0].description == "physicians/1,000"
+
+
+def test_data_query_database_id_defaults_to_wdi():
+    dq = DataQuery(source="wb_data360", indicator_codes=["WB_WDI_SH_TBS_INCD"], location_code="KEN")
+    assert dq.database_id == "WB_WDI"
+
+
+def test_data_query_database_id_explicit():
+    dq = DataQuery(source="wb_data360", database_id="WB_HNP", indicator_codes=[], location_code="KEN")
+    assert dq.database_id == "WB_HNP"
+
+
+def test_resolved_field_backward_compat_no_description_or_alternatives():
+    """Existing construction (field, value, citation only) must still work."""
+    rf = ResolvedField(field="birth_rate", value=28.5, citation="UN WPP 2024, KEN, 2023")
+    assert rf.description == ""
+    assert rf.alternatives == []
