@@ -192,7 +192,20 @@ def _apply_wb_disease_prevalence(params: SimParams, resolved: list[ResolvedField
 
 
 def _apply_health_system(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
-    return params  # implemented in Task 4
+    if params.get_treatment() is not None:
+        return params
+    capacity_field = next((rf for rf in resolved if rf.field == "treatment_capacity"), None)
+    uhc_field = next((rf for rf in resolved if rf.field == "uhc_coverage"), None)
+    if capacity_field is None and uhc_field is None:
+        return params
+    from .schema import Intervention
+    capacity = max(1, round(capacity_field.value / 1000 * params.n_agents)) if capacity_field else None
+    coverage = uhc_field.value / 100.0 if uhc_field else 1.0
+    treatment = Intervention(type="treatment", capacity=capacity, coverage=coverage, start_day=0)
+    return SimParams.model_validate({
+        **params.model_dump(),
+        "interventions": params.model_dump()["interventions"] + [treatment.model_dump()],
+    })
 
 
 def parse_query(user_input: str) -> SimParams:

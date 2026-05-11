@@ -512,3 +512,79 @@ def test_apply_wb_disease_prevalence_first_disease_field_wins():
     ]
     result = _apply_wb_disease_prevalence(params, resolved)
     assert abs(result.init_prev - 0.063) < 1e-9  # hiv_prevalence wins (first)
+
+
+# ── _apply_health_system ──────────────────────────────────────────────────────
+
+def test_apply_health_system_no_op_when_llm_set_treatment():
+    from epichat.schema import Intervention
+    treatment = Intervention(type="treatment", coverage=0.8, capacity=50, start_day=0)
+    params = SimParams(beta=22.8125, interventions=[treatment], n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="x")]
+    result = _apply_health_system(params, resolved)
+    assert result is params   # LLM wins
+
+
+def test_apply_health_system_no_op_when_no_health_fields():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_health_system(params, resolved)
+    assert result is params
+
+
+def test_apply_health_system_uses_beds_for_capacity():
+    """2.3 beds/1,000 × 10,000 agents → capacity = 23"""
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="WB WDI, KEN, 2021",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    assert result is not params
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.capacity == 23
+
+
+def test_apply_health_system_uses_uhc_for_coverage():
+    """UHC index 56 → treatment coverage = 0.56"""
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="uhc_coverage", value=56.0, citation="WB WDI, KEN, 2022")]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert abs(treatment.coverage - 0.56) < 1e-9
+
+
+def test_apply_health_system_creates_treatment_with_both_fields():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [
+        ResolvedField(field="treatment_capacity", value=2.3, citation="WB WDI, KEN, 2021",
+                      description="hospital beds/1,000"),
+        ResolvedField(field="uhc_coverage", value=56.0, citation="WB WDI, KEN, 2022"),
+    ]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.capacity == 23
+    assert abs(treatment.coverage - 0.56) < 1e-9
+    assert treatment.start_day == 0
+
+
+def test_apply_health_system_capacity_minimum_one():
+    """Very small bed count must not produce capacity=0 (Pydantic constraint: ge=1)."""
+    params = SimParams(beta=22.8125, n_agents=100)
+    resolved = [ResolvedField(field="treatment_capacity", value=0.001, citation="x",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.capacity >= 1
+
+
+def test_apply_health_system_returns_new_simparams_via_model_validate():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="x",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    assert isinstance(result, SimParams)
+    assert result is not params
+    assert params.get_treatment() is None   # original unchanged
