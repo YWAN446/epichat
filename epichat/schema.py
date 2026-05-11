@@ -17,6 +17,14 @@ class Intervention(BaseModel):
     scale: float = Field(default=0.2, ge=0.0, le=1.0)
     shift: float = Field(default=0.0, ge=0.0, le=1.0)
 
+    @field_validator("type", mode="before")
+    @classmethod
+    def normalize_type(cls, v):
+        _aliases = {"vaccination": "vaccine", "vaccinate": "vaccine",
+                    "treat": "treatment", "treatment_intervention": "treatment",
+                    "seasonal": "seasonality"}
+        return _aliases.get(str(v).lower(), v)
+
     @field_validator("capacity", mode="before")
     @classmethod
     def coerce_capacity_to_int(cls, v):
