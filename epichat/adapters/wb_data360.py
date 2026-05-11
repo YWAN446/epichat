@@ -62,7 +62,8 @@ INCIDENCE_SCALE: dict[str, float] = {
 
 
 def _fetch_text(url: str) -> str:
-    with urllib.request.urlopen(url, timeout=15) as resp:
+    req = urllib.request.Request(url, headers={"User-Agent": "EpiChat/1.0"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
         return resp.read().decode("utf-8")
 
 

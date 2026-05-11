@@ -1,0 +1,168 @@
+import starsim as ss
+import matplotlib
+matplotlib.use('Agg')
+import json
+import numpy as np
+
+
+class SIS(ss.SIR):
+    """SIR with no immunity: infected agents return directly to susceptible."""
+
+    def __init__(self, pars=None, **kwargs):
+        super().__init__(pars=pars, **kwargs)
+        self.define_states(
+            ss.BoolState('susceptible', default=True, label='Susceptible'),
+            ss.BoolState('infected',  label='Infectious'),
+            ss.BoolState('recovered', label='Recovered'),  # unused, kept for SIR compat
+            ss.FloatArr('ti_infected'),
+            ss.FloatArr('ti_recovered'),
+            ss.FloatArr('ti_dead'),
+            ss.FloatArr('rel_sus',   default=1.0),
+            ss.FloatArr('rel_trans', default=1.0),
+            reset=True,
+        )
+
+    def step_state(self):
+        sim = self.sim
+        # I -> S (no immunity — go straight back to susceptible)
+        recovered = (self.infected & (self.ti_recovered <= sim.ti)).uids
+        self.infected[recovered]    = False
+        self.susceptible[recovered] = True
+        # Deaths
+        deaths = (self.ti_dead <= sim.ti).uids
+        if len(deaths):
+            sim.people.request_death(deaths)
+
+    def set_prognoses(self, uids, sources=None):
+        ti = self.t.ti
+        self.susceptible[uids] = False
+        self.infected[uids]    = True
+        self.ti_infected[uids] = ti
+        p = self.pars
+        dur_inf  = p.dur_inf.rvs(uids)
+        will_die  = p.p_death.rvs(uids)
+        dead_uids = uids[will_die]
+        rec_uids  = uids[~will_die]
+        self.ti_dead[dead_uids]      = ti + dur_inf[will_die]
+        self.ti_recovered[rec_uids]  = ti + dur_inf[~will_die]
+
+
+# ── Interventions ─────────────────────────────────────────────────────────────
+interventions_list = []
+connectors_list = []
+
+{% if seasonality_int %}
+connectors_list.append(ss.seasonality(
+    diseases='sis',
+    scale={{ seasonality_int.scale }},
+    shift={{ seasonality_int.shift }},
+))
+{% endif %}
+
+{% if treatment_int %}
+from starsim.interventions import treat_num as _treat_num
+_tx = ss.Tx()
+_treatment = _treat_num(
+    product=_tx,
+    prob={{ treatment_int.coverage if treatment_int.coverage is not none else 1.0 }},
+    {% if treatment_int.capacity is not none %}max_capacity={{ treatment_int.capacity }},{% endif %}
+)
+interventions_list.append(_treatment)
+{% endif %}
+
+# ── Network ───────────────────────────────────────────────────────────────────
+{% if network_type == 'age_structured' %}
+_age_groups = {
+    'children': ss.AgeGroup(0, 18),
+    'adults':   ss.AgeGroup(18, 65),
+    'elderly':  ss.AgeGroup(65, None),
+}
+_contact_matrix = np.array([
+    [7.0, 2.5, 0.5],
+    [2.5, 9.0, 1.5],
+    [0.5, 1.5, 3.5],
+]) * {{ network_beta }}
+_network = ss.MixingPools(diseases='sis', src=_age_groups, dst=_age_groups,
+                          n_contacts=_contact_matrix, beta=1.0)
+{% else %}
+_network = dict(type='random', n_contacts={{ n_contacts }}, beta={{ network_beta }})
+{% endif %}
+
+# ── Simulation parameters ─────────────────────────────────────────────────────
+disease = SIS(
+    init_prev={{ init_prev }},
+    beta={{ beta }},
+    dur_inf=ss.constant({{ dur_inf }}),
+    p_death={{ p_death }},
+)
+
+pars = dict(
+    n_agents={{ n_agents }},
+    networks=_network,
+    diseases=[disease],
+{% if use_demographics %}
+    demographics=[
+        ss.Births(birth_rate={{ birth_rate }}),
+        ss.Deaths(death_rate={{ death_rate }}),
+    ],
+{% endif %}
+    dur={{ sim_dur_years }},
+    dt=1/365,
+{% if rand_seed is not none %}
+    rand_seed={{ rand_seed }},
+{% endif %}
+)
+
+if interventions_list:
+    pars['interventions'] = interventions_list
+
+sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
+sim.run()
+
+res = sim.results
+dr = res[list(sim.diseases.keys())[0]]
+
+n_infected     = dr['n_infected'].values
+cum_infections = dr['cum_infections'].values
+_d_module = list(sim.diseases.values())[0]
+_ti_dead = _d_module.ti_dead.values
+_n_steps = len(res['timevec'])
+_finite_ti = np.round(_ti_dead[np.isfinite(_ti_dead)]).astype(int)
+if len(_finite_ti) > 0:
+    cum_deaths = np.cumsum(np.bincount(_finite_ti, minlength=_n_steps)[:_n_steps])
+else:
+    cum_deaths = np.zeros(_n_steps, dtype=int)
+
+import matplotlib.pyplot as plt
+_scale = {{ pop_scale }}
+_ylabel = '{{ "People" if pop_scale != 1.0 else "Count" }}'
+_days = np.arange(len(n_infected))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+for _key, _color, _lbl in [
+    ('n_susceptible', 'steelblue', 'Susceptible'),
+    ('n_infected',    'firebrick', 'Infectious'),
+]:
+    if _key in dr:
+        ax1.plot(_days, dr[_key].values * _scale, color=_color, label=_lbl)
+ax1.set_xlabel('Day')
+ax1.set_ylabel(_ylabel)
+ax1.set_title('SIS Compartments')
+ax1.legend()
+ax2.plot(_days, cum_infections * _scale, color='steelblue', label='Cumulative infections')
+ax2.plot(_days, cum_deaths     * _scale, color='firebrick', label='Cumulative deaths')
+ax2.set_xlabel('Day')
+ax2.set_ylabel(_ylabel)
+ax2.set_title('Cumulative')
+ax2.legend()
+fig.tight_layout()
+fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
+plt.close(fig)
+
+print(json.dumps({
+    'peak_infections': int(n_infected.max()),
+    'peak_day':        int(n_infected.argmax()),
+    'total_infected':  int(cum_infections[-1]),
+    'total_deaths':    int(cum_deaths[-1]),
+    'n_agents':        {{ n_agents }},
+    'sim_days':        len(res['timevec']),
+}))
