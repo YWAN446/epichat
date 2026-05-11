@@ -169,6 +169,32 @@ def _apply_surveillance(params: SimParams, resolved: list[ResolvedField]) -> Sim
     return SimParams.model_validate({**params.model_dump(), "init_prev": init_prev})
 
 
+def _apply_wb_disease_prevalence(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
+    # WHO GHO surveillance takes precedence
+    if any(rf.field.endswith("_cases") for rf in resolved):
+        return params
+    disease_field = next(
+        (rf for rf in resolved if rf.field.endswith(("_prevalence", "_incidence"))),
+        None,
+    )
+    if disease_field is None:
+        return params
+    from .adapters.wb_data360 import INCIDENCE_SCALE
+    scale = INCIDENCE_SCALE.get(disease_field.field)
+    if scale is None:
+        return params
+    if disease_field.field.endswith("_prevalence"):
+        init_prev = disease_field.value / scale
+    else:
+        init_prev = disease_field.value / scale / 365 * params.dur_inf
+    init_prev = max(0.0001, min(0.5, init_prev))
+    return SimParams.model_validate({**params.model_dump(), "init_prev": init_prev})
+
+
+def _apply_health_system(params: SimParams, resolved: list[ResolvedField]) -> SimParams:
+    return params  # implemented in Task 4
+
+
 def parse_query(user_input: str) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
@@ -192,6 +218,8 @@ def parse_query(user_input: str) -> SimParams:
     params = _apply_age_distribution(params, resolved)
     params = _apply_vaccination_coverage(params, resolved)
     params = _apply_surveillance(params, resolved)
+    params = _apply_wb_disease_prevalence(params, resolved)
+    params = _apply_health_system(params, resolved)
     params = _apply_population_scale(params, resolved)
     return params
 

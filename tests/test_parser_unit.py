@@ -7,6 +7,8 @@ from epichat.parser import (
     _apply_vaccination_coverage,
     _apply_surveillance,
     _apply_population_scale,
+    _apply_wb_disease_prevalence,
+    _apply_health_system,
     _llm_call_1,
     _llm_call_2,
     parse_query,
@@ -421,3 +423,73 @@ def test_parse_query_applies_all_post_processors_in_order():
     dur_inf = result.dur_inf
     expected_prev = (500_000.0 / 54027487 / 365) * dur_inf
     assert abs(result.init_prev - expected_prev) < 1e-12
+
+
+# ── _apply_wb_disease_prevalence ──────────────────────────────────────────────
+
+def test_apply_wb_disease_prevalence_no_op_when_cases_field_present():
+    """WHO GHO cases field takes precedence — WB disease prevalence must be skipped."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [
+        ResolvedField(field="measles_cases", value=5000, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="total_population", value=54_000_000, citation="x"),
+        ResolvedField(field="tb_incidence", value=245.0, citation="WB WDI, KEN, 2022",
+                      description="per 100,000/yr"),
+    ]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is params   # unchanged
+
+
+def test_apply_wb_disease_prevalence_no_op_when_no_disease_field():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is params
+
+
+def test_apply_wb_disease_prevalence_uses_prevalence_percent():
+    """HIV prevalence: 6.3% → init_prev = 0.063"""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="hiv_prevalence", value=6.3, citation="WB WDI, KEN, 2020",
+                              description="% of population ages 15–49")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is not params
+    assert abs(result.init_prev - 0.063) < 1e-9
+
+
+def test_apply_wb_disease_prevalence_uses_incidence_per_100k():
+    """TB: 245/100k/yr, dur_inf=10 days → init_prev = 245/100000/365*10"""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="tb_incidence", value=245.0, citation="WB WDI, KEN, 2022",
+                              description="per 100,000/yr")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is not params
+    expected = 245.0 / 100_000 / 365 * 10.0
+    assert abs(result.init_prev - expected) < 1e-12
+
+
+def test_apply_wb_disease_prevalence_uses_incidence_per_1k():
+    """Malaria: 120/1k/yr, dur_inf=7 days → init_prev = 120/1000/365*7"""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=7.0)
+    resolved = [ResolvedField(field="malaria_incidence", value=120.0, citation="WB WDI, KEN, 2022",
+                              description="per 1,000 population at risk/yr")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is not params
+    expected = 120.0 / 1_000 / 365 * 7.0
+    assert abs(result.init_prev - expected) < 1e-12
+
+
+def test_apply_wb_disease_prevalence_caps_at_0_5():
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="hiv_prevalence", value=99.0, citation="x",
+                              description="% of population ages 15–49")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result.init_prev == 0.5
+
+
+def test_apply_wb_disease_prevalence_enforces_minimum():
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="tb_incidence", value=0.001, citation="x",
+                              description="per 100,000/yr")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result.init_prev == 0.0001
