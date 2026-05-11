@@ -222,3 +222,54 @@ External source (URL / file upload)
 ```
 
 The key design principle: external data should **inform defaults**, not replace user control. Every data-sourced parameter should be visible and editable in the Review step, with the data source cited (e.g., "Birth rate: 34.5/1000 — UN WPP 2024, Kenya").
+
+---
+
+## Data360 Adapter — Deferred Features
+
+These items were explicitly scoped out of the initial Data360 adapter
+(`epichat/adapters/wb_data360.py`) and should be considered for future phases.
+
+### WASH / Sanitation Indicators
+
+Indicators: access to clean water (`WB_WDI_SH_H2O_BASW_ZS`), basic sanitation
+(`WB_WDI_SH_STA_BASS_ZS`).
+
+Relevance: transmission modifier for enteric diseases (cholera, typhoid). Would
+require a new `transmission_modifier` parameter in `SimParams` and a corresponding
+post-processor.
+
+### Socioeconomic Context
+
+Indicators: GDP per capita (`WB_WDI_NY_GDP_PCAP_CD`), poverty headcount
+(`WB_WDI_SI_POV_DDAY`).
+
+Relevance: supplementary narrative context only. No direct simulation parameter
+mapping is defined — would require extending the narration step.
+
+### Health Expenditure
+
+Indicators: current health expenditure % of GDP (`WB_WDI_SH_XPD_CHEX_GD_ZS`),
+out-of-pocket expenditure % (`WB_WDI_SH_XPD_OOPC_CH_ZS`).
+
+Relevance: proxy for treatment-seeking behaviour; could refine `treatment.coverage`
+estimate. High out-of-pocket share → lower effective coverage.
+
+### Other Data360 Databases
+
+Data360 aggregates multiple databases beyond WB_WDI (HNP, WHO-sourced datasets).
+Accessing them requires surfacing `database_id` more explicitly in the LLM extraction
+prompt. Worth exploring once WDI integration proves stable.
+
+### Capacity Estimation Function
+
+The current formula — `capacity = round(beds_per_1000 / 1000 * n_agents)` — is a
+rough linear approximation. A more accurate estimator would incorporate:
+
+- Typical bed occupancy rates (~65–75% for acute care beds)
+- Disease-specific bed utilisation (e.g., ICU beds for severe COVID vs. general
+  wards for TB)
+- Staffing ratios (physicians and nurses per bed as constraints)
+
+This estimation function is analogous to how `_apply_surveillance` derives `init_prev`
+from raw case counts rather than using them directly.
