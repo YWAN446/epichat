@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from .adapters.un_wpp import UNWPPAdapter
 from .adapters.who_gho import WHOGHOAdapter
+from .adapters.wb_data360 import WorldBankData360Adapter
 from .executor import SimExecutor
 from .generator import CodeGenerator
 from .narrator import narrate
@@ -139,6 +140,7 @@ class EpiChat:
         self.executor = SimExecutor()
         configure_resolver(UNWPPAdapter(api_key=os.environ.get("UN_API_KEY")))
         configure_resolver(WHOGHOAdapter())
+        configure_resolver(WorldBankData360Adapter())
 
     def run(self, user_input: str) -> EpiChatResult:
         """Full pipeline: NL query → simulation → narration."""

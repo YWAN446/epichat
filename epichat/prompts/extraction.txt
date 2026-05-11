@@ -169,6 +169,55 @@ Request both coverage and cases codes when simulating a disease with known surve
 }
 ```
 
+## World Bank Data360 data queries
+
+When the user mentions a country *and* a disease not covered by WHO GHO (TB, HIV/AIDS,
+malaria, diabetes, hepatitis B), or when the user asks about hospital capacity or
+healthcare system strength, add a "wb_data360" query alongside the "un_wpp" query.
+
+Use `indicator_codes` (Data360 format), `location_code` (ISO3), `database_id` defaults
+to "WB_WDI". Always include both the demographic WDI codes for cross-source comparison.
+
+Health system — request whenever the user mentions treatment, hospitals, or healthcare:
+  indicator_codes: ["WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS",
+                    "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD"]
+
+Disease epidemiology — request the matching indicator(s) for the disease being simulated:
+
+| Disease    | indicator_codes                                                    |
+|------------|--------------------------------------------------------------------|
+| TB         | ["WB_WDI_SH_TBS_INCD"]                                            |
+| HIV/AIDS   | ["WB_WDI_SH_DYN_AIDS_ZS", "WB_WDI_SH_HIV_INCD_TL_P3"]            |
+| Malaria    | ["WB_WDI_SH_MLR_INCD_P3"]                                         |
+| Diabetes   | ["WB_WDI_SH_STA_DIAB_ZS"]                                         |
+| Hepatitis B| ["WB_WDI_SH_HEP_HBVS_ZS"]                                         |
+
+Demographics — always include alongside a UN WPP query for cross-source comparison:
+  indicator_codes: ["WB_WDI_SP_DYN_CBRT_IN", "WB_WDI_SP_DYN_CDRT_IN",
+                    "WB_WDI_SP_POP_TOTL"]
+
+Precedence: WHO GHO (who_gho source) takes priority for vaccine-preventable diseases
+(measles, polio, pertussis, etc.). Use wb_data360 disease indicators only for diseases
+not covered by WHO GHO.
+
+Example output for HIV in Kenya with health system context:
+
+```json
+{
+  "source": "wb_data360",
+  "database_id": "WB_WDI",
+  "indicator_codes": [
+    "WB_WDI_SH_DYN_AIDS_ZS", "WB_WDI_SH_HIV_INCD_TL_P3",
+    "WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS",
+    "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD",
+    "WB_WDI_SP_DYN_CBRT_IN", "WB_WDI_SP_DYN_CDRT_IN", "WB_WDI_SP_POP_TOTL"
+  ],
+  "location_code": "KEN",
+  "start_year": 2018,
+  "end_year": 2024
+}
+```
+
 ## Location table (ISO3 → UN location_id)
 
 {location_table}
