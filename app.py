@@ -102,6 +102,11 @@ def _restore_conversation(conv_id: str) -> None:
     st.session_state.messages = list(conv["messages"])
     st.session_state.active_conv_id = conv_id
     st.session_state.stage = "results"
+    last_plot = next(
+        (m["plot_path"] for m in reversed(conv["messages"]) if m.get("plot_path")),
+        None,
+    )
+    st.session_state.plot_path = last_plot
 
 
 def _export_filename(ext: str) -> str:
