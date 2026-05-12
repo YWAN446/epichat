@@ -251,7 +251,7 @@ def _apply_modification_and_summarize(text: str) -> None:
 with st.sidebar:
     st.markdown(
         "<h2 style='font-size:2rem;margin:0;padding:4px 0;line-height:1.2'>🦠 EpiChat</h2>"
-        "<p style='font-size:1rem;color:#6b7280;margin:6px 0 0 0;line-height:1.4'>"
+        "<p style='font-size:1rem;color:white;margin:6px 0 0 0;line-height:1.4'>"
         "Ask an epidemiological question. Get a validated simulation.</p>",
         unsafe_allow_html=True,
     )
@@ -312,7 +312,7 @@ if not messages:
     st.markdown(
         "<div style='text-align:center;padding-top:15vh'>"
         "<h1 style='font-size:3rem'>🦠 EpiChat</h1>"
-        "<p style='color:grey;font-size:1.5rem;margin:0'>"
+        "<p style='color:white;font-size:1.5rem;margin:0'>"
         "What would you like to simulate today?"
         "</p></div>",
         unsafe_allow_html=True,
