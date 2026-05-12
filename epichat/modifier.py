@@ -10,6 +10,11 @@ from .schema import SimParams
 
 _MODEL = "claude-sonnet-4-6"
 
+_NULLABLE_FIELDS = frozenset({
+    "dur_exp", "dur_immune", "rand_seed",
+    "age_pct_under18", "age_pct_18_64", "age_pct_over65",
+})
+
 
 def _parse_json(raw: str) -> dict:
     if "```" in raw:
@@ -47,8 +52,5 @@ def apply_modification(params: SimParams, message: str) -> SimParams:
     )
     raw = response.content[0].text.strip()
     data = _parse_json(raw)
-    data = {
-        k: v for k, v in data.items()
-        if v is not None or k in ("dur_exp", "dur_immune", "rand_seed")
-    }
+    data = {k: v for k, v in data.items() if v is not None or k in _NULLABLE_FIELDS}
     return SimParams(**data)
