@@ -354,12 +354,11 @@ with st.sidebar:
 
 # ── Main area ─────────────────────────────────────────────────────────────────
 _SUGGESTIONS = [
-    "Simulate HIV in Kenya",
-    "Model measles, 80% vaccinated",
-    "COVID with seasonality",
-    "Ebola outbreak, R0=2",
-    "TB in South Africa",
-    "Malaria in Nigeria with 50% treatment",
+    "Simulate a generic SIR epidemic",
+    "COVID-19 endemic with waning immunity",
+    "Influenza outbreak",
+    "Measles with 80% vaccination coverage",
+    "Ebola outbreak",
 ]
 
 messages = st.session_state.messages
