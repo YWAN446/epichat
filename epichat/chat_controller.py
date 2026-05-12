@@ -150,18 +150,25 @@ def next_question(
     return None
 
 
-def build_summary(params, data_sources: list) -> str:
-    lines: list[str] = ["Got it. Here's what I've put together:\n"]
+def build_summary(params, data_sources: list, description: str = "") -> str:
+    """Build a markdown-formatted parameter summary with optional LLM description."""
+    parts: list[str] = []
     used_sources: set[str] = set()
-    W = _SUMMARY_LABEL_WIDTH
+
+    parts.append("Got it. Here's what I've put together:")
+
+    if description:
+        parts.append(description)
+
+    # ── Key parameter table (hard line breaks keep items on separate lines) ───
+    table: list[str] = []
 
     disease_name = next(
         (_DISEASE_NAMES[rf.field] for rf in data_sources if rf.field in _DISEASE_NAMES),
         params.disease_type.upper(),
     )
-    model = params.disease_type.upper()
     dur = int(params.sim_dur_years) if params.sim_dur_years == int(params.sim_dur_years) else params.sim_dur_years
-    lines.append(f"  {'Disease':<{W}} {disease_name} · {model} model · {dur}-year simulation")
+    table.append(f"**Disease:** {disease_name} · {params.disease_type.upper()} model · {dur}-year simulation")
 
     pop_field = next((rf for rf in data_sources if rf.field == "total_population"), None)
     if pop_field:
@@ -170,16 +177,15 @@ def build_summary(params, data_sources: list) -> str:
             used_sources.add(abbrev)
         pop_m = pop_field.value / 1_000_000
         cite = f" [{abbrev}]" if abbrev else ""
-        _m = re.search(r",\s*([^,()]+)\s*\(", pop_field.citation)
-        country = _m.group(1).strip() if _m else ""
+        m = re.search(r",\s*([^,()]+)\s*\(", pop_field.citation)
+        country = m.group(1).strip() if m else ""
         prefix = f"{country} " if country else ""
-        lines.append(f"  {'Location':<{W}} {prefix}(pop. {pop_m:.1f}M){cite}")
+        table.append(f"**Location:** {prefix}(pop. {pop_m:.1f}M){cite}")
 
-    lines.append(f"  {'Agents':<{W}} {params.n_agents:,}")
+    table.append(f"**Agents:** {params.n_agents:,}")
 
     prev_field = next(
-        (rf for rf in data_sources
-         if rf.field.endswith(("_prevalence", "_incidence", "_cases"))),
+        (rf for rf in data_sources if rf.field.endswith(("_prevalence", "_incidence", "_cases"))),
         None,
     )
     if prev_field:
@@ -188,58 +194,85 @@ def build_summary(params, data_sources: list) -> str:
             used_sources.add(abbrev)
         cite = f" [{abbrev}]" if abbrev else ""
         used_marker = " ★" if prev_field.alternatives else ""
-        lines.append(f"  {'Prevalence':<{W}} {prev_field.value}%{cite}{used_marker}")
+        table.append(f"**Prevalence:** {prev_field.value}%{cite}{used_marker}")
         for alt in prev_field.alternatives:
             alt_abbrev = _abbrev(alt.citation)
             if alt_abbrev:
                 used_sources.add(alt_abbrev)
             alt_cite = f" [{alt_abbrev}]" if alt_abbrev else ""
-            alt_desc = f"  ({alt.description})" if alt.description else ""
-            lines.append(f"  {'':<{W}} ↳ {alt.value}{alt_cite}{alt_desc}")
+            alt_desc = f" ({alt.description})" if alt.description else ""
+            table.append(f"↳ {alt.value}{alt_cite}{alt_desc}")
     else:
-        lines.append(f"  {'Prevalence':<{W}} {params.init_prev * 100:.2f}%")
+        table.append(f"**Prevalence:** {params.init_prev * 100:.2f}%")
 
     label_used = False
     for iv in params.interventions:
-        lbl = "Intervention" if not label_used else ""
+        lbl = "**Intervention:**" if not label_used else "↳"
         label_used = True
         if iv.type == "vaccine":
             cov = f"{iv.coverage * 100:.0f}%" if iv.coverage else "?"
-            lines.append(f"  {lbl:<{W}} Vaccination · {cov} coverage")
+            table.append(f"{lbl} Vaccination · {cov} coverage")
         elif iv.type == "treatment":
             cov = f"{iv.coverage * 100:.0f}% coverage" if iv.coverage else ""
             cap_field = next((rf for rf in data_sources if rf.field == "treatment_capacity"), None)
-            lines.append(f"  {lbl:<{W}} Treatment · {cov}")
+            table.append(f"{lbl} Treatment · {cov}")
             if cap_field:
                 abbrev = _abbrev(cap_field.citation)
                 if abbrev:
                     used_sources.add(abbrev)
                 cite = f" [{abbrev}]" if abbrev else ""
                 used_marker = " ★" if cap_field.alternatives else ""
-                lines.append(f"  {'':<{W}} Capacity: {cap_field.value} beds/1,000{cite}{used_marker}")
+                table.append(f"Capacity: {cap_field.value} beds/1,000{cite}{used_marker}")
                 for alt in cap_field.alternatives:
                     alt_abbrev = _abbrev(alt.citation)
                     if alt_abbrev:
                         used_sources.add(alt_abbrev)
                     alt_cite = f" [{alt_abbrev}]" if alt_abbrev else ""
-                    alt_desc = f"  ({alt.description})" if alt.description else ""
-                    lines.append(f"  {'':<{W}} ↳ {alt.value}{alt_cite}{alt_desc}")
+                    alt_desc = f" ({alt.description})" if alt.description else ""
+                    table.append(f"↳ {alt.value}{alt_cite}{alt_desc}")
         elif iv.type == "seasonality":
-            lines.append(f"  {lbl:<{W}} Seasonality · strength {iv.scale:.0%}")
+            table.append(f"{lbl} Seasonality · strength {iv.scale:.0%}")
     if not params.interventions:
-        lines.append(f"  {'Intervention':<{W}} None")
+        table.append("**Intervention:** None")
 
-    lines.append(f"  {'R₀ (approx)':<{W}} {params.approx_r0():.1f}")
-    lines.append(f"  {'Mortality':<{W}} {params.p_death * 100:.1f}%")
+    table.append(f"**R₀ (approx):** {params.approx_r0():.1f}")
+    table.append(f"**Mortality:** {params.p_death * 100:.1f}%")
 
+    parts.append("  \n".join(table))
+
+    # ── Detailed model parameters ─────────────────────────────────────────────
+    param_items: list[str] = [
+        f"Beta: {params.beta:.4g}",
+        f"Infectious period: {params.dur_inf:.4g} days",
+    ]
+    if params.dur_exp is not None:
+        param_items.append(f"Exposed period: {params.dur_exp:.4g} days")
+    if params.dur_immune is not None:
+        param_items.append(f"Immunity duration: {params.dur_immune:.4g} days")
+    if params.disease_type == "seiar":
+        param_items.append(f"Asymptomatic fraction: {params.p_asymp:.0%}")
+        param_items.append(f"Asymp. transmissibility: {params.rel_trans_asymp:.0%}")
+    network_str = (
+        "Age-structured network"
+        if params.network_type == "age_structured"
+        else f"Random network · {params.n_contacts} contacts/agent"
+    )
+    param_items.append(network_str)
+    if params.use_demographics:
+        param_items.append(
+            f"Demographics on · birth {params.birth_rate:.1f}/1,000/yr"
+            f" · death {params.death_rate:.1f}/1,000/yr"
+        )
+    parts.append("**Model parameters**  \n" + " · ".join(param_items))
+
+    # ── References (each source on its own paragraph below the rule) ─────────
     if used_sources:
-        lines.append("")
-        lines.append("─" * 40)
+        ref_blocks: list[str] = ["---", "**References**"]
         for src in ("UN WPP", "WB WDI", "WHO GHO"):
             if src in used_sources:
-                lines.append(f"{src:<7} {_SOURCE_FOOTNOTES[src]}")
-        lines.append("─" * 40)
+                ref_blocks.append(f"**{src}** — {_SOURCE_FOOTNOTES[src]}")
+        ref_blocks.append("---")
+        parts.append("\n\n".join(ref_blocks))
 
-    lines.append("")
-    lines.append("Would you like to adjust anything, or shall I run the simulation?")
-    return "\n".join(lines)
+    parts.append("Would you like to adjust anything, or shall I run the simulation?")
+    return "\n\n".join(parts)

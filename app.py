@@ -20,7 +20,7 @@ from epichat.chat_controller import (
 )
 from epichat.epichat import EpiChat
 from epichat.exporter import to_docx, to_pdf
-from epichat.modifier import apply_modification
+from epichat.modifier import apply_modification, generate_sim_description
 from epichat.narrator import narrate
 from epichat.parser import get_last_resolved, parse_query
 
@@ -110,6 +110,15 @@ def _export_filename(ext: str) -> str:
 
 # ── Core conversation logic ───────────────────────────────────────────────────
 
+def _build_summary_with_description() -> str:
+    s = st.session_state
+    try:
+        description = generate_sim_description(s.params, s.data_sources)
+    except Exception:
+        description = ""
+    return build_summary(s.params, s.data_sources, description)
+
+
 def _do_parse() -> None:
     try:
         st.session_state.params = parse_query(st.session_state.context)
@@ -188,7 +197,7 @@ def _thinking_text() -> str:
     stage = st.session_state.stage
     text = st.session_state.pending_input or ""
     if stage == "collecting":
-        return "Searching available epidemiological data…"
+        return "Searching available data…"
     if stage in ("ready", "results"):
         if detect_run_intent(text):
             return "Preparing simulation…"
@@ -217,7 +226,7 @@ def _process_pending() -> None:
             return
         question = next_question(s.collected, s.params, s.data_sources)
         if question is None:
-            _add_msg("assistant", build_summary(s.params, s.data_sources))
+            _add_msg("assistant", _build_summary_with_description())
             s.stage = "ready"
         else:
             _add_msg("assistant", question)
@@ -250,7 +259,7 @@ def _start_new_scenario(text: str) -> None:
     s.collected = update_collected(s.collected, s.params, s.data_sources, text)
     question = next_question(s.collected, s.params, s.data_sources)
     if question is None:
-        _add_msg("assistant", build_summary(s.params, s.data_sources))
+        _add_msg("assistant", _build_summary_with_description())
         s.stage = "ready"
     else:
         _add_msg("assistant", question)
@@ -269,7 +278,7 @@ def _apply_modification_and_summarize(text: str) -> None:
         return
     _add_msg(
         "assistant",
-        "Updated. Here's the revised summary:\n\n" + build_summary(s.params, s.data_sources),
+        "Updated. Here's the revised summary:\n\n" + _build_summary_with_description(),
     )
 
 
