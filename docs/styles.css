@@ -605,5 +605,7 @@ footer.site .bottom {
     margin: 0.75rem 0 0;
     text-align: center;
     width: 100%;
+    border-bottom: 0;
   }
+  .nav.nav-open .nav-links a:last-child { border-bottom: 0; }
 }

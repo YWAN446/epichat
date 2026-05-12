@@ -43,6 +43,13 @@
         burger.textContent = '☰';
       });
     });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 640) {
+        nav.classList.remove('nav-open');
+        burger.setAttribute('aria-expanded', 'false');
+        burger.textContent = '☰';
+      }
+    });
   }
 
   function mountFooter() {
