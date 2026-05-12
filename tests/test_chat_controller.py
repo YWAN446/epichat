@@ -252,6 +252,31 @@ def test_build_summary_star_marker_and_alternatives():
     assert "★" in summary
     assert "↳" in summary
 
+def test_build_summary_cases_field_shows_count_not_percent():
+    params = _base_params(init_prev=0.000082)
+    ds = [_make_rf("measles_cases", 227, "WHO GHO, ESP, 2023")]
+    summary = build_summary(params, ds)
+    assert "Cases (annual):" in summary
+    assert "227" in summary
+    assert "227%" not in summary
+    assert "Initial prevalence" in summary
+
+def test_build_summary_incidence_field_shows_rate_and_units():
+    params = _base_params(init_prev=0.0003)
+    ds = [_make_rf("tb_incidence", 14.2, "WB WDI, KEN, 2024", "per 100,000/yr")]
+    summary = build_summary(params, ds)
+    assert "Incidence:" in summary
+    assert "per 100,000/yr" in summary
+    assert "14.2%" not in summary
+    assert "Initial prevalence" in summary
+
+def test_build_summary_prevalence_field_shows_percent():
+    params = _base_params(init_prev=0.03)
+    ds = [_make_rf("hiv_prevalence", 3.0, "WB WDI, KEN, 2024")]
+    summary = build_summary(params, ds)
+    assert "Prevalence:** 3.0%" in summary
+    assert "3.0%%" not in summary
+
 def test_build_summary_ends_with_question():
     params = _base_params()
     summary = build_summary(params, [])

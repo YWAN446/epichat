@@ -201,7 +201,15 @@ def build_summary(params, data_sources: list, description: str = "") -> str:
             used_sources.add(abbrev)
         cite = f" [{abbrev}]" if abbrev else ""
         used_marker = " ★" if prev_field.alternatives else ""
-        table.append(f"**Prevalence:** {prev_field.value}%{cite}{used_marker}")
+        if prev_field.field.endswith("_cases"):
+            table.append(f"**Cases (annual):** {int(prev_field.value):,}{cite}{used_marker}")
+            table.append(f"↳ Initial prevalence: {params.init_prev * 100:.4f}%")
+        elif prev_field.field.endswith("_incidence"):
+            units = prev_field.description or "per 100,000/yr"
+            table.append(f"**Incidence:** {prev_field.value:.4g} {units}{cite}{used_marker}")
+            table.append(f"↳ Initial prevalence: {params.init_prev * 100:.4f}%")
+        else:  # _prevalence
+            table.append(f"**Prevalence:** {prev_field.value}%{cite}{used_marker}")
         for alt in prev_field.alternatives:
             alt_abbrev = _abbrev(alt.citation)
             if alt_abbrev:
