@@ -565,3 +565,45 @@ footer.site .bottom {
   color: var(--paper);
   border-color: var(--ink);
 }
+
+/* ------------------------------------------------------------
+   Mobile nav burger
+   ------------------------------------------------------------ */
+
+.nav-burger {
+  display: none;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ink);
+  padding: 0.3rem 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .nav-burger { display: block; }
+  .nav-inner { flex-wrap: wrap; }
+  .nav-links,
+  .nav-cta { display: none; }
+  .nav.nav-open .nav-links {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+    padding: 0.5rem 0 0.75rem;
+    border-top: 1px solid var(--rule);
+    margin-top: 0.5rem;
+  }
+  .nav.nav-open .nav-links a {
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .nav.nav-open .nav-cta {
+    display: block;
+    margin: 0.75rem 0 0;
+    text-align: center;
+    width: 100%;
+  }
+}

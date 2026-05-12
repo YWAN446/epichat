@@ -24,9 +24,25 @@
             `).join("")}
           </div>
           <a href="https://epichat.streamlit.app/" target="_blank" rel="noopener" class="nav-cta">Try the demo ↗</a>
+          <button class="nav-burger" aria-label="Toggle menu" aria-expanded="false">☰</button>
         </div>
       </nav>
     `;
+
+    const nav = host.querySelector('.nav');
+    const burger = host.querySelector('.nav-burger');
+    burger.addEventListener('click', () => {
+      const open = nav.classList.toggle('nav-open');
+      burger.setAttribute('aria-expanded', String(open));
+      burger.textContent = open ? '✕' : '☰';
+    });
+    host.querySelectorAll('.nav-links a').forEach(a => {
+      a.addEventListener('click', () => {
+        nav.classList.remove('nav-open');
+        burger.setAttribute('aria-expanded', 'false');
+        burger.textContent = '☰';
+      });
+    });
   }
 
   function mountFooter() {
