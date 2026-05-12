@@ -35,6 +35,7 @@ if "chat" not in st.session_state:
 
 # ── Session state defaults ────────────────────────────────────────────────────
 _CONV_DEFAULTS: dict = {
+    "active_conv_id": None,
     "stage": "greeting",
     "context": "",
     "params": None,
@@ -191,6 +192,7 @@ def _handle_user_message(text: str) -> None:
             return
         question = next_question(s.collected, s.params, s.data_sources)
         if question is None:
+            s.stage = "summarizing"
             _add_msg("assistant", build_summary(s.params, s.data_sources))
             s.stage = "ready"
         else:
@@ -257,6 +259,16 @@ with st.sidebar:
         _reset_conversation()
         st.rerun()
 
+    if st.session_state.conversations:
+        st.divider()
+        st.caption("RECENT")
+        for conv in reversed(st.session_state.conversations):
+            title = conv["title"][:50] + ("…" if len(conv["title"]) > 50 else "")
+            if st.button(title, key=f"conv_{conv['id']}", use_container_width=True):
+                _save_current_conversation()
+                _restore_conversation(conv["id"])
+                st.rerun()
+
     if st.session_state.plot_path:
         st.divider()
         st.caption("Export conversation")
@@ -277,16 +289,6 @@ with st.sidebar:
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True,
         )
-
-    if st.session_state.conversations:
-        st.divider()
-        st.caption("RECENT")
-        for conv in reversed(st.session_state.conversations):
-            title = conv["title"][:50] + ("…" if len(conv["title"]) > 50 else "")
-            if st.button(title, key=f"conv_{conv['id']}", use_container_width=True):
-                _save_current_conversation()
-                _restore_conversation(conv["id"])
-                st.rerun()
 
 
 # ── Main area ─────────────────────────────────────────────────────────────────
@@ -324,6 +326,8 @@ else:
                 st.image(msg["plot_path"], use_container_width=True)
 
     if st.session_state.stage == "running":
+        with st.chat_message("assistant", avatar="🦠"):
+            st.markdown("Running simulation…")
         with st.spinner("Running simulation…"):
             _do_run_simulation()
         st.rerun()
