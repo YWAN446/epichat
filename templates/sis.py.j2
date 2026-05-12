@@ -60,14 +60,35 @@ connectors_list.append(ss.seasonality(
 {% endif %}
 
 {% if treatment_int %}
-from starsim.interventions import treat_num as _treat_num
-_tx = ss.Tx()
-_treatment = _treat_num(
-    product=_tx,
+class _SimpleTreatment(ss.Intervention):
+    def __init__(self, prob=1.0, max_capacity=None, start_day=0):
+        super().__init__()
+        self._prob = prob
+        self._max_capacity = max_capacity
+        self._start_day = start_day
+
+    def step(self):
+        if self.sim.ti < self._start_day:
+            return
+        disease = list(self.sim.diseases.values())[0]
+        infected = disease.infected.uids
+        if len(infected) == 0:
+            return
+        n = int(self._prob * len(infected))
+        if self._max_capacity is not None:
+            n = min(n, self._max_capacity)
+        if n <= 0:
+            return
+        _rng = np.random.default_rng(int(self.sim.ti))
+        _treat_uids = ss.uids(_rng.choice(infected, size=min(n, len(infected)), replace=False))
+        if hasattr(disease, 'ti_recovered'):
+            disease.ti_recovered[_treat_uids] = self.sim.ti + 1
+
+interventions_list.append(_SimpleTreatment(
     prob={{ treatment_int.coverage if treatment_int.coverage is not none else 1.0 }},
     {% if treatment_int.capacity is not none %}max_capacity={{ treatment_int.capacity }},{% endif %}
-)
-interventions_list.append(_treatment)
+    start_day={{ treatment_int.start_day }},
+))
 {% endif %}
 
 # ── Network ───────────────────────────────────────────────────────────────────

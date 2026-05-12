@@ -26,14 +26,35 @@ connectors_list.append(ss.seasonality(
 {% endif %}
 
 {% if treatment_int %}
-from starsim.interventions import treat_num as _treat_num
-_tx = ss.Tx()
-_treatment = _treat_num(
-    product=_tx,
+class _SimpleTreatment(ss.Intervention):
+    def __init__(self, prob=1.0, max_capacity=None, start_day=0):
+        super().__init__()
+        self._prob = prob
+        self._max_capacity = max_capacity
+        self._start_day = start_day
+
+    def step(self):
+        if self.sim.ti < self._start_day:
+            return
+        disease = list(self.sim.diseases.values())[0]
+        infected = disease.infected.uids
+        if len(infected) == 0:
+            return
+        n = int(self._prob * len(infected))
+        if self._max_capacity is not None:
+            n = min(n, self._max_capacity)
+        if n <= 0:
+            return
+        _rng = np.random.default_rng(int(self.sim.ti))
+        _treat_uids = ss.uids(_rng.choice(infected, size=min(n, len(infected)), replace=False))
+        if hasattr(disease, 'ti_recovered'):
+            disease.ti_recovered[_treat_uids] = self.sim.ti + 1
+
+interventions_list.append(_SimpleTreatment(
     prob={{ treatment_int.coverage if treatment_int.coverage is not none else 1.0 }},
     {% if treatment_int.capacity is not none %}max_capacity={{ treatment_int.capacity }},{% endif %}
-)
-interventions_list.append(_treatment)
+    start_day={{ treatment_int.start_day }},
+))
 {% endif %}
 
 {% if vaccine and vaccine.start_day > 0 %}
@@ -100,8 +121,8 @@ _rng = np.random.default_rng({{ rand_seed }})
 _rng = np.random.default_rng()
 {% endif %}
 _vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
-_sir.susceptible[_vax_uids] = False
-_sir.recovered[_vax_uids] = True
+_sir.susceptible[ss.uids(_vax_uids)] = False
+_sir.recovered[ss.uids(_vax_uids)] = True
 {% endif %}
 
 {% if age_pct_under18 is not none and network_type == 'age_structured' %}
@@ -130,7 +151,14 @@ dr = res[list(sim.diseases.keys())[0]]
 
 n_infected     = dr['n_infected'].values
 cum_infections = dr['cum_infections'].values
-cum_deaths     = res['cum_deaths'].values
+_d_module = list(sim.diseases.values())[0]
+_ti_dead = _d_module.ti_dead.values
+_n_steps = len(res['timevec'])
+_finite_ti = np.round(_ti_dead[np.isfinite(_ti_dead)]).astype(int)
+if len(_finite_ti) > 0:
+    cum_deaths = np.cumsum(np.bincount(_finite_ti, minlength=_n_steps)[:_n_steps])
+else:
+    cum_deaths = np.zeros(_n_steps, dtype=int)
 
 import matplotlib.pyplot as plt
 _scale = {{ pop_scale }}
