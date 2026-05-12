@@ -617,7 +617,7 @@ footer.site .bottom {
 @media (max-width: 640px) {
   html, body { font-size: 15px; }
   .wrap { padding: 0 1rem; }
-  section { padding: 2.5rem 0; }
+  section { padding: 2.5rem 0 !important; }
 
   /* footer: collapse 2-col to 1-col */
   footer.site .cols { grid-template-columns: 1fr; }
