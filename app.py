@@ -249,8 +249,12 @@ def _apply_modification_and_summarize(text: str) -> None:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🦠 EpiChat")
-    st.caption("Ask an epidemiological question. Get a validated simulation.")
+    st.markdown(
+        "<h2 style='font-size:2rem;margin:0;padding:4px 0;line-height:1.2'>🦠 EpiChat</h2>"
+        "<p style='font-size:1rem;color:#6b7280;margin:6px 0 0 0;line-height:1.4'>"
+        "Ask an epidemiological question. Get a validated simulation.</p>",
+        unsafe_allow_html=True,
+    )
     st.divider()
 
     if st.button("+ New Chat", use_container_width=True, type="primary"):
@@ -306,18 +310,13 @@ messages = st.session_state.messages
 
 if not messages:
     st.markdown(
-        "<div style='text-align:center;margin-top:15vh'>"
-        "<h1>🦠 EpiChat</h1>"
-        "<p style='color:grey;font-size:1.1rem'>"
+        "<div style='text-align:center;padding-top:15vh'>"
+        "<h1 style='font-size:3rem'>🦠 EpiChat</h1>"
+        "<p style='color:grey;font-size:1.5rem;margin:0'>"
         "What would you like to simulate today?"
         "</p></div>",
         unsafe_allow_html=True,
     )
-    cols = st.columns(3)
-    for i, suggestion in enumerate(_SUGGESTIONS):
-        if cols[i % 3].button(suggestion, use_container_width=True):
-            _handle_user_message(suggestion)
-            st.rerun()
 else:
     for msg in messages:
         avatar = "🦠" if msg["role"] == "assistant" else None
@@ -337,3 +336,15 @@ else:
 if prompt := st.chat_input("Type your message…"):
     _handle_user_message(prompt)
     st.rerun()
+
+# ── Suggestion chips (empty state only, just above chat input bar) ────────────
+if not messages:
+    st.markdown(
+        "<div style='height:calc(100vh - 350px)'></div>",
+        unsafe_allow_html=True,
+    )
+    cols = st.columns(len(_SUGGESTIONS))
+    for i, suggestion in enumerate(_SUGGESTIONS):
+        if cols[i].button(suggestion, use_container_width=True):
+            _handle_user_message(suggestion)
+            st.rerun()
