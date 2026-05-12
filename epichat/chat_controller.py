@@ -259,16 +259,40 @@ def build_summary(params, data_sources: list, description: str = "") -> str:
     if params.disease_type == "seiar":
         param_items.append(f"Asymptomatic fraction: {params.p_asymp:.0%}")
         param_items.append(f"Asymp. transmissibility: {params.rel_trans_asymp:.0%}")
-    network_str = (
-        "Age-structured network"
-        if params.network_type == "age_structured"
-        else f"Random network · {params.n_contacts} contacts/agent"
-    )
-    param_items.append(network_str)
+
+    if params.network_type == "age_structured":
+        age_rf = next((rf for rf in data_sources if rf.field == "age_distribution_pct"), None)
+        age_cite = ""
+        if age_rf:
+            abbrev = _abbrev(age_rf.citation)
+            if abbrev:
+                used_sources.add(abbrev)
+                age_cite = f" [{abbrev}]"
+        if all(x is not None for x in (params.age_pct_under18, params.age_pct_18_64, params.age_pct_over65)):
+            param_items.append(
+                f"Age-structured network · <18: {params.age_pct_under18:.0f}%"
+                f" · 18–64: {params.age_pct_18_64:.0f}%"
+                f" · 65+: {params.age_pct_over65:.0f}%{age_cite}"
+            )
+        else:
+            param_items.append(f"Age-structured network{age_cite}")
+    else:
+        param_items.append(f"Random network · {params.n_contacts} contacts/agent")
+
     if params.use_demographics:
+        br_rf = next((rf for rf in data_sources if rf.field == "birth_rate"), None)
+        dr_rf = next((rf for rf in data_sources if rf.field == "death_rate"), None)
+        demo_cites: set[str] = set()
+        for rf in (br_rf, dr_rf):
+            if rf:
+                abbrev = _abbrev(rf.citation)
+                if abbrev:
+                    used_sources.add(abbrev)
+                    demo_cites.add(abbrev)
+        demo_cite = (" [" + ", ".join(sorted(demo_cites)) + "]") if demo_cites else ""
         param_items.append(
             f"Demographics on · birth {params.birth_rate:.1f}/1,000/yr"
-            f" · death {params.death_rate:.1f}/1,000/yr"
+            f" · death {params.death_rate:.1f}/1,000/yr{demo_cite}"
         )
     parts.append("**Model parameters**  \n" + " · ".join(param_items))
 

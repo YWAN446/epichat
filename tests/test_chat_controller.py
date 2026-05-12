@@ -256,3 +256,46 @@ def test_build_summary_ends_with_question():
     params = _base_params()
     summary = build_summary(params, [])
     assert summary.strip().endswith("?")
+
+def test_build_summary_age_structured_network_shows_percentages():
+    params = _base_params(
+        network_type="age_structured",
+        age_pct_under18=40.0,
+        age_pct_18_64=52.0,
+        age_pct_over65=8.0,
+    )
+    ds = [_make_rf("age_distribution_pct", {"0-17": 40.0, "18-64": 52.0, "65+": 8.0},
+                   "UN WPP 2024, Kenya (KEN), 2026")]
+    summary = build_summary(params, ds)
+    assert "40%" in summary
+    assert "52%" in summary
+    assert "8%" in summary
+    assert "[UN WPP]" in summary
+
+def test_build_summary_age_structured_network_without_data_source():
+    params = _base_params(
+        network_type="age_structured",
+        age_pct_under18=30.0,
+        age_pct_18_64=60.0,
+        age_pct_over65=10.0,
+    )
+    summary = build_summary(params, [])
+    assert "Age-structured" in summary
+    assert "30%" in summary
+
+def test_build_summary_demographics_with_citation():
+    params = _base_params(use_demographics=True, birth_rate=35.2, death_rate=7.1)
+    ds = [
+        _make_rf("birth_rate", 35.2, "UN WPP 2024, Kenya (KEN), 2026"),
+        _make_rf("death_rate", 7.1, "UN WPP 2024, Kenya (KEN), 2026"),
+    ]
+    summary = build_summary(params, ds)
+    assert "35.2" in summary
+    assert "7.1" in summary
+    assert "[UN WPP]" in summary
+
+def test_build_summary_demographics_without_citation():
+    params = _base_params(use_demographics=True, birth_rate=20.0, death_rate=10.0)
+    summary = build_summary(params, [])
+    assert "Demographics" in summary
+    assert "20.0" in summary
