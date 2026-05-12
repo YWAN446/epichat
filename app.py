@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime
-import os
 import uuid
 from pathlib import Path
 
@@ -80,12 +79,12 @@ def _save_current_conversation() -> None:
 
 def _reset_conversation() -> None:
     for key, val in _CONV_DEFAULTS.items():
-        st.session_state[key] = val if not isinstance(val, dict) else dict(val)
-    st.session_state.messages = []
-    st.session_state.collected = {
-        "disease": False, "location": False,
-        "population": False, "interventions": False,
-    }
+        if isinstance(val, dict):
+            st.session_state[key] = dict(val)
+        elif isinstance(val, list):
+            st.session_state[key] = list(val)
+        else:
+            st.session_state[key] = val
 
 
 def _restore_conversation(conv_id: str) -> None:
@@ -192,7 +191,6 @@ def _handle_user_message(text: str) -> None:
             return
         question = next_question(s.collected, s.params, s.data_sources)
         if question is None:
-            s.stage = "summarizing"
             _add_msg("assistant", build_summary(s.params, s.data_sources))
             s.stage = "ready"
         else:
@@ -220,6 +218,7 @@ def _handle_user_message(text: str) -> None:
 def _start_new_scenario(text: str) -> None:
     s = st.session_state
     s.context = text
+    s.params = None
     s.collected = {k: False for k in s.collected}
     _do_parse()
     s.collected = update_collected(s.collected, s.params, s.data_sources, text)
@@ -272,19 +271,21 @@ with st.sidebar:
     if st.session_state.plot_path:
         st.divider()
         st.caption("Export conversation")
-        msgs = st.session_state.messages
-        pdf_bytes = to_pdf(msgs, st.session_state.plot_path)
+        if st.session_state.get("_export_cache_key") != st.session_state.plot_path:
+            msgs = st.session_state.messages
+            st.session_state["_export_pdf"] = to_pdf(msgs, st.session_state.plot_path)
+            st.session_state["_export_docx"] = to_docx(msgs, st.session_state.plot_path)
+            st.session_state["_export_cache_key"] = st.session_state.plot_path
         st.download_button(
             "↓ Download PDF",
-            data=pdf_bytes,
+            data=st.session_state["_export_pdf"],
             file_name=_export_filename("pdf"),
             mime="application/pdf",
             use_container_width=True,
         )
-        docx_bytes = to_docx(msgs, st.session_state.plot_path)
         st.download_button(
             "↓ Download Word",
-            data=docx_bytes,
+            data=st.session_state["_export_docx"],
             file_name=_export_filename("docx"),
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True,
