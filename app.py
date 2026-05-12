@@ -70,6 +70,9 @@ def _save_current_conversation() -> None:
     msgs = st.session_state.messages
     if not msgs:
         return
+    # Already in history — don't create a duplicate
+    if st.session_state.active_conv_id is not None:
+        return
     first_user = next((m["content"] for m in msgs if m["role"] == "user"), "Conversation")
     st.session_state.conversations.append({
         "id": str(uuid.uuid4()),
@@ -97,6 +100,7 @@ def _restore_conversation(conv_id: str) -> None:
         return
     _reset_conversation()
     st.session_state.messages = list(conv["messages"])
+    st.session_state.active_conv_id = conv_id
     st.session_state.stage = "results"
 
 
