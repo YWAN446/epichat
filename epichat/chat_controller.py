@@ -38,7 +38,16 @@ _RUN_PHRASES = frozenset({
     "correct", "perfect", "great", "do it", "proceed", "start",
     "run it", "looks good", "go ahead", "let's go", "lets go",
     "run the simulation", "run simulation", "start simulation",
+    # Common natural-language affirmations
+    "sounds good", "all good", "good", "confirmed", "agreed",
+    "go for it", "yes please", "please run", "run now", "run please",
+    "ready", "ready to run", "let's run", "lets run",
+    "let's do it", "lets do it", "do it now", "execute",
+    "you can run", "can run", "go ahead and run",
 })
+
+_RUN_NEGATION = frozenset({"no", "not", "don't", "dont", "stop", "wait", "never",
+                            "without", "change", "remove", "except", "but"})
 
 _NEW_SCENARIO_PATTERNS = [
     r"\bnow simulate\b",
@@ -63,7 +72,15 @@ def _abbrev(citation: str) -> str:
 
 def detect_run_intent(message: str) -> bool:
     msg = message.lower().strip().rstrip("!.").strip()
-    return msg in _RUN_PHRASES or "run the sim" in msg
+    if msg in _RUN_PHRASES:
+        return True
+    if any(p in msg for p in ("run the sim", "can run", "sounds good", "go for it")):
+        return True
+    # Short message (≤5 words) containing "run" with no negation/modification language
+    words = msg.split()
+    if len(words) <= 5 and "run" in words and not (set(words) & _RUN_NEGATION):
+        return True
+    return False
 
 
 def detect_new_scenario(message: str) -> bool:

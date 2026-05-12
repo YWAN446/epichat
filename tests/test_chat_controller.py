@@ -35,11 +35,26 @@ def test_detect_run_intent_looks_good():
 def test_detect_run_intent_go_ahead():
     assert detect_run_intent("go ahead") is True
 
+def test_detect_run_intent_you_can_run():
+    assert detect_run_intent("you can run") is True
+
+def test_detect_run_intent_sounds_good():
+    assert detect_run_intent("sounds good") is True
+
+def test_detect_run_intent_go_for_it():
+    assert detect_run_intent("go for it") is True
+
+def test_detect_run_intent_please_run():
+    assert detect_run_intent("please run") is True
+
 def test_detect_run_intent_modification_not_run():
     assert detect_run_intent("change duration to 5 years") is False
 
 def test_detect_run_intent_question_not_run():
     assert detect_run_intent("what is R0?") is False
+
+def test_detect_run_intent_negation_not_run():
+    assert detect_run_intent("don't run yet") is False
 
 
 # ── detect_new_scenario ───────────────────────────────────────────────────────
