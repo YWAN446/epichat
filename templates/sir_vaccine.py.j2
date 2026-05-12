@@ -27,8 +27,8 @@ sus_uids = sir_mod.susceptible.uids
 n_vax = int({{ vax_coverage }} * len(sus_uids))
 rng = np.random.default_rng()
 vax_uids = rng.choice(sus_uids, size=n_vax, replace=False) if n_vax > 0 else np.array([], dtype=int)
-sir_mod.susceptible[vax_uids] = False
-sir_mod.recovered[vax_uids] = True
+sir_mod.susceptible[ss.uids(vax_uids)] = False
+sir_mod.recovered[ss.uids(vax_uids)] = True
 sim.run()
 {% else %}
 # Ongoing vaccination campaign starting at day {{ vax_start_day }}
@@ -49,7 +49,7 @@ sir = res['sir']
 
 n_infected = sir['n_infected'].values
 cum_infections = sir['cum_infections'].values
-cum_deaths = res['cum_deaths'].values
+cum_deaths = res['cum_deaths'].values if 'cum_deaths' in res else np.zeros(len(res['timevec']))
 
 import matplotlib.pyplot as plt
 _scale = {{ pop_scale }}

@@ -151,14 +151,7 @@ dr = res[list(sim.diseases.keys())[0]]
 
 n_infected     = dr['n_infected'].values
 cum_infections = dr['cum_infections'].values
-_d_module = list(sim.diseases.values())[0]
-_ti_dead = _d_module.ti_dead.values
-_n_steps = len(res['timevec'])
-_finite_ti = np.round(_ti_dead[np.isfinite(_ti_dead)]).astype(int)
-if len(_finite_ti) > 0:
-    cum_deaths = np.cumsum(np.bincount(_finite_ti, minlength=_n_steps)[:_n_steps])
-else:
-    cum_deaths = np.zeros(_n_steps, dtype=int)
+cum_deaths = res['cum_deaths'].values if 'cum_deaths' in res else np.zeros(len(res['timevec']))
 
 import matplotlib.pyplot as plt
 _scale = {{ pop_scale }}

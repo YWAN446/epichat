@@ -142,8 +142,8 @@ _rng = np.random.default_rng({{ rand_seed }})
 _rng = np.random.default_rng()
 {% endif %}
 _vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
-_disease_obj.susceptible[_vax_uids] = False
-_disease_obj.recovered[_vax_uids]   = True
+_disease_obj.susceptible[ss.uids(_vax_uids)] = False
+_disease_obj.recovered[ss.uids(_vax_uids)]   = True
 {% endif %}
 
 {% if age_pct_under18 is not none and network_type == 'age_structured' %}
@@ -172,7 +172,7 @@ seir_res = res[list(sim.diseases.keys())[0]]
 
 n_infected    = seir_res['n_infected'].values
 cum_infections = seir_res['cum_infections'].values
-cum_deaths    = res['cum_deaths'].values
+cum_deaths = res['cum_deaths'].values if 'cum_deaths' in res else np.zeros(len(res['timevec']))
 
 import matplotlib.pyplot as plt
 _scale = {{ pop_scale }}
