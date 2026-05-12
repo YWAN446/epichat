@@ -63,14 +63,14 @@ def to_pdf(
         pdf.multi_cell(0, 5, content, fill=(role == "assistant"))
 
         if msg_plot and Path(msg_plot).exists():
-            pdf.image(msg_plot, w=pdf.epw)
+            pdf.image(msg_plot, x=pdf.l_margin, w=pdf.epw)
         elif (
             plot_path
             and Path(plot_path).exists()
             and role == "assistant"
             and "complete" in content.lower()
         ):
-            pdf.image(plot_path, w=pdf.epw)
+            pdf.image(plot_path, x=pdf.l_margin, w=pdf.epw)
 
         pdf.ln(3)
 
