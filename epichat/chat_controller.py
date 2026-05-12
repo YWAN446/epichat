@@ -9,19 +9,9 @@ if TYPE_CHECKING:
     from .schema import SimParams
 
 _SOURCE_FOOTNOTES: dict[str, str] = {
-    "UN WPP": (
-        "UN World Population Prospects 2024. Official UN demographic\n"
-        "        projections for 237 countries. data.un.org"
-    ),
-    "WB WDI": (
-        "World Bank World Development Indicators. Annual country-level\n"
-        "        health & economic data from official national sources.\n"
-        "        datatopics.worldbank.org"
-    ),
-    "WHO GHO": (
-        "World Health Organization Global Health Observatory. Disease\n"
-        "        surveillance and health system indicators. who.int/data/gho"
-    ),
+    "UN WPP": "UN World Population Prospects 2024. Official UN demographic projections for 237 countries. data.un.org",
+    "WB WDI": "World Bank World Development Indicators. Annual country-level health & economic data from official national sources. datatopics.worldbank.org",
+    "WHO GHO": "World Health Organization Global Health Observatory. Disease surveillance and health system indicators. who.int/data/gho",
 }
 
 _DISEASE_NAMES: dict[str, str] = {
@@ -61,6 +51,8 @@ _NEW_SCENARIO_PATTERNS = [
     r"\bdifferent country\b",
 ]
 
+_SUMMARY_LABEL_WIDTH = 13
+
 
 def _abbrev(citation: str) -> str:
     for key in ("UN WPP", "WB WDI", "WHO GHO"):
@@ -71,7 +63,7 @@ def _abbrev(citation: str) -> str:
 
 def detect_run_intent(message: str) -> bool:
     msg = message.lower().strip().rstrip("!.").strip()
-    return msg in _RUN_PHRASES or "run the sim" in msg or "looks good" in msg
+    return msg in _RUN_PHRASES or "run the sim" in msg
 
 
 def detect_new_scenario(message: str) -> bool:
@@ -102,9 +94,7 @@ def update_collected(
         result["population"] = True
 
     if result["disease"] and result["location"] and result["population"]:
-        if params.interventions or msg_lower in _SKIP_WORDS or any(
-            w in msg_lower for w in _SKIP_WORDS
-        ):
+        if params.interventions or any(w in msg_lower for w in _SKIP_WORDS):
             result["interventions"] = True
 
     return result
@@ -146,7 +136,7 @@ def next_question(
 def build_summary(params, data_sources: list) -> str:
     lines: list[str] = ["Got it. Here's what I've put together:\n"]
     used_sources: set[str] = set()
-    W = 13
+    W = _SUMMARY_LABEL_WIDTH
 
     disease_name = next(
         (_DISEASE_NAMES[rf.field] for rf in data_sources if rf.field in _DISEASE_NAMES),
@@ -163,7 +153,10 @@ def build_summary(params, data_sources: list) -> str:
             used_sources.add(abbrev)
         pop_m = pop_field.value / 1_000_000
         cite = f" [{abbrev}]" if abbrev else ""
-        lines.append(f"  {'Location':<{W}} (pop. {pop_m:.1f}M){cite}")
+        _m = re.search(r",\s*([^,()]+)\s*\(", pop_field.citation)
+        country = _m.group(1).strip() if _m else ""
+        prefix = f"{country} " if country else ""
+        lines.append(f"  {'Location':<{W}} {prefix}(pop. {pop_m:.1f}M){cite}")
 
     lines.append(f"  {'Agents':<{W}} {params.n_agents:,}")
 
