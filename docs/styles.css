@@ -640,3 +640,46 @@ footer.site .bottom {
   /* stats strip: 2×2 → single column */
   .stats-strip { grid-template-columns: 1fr !important; }
 }
+
+/* ------------------------------------------------------------
+   Pipeline — stacked card layout on mobile
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  .layer-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+  }
+  /* layer number + status sit side-by-side (auto-width, don't fill row) */
+  .layer-num {
+    flex: 0 0 auto !important;
+    flex-direction: row !important;
+    gap: 0.4rem !important;
+    padding: 0.75rem !important;
+    border-right: none !important;
+    background: transparent !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+  }
+  .layer-num .mono:last-child { font-size: 1.2rem !important; }
+  .layer-status {
+    flex: 0 0 auto !important;
+    padding: 0.75rem 0.75rem 0.75rem 0 !important;
+    border-right: none !important;
+    align-items: center !important;
+  }
+  /* description and in/out each fill full width */
+  .layer-desc {
+    flex: 0 0 100% !important;
+    padding: 0 0.75rem 0.5rem !important;
+    border-right: none !important;
+  }
+  .layer-io {
+    flex: 0 0 100% !important;
+    padding: 0.5rem 0.75rem 0.75rem !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    background: var(--paper-2) !important;
+  }
+}

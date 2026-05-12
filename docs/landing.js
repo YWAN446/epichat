@@ -33,21 +33,21 @@ const LAYERS = [
 const layersHost = document.getElementById("layers");
 if (layersHost) {
   layersHost.innerHTML = LAYERS.map((L, i) => `
-    <div style="display: grid; grid-template-columns: 80px 140px 1fr 240px; gap: 0;
+    <div class="layer-row" style="display: grid; grid-template-columns: 80px 140px 1fr 240px; gap: 0;
                 ${i < LAYERS.length - 1 ? "border-bottom: 1px solid var(--rule);" : ""}
                 align-items: stretch;">
-      <div style="padding: 1.6rem 1rem; border-right: 1px solid var(--rule); display: flex; flex-direction: column; gap: 0.3rem; align-items: center; justify-content: center; background: var(--paper-3);">
+      <div class="layer-num" style="padding: 1.6rem 1rem; border-right: 1px solid var(--rule); display: flex; flex-direction: column; gap: 0.3rem; align-items: center; justify-content: center; background: var(--paper-3);">
         <div class="mono" style="font-size: 0.64rem; color: var(--ink-3); letter-spacing: 0.14em;">LAYER</div>
         <div class="mono" style="font-size: 2rem; font-weight: 500; color: var(--accent); line-height: 1;">${L.idx}</div>
       </div>
-      <div style="padding: 1.6rem 1.2rem; border-right: 1px solid var(--rule); display: flex; align-items: flex-start;">
+      <div class="layer-status" style="padding: 1.6rem 1.2rem; border-right: 1px solid var(--rule); display: flex; align-items: flex-start;">
         <span class="tag ${L.status === "PROTOTYPE" ? "filled" : "accent"}">${L.status}</span>
       </div>
-      <div style="padding: 1.6rem 1.2rem; border-right: 1px solid var(--rule);">
+      <div class="layer-desc" style="padding: 1.6rem 1.2rem; border-right: 1px solid var(--rule);">
         <h3 style="font-family: var(--serif); font-size: 1.2rem; font-weight: 500; margin: 0 0 0.4rem; letter-spacing: -0.01em;">${L.title}</h3>
         <p style="font-size: 0.95rem; line-height: 1.5; color: var(--ink-2); margin: 0; max-width: 52ch; text-wrap: pretty;">${L.desc}</p>
       </div>
-      <div style="padding: 1.6rem 1.2rem; background: var(--paper-3); font-family: var(--mono); font-size: 0.76rem; display: flex; flex-direction: column; justify-content: center; gap: 0.4rem;">
+      <div class="layer-io" style="padding: 1.6rem 1.2rem; background: var(--paper-3); font-family: var(--mono); font-size: 0.76rem; display: flex; flex-direction: column; justify-content: center; gap: 0.4rem;">
         <div style="color: var(--ink-3);">▸ in  <span style="color: var(--ink);">${L.inLbl}</span></div>
         <div style="color: var(--ink-3);">▾ out <span style="color: var(--accent);">${L.outLbl}</span></div>
       </div>
