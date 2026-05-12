@@ -85,6 +85,9 @@ def _reset_conversation() -> None:
             st.session_state[key] = list(val)
         else:
             st.session_state[key] = val
+    # Clear empty-state widget state so pills don't re-fire after New Chat
+    for wkey in ("suggestion_pills", "initial_input"):
+        st.session_state.pop(wkey, None)
 
 
 def _restore_conversation(conv_id: str) -> None:
@@ -309,42 +312,46 @@ _SUGGESTIONS = [
 messages = st.session_state.messages
 
 if not messages:
+    # ── Empty state: inline input + suggestion pills ──────────────────────────
     st.markdown(
         "<div style='text-align:center;padding-top:15vh'>"
         "<h1 style='font-size:3rem'>🦠 EpiChat</h1>"
-        "<p style='color:white;font-size:1.5rem;margin:0'>"
+        "<p style='color:white;font-size:1.5rem;margin:0 0 2rem 0'>"
         "What would you like to simulate today?"
         "</p></div>",
         unsafe_allow_html=True,
     )
-else:
-    for msg in messages:
-        avatar = "🦠" if msg["role"] == "assistant" else None
-        with st.chat_message(msg["role"], avatar=avatar):
-            st.markdown(msg["content"])
-            if msg.get("plot_path") and Path(msg["plot_path"]).exists():
-                st.image(msg["plot_path"], use_container_width=True)
-
-    if st.session_state.stage == "running":
-        with st.chat_message("assistant", avatar="🦠"):
-            st.markdown("Running simulation…")
-        with st.spinner("Running simulation…"):
-            _do_run_simulation()
+    with st.container():
+        initial_prompt = st.chat_input("Type your message…", key="initial_input")
+        selected = st.pills(
+            label="Suggestions",
+            label_visibility="collapsed",
+            options=_SUGGESTIONS,
+            key="suggestion_pills",
+        )
+    if initial_prompt:
+        _handle_user_message(initial_prompt)
         st.rerun()
+    if selected:
+        _handle_user_message(selected)
+        st.rerun()
+    st.stop()
 
-# ── Chat input (always visible) ───────────────────────────────────────────────
+# ── Active state: chat thread + fixed input at bottom ────────────────────────
+for msg in messages:
+    avatar = "🦠" if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=avatar):
+        st.markdown(msg["content"])
+        if msg.get("plot_path") and Path(msg["plot_path"]).exists():
+            st.image(msg["plot_path"], use_container_width=True)
+
+if st.session_state.stage == "running":
+    with st.chat_message("assistant", avatar="🦠"):
+        st.markdown("Running simulation…")
+    with st.spinner("Running simulation…"):
+        _do_run_simulation()
+    st.rerun()
+
 if prompt := st.chat_input("Type your message…"):
     _handle_user_message(prompt)
     st.rerun()
-
-# ── Suggestion chips (empty state only, just above chat input bar) ────────────
-if not messages:
-    st.markdown(
-        "<div style='height:calc(100vh - 350px)'></div>",
-        unsafe_allow_html=True,
-    )
-    cols = st.columns(len(_SUGGESTIONS))
-    for i, suggestion in enumerate(_SUGGESTIONS):
-        if cols[i].button(suggestion, use_container_width=True):
-            _handle_user_message(suggestion)
-            st.rerun()
