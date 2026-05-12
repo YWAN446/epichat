@@ -653,6 +653,7 @@ footer.site .bottom {
   }
   /* layer number + status sit side-by-side (auto-width, don't fill row) */
   .layer-num {
+    display: flex !important;
     flex: 0 0 auto !important;
     flex-direction: row !important;
     gap: 0.4rem !important;
