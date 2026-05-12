@@ -609,3 +609,34 @@ footer.site .bottom {
   }
   .nav.nav-open .nav-links a:last-child { border-bottom: 0; }
 }
+
+/* ------------------------------------------------------------
+   Global 640px breakpoint
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  html, body { font-size: 15px; }
+  .wrap { padding: 0 1rem; }
+  section { padding: 2.5rem 0; }
+
+  /* footer: collapse 2-col to 1-col */
+  footer.site .cols { grid-template-columns: 1fr; }
+
+  /* stats strip: 4-col → 2×2 */
+  .stats-strip { grid-template-columns: 1fr 1fr !important; }
+
+  /* team cards: stack photo above bio */
+  .team-card { grid-template-columns: 1fr !important; }
+  .team-card > img { width: 120px !important; height: auto !important; }
+
+  /* roadmap: hide header row (rows are self-labelled as cards) */
+  .roadmap-header { display: none !important; }
+
+  /* safety net: allow tables to scroll if anything still overflows */
+  #layers, #roadmap-rows { overflow-x: auto; }
+}
+
+@media (max-width: 400px) {
+  /* stats strip: 2×2 → single column */
+  .stats-strip { grid-template-columns: 1fr !important; }
+}
