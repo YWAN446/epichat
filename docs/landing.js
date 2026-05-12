@@ -228,14 +228,14 @@ const impactBar = (v) => {
 const roadmapHost = document.getElementById("roadmap-rows");
 if (roadmapHost) {
   roadmapHost.innerHTML = ROADMAP.map((r, i) => `
-    <div style="display: grid; grid-template-columns: 60px 1fr 140px 140px; gap: 0; background: ${i % 2 ? "var(--paper-2)" : "var(--paper)"};
+    <div class="roadmap-row" style="display: grid; grid-template-columns: 60px 1fr 140px 140px; gap: 0; background: ${i % 2 ? "var(--paper-2)" : "var(--paper)"};
                 ${i < ROADMAP.length - 1 ? "border-bottom: 1px solid var(--rule);" : ""}">
-      <div style="padding: 1rem; border-right: 1px solid var(--rule); font-family: var(--mono); color: var(--ink-3); display: flex; align-items: center;">
+      <div class="road-pri" style="padding: 1rem; border-right: 1px solid var(--rule); font-family: var(--mono); color: var(--ink-3); display: flex; align-items: center;">
         <span style="color: var(--accent); font-weight: 500;">${r.priority}</span>
       </div>
-      <div style="padding: 1rem 1.2rem; border-right: 1px solid var(--rule); font-family: var(--serif); font-size: 1rem;">${r.name}</div>
-      <div style="padding: 1rem 1.2rem; border-right: 1px solid var(--rule); font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); display: flex; align-items: center;">${r.complexity}</div>
-      <div style="padding: 1rem 1.2rem; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); display: flex; align-items: center; gap: 0.6rem;">
+      <div class="road-name" style="padding: 1rem 1.2rem; border-right: 1px solid var(--rule); font-family: var(--serif); font-size: 1rem;">${r.name}</div>
+      <div class="road-cmplx" style="padding: 1rem 1.2rem; border-right: 1px solid var(--rule); font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); display: flex; align-items: center;">${r.complexity}</div>
+      <div class="road-impact" style="padding: 1rem 1.2rem; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); display: flex; align-items: center; gap: 0.6rem;">
         <span style="display: flex; gap: 2px; align-items: flex-end;">${impactBar(r.impact)}</span>
         <span>${r.impact}</span>
       </div>
