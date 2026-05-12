@@ -99,8 +99,15 @@ def update_collected(
     result = dict(collected)
     msg_lower = last_user_message.lower().strip().rstrip(".")
 
-    if params.disease_type != "sir" or any(
-        rf.field in _DISEASE_INDICATOR_FIELDS for rf in data_sources
+    # Generic SIR defaults (extraction.txt): dur_inf=10, n_contacts=4, p_death=0.
+    # Any deviation means the LLM inferred disease-specific values → disease was named.
+    if (
+        params.disease_type != "sir"
+        or any(rf.field in _DISEASE_INDICATOR_FIELDS for rf in data_sources)
+        or params.p_death > 0
+        or params.dur_inf != 10.0
+        or params.n_contacts != 4
+        or bool(params.interventions)
     ):
         result["disease"] = True
 

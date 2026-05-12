@@ -88,6 +88,31 @@ def test_update_collected_disease_from_nondefault_type():
     result = update_collected(_base_collected(), params, [], "HIV in Kenya")
     assert result["disease"] is True
 
+def test_update_collected_disease_from_nonzero_p_death():
+    # "COVID with seasonality" → disease_type=sir but p_death=0.01 (COVID default)
+    params = _base_params(disease_type="sir", p_death=0.01, dur_inf=8.0, n_contacts=6)
+    result = update_collected(_base_collected(), params, [], "COVID with seasonality")
+    assert result["disease"] is True
+
+def test_update_collected_disease_from_interventions():
+    # Seasonality intervention alone should flag disease as collected
+    from epichat.schema import Intervention
+    iv = Intervention(type="seasonality", scale=0.3, shift=0.0)
+    params = _base_params(disease_type="sir", interventions=[iv])
+    result = update_collected(_base_collected(), params, [], "flu with seasonality")
+    assert result["disease"] is True
+
+def test_update_collected_disease_from_nondefault_dur_inf():
+    params = _base_params(disease_type="sir", dur_inf=5.0, n_contacts=6)  # flu-like
+    result = update_collected(_base_collected(), params, [], "simulate flu")
+    assert result["disease"] is True
+
+def test_update_collected_disease_not_set_for_pure_generic_sir():
+    # "Run a default SIR model" → all defaults → disease should still need clarification
+    params = _base_params(disease_type="sir", p_death=0.0, dur_inf=10.0, n_contacts=4)
+    result = update_collected(_base_collected(), params, [], "run a default SIR model")
+    assert result["disease"] is False
+
 def test_update_collected_disease_from_indicator_field():
     params = _base_params(disease_type="sir")
     ds = [_make_rf("hiv_prevalence", 3.0, "WB WDI, KEN, 2024")]
