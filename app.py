@@ -296,6 +296,7 @@ def _apply_modification_and_summarize(text: str) -> None:
     except Exception as e:
         _add_msg("assistant", f"I couldn't apply that modification: {e}. Please try again.")
         return
+    s.context = (s.context + " " + text).strip()
     _add_msg(
         "assistant",
         "Updated. Here's the revised summary:\n\n" + _build_summary_with_description(),
