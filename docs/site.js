@@ -23,7 +23,7 @@
               <a href="${l.href}" class="${l.href === CURRENT ? "active" : ""}">${l.label}</a>
             `).join("")}
           </div>
-          <a href="#demo" class="nav-cta" style="opacity: 0.5; cursor: default;">Demo coming soon</a>
+          <a href="https://epichat.streamlit.app/" target="_blank" rel="noopener" class="nav-cta">Try the demo ↗</a>
         </div>
       </nav>
     `;
@@ -51,6 +51,7 @@
               <ul>
                 <li><a href="index.html">Overview</a></li>
                 <li><a href="docs.html">Docs</a></li>
+                <li><a href="https://epichat.streamlit.app/" target="_blank" rel="noopener">Live demo ↗</a></li>
               </ul>
             </div>
             <div>
@@ -58,7 +59,6 @@
               <ul>
                 <li><a href="https://github.com/YWAN446/epichat" target="_blank" rel="noopener">GitHub ↗</a></li>
                 <li><a href="https://starsim.org" target="_blank" rel="noopener">Starsim ↗</a></li>
-                <li><a href="#demo">Live demo</a></li>
               </ul>
             </div>
             <div>
