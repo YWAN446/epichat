@@ -7,3 +7,5 @@ matplotlib
 sciris
 python-dotenv
 pytest
+fpdf2
+python-docx
