@@ -118,6 +118,16 @@ def test_update_collected_interventions_not_set_prematurely():
     result = update_collected(_base_collected(), params, [], "none")
     assert result["interventions"] is False
 
+def test_update_collected_interventions_not_set_from_params_when_prereqs_missing():
+    # Even if params has interventions, don't set flag until disease/location/population are True
+    iv = Intervention(type="vaccine", coverage=0.7, start_day=0)
+    params = _base_params(interventions=[iv])
+    # Only disease is collected, not location or population
+    collected = _base_collected()
+    collected["disease"] = True
+    result = update_collected(collected, params, [], "some message")
+    assert result["interventions"] is False
+
 def test_update_collected_returns_unchanged_when_params_none():
     collected = _base_collected()
     result = update_collected(collected, None, [], "HIV in Kenya")

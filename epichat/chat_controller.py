@@ -106,8 +106,6 @@ def update_collected(
             w in msg_lower for w in _SKIP_WORDS
         ):
             result["interventions"] = True
-    elif params.interventions:
-        result["interventions"] = True
 
     return result
 
