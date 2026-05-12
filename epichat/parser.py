@@ -27,10 +27,17 @@ class IntentResult:
 _resolver: Resolver = Resolver()
 _LOCATION_TABLE: str = ""
 _last_resolved: list[ResolvedField] = []
+_last_location_queried: bool = False
 
 
 def get_last_resolved() -> list[ResolvedField]:
     return list(_last_resolved)
+
+
+def get_last_location_queried() -> bool:
+    """True when LLM-1 recognised a geographic location in the query,
+    even if the UN WPP API call subsequently failed or returned nothing."""
+    return _last_location_queried
 
 
 def configure_resolver(adapter: SourceAdapter) -> None:
@@ -222,9 +229,14 @@ def parse_query(user_input: str) -> SimParams:
     Raises:
         ValueError: if the LLM requests clarification or returns invalid JSON/schema.
     """
-    global _last_resolved
-    _last_resolved = []   # reset before any work
+    global _last_resolved, _last_location_queried
+    _last_resolved = []
+    _last_location_queried = False
     intent = _llm_call_1(user_input)
+    _last_location_queried = any(
+        q.source == "un_wpp" and q.location_id != 0
+        for q in intent.data_queries
+    )
     resolved = _run_resolver(intent.data_queries)
     _last_resolved = resolved
     params = _llm_call_2(user_input, intent.preliminary_params, resolved)

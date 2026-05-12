@@ -22,7 +22,7 @@ from epichat.epichat import EpiChat
 from epichat.exporter import to_docx, to_pdf
 from epichat.modifier import apply_modification, generate_sim_description
 from epichat.narrator import narrate
-from epichat.parser import get_last_resolved, parse_query
+from epichat.parser import get_last_resolved, get_last_location_queried, parse_query
 
 st.set_page_config(page_title="EpiChat", page_icon="🦠", layout="wide")
 
@@ -123,6 +123,8 @@ def _do_parse() -> None:
     try:
         st.session_state.params = parse_query(st.session_state.context)
         st.session_state.data_sources = get_last_resolved()
+        if get_last_location_queried():
+            st.session_state._location_recognized = True
     except Exception:
         pass
 
@@ -217,6 +219,11 @@ def _process_pending() -> None:
         s.context = (s.context + " " + text).strip()
         _do_parse()
         s.collected = update_collected(s.collected, s.params, s.data_sources, text)
+        # Accept location even when the UN WPP API failed — the LLM still recognised it
+        if st.session_state.get("_location_recognized"):
+            s.collected["location"] = True
+            s.collected["population"] = True
+            st.session_state._location_recognized = False
         if s.params is None:
             _add_msg(
                 "assistant",
@@ -257,6 +264,10 @@ def _start_new_scenario(text: str) -> None:
     s.collected = {k: False for k in s.collected}
     _do_parse()
     s.collected = update_collected(s.collected, s.params, s.data_sources, text)
+    if st.session_state.get("_location_recognized"):
+        s.collected["location"] = True
+        s.collected["population"] = True
+        st.session_state._location_recognized = False
     question = next_question(s.collected, s.params, s.data_sources)
     if question is None:
         _add_msg("assistant", _build_summary_with_description())
