@@ -47,6 +47,7 @@ _CONV_DEFAULTS: dict = {
         "interventions": False,
     },
     "messages": [],
+    "pending_input": None,
 }
 
 for key, val in [
@@ -167,8 +168,8 @@ def _do_run_simulation() -> None:
 
 
 def _handle_user_message(text: str) -> None:
+    """Add user message immediately and queue processing for the next render cycle."""
     s = st.session_state
-
     if s.stage == "greeting":
         if not s.messages:
             _add_msg(
@@ -178,8 +179,30 @@ def _handle_user_message(text: str) -> None:
                 "with what you know.",
             )
         s.stage = "collecting"
-
     _add_msg("user", text)
+    s.pending_input = text
+
+
+def _thinking_text() -> str:
+    """Return an appropriate status label for the current stage and pending input."""
+    stage = st.session_state.stage
+    text = st.session_state.pending_input or ""
+    if stage == "collecting":
+        return "Searching available epidemiological data…"
+    if stage in ("ready", "results"):
+        if detect_run_intent(text):
+            return "Preparing simulation…"
+        if detect_new_scenario(text):
+            return "Parsing new scenario…"
+        return "Updating parameters…"
+    return "Thinking…"
+
+
+def _process_pending() -> None:
+    """Execute the queued user input. Called from the render loop under a spinner."""
+    s = st.session_state
+    text = s.pending_input
+    s.pending_input = None
 
     if s.stage == "collecting":
         s.context = (s.context + " " + text).strip()
@@ -344,6 +367,13 @@ for msg in messages:
         st.markdown(msg["content"])
         if msg.get("plot_path") and Path(msg["plot_path"]).exists():
             st.image(msg["plot_path"], use_container_width=True)
+
+# Show thinking indicator and process queued input
+if st.session_state.pending_input:
+    with st.chat_message("assistant", avatar="🦠"):
+        with st.spinner(_thinking_text()):
+            _process_pending()
+    st.rerun()
 
 if st.session_state.stage == "running":
     with st.chat_message("assistant", avatar="🦠"):
