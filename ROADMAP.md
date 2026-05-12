@@ -168,7 +168,42 @@ This document maps future EpiChat capabilities to the external datasets that wou
 
 ---
 
-## Phase 7 — Geospatial / Metapopulation Modeling
+## Phase 7 — Multilingual Support
+
+**Feature:** Accept user queries in any language and respond in the same language, making EpiChat accessible to non-English-speaking researchers, public health practitioners, and students.
+
+**Why it matters:** Epidemics are inherently local — the professionals closest to an outbreak often work in French, Spanish, Portuguese, Arabic, Chinese, or other languages. Requiring English creates a barrier precisely where the tool is most needed.
+
+**How it works:**
+
+The underlying Claude model already understands and generates text in ~100 languages, so parameter extraction from queries like "simuler la rougeole en France" or "simular sarampión en México" works without any model changes. The work is in the application layer:
+
+| Layer | Change required |
+|---|---|
+| LLM extraction prompt | Already language-agnostic; Claude returns structured JSON regardless of input language |
+| LLM response generation | Inject `reply_language` instruction into all system prompts (e.g., "Respond in the same language as the user's message") |
+| Streamlit UI strings | Externalize hardcoded English labels into a locale dictionary; ship translations for priority languages |
+| `build_summary` / `next_question` | Replace hardcoded English phrases with locale-keyed strings |
+| Citation footnotes | Translate footnote text; data source names (UN WPP, WB WDI) remain as-is |
+
+**Priority languages** (based on WHO region and disease burden):
+- Spanish (PAHO, ~500M speakers)
+- French (AFRO, ~300M speakers)
+- Portuguese (Brazil + AFRO)
+- Arabic (EMRO)
+- Chinese (Simplified, WPRO)
+
+**What EpiChat needs:**
+- Language detection: pass `user_language` to all LLM calls (or instruct the model to auto-detect and mirror)
+- Locale file: `epichat/locales/{lang}.json` with keys for all UI strings
+- `next_question()` and `build_summary()` accept an optional `lang: str` parameter
+- Streamlit UI: auto-detect from browser `Accept-Language` header, or explicit language selector in sidebar
+
+**Implementation complexity:** Low–Medium — LLM response translation is near-zero cost (model already handles it); the main work is externalizing ~40 hardcoded UI strings and adding locale files for each language.
+
+---
+
+## Phase 8 — Geospatial / Metapopulation Modeling
 
 **Feature:** Model multiple connected subpopulations (cities, districts, countries) with travel-driven transmission between them.
 
@@ -192,12 +227,13 @@ This document maps future EpiChat capabilities to the external datasets that wou
 | Priority | Phase | Complexity | Impact |
 |---|---|---|---|
 | 1 | Phase 4 — Country demographics | Low–Medium | High: improves all long-run simulations |
-| 2 | Phase 1 — Country contact matrices | Medium | High: improves age-structured accuracy |
-| 3 | Phase 3 — Age-specific severity | Medium | High: realistic mortality distribution |
-| 4 | Phase 2 — HouseholdNet | High | Medium: important for household-transmitted diseases |
-| 5 | Phase 5 — Calibration | High | Very High: enables research-grade parameter estimation |
-| 6 | Phase 6 — STI networks | Very High | Medium: expands disease scope |
-| 7 | Phase 7 — Metapopulation | Very High | High: spatial outbreak dynamics |
+| 2 | Phase 7 — Multilingual support | Low–Medium | High: removes language barrier for global users |
+| 3 | Phase 1 — Country contact matrices | Medium | High: improves age-structured accuracy |
+| 4 | Phase 3 — Age-specific severity | Medium | High: realistic mortality distribution |
+| 5 | Phase 2 — HouseholdNet | High | Medium: important for household-transmitted diseases |
+| 6 | Phase 5 — Calibration | High | Very High: enables research-grade parameter estimation |
+| 7 | Phase 6 — STI networks | Very High | Medium: expands disease scope |
+| 8 | Phase 8 — Metapopulation | Very High | High: spatial outbreak dynamics |
 
 ---
 
