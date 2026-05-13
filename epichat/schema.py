@@ -116,3 +116,23 @@ class SimParams(BaseModel):
         d["seasonality_int"]= seas.model_dump()  if seas  else None
         d["treatment_int"]  = treat.model_dump() if treat else None
         return d
+
+
+class OutbreakContext(BaseModel):
+    input_type: Literal["query", "report", "url", "search"]
+    source_url: Optional[str] = None
+    disease_name: Optional[str] = None
+    pathogen_type: Optional[str] = None
+    location: Optional[str] = None
+    geographic_scale: Optional[Literal["city", "regional", "national", "global"]] = None
+    outbreak_start_date: Optional[str] = None
+    outbreak_end_date: Optional[str] = None
+    total_cases: Optional[int] = None
+    total_deaths: Optional[int] = None
+    case_fatality_rate: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    r0_estimate: Optional[float] = Field(default=None, gt=0.0)
+    incubation_period_days: Optional[float] = Field(default=None, gt=0.0)
+    infectious_period_days: Optional[float] = Field(default=None, gt=0.0)
+    affected_population: Optional[str] = None
+    interventions_mentioned: List[str] = []
+    confidence: Literal["high", "medium", "low"] = "low"
