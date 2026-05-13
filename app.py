@@ -209,13 +209,6 @@ def _handle_user_message(text: str) -> None:
     """Add user message immediately and queue processing for the next render cycle."""
     s = st.session_state
     if s.stage == "greeting":
-        if not s.messages:
-            _add_msg(
-                "assistant",
-                "What would you like to simulate today? You can describe a disease, "
-                "a location, a population size, and any interventions — or just start "
-                "with what you know.",
-            )
         s.stage = "collecting"
     _add_msg("user", text)
     s.pending_input = text
@@ -389,9 +382,9 @@ with st.sidebar:
 _SUGGESTIONS = [
     "Simulate a generic SIR epidemic",
     "COVID-19 endemic with waning immunity",
-    "Influenza outbreak",
     "Measles with 80% vaccination coverage",
-    "Ebola outbreak",
+    "Ebola outbreak in DRC",
+    "Search for the latest Mpox outbreak news",
 ]
 
 messages = st.session_state.messages
@@ -401,8 +394,12 @@ if not messages:
     st.markdown(
         "<div style='text-align:center;padding-top:15vh'>"
         "<h1 style='font-size:3rem'>🦠 EpiChat</h1>"
-        "<p style='color:white;font-size:1.5rem;margin:0 0 2rem 0'>"
+        "<p style='color:white;font-size:1.5rem;margin:0 0 0.5rem 0'>"
         "What would you like to simulate today?"
+        "</p>"
+        "<p style='color:#aac4e0;font-size:1rem;margin:0 0 2rem 0'>"
+        "Describe a disease &nbsp;·&nbsp; paste an epidemiological report "
+        "&nbsp;·&nbsp; share a URL &nbsp;·&nbsp; ask me to search for outbreak news"
         "</p></div>",
         unsafe_allow_html=True,
     )
