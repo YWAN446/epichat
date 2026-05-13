@@ -599,3 +599,71 @@ def test_apply_health_system_coverage_defaults_to_1_when_no_uhc():
     treatment = result.get_treatment()
     assert treatment is not None
     assert treatment.coverage == 1.0
+
+
+from unittest.mock import MagicMock, patch
+from epichat.schema import OutbreakContext
+
+
+def _make_intent_response(disease_type="sir", beta=22.8125):
+    payload = (
+        '{"preliminary_params":{"disease_type":"' + disease_type + '",'
+        '"n_agents":10000,"n_contacts":4,"network_type":"random",'
+        '"network_beta":1.0,"beta":' + str(beta) + ',"init_prev":0.01,'
+        '"dur_inf":10.0,"dur_exp":null,"dur_immune":null,"p_asymp":0.3,'
+        '"rel_trans_asymp":0.5,"p_death":0.0,"sim_dur_years":1.0,'
+        '"rand_seed":null,"use_demographics":false,"birth_rate":20.0,'
+        '"death_rate":10.0,"interventions":[]},"data_queries":[]}'
+    )
+    block = MagicMock()
+    block.type = "text"
+    block.text = payload
+    resp = MagicMock()
+    resp.stop_reason = "end_turn"
+    resp.content = [block]
+    return resp
+
+
+def test_parse_query_forwards_context_to_llm(monkeypatch):
+    ctx = OutbreakContext(
+        input_type="report",
+        disease_name="Ebola",
+        location="DRC",
+        total_cases=500,
+        confidence="high",
+    )
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _make_intent_response()
+
+    with patch("epichat.parser.anthropic.Anthropic") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.side_effect = fake_create
+        from epichat.parser import parse_query
+        parse_query("run ebola sim", context=ctx)
+
+    user_content = captured["messages"][0]["content"]
+    assert "Outbreak context" in user_content
+    assert "Ebola" in user_content
+    assert "DRC" in user_content
+
+
+def test_parse_query_without_context_unchanged(monkeypatch):
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _make_intent_response()
+
+    with patch("epichat.parser.anthropic.Anthropic") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.side_effect = fake_create
+        from epichat.parser import parse_query
+        parse_query("run a default SIR model")
+
+    user_content = captured["messages"][0]["content"]
+    assert "Outbreak context" not in user_content

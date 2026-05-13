@@ -9,7 +9,7 @@ import anthropic
 from dotenv import load_dotenv
 
 from .resolver import DataQuery, ResolvedField, Resolver, SourceAdapter
-from .schema import SimParams
+from .schema import OutbreakContext, SimParams
 
 load_dotenv()
 
@@ -68,13 +68,24 @@ def _parse_json(raw: str) -> dict:
         raise ValueError(f"LLM returned non-JSON response: {raw!r}") from e
 
 
-def _llm_call_1(user_input: str) -> IntentResult:
+def _format_context(context: OutbreakContext) -> str:
+    lines = ["Outbreak context (extracted from source):"]
+    for key, val in context.model_dump(exclude={"input_type", "confidence"}).items():
+        if val is not None and val != []:
+            lines.append(f"  {key}: {val}")
+    return "\n".join(lines)
+
+
+def _llm_call_1(user_input: str, context: OutbreakContext | None = None) -> IntentResult:
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    content = user_input
+    if context is not None:
+        content = _format_context(context) + "\n\nUser query: " + user_input
     message = client.messages.create(
         model=_MODEL,
         max_tokens=1500,
         system=_load_system_prompt(),
-        messages=[{"role": "user", "content": user_input}],
+        messages=[{"role": "user", "content": content}],
     )
     raw = message.content[0].text.strip()
     data = _parse_json(raw)
@@ -215,7 +226,7 @@ def _apply_health_system(params: SimParams, resolved: list[ResolvedField]) -> Si
     })
 
 
-def parse_query(user_input: str) -> SimParams:
+def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
 
@@ -232,7 +243,7 @@ def parse_query(user_input: str) -> SimParams:
     global _last_resolved, _last_location_queried
     _last_resolved = []
     _last_location_queried = False
-    intent = _llm_call_1(user_input)
+    intent = _llm_call_1(user_input, context)
     _last_location_queried = any(
         q.source == "un_wpp" and q.location_id != 0
         for q in intent.data_queries
