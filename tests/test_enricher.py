@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from epichat.schema import OutbreakContext
 
 
@@ -72,3 +70,16 @@ def test_enrich_handles_tool_use_then_end_turn():
     assert ctx.input_type == "search"
     assert ctx.disease_name == "Mpox"
     assert ctx.location == "DRC"
+
+
+def test_enrich_falls_back_on_schema_validation_error():
+    with patch("epichat.enricher.anthropic.Anthropic") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.return_value = _mock_response(
+            '{"input_type": "unknown_type", "confidence": "high"}'
+        )
+        from epichat.enricher import enrich_input
+        ctx = enrich_input("anything")
+    assert isinstance(ctx, OutbreakContext)
+    assert ctx.input_type == "query"

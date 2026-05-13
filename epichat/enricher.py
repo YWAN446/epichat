@@ -52,6 +52,8 @@ def _call_enrichment_llm(user_input: str) -> OutbreakContext:
                 {
                     "role": "user",
                     "content": [
+                        # web_search_20250305 is a server-side tool; results are injected by the API.
+                        # The client sends an empty tool_result as an acknowledgement turn.
                         {"type": "tool_result", "tool_use_id": b.id, "content": ""}
                         for b in response.content
                         if b.type == "tool_use"
