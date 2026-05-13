@@ -173,27 +173,78 @@ cum_infections = dr['cum_infections'].values
 cum_deaths = res['cum_deaths'].values if 'cum_deaths' in res else np.zeros(len(res['timevec']))
 
 import matplotlib.pyplot as plt
-_scale = {{ pop_scale }}
-_ylabel = '{{ "People" if pop_scale != 1.0 else "Count" }}'
-_days = np.arange(len(n_infected))
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-for _key, _color, _lbl in [
-    ('n_susceptible', 'steelblue', 'Susceptible'),
-    ('n_infected',    'firebrick', 'Infectious'),
-    ('n_recovered',   'seagreen',  'Recovered'),
+
+_dis_key = list(sim.diseases.keys())[0]
+_dr = sim.results[_dis_key]
+_rs = sim.results
+_days = np.arange(len(_rs['timevec']))
+
+fig, axes = plt.subplots(3, 3, figsize=(15, 10))
+_ax = axes.flatten()
+
+# (0,0) All compartments overview
+for _k, _c, _l in [
+    ('n_susceptible',  'steelblue',  'Susceptible'),
+    ('n_exposed',      'gold',       'Exposed'),
+    ('n_infected',     'firebrick',  'Infectious'),
+    ('n_asymptomatic', 'darkorange', 'Asymptomatic'),
+    ('n_recovered',    'seagreen',   'Recovered'),
 ]:
-    if _key in dr:
-        ax1.plot(_days, dr[_key].values * _scale, color=_color, label=_lbl)
-ax1.set_xlabel('Day')
-ax1.set_ylabel(_ylabel)
-ax1.set_title('SIRS Compartments')
-ax1.legend()
-ax2.plot(_days, cum_infections * _scale, color='steelblue', label='Cumulative infections')
-ax2.plot(_days, cum_deaths     * _scale, color='firebrick', label='Cumulative deaths')
-ax2.set_xlabel('Day')
-ax2.set_ylabel(_ylabel)
-ax2.set_title('Cumulative')
-ax2.legend()
+    if _k in _dr:
+        _ax[0].plot(_days, _dr[_k].values, color=_c, label=_l)
+_ax[0].set_title('All compartments')
+_ax[0].set_xlabel('Day')
+_ax[0].legend(fontsize=7)
+
+# (0,1) Susceptible
+_ax[1].set_title('Susceptible')
+_ax[1].set_xlabel('Day')
+if 'n_susceptible' in _dr:
+    _ax[1].plot(_days, _dr['n_susceptible'].values, color='steelblue')
+
+# (0,2) Infectious
+_ax[2].set_title('Infectious')
+_ax[2].set_xlabel('Day')
+if 'n_infected' in _dr:
+    _ax[2].plot(_days, _dr['n_infected'].values, color='firebrick')
+
+# (1,0) Recovered
+_ax[3].set_title('Recovered')
+_ax[3].set_xlabel('Day')
+if 'n_recovered' in _dr:
+    _ax[3].plot(_days, _dr['n_recovered'].values, color='seagreen')
+
+# (1,1) Prevalence
+_ax[4].set_title('Prevalence (%)')
+_ax[4].set_xlabel('Day')
+if 'prevalence' in _dr:
+    _ax[4].plot(_days, _dr['prevalence'].values * 100, color='firebrick')
+
+# (1,2) New infections per day
+_ax[5].set_title('New infections / day')
+_ax[5].set_xlabel('Day')
+if 'new_infections' in _dr:
+    _ax[5].plot(_days, _dr['new_infections'].values, color='steelblue')
+
+# (2,0) Cumulative infections
+_ax[6].set_title('Cumulative infections')
+_ax[6].set_xlabel('Day')
+if 'cum_infections' in _dr:
+    _ax[6].plot(_days, _dr['cum_infections'].values, color='steelblue')
+
+# (2,1) New deaths per day
+_ax[7].set_title('New deaths / day')
+_ax[7].set_xlabel('Day')
+if 'new_deaths' in _rs:
+    _ax[7].plot(_days, _rs['new_deaths'].values, color='darkred')
+
+# (2,2) Cumulative deaths
+_ax[8].set_title('Cumulative deaths')
+_ax[8].set_xlabel('Day')
+if 'cum_deaths' in _rs:
+    _ax[8].plot(_days, _rs['cum_deaths'].values, color='darkred')
+
+fig.suptitle(_dis_key.upper() + ' Simulation', fontsize=13, y=1.01)
 fig.tight_layout()
 fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
 plt.close(fig)
