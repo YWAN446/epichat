@@ -73,6 +73,8 @@ def _format_context(context: OutbreakContext) -> str:
     for key, val in context.model_dump(exclude={"input_type", "confidence"}).items():
         if val is not None and val != []:
             lines.append(f"  {key}: {val}")
+    if len(lines) == 1:
+        return ""
     return "\n".join(lines)
 
 
@@ -80,7 +82,9 @@ def _llm_call_1(user_input: str, context: OutbreakContext | None = None) -> Inte
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     content = user_input
     if context is not None:
-        content = _format_context(context) + "\n\nUser query: " + user_input
+        ctx_block = _format_context(context)
+        if ctx_block:
+            content = ctx_block + "\n\nUser query: " + user_input
     message = client.messages.create(
         model=_MODEL,
         max_tokens=1500,

@@ -14,7 +14,7 @@ from epichat.parser import (
     parse_query,
 )
 from epichat.resolver import ResolvedField
-from epichat.schema import SimParams
+from epichat.schema import OutbreakContext, SimParams
 
 
 def _mock_llm(response_text: str):
@@ -601,10 +601,6 @@ def test_apply_health_system_coverage_defaults_to_1_when_no_uhc():
     assert treatment.coverage == 1.0
 
 
-from unittest.mock import MagicMock, patch
-from epichat.schema import OutbreakContext
-
-
 def _make_intent_response(disease_type="sir", beta=22.8125):
     payload = (
         '{"preliminary_params":{"disease_type":"' + disease_type + '",'
@@ -624,7 +620,7 @@ def _make_intent_response(disease_type="sir", beta=22.8125):
     return resp
 
 
-def test_parse_query_forwards_context_to_llm(monkeypatch):
+def test_parse_query_forwards_context_to_llm():
     ctx = OutbreakContext(
         input_type="report",
         disease_name="Ebola",
@@ -651,7 +647,7 @@ def test_parse_query_forwards_context_to_llm(monkeypatch):
     assert "DRC" in user_content
 
 
-def test_parse_query_without_context_unchanged(monkeypatch):
+def test_parse_query_without_context_unchanged():
     captured = {}
 
     def fake_create(**kwargs):
@@ -664,6 +660,25 @@ def test_parse_query_without_context_unchanged(monkeypatch):
         mock_client.messages.create.side_effect = fake_create
         from epichat.parser import parse_query
         parse_query("run a default SIR model")
+
+    user_content = captured["messages"][0]["content"]
+    assert "Outbreak context" not in user_content
+
+
+def test_parse_query_with_all_null_context_not_injected():
+    ctx = OutbreakContext(input_type="query")  # all fields null
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _make_intent_response()
+
+    with patch("epichat.parser.anthropic.Anthropic") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.side_effect = fake_create
+        from epichat.parser import parse_query
+        parse_query("run a default SIR model", context=ctx)
 
     user_content = captured["messages"][0]["content"]
     assert "Outbreak context" not in user_content
