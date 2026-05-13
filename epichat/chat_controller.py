@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .resolver import ResolvedField
-    from .schema import SimParams
+    from .schema import OutbreakContext, SimParams
 
 _SOURCE_FOOTNOTES: dict[str, str] = {
     "UN WPP": "UN World Population Prospects 2024. Official UN demographic projections for 237 countries. data.un.org",
@@ -93,10 +93,22 @@ def update_collected(
     params,  # SimParams | None
     data_sources: list,
     last_user_message: str,
+    outbreak_context: "OutbreakContext | None" = None,
 ) -> dict[str, bool]:
-    if params is None:
-        return dict(collected)
     result = dict(collected)
+
+    if outbreak_context is not None:
+        if outbreak_context.disease_name is not None:
+            result["disease"] = True
+        if outbreak_context.location is not None:
+            result["location"] = True
+            result["population"] = True
+        if outbreak_context.interventions_mentioned:
+            result["interventions"] = True
+
+    if params is None:
+        return result
+
     msg_lower = last_user_message.lower().strip().rstrip(".")
 
     # Generic SIR defaults (extraction.txt): dur_inf=10, n_contacts=4, p_death=0.

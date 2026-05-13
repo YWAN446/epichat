@@ -7,7 +7,7 @@ from epichat.chat_controller import (
     detect_run_intent,
     detect_new_scenario,
 )
-from epichat.schema import SimParams, Intervention
+from epichat.schema import SimParams, Intervention, OutbreakContext
 from epichat.resolver import ResolvedField
 
 
@@ -324,3 +324,39 @@ def test_build_summary_demographics_without_citation():
     summary = build_summary(params, [])
     assert "Demographics" in summary
     assert "20.0" in summary
+
+
+# ── update_collected with OutbreakContext pre-fill ────────────────────────────
+
+def test_update_collected_prefills_disease_from_context():
+    collected = {"disease": False, "location": False, "population": False, "interventions": False}
+    ctx = OutbreakContext(input_type="report", disease_name="Ebola")
+    result = update_collected(collected, None, [], "", outbreak_context=ctx)
+    assert result["disease"] is True
+    assert result["location"] is False
+
+
+def test_update_collected_prefills_location_and_population_from_context():
+    collected = {"disease": False, "location": False, "population": False, "interventions": False}
+    ctx = OutbreakContext(input_type="url", location="Nigeria")
+    result = update_collected(collected, None, [], "", outbreak_context=ctx)
+    assert result["location"] is True
+    assert result["population"] is True
+
+
+def test_update_collected_prefills_interventions_from_context():
+    collected = {"disease": False, "location": False, "population": False, "interventions": False}
+    ctx = OutbreakContext(
+        input_type="report",
+        disease_name="Mpox",
+        location="DRC",
+        interventions_mentioned=["ring vaccination"],
+    )
+    result = update_collected(collected, None, [], "", outbreak_context=ctx)
+    assert result["interventions"] is True
+
+
+def test_update_collected_no_context_unchanged():
+    collected = {"disease": False, "location": False, "population": False, "interventions": False}
+    result = update_collected(collected, None, [], "")
+    assert result == collected
