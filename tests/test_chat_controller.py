@@ -356,7 +356,27 @@ def test_update_collected_prefills_interventions_from_context():
     assert result["interventions"] is True
 
 
-def test_update_collected_no_context_unchanged():
+def test_update_collected_all_null_context_does_not_prefill():
+    """OutbreakContext with all None fields should not pre-fill anything."""
     collected = {"disease": False, "location": False, "population": False, "interventions": False}
-    result = update_collected(collected, None, [], "")
+    ctx = OutbreakContext(input_type="query")  # all fields null
+    result = update_collected(collected, None, [], "", outbreak_context=ctx)
     assert result == collected
+
+
+def test_update_collected_prefill_enables_interventions_gate():
+    """Pre-filled disease/location/population from context unlock the interventions gate."""
+    from epichat.schema import Intervention
+    # Build a params with an intervention
+    params = _base_params(
+        beta=22.8125,
+        disease_type="sir",
+        interventions=[Intervention(type="vaccine", coverage=0.7, start_day=0)],
+    )
+    ctx = OutbreakContext(input_type="report", disease_name="Ebola", location="DRC")
+    collected = {"disease": False, "location": False, "population": False, "interventions": False}
+    result = update_collected(collected, params, [], "", outbreak_context=ctx)
+    assert result["disease"] is True
+    assert result["location"] is True
+    assert result["population"] is True
+    assert result["interventions"] is True

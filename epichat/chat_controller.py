@@ -97,6 +97,7 @@ def update_collected(
 ) -> dict[str, bool]:
     result = dict(collected)
 
+    # Pre-fill from OutbreakContext before applying params-based logic
     if outbreak_context is not None:
         if outbreak_context.disease_name is not None:
             result["disease"] = True
