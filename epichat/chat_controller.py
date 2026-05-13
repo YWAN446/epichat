@@ -105,7 +105,8 @@ def update_collected(
             result["location"] = True
             result["population"] = True
         if outbreak_context.interventions_mentioned:
-            result["interventions"] = True
+            if result["disease"] and result["location"] and result["population"]:
+                result["interventions"] = True
 
     if params is None:
         return result

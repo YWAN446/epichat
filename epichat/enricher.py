@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -23,7 +24,8 @@ def enrich_input(user_input: str) -> OutbreakContext:
     """
     try:
         return _call_enrichment_llm(user_input)
-    except Exception:
+    except Exception as e:
+        logging.getLogger(__name__).warning("enrich_input failed: %s", e, exc_info=True)
         return OutbreakContext(input_type="query")
 
 

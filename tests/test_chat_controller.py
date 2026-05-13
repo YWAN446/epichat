@@ -356,6 +356,18 @@ def test_update_collected_prefills_interventions_from_context():
     assert result["interventions"] is True
 
 
+def test_update_collected_interventions_not_prefilled_without_prerequisites():
+    """interventions_mentioned in context should not pre-fill when disease/location are absent."""
+    collected = {"disease": False, "location": False, "population": False, "interventions": False}
+    ctx = OutbreakContext(
+        input_type="report",
+        interventions_mentioned=["ring vaccination"],
+        # no disease_name, no location
+    )
+    result = update_collected(collected, None, [], "", outbreak_context=ctx)
+    assert result["interventions"] is False
+
+
 def test_update_collected_all_null_context_does_not_prefill():
     """OutbreakContext with all None fields should not pre-fill anything."""
     collected = {"disease": False, "location": False, "population": False, "interventions": False}
