@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from epichat.schema import OutbreakContext
 
 
@@ -35,12 +38,17 @@ def test_partial_fields_validate():
 
 
 def test_invalid_input_type_raises():
-    import pytest
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         OutbreakContext(input_type="unknown_type")
 
 
 def test_invalid_geographic_scale_raises():
-    import pytest
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         OutbreakContext(input_type="query", geographic_scale="continent")
+
+
+def test_negative_counts_raise():
+    with pytest.raises(ValidationError):
+        OutbreakContext(input_type="query", total_cases=-1)
+    with pytest.raises(ValidationError):
+        OutbreakContext(input_type="query", total_deaths=-1)

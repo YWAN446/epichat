@@ -125,10 +125,10 @@ class OutbreakContext(BaseModel):
     pathogen_type: Optional[str] = None
     location: Optional[str] = None
     geographic_scale: Optional[Literal["city", "regional", "national", "global"]] = None
-    outbreak_start_date: Optional[str] = None
-    outbreak_end_date: Optional[str] = None
-    total_cases: Optional[int] = None
-    total_deaths: Optional[int] = None
+    outbreak_start_date: Optional[str] = None  # ISO date or descriptive, e.g. "2024-01"
+    outbreak_end_date:   Optional[str] = None  # None if ongoing or unknown
+    total_cases:  Optional[int] = Field(default=None, ge=0)
+    total_deaths: Optional[int] = Field(default=None, ge=0)
     case_fatality_rate: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     r0_estimate: Optional[float] = Field(default=None, gt=0.0)
     incubation_period_days: Optional[float] = Field(default=None, gt=0.0)
