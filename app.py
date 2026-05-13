@@ -145,10 +145,7 @@ def _do_parse() -> None:
 
 
 def _do_enrich(text: str) -> None:
-    try:
-        st.session_state.outbreak_context = enrich_input(text)
-    except Exception:
-        st.session_state.outbreak_context = None
+    st.session_state.outbreak_context = enrich_input(text)
 
 
 def _format_context_card(ctx) -> str:
@@ -249,13 +246,14 @@ def _process_pending() -> None:
         s.context = (s.context + " " + text).strip()
         if s.outbreak_context is None:
             _do_enrich(text)
-            if DEV_MODE and s.outbreak_context is not None:
+            if DEV_MODE and s.outbreak_context is not None and s.outbreak_context.disease_name is not None:
                 _add_msg("assistant", _format_context_card(s.outbreak_context))
         _do_parse()
         s.collected = update_collected(
             s.collected, s.params, s.data_sources, text,
             outbreak_context=s.outbreak_context,
         )
+        # Accept location even when the UN WPP API failed — the LLM still recognised it
         if st.session_state.get("_location_recognized"):
             s.collected["location"] = True
             s.collected["population"] = True
@@ -300,13 +298,14 @@ def _start_new_scenario(text: str) -> None:
     s.collected = {k: False for k in s.collected}
     s.outbreak_context = None
     _do_enrich(text)
-    if DEV_MODE and s.outbreak_context is not None:
+    if DEV_MODE and s.outbreak_context is not None and s.outbreak_context.disease_name is not None:
         _add_msg("assistant", _format_context_card(s.outbreak_context))
     _do_parse()
     s.collected = update_collected(
         s.collected, s.params, s.data_sources, text,
         outbreak_context=s.outbreak_context,
     )
+    # Accept location even when the UN WPP API failed — the LLM still recognised it
     if st.session_state.get("_location_recognized"):
         s.collected["location"] = True
         s.collected["population"] = True
