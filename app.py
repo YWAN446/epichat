@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+import os
 import uuid
 from pathlib import Path
 
@@ -10,6 +11,8 @@ import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
+
+DEV_MODE = os.environ.get("EPICHAT_DEV_MODE", "false").lower() == "true"
 
 from epichat.chat_controller import (
     build_summary,
@@ -22,6 +25,7 @@ from epichat.epichat import EpiChat
 from epichat.exporter import to_docx, to_pdf
 from epichat.modifier import apply_modification, generate_sim_description
 from epichat.narrator import narrate
+from epichat.enricher import enrich_input
 from epichat.parser import get_last_resolved, get_last_location_queried, parse_query
 
 st.set_page_config(page_title="EpiChat", page_icon="🦠", layout="wide")
@@ -48,6 +52,7 @@ _CONV_DEFAULTS: dict = {
     },
     "messages": [],
     "pending_input": None,
+    "outbreak_context": None,
 }
 
 for key, val in [
@@ -130,12 +135,28 @@ def _build_summary_with_description() -> str:
 
 def _do_parse() -> None:
     try:
-        st.session_state.params = parse_query(st.session_state.context)
+        ctx = st.session_state.get("outbreak_context")
+        st.session_state.params = parse_query(st.session_state.context, context=ctx)
         st.session_state.data_sources = get_last_resolved()
         if get_last_location_queried():
             st.session_state._location_recognized = True
     except Exception:
         pass
+
+
+def _do_enrich(text: str) -> None:
+    try:
+        st.session_state.outbreak_context = enrich_input(text)
+    except Exception:
+        st.session_state.outbreak_context = None
+
+
+def _format_context_card(ctx) -> str:
+    lines = ["**🔬 Extracted context (dev mode)**\n", "| Field | Value |", "|-------|-------|"]
+    for k, v in ctx.model_dump().items():
+        display_v = str(v) if v not in (None, []) else "*unknown*"
+        lines.append(f"| {k} | {display_v} |")
+    return "\n".join(lines)
 
 
 def _do_run_simulation() -> None:
@@ -226,9 +247,15 @@ def _process_pending() -> None:
 
     if s.stage == "collecting":
         s.context = (s.context + " " + text).strip()
+        if s.outbreak_context is None:
+            _do_enrich(text)
+            if DEV_MODE and s.outbreak_context is not None:
+                _add_msg("assistant", _format_context_card(s.outbreak_context))
         _do_parse()
-        s.collected = update_collected(s.collected, s.params, s.data_sources, text)
-        # Accept location even when the UN WPP API failed — the LLM still recognised it
+        s.collected = update_collected(
+            s.collected, s.params, s.data_sources, text,
+            outbreak_context=s.outbreak_context,
+        )
         if st.session_state.get("_location_recognized"):
             s.collected["location"] = True
             s.collected["population"] = True
@@ -271,8 +298,15 @@ def _start_new_scenario(text: str) -> None:
     s.context = text
     s.params = None
     s.collected = {k: False for k in s.collected}
+    s.outbreak_context = None
+    _do_enrich(text)
+    if DEV_MODE and s.outbreak_context is not None:
+        _add_msg("assistant", _format_context_card(s.outbreak_context))
     _do_parse()
-    s.collected = update_collected(s.collected, s.params, s.data_sources, text)
+    s.collected = update_collected(
+        s.collected, s.params, s.data_sources, text,
+        outbreak_context=s.outbreak_context,
+    )
     if st.session_state.get("_location_recognized"):
         s.collected["location"] = True
         s.collected["population"] = True
