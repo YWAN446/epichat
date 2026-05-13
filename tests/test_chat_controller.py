@@ -282,6 +282,42 @@ def test_build_summary_ends_with_question():
     summary = build_summary(params, [])
     assert summary.strip().endswith("?")
 
+def test_build_summary_vaccine_cites_coverage_source():
+    iv = Intervention(type="vaccine", coverage=0.76, start_day=0)
+    params = _base_params(interventions=[iv])
+    ds = [_make_rf("mcv1_coverage", 76.0, "WHO GHO, ZAF, 2023")]
+    summary = build_summary(params, ds)
+    assert "76% coverage" in summary
+    assert "[WHO GHO]" in summary
+
+def test_build_summary_vaccine_matches_coverage_value():
+    """When two coverage fields exist, each vaccine line cites the matching one."""
+    iv1 = Intervention(type="vaccine", coverage=0.76, start_day=0)
+    iv2 = Intervention(type="vaccine", coverage=0.82, start_day=0)
+    params = _base_params(interventions=[iv1, iv2])
+    ds = [
+        _make_rf("mcv1_coverage", 76.0, "WHO GHO, ZAF, 2023"),
+        _make_rf("mcv2_coverage", 82.0, "WHO GHO, ZAF, 2023"),
+    ]
+    summary = build_summary(params, ds)
+    assert "76% coverage [WHO GHO]" in summary
+    assert "82% coverage [WHO GHO]" in summary
+
+def test_build_summary_treatment_cites_uhc_coverage():
+    iv = Intervention(type="treatment", coverage=1.0, start_day=0)
+    params = _base_params(interventions=[iv])
+    ds = [_make_rf("uhc_coverage", 68.0, "WB WDI, ZAF, 2023")]
+    summary = build_summary(params, ds)
+    assert "Treatment" in summary
+    assert "[WB WDI]" in summary
+
+def test_build_summary_vaccine_no_citation_when_no_coverage_source():
+    iv = Intervention(type="vaccine", coverage=0.70, start_day=0)
+    params = _base_params(interventions=[iv])
+    summary = build_summary(params, [])
+    assert "70% coverage" in summary
+    assert "[" not in summary.split("Vaccination")[1].split("\n")[0]
+
 def test_build_summary_age_structured_network_shows_percentages():
     params = _base_params(
         network_type="age_structured",

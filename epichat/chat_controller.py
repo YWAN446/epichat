@@ -234,17 +234,44 @@ def build_summary(params, data_sources: list, description: str = "") -> str:
     else:
         table.append(f"**Prevalence:** {params.init_prev * 100:.2f}%")
 
+    # All vaccination-coverage data sources (e.g. mcv1_coverage, mcv2_coverage from WHO GHO)
+    _vax_cov_fields = [
+        rf for rf in data_sources
+        if rf.field.endswith("_coverage") and rf.field != "uhc_coverage"
+    ]
+    # UHC coverage drives treatment coverage %
+    _uhc_field = next((rf for rf in data_sources if rf.field == "uhc_coverage"), None)
+
     label_used = False
     for iv in params.interventions:
         lbl = "**Intervention:**" if not label_used else "↳"
         label_used = True
         if iv.type == "vaccine":
-            cov = f"{iv.coverage * 100:.0f}%" if iv.coverage else "?"
-            table.append(f"{lbl} Vaccination · {cov} coverage")
+            cov_pct = round(iv.coverage * 100) if iv.coverage is not None else None
+            cov = f"{cov_pct}%" if cov_pct is not None else "?"
+            # Match data source by value first, then fall back to first available
+            cov_field = next(
+                (rf for rf in _vax_cov_fields if cov_pct is not None and round(rf.value) == cov_pct),
+                _vax_cov_fields[0] if _vax_cov_fields else None,
+            )
+            cite = ""
+            if cov_field:
+                abbrev = _abbrev(cov_field.citation)
+                if abbrev:
+                    used_sources.add(abbrev)
+                    cite = f" [{abbrev}]"
+            table.append(f"{lbl} Vaccination · {cov} coverage{cite}")
         elif iv.type == "treatment":
             cov = f"{iv.coverage * 100:.0f}% coverage" if iv.coverage else ""
             cap_field = next((rf for rf in data_sources if rf.field == "treatment_capacity"), None)
-            table.append(f"{lbl} Treatment · {cov}")
+            # Cite UHC coverage when it set the treatment coverage %
+            treat_cite = ""
+            if _uhc_field:
+                abbrev = _abbrev(_uhc_field.citation)
+                if abbrev:
+                    used_sources.add(abbrev)
+                    treat_cite = f" [{abbrev}]"
+            table.append(f"{lbl} Treatment · {cov}{treat_cite}")
             if cap_field:
                 abbrev = _abbrev(cap_field.citation)
                 if abbrev:
