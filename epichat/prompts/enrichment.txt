@@ -15,10 +15,10 @@ Return a JSON object with these fields (set to null if unknown):
 - input_type: one of "query", "report", "url", "search"
 - source_url: URL of the primary source, or null
 - disease_name: common name (e.g. "Mpox", "COVID-19", "Influenza H5N1"), or null
-- pathogen_type: "virus", "bacteria", "parasite", "fungus", or null
+- pathogen_type: use exactly one of "virus", "bacteria", "parasite", "fungus" — no other values — or null
 - location: country or region name, or null
 - geographic_scale: "city", "regional", "national", or "global", or null
-- outbreak_start_date: ISO date or descriptive date string (e.g. "2024-01"), or null
+- outbreak_start_date: ISO date or descriptive date string (e.g. "2024-01"), or null if unknown
 - outbreak_end_date: date the outbreak ended, or null if ongoing or unknown
 - total_cases: integer count of confirmed/suspected cases, or null
 - total_deaths: integer death count, or null
@@ -27,16 +27,16 @@ Return a JSON object with these fields (set to null if unknown):
 - incubation_period_days: days from exposure to symptom onset, or null
 - infectious_period_days: days a case is infectious, or null
 - affected_population: who is primarily at risk (e.g. "children under 5"), or null
-- interventions_mentioned: list of intervention strings from the source, or []
-- confidence: "high" (detailed report), "medium" (news article/partial), or "low" (brief query)
+- interventions_mentioned: list of short descriptive phrases from the source (e.g. ["ring vaccination", "school closures", "travel bans"]), or []
+- confidence: "high" (detailed epidemiological report), "medium" (news article, partial data, or search returning a substantive article), "low" (brief query or search returning only snippets)
 
 ## Critical rules
 
 1. NEVER guess. If you are not certain, set the field to null.
 2. Extract only facts explicitly stated in the source. Do not calculate case_fatality_rate unless both total_cases and total_deaths are clearly stated.
-3. Use web_search when input_type is "url" or "search". Do not fabricate article content.
+3. Use web_search when input_type is "url" or "search". Do NOT call web_search for "query" or "report" inputs — extract only what the user's text contains. Do not fabricate article content. If web_search returns no relevant content, return all fields as null except input_type and set confidence to "low".
 4. Return ONLY a valid JSON object. No markdown fences, no explanation.
 
 ## Example output for a news article URL
 
-{"input_type":"url","source_url":"https://example.com/report","disease_name":"Mpox","pathogen_type":"virus","location":"Nigeria","geographic_scale":"national","outbreak_start_date":"2024-01","outbreak_end_date":null,"total_cases":1240,"total_deaths":38,"case_fatality_rate":0.031,"r0_estimate":null,"incubation_period_days":null,"infectious_period_days":null,"affected_population":"young adults","interventions_mentioned":["ring vaccination"],"confidence":"medium"}
+{"input_type":"url","source_url":"https://example.com/report","disease_name":"Mpox","pathogen_type":"virus","location":"Nigeria","geographic_scale":"national","outbreak_start_date":"2024-01","outbreak_end_date":null,"total_cases":1240,"total_deaths":38,"case_fatality_rate":null,"r0_estimate":null,"incubation_period_days":null,"infectious_period_days":null,"affected_population":"young adults","interventions_mentioned":["ring vaccination"],"confidence":"medium"}
