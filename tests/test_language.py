@@ -127,5 +127,6 @@ def test_build_summary_non_english_calls_translate():
                            n_contacts=4, init_prev=0.01, dur_inf=10.0,
                            p_death=0.0, sim_dur_years=1.0)
         result = build_summary(params, [], lang="Spanish")
-    mock_t.assert_called_once()
-    assert result == "TRANSLATED"
+    # Two calls: one for the main body, one for the run question
+    assert mock_t.call_count == 2
+    assert result == "TRANSLATED\n\nTRANSLATED"

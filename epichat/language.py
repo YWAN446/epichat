@@ -103,7 +103,7 @@ def translate(text: str, target_lang: str) -> str:
         client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         resp = client.messages.create(
             model=_MODEL,
-            max_tokens=2048,
+            max_tokens=4096,
             system=(
                 f"Translate the following text into {target_lang}. "
                 "Preserve all markdown formatting (**, *, ·, —, >, newlines, "

@@ -338,9 +338,12 @@ def build_summary(params, data_sources: list, description: str = "", lang: str =
         ref_blocks.append("---")
         parts.append("\n\n".join(ref_blocks))
 
-    parts.append("Would you like to adjust anything, or shall I run the simulation?")
+    _RUN_QUESTION = "Would you like to adjust anything, or shall I run the simulation?"
     result = "\n\n".join(parts)
     if lang.lower() != "english":
         from .language import translate
         result = translate(result, lang)
-    return result
+        run_q = translate(_RUN_QUESTION, lang)
+    else:
+        run_q = _RUN_QUESTION
+    return result + "\n\n" + run_q
