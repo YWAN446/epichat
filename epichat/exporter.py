@@ -39,7 +39,7 @@ _CJK_FONT_CANDIDATES = [
     "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf",
 ]
 
-_RL_FONT_REGISTERED: set[str] = set()
+_RL_CJK_REGISTERED = False
 
 
 def _replace_special(text: str) -> str:
@@ -67,16 +67,20 @@ def _find_cjk_font() -> str | None:
     return None
 
 
-def _rl_register_font(font_path: str) -> str:
-    """Register a TTF font with reportlab and return the font name."""
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
+def _rl_register_cjk() -> str:
+    """Register a CJK font with reportlab and return the font name.
 
-    font_name = "EpiChatCJK"
-    if font_name not in _RL_FONT_REGISTERED:
-        pdfmetrics.registerFont(TTFont(font_name, font_path))
-        _RL_FONT_REGISTERED.add(font_name)
-    return font_name
+    Uses UnicodeCIDFont (STSong-Light) which is built into reportlab and
+    requires no system font files — works on any platform.
+    """
+    global _RL_CJK_REGISTERED
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+
+    if not _RL_CJK_REGISTERED:
+        pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
+        _RL_CJK_REGISTERED = True
+    return "STSong-Light"
 
 
 def to_pdf(
@@ -92,12 +96,7 @@ def to_pdf(
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
     all_text = " ".join(m.get("content", "") for m in messages)
-    cjk_font_path = _find_cjk_font() if _has_cjk(all_text) else None
-
-    if cjk_font_path:
-        font_name = _rl_register_font(cjk_font_path)
-    else:
-        font_name = "Helvetica"
+    font_name = _rl_register_cjk() if _has_cjk(all_text) else "Helvetica"
 
     left_margin = right_margin = 20 * mm
     buf = io.BytesIO()
