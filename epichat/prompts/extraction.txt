@@ -228,5 +228,5 @@ If the user message begins with an "Outbreak context" block, use its values to i
 - Use disease_name to select disease_type if it matches a known disease in the table above.
 - Use total_cases and total_deaths to refine init_prev and p_death if not stated in the query.
 - Use r0_estimate to compute beta if R0 is not stated in the query.
-- Use location to populate data_queries if a country/region is present.
-- User-stated values in the query always take precedence over context values.
+- Location (CRITICAL): The context location is where the source outbreak occurred — it may differ from where the user wants to simulate. If the user's query names any country or region (e.g. "in Kenya", "hit Nigeria", "what would happen in Brazil"), use ONLY the user's stated location for all data_queries. Ignore the context location entirely. Only use the context location when the user's query contains no location at all.
+- All other user-stated values (population, duration, interventions, R0) always take precedence over context values.

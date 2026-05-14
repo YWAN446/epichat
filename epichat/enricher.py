@@ -18,6 +18,14 @@ load_dotenv()
 _ENRICHMENT_MODEL = "claude-haiku-4-5-20251001"
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "enrichment.txt"
 _URL_RE = re.compile(r"https?://\S+")
+# Phrases that signal the user wants a hypothetical simulation in a named place,
+# not a replay of the source outbreak location.
+_HYPOTHETICAL_RE = re.compile(
+    r"\b(what\s+if|simulate\s+(this|it)\s+in|what\s+would\s+happen\s+(in|if)|"
+    r"if\s+(this|it)\s+(hit|reached?|spread\s+to|struck?|occurred?\s+in)|"
+    r"spread\s+to|reach(ed?)?\s+[A-Z])",
+    re.IGNORECASE,
+)
 _MAX_ARTICLE_CHARS = 8000
 
 
@@ -88,10 +96,24 @@ def enrich_input(user_input: str) -> OutbreakContext:
     Returns OutbreakContext(input_type="query") on any failure.
     """
     try:
-        return _call_enrichment_llm(user_input)
+        ctx = _call_enrichment_llm(user_input)
+        # If the user described a hypothetical scenario in a different place
+        # (e.g. "what if this hit Kenya"), clear the source outbreak location so
+        # the parser uses the user's stated location instead.
+        if ctx.location is not None and _HYPOTHETICAL_RE.search(user_input):
+            ctx = ctx.model_copy(update={"location": None})
+        return ctx
     except Exception as e:
         logging.getLogger(__name__).warning("enrich_input failed: %s", e, exc_info=True)
         return OutbreakContext(input_type="query")
+
+
+def _find_json_block(text_blocks: list[str]) -> str:
+    """Return the first text block that contains a JSON object, or '{}' if none do."""
+    for block in text_blocks:
+        if "{" in block:
+            return block
+    return "{}"
 
 
 def _call_enrichment_llm(user_input: str) -> OutbreakContext:
@@ -111,7 +133,7 @@ def _call_enrichment_llm(user_input: str) -> OutbreakContext:
         text_blocks = [b.text for b in response.content if b.type == "text"]
 
         if response.stop_reason == "end_turn":
-            raw = text_blocks[-1] if text_blocks else "{}"
+            raw = _find_json_block(text_blocks)
             return _parse_context(raw)
 
         if response.stop_reason == "tool_use":
@@ -130,10 +152,16 @@ def _call_enrichment_llm(user_input: str) -> OutbreakContext:
             ]
             continue
 
-        raw = text_blocks[-1] if text_blocks else "{}"
+        raw = _find_json_block(text_blocks)
         return _parse_context(raw)
 
     return OutbreakContext(input_type="query")
+
+
+_FLOAT_FIELDS = frozenset({
+    "case_fatality_rate", "r0_estimate",
+    "incubation_period_days", "infectious_period_days",
+})
 
 
 def _parse_context(raw: str) -> OutbreakContext:
@@ -142,10 +170,17 @@ def _parse_context(raw: str) -> OutbreakContext:
         if raw.startswith("json"):
             raw = raw[4:]
         raw = raw.strip()
-    brace = raw.find("{")
-    if brace > 0:
-        raw = raw[brace:]
-    if not raw.strip():
+    # Extract the JSON object between first { and last }; fall back to {} if not found
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start != -1 and end > start:
+        raw = raw[start : end + 1]
+    else:
+        logging.getLogger(__name__).debug("No JSON object found in enricher response: %r", raw[:200])
         raw = "{}"
     data = json.loads(raw)
+    # Null out numeric fields that the model returned as range strings (e.g. "4-42")
+    for field in _FLOAT_FIELDS:
+        if isinstance(data.get(field), str):
+            data[field] = None
     return OutbreakContext.model_validate(data)
