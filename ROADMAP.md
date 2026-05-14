@@ -4,19 +4,37 @@ This document maps future EpiChat capabilities to the external datasets that wou
 
 ---
 
-## Current State (v0.1)
+## Current State (v0.2)
 
+### Core simulation
 | Feature | Status |
 |---|---|
-| SIR / SEIR / SIS models | Implemented |
+| SIR / SEIR / SIS / SIRS / SEIRS / SEIAR models | Implemented |
 | Random (Erdős–Rényi) network | Implemented |
 | Age-structured contacts (built-in POLYMOD matrix) | Implemented — 3-group European average |
 | Vaccination (pre-existing coverage + ongoing campaign) | Implemented |
 | Seasonality connector | Implemented |
 | Demographics (births + deaths with user-supplied rates) | Implemented |
-| Treatment intervention | Implemented |
-| Parameter extraction from natural language (LLM) | Implemented |
-| Two-step review/edit UI | Implemented |
+| Treatment intervention (capacity + coverage) | Implemented |
+| Export to PDF and Word | Implemented |
+
+### Data integration
+| Feature | Status |
+|---|---|
+| UN WPP — population, birth/death rates, age distribution | Implemented |
+| WHO GHO — disease surveillance, vaccination coverage | Implemented |
+| World Bank WDI — health system capacity, UHC index, disease prevalence | Implemented |
+| Data source citations in parameter summary | Implemented — citations shown for all resolved fields including intervention coverage |
+
+### Input enrichment (v0.2)
+| Feature | Status |
+|---|---|
+| Plain natural language query | Implemented |
+| Pasted epidemiological report | Implemented — LLM extracts structured facts (OutbreakContext) |
+| URL to online article or news | Implemented — page fetched client-side, facts extracted |
+| Web search request | Implemented — Anthropic built-in web_search tool |
+| OutbreakContext pre-fills conversation state | Implemented — disease/location/population/interventions inferred |
+| Dev mode inspection card | Implemented — `EPICHAT_DEV_MODE=true` shows extracted fields |
 
 ---
 

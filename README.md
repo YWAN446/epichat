@@ -12,11 +12,14 @@ Type a natural language question about an epidemic. EpiChat translates it into a
 ## Architecture
 
 ```
-User NL query
+User input (query · report · URL · search request)
      │
      ▼
+Layer 0: Input Enricher        (Claude Haiku + web_search tool)
+     │  OutbreakContext — structured facts, all fields nullable
+     ▼
 Layer 1: LLM Parameter Parser  (Claude API + extraction prompt)
-     │  Structured JSON (SimParams)
+     │  Structured JSON (SimParams) — context informs defaults
      ▼
 Layer 2: Code Generator        (Jinja2 templates → Starsim Python)
      │  Python script
@@ -29,6 +32,23 @@ Layer 4: Results Narrator      (Claude API + narration prompt)
      ▼
 User: epidemic curve + interpretation
 ```
+
+---
+
+## Input Types
+
+EpiChat accepts four kinds of input — the enrichment layer classifies and handles each automatically.
+
+| Input type | Example | What happens |
+|-----------|---------|--------------|
+| **Query** | `"Simulate Ebola in DRC"` | Fast path — LLM extracts parameters directly |
+| **Report** | Paste a WHO situation report or epidemiological bulletin | Structured facts (cases, CFR, interventions) are extracted before simulation |
+| **URL** | `"Read this article: https://www.nicd.ac.za/..."` | Page is fetched and parsed client-side; facts are extracted from the full text |
+| **Search** | `"Search for the latest Mpox outbreak news in Africa"` | Built-in web search retrieves recent news; facts are extracted from results |
+
+In all cases EpiChat produces an `OutbreakContext` object (disease name, location, case counts, R₀ estimate, interventions mentioned, etc.) before generating `SimParams`. Fields that cannot be determined are left null — the model never guesses.
+
+**Dev mode** — set `EPICHAT_DEV_MODE=true` to see the extracted `OutbreakContext` as a table in the chat after each enrichment step. Off by default.
 
 ---
 
@@ -52,6 +72,9 @@ python cli.py
 
 # 5. Streamlit web app
 streamlit run app.py
+
+# 6. Streamlit web app — dev mode (shows OutbreakContext extraction card)
+EPICHAT_DEV_MODE=true streamlit run app.py
 ```
 
 ---
@@ -232,15 +255,18 @@ EpiChat's LLM parser understands a wide range of phrasing. A few patterns:
 
 | You say | What EpiChat does |
 |---------|------------------|
-| "R0 = 2.5" | Converts to beta using `R0 × 365 / (n_contacts × dur_inf)` |
-| "COVID", "flu", "measles", etc. | Applies built-in disease defaults |
-| "80% vaccinated" | Adds vaccine intervention, `start_day=0` |
-| "vaccination campaign starting month 3" | Vaccine intervention, `start_day=90` |
-| "seasonal transmission" or "winter peak" | Seasonality, `scale=0.3, shift=0.0` |
-| "endemic" or "long-run" | Sets `use_demographics=true` |
-| "age-structured" or "school-age children" | Sets `network_type=age_structured` |
-| "masks" or "50% mask uptake with 50% efficacy" | Sets `network_beta≈0.75` |
-| "reproducible" or "set seed 42" | Sets `rand_seed=42` |
+| `"R0 = 2.5"` | Converts to beta using `R0 × 365 / (n_contacts × dur_inf)` |
+| `"COVID"`, `"flu"`, `"measles"`, etc. | Applies built-in disease defaults |
+| `"80% vaccinated"` | Adds vaccine intervention, `start_day=0` |
+| `"vaccination campaign starting month 3"` | Vaccine intervention, `start_day=90` |
+| `"seasonal transmission"` or `"winter peak"` | Seasonality, `scale=0.3, shift=0.0` |
+| `"endemic"` or `"long-run"` | Sets `use_demographics=true` |
+| `"age-structured"` or `"school-age children"` | Sets `network_type=age_structured` |
+| `"masks"` or `"50% mask uptake with 50% efficacy"` | Sets `network_beta≈0.75` |
+| `"reproducible"` or `"set seed 42"` | Sets `rand_seed=42` |
+| Paste a situation report | Enricher extracts facts; parser uses them as defaults |
+| `"https://..."` URL | Page is fetched and parsed; facts inform simulation |
+| `"Search for recent Mpox news"` | Web search retrieves context before simulation |
 
 ---
 
@@ -253,15 +279,22 @@ epichat/
 ├── app.py                   # Streamlit web interface
 ├── ROADMAP.md               # Planned data integrations and future features
 ├── epichat/
-│   ├── schema.py            # Pydantic parameter model (single source of truth)
-│   ├── parser.py            # NL → SimParams (Claude API)
+│   ├── schema.py            # Pydantic models: SimParams + OutbreakContext
+│   ├── enricher.py          # Input enrichment: query/report/URL/search → OutbreakContext
+│   ├── parser.py            # NL + OutbreakContext → SimParams (Claude API)
+│   ├── chat_controller.py   # Conversation state machine, summary builder
 │   ├── generator.py         # SimParams → Starsim code (Jinja2)
 │   ├── executor.py          # Sandboxed subprocess execution
 │   ├── narrator.py          # Results → plain-language (Claude API)
 │   ├── epichat.py           # Main orchestrator + error recovery loop
-│   └── prompts/
-│       ├── extraction.txt   # System prompt for parameter parsing
-│       └── narration.txt    # System prompt for interpretation
+│   ├── prompts/
+│   │   ├── enrichment.txt   # System prompt for input enrichment (Layer 0)
+│   │   ├── extraction.txt   # System prompt for parameter parsing (Layer 1)
+│   │   └── narration.txt    # System prompt for interpretation (Layer 4)
+│   └── adapters/
+│       ├── un_wpp.py        # UN World Population Prospects — demographics
+│       ├── who_gho.py       # WHO Global Health Observatory — disease surveillance
+│       └── wb_data360.py    # World Bank WDI — health system + disease indicators
 ├── templates/
 │   ├── sir.py.j2            # SIR (+ SIS) simulation template
 │   ├── seir.py.j2           # SEIR simulation template
@@ -270,8 +303,12 @@ epichat/
 │   ├── seiar.py.j2          # SEIAR (asymptomatic track) template
 │   └── sis.py.j2            # SIS (no immunity) template
 └── tests/
-    ├── test_queries.json    # Benchmark queries
-    └── test_parser.py       # Automated accuracy tests
+    ├── test_queries.json         # Benchmark queries
+    ├── test_parser.py            # Automated accuracy tests
+    ├── test_outbreak_context.py  # OutbreakContext schema validation
+    ├── test_enricher.py          # Enricher unit tests (mocked LLM)
+    ├── test_parser_unit.py       # Parser unit tests with OutbreakContext
+    └── test_chat_controller.py   # Conversation state machine tests
 ```
 
 ---
@@ -288,4 +325,4 @@ epichat/
 
 ---
 
-*EpiChat v0.1 — Prototype*
+*EpiChat v0.2 — Prototype*
