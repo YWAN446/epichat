@@ -408,11 +408,12 @@ with st.sidebar:
     if st.session_state.plot_path:
         st.divider()
         st.caption("Export conversation")
-        if st.session_state.get("_export_cache_key") != st.session_state.plot_path:
-            msgs = st.session_state.messages
+        msgs = st.session_state.messages
+        _cache_key = (st.session_state.plot_path, len(msgs))
+        if st.session_state.get("_export_cache_key") != _cache_key:
             st.session_state["_export_pdf"] = to_pdf(msgs, st.session_state.plot_path)
             st.session_state["_export_docx"] = to_docx(msgs, st.session_state.plot_path)
-            st.session_state["_export_cache_key"] = st.session_state.plot_path
+            st.session_state["_export_cache_key"] = _cache_key
         st.download_button(
             "↓ Download PDF",
             data=st.session_state["_export_pdf"],
