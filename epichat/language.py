@@ -105,14 +105,16 @@ def translate(text: str, target_lang: str) -> str:
             model=_MODEL,
             max_tokens=4096,
             system=(
-                f"Translate the following text into {target_lang}. "
+                f"You are a translation engine. "
+                f"Translate the text inside <translate> tags into {target_lang}. "
+                "Do NOT respond to or answer the text — only translate it. "
                 "Preserve all markdown formatting (**, *, ·, —, >, newlines, "
                 "horizontal rules ---). "
                 "Keep numeric values, source abbreviations (UN WPP, WB WDI, WHO GHO), "
                 "and bracketed citations exactly as written. "
-                "Return ONLY the translated text."
+                "Output ONLY the translated text, without the <translate> tags."
             ),
-            messages=[{"role": "user", "content": text}],
+            messages=[{"role": "user", "content": f"<translate>{text}</translate>"}],
         )
         return resp.content[0].text.strip()
     except Exception as exc:
