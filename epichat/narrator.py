@@ -50,7 +50,7 @@ def narrate(user_input: str, params: SimParams, stats: dict, lang: str = "Englis
 
     message = client.messages.create(
         model=_MODEL,
-        max_tokens=1024,
+        max_tokens=2048,
         system=system_prompt,
         messages=[{"role": "user", "content": user_message}],
     )

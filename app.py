@@ -189,23 +189,41 @@ def _do_run_simulation() -> None:
         s.stage = "ready"
         return
 
-    narration = narrate(s.context, s.params, exec_result["stats"], lang=_lang())
+    lang = _lang()
+    narration = narrate(s.context, s.params, exec_result["stats"], lang=lang)
     stats = exec_result["stats"]
     n = stats.get("n_agents", 1)
     pct = stats.get("total_infected", 0) / n * 100 if n else 0
 
-    result_text = (
+    # Narration text — already in the user's language
+    summary = narration.get("summary", "")
+    if narration.get("summary_continued"):
+        summary += "\n\n" + narration["summary_continued"]
+    findings = narration.get("key_findings", [])
+
+    # UI template strings — translate if needed
+    stats_text = (
         "✓ Simulation complete\n\n"
         f"**Peak infections:** {stats.get('peak_infections', 'N/A'):,} "
         f"(day {stats.get('peak_day', '?')})\n"
         f"**Total infected:** {stats.get('total_infected', 'N/A'):,} ({pct:.1f}%)\n"
-        f"**Deaths:** {stats.get('total_deaths', 0):,}\n\n"
-        f"{narration.get('summary', '')}"
+        f"**Deaths:** {stats.get('total_deaths', 0):,}"
     )
-    findings = narration.get("key_findings", [])
+    findings_label = "**Key findings:**"
+    footer = "Would you like to try a variation, or start a new simulation?"
+    if lang.lower() != "english":
+        from epichat.language import translate
+        # One call: batch all template strings separated by a marker translators preserve
+        combined = stats_text + "{{SEP}}" + findings_label + "{{SEP}}" + footer
+        parts = translate(combined, lang).split("{{SEP}}")
+        stats_text = parts[0].strip()
+        findings_label = parts[1].strip() if len(parts) > 1 else findings_label
+        footer = parts[2].strip() if len(parts) > 2 else footer
+
+    result_text = stats_text + "\n\n" + summary
     if findings:
-        result_text += "\n\n**Key findings:**\n" + "\n".join(f"· {f}" for f in findings)
-    result_text += "\n\n---\nWould you like to try a variation, or start a new simulation?"
+        result_text += "\n\n" + findings_label + "\n" + "\n".join(f"· {f}" for f in findings)
+    result_text += "\n\n---\n" + footer
 
     _add_msg("assistant", result_text, plot_path=exec_result["plot_path"])
     s.plot_path = exec_result["plot_path"]
