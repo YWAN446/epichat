@@ -28,23 +28,27 @@ def _parse_json(raw: str) -> dict:
     return json.loads(raw)
 
 
-def generate_sim_description(params: "SimParams", data_sources: list) -> str:
-    """Return a 2-3 sentence plain-English description of the simulation."""
+def generate_sim_description(params: "SimParams", data_sources: list, lang: str = "English") -> str:
+    """Return a 2-3 sentence description of the simulation in the target language."""
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     ds_summary = "; ".join(
         f"{rf.field}={rf.value} ({rf.citation})" for rf in data_sources
     ) or "no external data"
+    target = lang if lang.lower() != "english" else "plain English"
     prompt = (
         f"Simulation parameters:\n{json.dumps(params.model_dump(), indent=2)}\n\n"
         f"Real-world data used: {ds_summary}\n\n"
-        "Write 2-3 sentences in plain English describing what this simulation models, "
+        f"Write 2-3 sentences in {target} describing what this simulation models, "
         "the key epidemiological context, and any notable parameters or interventions. "
         "Be specific and informative. Do not use bullet points or headers."
+    )
+    system = (
+        f"You are an expert epidemiologist. Describe simulations concisely in {target}."
     )
     response = client.messages.create(
         model=_MODEL,
         max_tokens=256,
-        system="You are an expert epidemiologist. Describe simulations concisely in plain English.",
+        system=system,
         messages=[{"role": "user", "content": prompt}],
     )
     return response.content[0].text.strip()

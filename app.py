@@ -26,6 +26,7 @@ from epichat.exporter import to_docx, to_pdf
 from epichat.modifier import apply_modification, generate_sim_description
 from epichat.narrator import narrate
 from epichat.enricher import enrich_input
+from epichat.language import detect_language, detect_location_correction
 from epichat.parser import get_last_resolved, get_last_location_queried, parse_query
 
 st.set_page_config(page_title="EpiChat", page_icon="🦠", layout="wide")
@@ -53,6 +54,7 @@ _CONV_DEFAULTS: dict = {
     "messages": [],
     "pending_input": None,
     "outbreak_context": None,
+    "user_language": None,
 }
 
 for key, val in [
@@ -124,13 +126,18 @@ def _export_filename(ext: str) -> str:
 
 # ── Core conversation logic ───────────────────────────────────────────────────
 
+def _lang() -> str:
+    return st.session_state.get("user_language") or "English"
+
+
 def _build_summary_with_description() -> str:
     s = st.session_state
+    lang = _lang()
     try:
-        description = generate_sim_description(s.params, s.data_sources)
+        description = generate_sim_description(s.params, s.data_sources, lang=lang)
     except Exception:
         description = ""
-    return build_summary(s.params, s.data_sources, description)
+    return build_summary(s.params, s.data_sources, description, lang=lang)
 
 
 def _do_parse() -> None:
@@ -182,7 +189,7 @@ def _do_run_simulation() -> None:
         s.stage = "ready"
         return
 
-    narration = narrate(s.context, s.params, exec_result["stats"])
+    narration = narrate(s.context, s.params, exec_result["stats"], lang=_lang())
     stats = exec_result["stats"]
     n = stats.get("n_agents", 1)
     pct = stats.get("total_infected", 0) / n * 100 if n else 0
@@ -221,11 +228,9 @@ def _thinking_text() -> str:
     if stage == "collecting":
         return "Searching available data…"
     if stage in ("ready", "results"):
-        if detect_run_intent(text):
-            return "Preparing simulation…"
         if detect_new_scenario(text):
             return "Parsing new scenario…"
-        return "Updating parameters…"
+        return "Thinking…"
     return "Thinking…"
 
 
@@ -234,6 +239,11 @@ def _process_pending() -> None:
     s = st.session_state
     text = s.pending_input
     s.pending_input = None
+
+    # One-time language detection per conversation (skipped for English)
+    if s.user_language is None:
+        s.user_language = detect_language(text)
+    lang = _lang()
 
     if s.stage == "collecting":
         s.context = (s.context + " " + text).strip()
@@ -258,7 +268,7 @@ def _process_pending() -> None:
                 "For example: 'Simulate HIV in Kenya'.",
             )
             return
-        question = next_question(s.collected, s.params, s.data_sources)
+        question = next_question(s.collected, s.params, s.data_sources, lang=lang)
         if question is None:
             _add_msg("assistant", _build_summary_with_description())
             s.stage = "ready"
@@ -303,7 +313,7 @@ def _start_new_scenario(text: str) -> None:
         s.collected["location"] = True
         s.collected["population"] = True
         st.session_state._location_recognized = False
-    question = next_question(s.collected, s.params, s.data_sources)
+    question = next_question(s.collected, s.params, s.data_sources, lang=_lang())
     if question is None:
         _add_msg("assistant", _build_summary_with_description())
         s.stage = "ready"
@@ -317,6 +327,29 @@ def _apply_modification_and_summarize(text: str) -> None:
     if s.params is None:
         _add_msg("assistant", "I don't have parameters yet. Please describe what you'd like to simulate.")
         return
+
+    # Check if the user is correcting the location before treating as a param modification
+    current_location = s.outbreak_context.location if s.outbreak_context else None
+    new_location = detect_location_correction(text, current_location)
+    if new_location is not None:
+        s.context = (s.context + " " + text).strip()
+        if s.outbreak_context is not None:
+            s.outbreak_context = s.outbreak_context.model_copy(update={"location": new_location})
+        _do_parse()
+        if st.session_state.get("_location_recognized"):
+            s.collected["location"] = True
+            s.collected["population"] = True
+            st.session_state._location_recognized = False
+        s.collected = update_collected(
+            s.collected, s.params, s.data_sources, text,
+            outbreak_context=s.outbreak_context,
+        )
+        _add_msg(
+            "assistant",
+            "Updated. Here's the revised summary:\n\n" + _build_summary_with_description(),
+        )
+        return
+
     try:
         s.params = apply_modification(s.params, text)
     except Exception as e:
@@ -379,6 +412,78 @@ with st.sidebar:
 
 
 # ── Main area ─────────────────────────────────────────────────────────────────
+_TYPEWRITER_PHRASES = [
+    "What would you like to simulate today?",
+    "¿Qué le gustaría simular hoy?",
+    "Que souhaitez-vous simuler aujourd'hui?",
+    "O que gostaria de simular hoje?",
+    "今天您想模拟什么？",
+    "ماذا تريد أن تحاكي اليوم؟",
+    "Was möchten Sie heute simulieren?",
+    "आज आप क्या सिमुलेट करना चाहेंगे?",
+    "今日は何をシミュレートしますか？",
+    "Unataka kuiga nini leo?",
+]
+
+_TYPEWRITER_HTML = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  html, body {{ background:transparent; height:56px; overflow:hidden; }}
+  #tw {{
+    font-family: "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: white;
+    text-align: center;
+    line-height: 56px;
+    height: 56px;
+    white-space: nowrap;
+  }}
+  #cursor {{
+    display: inline-block;
+    width: 2px;
+    height: 1.15em;
+    background: white;
+    vertical-align: middle;
+    margin-left: 1px;
+    animation: blink 0.65s step-end infinite;
+  }}
+  @keyframes blink {{ 0%,100%{{opacity:1}} 50%{{opacity:0}} }}
+</style>
+</head>
+<body>
+<div id="tw"><span id="text"></span><span id="cursor"></span></div>
+<script>
+const phrases = {phrases_json};
+let pi = 0, ci = 0, deleting = false;
+const textEl = document.getElementById("text");
+function tick() {{
+  const p = phrases[pi];
+  if (!deleting) {{
+    ci++;
+    textEl.textContent = p.slice(0, ci);
+    if (ci === p.length) {{ deleting = true; setTimeout(tick, 2400); return; }}
+    setTimeout(tick, 65);
+  }} else {{
+    ci--;
+    textEl.textContent = p.slice(0, ci);
+    if (ci === 0) {{
+      deleting = false;
+      pi = (pi + 1) % phrases.length;
+      setTimeout(tick, 450);
+      return;
+    }}
+    setTimeout(tick, 32);
+  }}
+}}
+setTimeout(tick, 900);
+</script>
+</body>
+</html>"""
+
 _SUGGESTIONS = [
     "Simulate a generic SIR epidemic",
     "COVID-19 endemic with waning immunity",
@@ -391,16 +496,22 @@ messages = st.session_state.messages
 
 if not messages:
     # ── Empty state: inline input + suggestion pills ──────────────────────────
+    import json as _json
     st.markdown(
-        "<div style='text-align:center;padding-top:15vh'>"
+        "<div style='text-align:center;padding-top:14vh'>"
         "<h1 style='font-size:3rem'>🦠 EpiChat</h1>"
-        "<p style='color:white;font-size:1.5rem;margin:0 0 0.5rem 0'>"
-        "What would you like to simulate today?"
-        "</p>"
-        "<p style='color:#aac4e0;font-size:1rem;margin:0 0 2rem 0'>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.components.v1.html(
+        _TYPEWRITER_HTML.format(phrases_json=_json.dumps(_TYPEWRITER_PHRASES)),
+        height=56,
+    )
+    st.markdown(
+        "<p style='color:#aac4e0;font-size:1rem;margin:-8px 0 2rem 0;text-align:center'>"
         "Describe a disease &nbsp;·&nbsp; paste an epidemiological report "
         "&nbsp;·&nbsp; share a URL &nbsp;·&nbsp; ask me to search for outbreak news"
-        "</p></div>",
+        "</p>",
         unsafe_allow_html=True,
     )
     with st.container():

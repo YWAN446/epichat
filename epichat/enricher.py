@@ -18,15 +18,11 @@ load_dotenv()
 _ENRICHMENT_MODEL = "claude-haiku-4-5-20251001"
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "enrichment.txt"
 _URL_RE = re.compile(r"https?://\S+")
-# Phrases that signal the user wants a hypothetical simulation in a named place,
-# not a replay of the source outbreak location.
-_HYPOTHETICAL_RE = re.compile(
-    r"\b(what\s+if|simulate\s+(this|it)\s+in|what\s+would\s+happen\s+(in|if)|"
-    r"if\s+(this|it)\s+(hit|reached?|spread\s+to|struck?|occurred?\s+in)|"
-    r"spread\s+to|reach(ed?)?\s+[A-Z])",
-    re.IGNORECASE,
-)
+_INTENT_MODEL = "claude-haiku-4-5-20251001"
+_INTENT_PROMPT_PATH = Path(__file__).parent / "prompts" / "intent_revision.txt"
 _MAX_ARTICLE_CHARS = 8000
+# Input types where the source location may differ from the user's simulation target.
+_REVISABLE_INPUT_TYPES = {"search", "url", "report"}
 
 
 class _TextExtractor(HTMLParser):
@@ -92,20 +88,48 @@ def _build_user_content(user_input: str) -> str:
 def enrich_input(user_input: str) -> OutbreakContext:
     """Extract structured outbreak context from any input type.
 
-    Pre-fetches URLs client-side; uses web_search for search requests.
+    Phase 1: extract source facts via enrichment LLM (may use web_search).
+    Phase 2: for search/url/report inputs, reconcile source facts with the
+             user's simulation intent via a second LLM call.
     Returns OutbreakContext(input_type="query") on any failure.
     """
     try:
-        ctx = _call_enrichment_llm(user_input)
-        # If the user described a hypothetical scenario in a different place
-        # (e.g. "what if this hit Kenya"), clear the source outbreak location so
-        # the parser uses the user's stated location instead.
-        if ctx.location is not None and _HYPOTHETICAL_RE.search(user_input):
-            ctx = ctx.model_copy(update={"location": None})
-        return ctx
+        source_ctx = _call_enrichment_llm(user_input)
+        if source_ctx.input_type in _REVISABLE_INPUT_TYPES:
+            return _resolve_intent(user_input, source_ctx)
+        return source_ctx
     except Exception as e:
         logging.getLogger(__name__).warning("enrich_input failed: %s", e, exc_info=True)
         return OutbreakContext(input_type="query")
+
+
+def _resolve_intent(user_input: str, source_ctx: OutbreakContext) -> OutbreakContext:
+    """Phase 2: apply the user's simulation intent to the extracted source facts.
+
+    The source context may reflect the outbreak's origin location (e.g. DRC)
+    while the user wants to simulate somewhere else (e.g. Kenya).  A dedicated
+    LLM call reads only the user's prompt and the source JSON so it can make
+    targeted overrides without re-doing the search.
+    """
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    system = _INTENT_PROMPT_PATH.read_text(encoding="utf-8")
+    content = (
+        f"SOURCE FACTS:\n{source_ctx.model_dump_json()}\n\n"
+        f"USER REQUEST:\n{user_input}"
+    )
+    response = client.messages.create(
+        model=_INTENT_MODEL,
+        max_tokens=1024,
+        system=system,
+        messages=[{"role": "user", "content": content}],
+    )
+    text_blocks = [b.text for b in response.content if b.type == "text"]
+    raw = _find_json_block(text_blocks)
+    try:
+        return _parse_context(raw)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("_resolve_intent parse failed: %s", exc)
+        return source_ctx
 
 
 def _find_json_block(text_blocks: list[str]) -> str:
@@ -122,12 +146,23 @@ def _call_enrichment_llm(user_input: str) -> OutbreakContext:
     content = _build_user_content(user_input)
     messages: list[dict] = [{"role": "user", "content": content}]
 
+    # web_search is only needed for pure search requests.
+    # When we pre-fetched a URL the article text is already in `content`;
+    # passing the tool anyway causes the LLM to search instead of reading
+    # the injected text, which produces wrong extraction results.
+    has_prefetched_article = content.startswith("[Fetched article from ")
+    tools = (
+        []
+        if has_prefetched_article
+        else [{"type": "web_search_20250305", "name": "web_search"}]
+    )
+
     for _ in range(10):
         response = client.messages.create(
             model=_ENRICHMENT_MODEL,
             max_tokens=2048,
             system=system,
-            tools=[{"type": "web_search_20250305", "name": "web_search"}],
+            tools=tools,
             messages=messages,
         )
         text_blocks = [b.text for b in response.content if b.type == "text"]

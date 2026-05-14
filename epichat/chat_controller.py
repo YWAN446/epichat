@@ -33,22 +33,6 @@ _SKIP_WORDS = frozenset({
     "no interventions", "no intervention", "not needed",
 })
 
-_RUN_PHRASES = frozenset({
-    "yes", "run", "go", "ok", "okay", "sure", "yep", "yeah",
-    "correct", "perfect", "great", "do it", "proceed", "start",
-    "run it", "looks good", "go ahead", "let's go", "lets go",
-    "run the simulation", "run simulation", "start simulation",
-    # Common natural-language affirmations
-    "sounds good", "all good", "good", "confirmed", "agreed",
-    "go for it", "yes please", "please run", "run now", "run please",
-    "ready", "ready to run", "let's run", "lets run",
-    "let's do it", "lets do it", "do it now", "execute",
-    "you can run", "can run", "go ahead and run",
-})
-
-_RUN_NEGATION = frozenset({"no", "not", "don't", "dont", "stop", "wait", "never",
-                            "without", "change", "remove", "except", "but"})
-
 _NEW_SCENARIO_PATTERNS = [
     r"\bnow simulate\b",
     r"\bnow model\b",
@@ -71,16 +55,8 @@ def _abbrev(citation: str) -> str:
 
 
 def detect_run_intent(message: str) -> bool:
-    msg = message.lower().strip().rstrip("!.").strip()
-    if msg in _RUN_PHRASES:
-        return True
-    if any(p in msg for p in ("run the sim", "can run", "sounds good", "go for it")):
-        return True
-    # Short message (≤5 words) containing "run" with no negation/modification language
-    words = msg.split()
-    if len(words) <= 5 and "run" in words and not (set(words) & _RUN_NEGATION):
-        return True
-    return False
+    from .language import detect_run_intent_llm
+    return detect_run_intent_llm(message)
 
 
 def detect_new_scenario(message: str) -> bool:
@@ -142,15 +118,16 @@ def next_question(
     collected: dict[str, bool],
     params,  # SimParams
     data_sources: list,
+    lang: str = "English",
 ) -> str | None:
     if not collected["disease"]:
-        return "What disease or pathogen would you like to model?"
-    if not collected["location"]:
-        return (
+        q: str | None = "What disease or pathogen would you like to model?"
+    elif not collected["location"]:
+        q = (
             "Which country or region? "
             "I can pull real demographic and health data if available."
         )
-    if not collected["population"]:
+    elif not collected["population"]:
         pop_field = next(
             (rf for rf in data_sources if rf.field == "total_population"), None
         )
@@ -158,20 +135,27 @@ def next_question(
             pop_m = pop_field.value / 1_000_000
             src = _abbrev(pop_field.citation)
             src_str = f" from {src} data" if src else ""
-            return (
+            q = (
                 f"How large a population? I can use the real population of {pop_m:.1f}M"
                 f"{src_str}, or you can specify a number."
             )
-        return "How large a population? Please specify (e.g. 100,000)."
-    if not collected["interventions"]:
-        return (
+        else:
+            q = "How large a population? Please specify (e.g. 100,000)."
+    elif not collected["interventions"]:
+        q = (
             "Are there any interventions to include — vaccination, treatment, or "
             "seasonal effects? (Type 'none' to skip)"
         )
-    return None
+    else:
+        return None
+
+    if q is not None and lang.lower() != "english":
+        from .language import translate
+        return translate(q, lang)
+    return q
 
 
-def build_summary(params, data_sources: list, description: str = "") -> str:
+def build_summary(params, data_sources: list, description: str = "", lang: str = "English") -> str:
     """Build a markdown-formatted parameter summary with optional LLM description."""
     parts: list[str] = []
     used_sources: set[str] = set()
@@ -355,4 +339,8 @@ def build_summary(params, data_sources: list, description: str = "") -> str:
         parts.append("\n\n".join(ref_blocks))
 
     parts.append("Would you like to adjust anything, or shall I run the simulation?")
-    return "\n\n".join(parts)
+    result = "\n\n".join(parts)
+    if lang.lower() != "english":
+        from .language import translate
+        result = translate(result, lang)
+    return result
