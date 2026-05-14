@@ -47,7 +47,7 @@ def generate_sim_description(params: "SimParams", data_sources: list, lang: str 
     )
     response = client.messages.create(
         model=_MODEL,
-        max_tokens=256,
+        max_tokens=1024,
         system=system,
         messages=[{"role": "user", "content": prompt}],
     )
