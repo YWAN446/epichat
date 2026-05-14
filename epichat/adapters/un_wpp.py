@@ -45,8 +45,9 @@ class UNWPPAdapter:
         try:
             text = _fetch_text(url, api_key=self._api_key)
             for row in _parse_csv(text):
-                loc_id = int(row["id"])
-                for key in ("iso3", "iso2", "name"):
+                # Locations CSV header uses capitalized names: Id|Name|Iso3|Iso2|...
+                loc_id = int(row["Id"])
+                for key in ("Iso3", "Iso2", "Name"):
                     val = row.get(key, "").strip()
                     if val:
                         self._loc_cache[val] = loc_id

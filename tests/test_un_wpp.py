@@ -6,7 +6,7 @@ from epichat.resolver import DataQuery
 
 _LOCATIONS_CSV = """\
 sep =|
-id|name|iso3|iso2|longitude|latitude
+Id|Name|Iso3|Iso2|Longitude|Latitude
 840|United States of America|USA|US|-95.71|37.09
 404|Kenya|KEN|KE|37.91|-0.02
 356|India|IND|IN|78.96|20.59
