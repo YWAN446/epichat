@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import io
-import re
 from pathlib import Path
 
 from docx import Document
@@ -10,25 +9,64 @@ from docx.shared import Inches, Pt, RGBColor
 from fpdf import FPDF
 
 
-def _sanitize(text: str) -> str:
-    """Replace non-Latin-1 characters with ASCII equivalents for fpdf core fonts."""
-    replacements = {
-        "★": "*",    # ★
-        "↳": "->",   # ↳
-        "·": "-",    # ·
-        "—": "-",    # —
-        "–": "-",    # –
-        "✓": "OK",   # ✓
-        "‘": "'",    # '
-        "’": "'",    # '
-        "“": '"',    # "
-        "”": '"',    # "
-        "R₀": "R0",  # R₀
-        "₂": "2",    # ₂
-    }
-    for char, repl in replacements.items():
+# Special characters to normalise before writing to PDF/DOCX.
+# Keys use \u escapes to avoid any encoding ambiguity in source files.
+_SPECIAL_CHARS: dict[str, str] = {
+    "★": "*",    # ★
+    "↳": "->",   # ↳
+    "·": "-",    # ·
+    "—": "-",    # —
+    "–": "-",    # –
+    "✓": "OK",   # ✓
+    "‘": "'",    # ‘ left single quotation mark
+    "’": "'",    # ’ right single quotation mark
+    "“": '"',    # “ left double quotation mark
+    "”": '"',    # ” right double quotation mark
+    "R₀": "R0",  # R₀
+    "₂": "2",    # ₂
+}
+
+# System CJK font candidates searched in order; first existing file wins.
+# TTF preferred over TTC as fpdf2 handles single-font TTFs most reliably.
+_CJK_FONT_CANDIDATES = [
+    # Windows
+    r"C:\Windows\Fonts\simhei.ttf",
+    r"C:\Windows\Fonts\msyh.ttc",
+    r"C:\Windows\Fonts\simsun.ttc",
+    # macOS
+    "/Library/Fonts/Arial Unicode.ttf",
+    "/System/Library/Fonts/PingFang.ttc",
+    # Linux
+    "/usr/share/fonts/truetype/wqy/wqy-microhei.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf",
+]
+
+
+def _replace_special(text: str) -> str:
+    for char, repl in _SPECIAL_CHARS.items():
         text = text.replace(char, repl)
+    return text
+
+
+def _sanitize_latin(text: str) -> str:
+    """Replace special chars then encode to latin-1 (Helvetica fallback)."""
+    text = _replace_special(text)
     return text.encode("latin-1", errors="replace").decode("latin-1")
+
+
+def _has_cjk(text: str) -> bool:
+    return any(
+        0x2E80 <= ord(c) <= 0x9FFF or 0xAC00 <= ord(c) <= 0xD7AF
+        for c in text
+    )
+
+
+def _find_cjk_font() -> str | None:
+    for path in _CJK_FONT_CANDIDATES:
+        if Path(path).exists():
+            return path
+    return None
 
 
 def to_pdf(
@@ -36,30 +74,37 @@ def to_pdf(
     plot_path: str | None = None,
 ) -> bytes:
     """Render the conversation as a PDF and return its bytes."""
+    all_text = " ".join(m.get("content", "") for m in messages)
+    cjk_font_path = _find_cjk_font() if _has_cjk(all_text) else None
+
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
-    pdf.set_font("Helvetica", "B", 16)
+    if cjk_font_path:
+        pdf.add_font("Unicode", fname=cjk_font_path)
+        font = "Unicode"
+    else:
+        font = "Helvetica"
+
+    pdf.set_font(font, size=16)
     pdf.cell(0, 10, "EpiChat Conversation", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(4)
 
     for msg in messages:
         role = msg.get("role", "")
-        content = _sanitize(msg.get("content", ""))
+        raw = msg.get("content", "")
+        content = _replace_special(raw) if cjk_font_path else _sanitize_latin(raw)
         msg_plot = msg.get("plot_path")
 
-        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_font(font, size=9)
         label = "You" if role == "user" else "EpiChat"
         pdf.set_text_color(80, 80, 80)
         pdf.cell(0, 5, label, new_x="LMARGIN", new_y="NEXT")
         pdf.set_text_color(0, 0, 0)
 
-        if role == "user":
-            pdf.set_fill_color(255, 255, 255)
-        else:
-            pdf.set_fill_color(245, 245, 245)
-        pdf.set_font("Helvetica", "", 9)
+        pdf.set_fill_color(245, 245, 245) if role == "assistant" else pdf.set_fill_color(255, 255, 255)
+        pdf.set_font(font, size=9)
         pdf.multi_cell(0, 5, content, fill=(role == "assistant"))
 
         if msg_plot and Path(msg_plot).exists():
