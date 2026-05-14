@@ -99,15 +99,18 @@ def to_pdf(
     else:
         font_name = "Helvetica"
 
+    left_margin = right_margin = 20 * mm
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
         topMargin=15 * mm,
         bottomMargin=15 * mm,
-        leftMargin=20 * mm,
-        rightMargin=20 * mm,
+        leftMargin=left_margin,
+        rightMargin=right_margin,
     )
+    # Usable image width: page width minus margins minus 6pt frame padding each side
+    img_width = A4[0] - left_margin - right_margin - 12
 
     title_style = ParagraphStyle(
         "title", fontName=font_name, fontSize=16, alignment=1, spaceAfter=8
@@ -157,7 +160,19 @@ def to_pdf(
             else None
         )
         if target_plot and Path(target_plot).exists():
-            story.append(RLImage(target_plot, width=170 * mm))
+            try:
+                from PIL import Image as _PILImage
+                pil_img = _PILImage.open(target_plot)
+                if pil_img.mode in ("RGBA", "P"):
+                    pil_img = pil_img.convert("RGB")
+                w, h = pil_img.size
+                img_h = img_width * h / w
+                img_buf = io.BytesIO()
+                pil_img.save(img_buf, format="PNG")
+                img_buf.seek(0)
+                story.append(RLImage(img_buf, width=img_width, height=img_h))
+            except Exception:
+                pass
 
         story.append(Spacer(1, 3 * mm))
 
