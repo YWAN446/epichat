@@ -6,11 +6,9 @@ from pathlib import Path
 
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
-from fpdf import FPDF
 
 
 # Special characters to normalise before writing to PDF/DOCX.
-# Keys use \u escapes to avoid any encoding ambiguity in source files.
 _SPECIAL_CHARS: dict[str, str] = {
     "★": "*",    # ★
     "↳": "->",   # ↳
@@ -18,16 +16,15 @@ _SPECIAL_CHARS: dict[str, str] = {
     "—": "-",    # —
     "–": "-",    # –
     "✓": "OK",   # ✓
-    "‘": "'",    # ‘ left single quotation mark
-    "’": "'",    # ’ right single quotation mark
-    "“": '"',    # “ left double quotation mark
-    "”": '"',    # ” right double quotation mark
+    "‘": "'",    # ' left single quotation mark
+    "’": "'",    # ' right single quotation mark
+    "“": '"',    # " left double quotation mark
+    "”": '"',    # " right double quotation mark
     "R₀": "R0",  # R₀
     "₂": "2",    # ₂
 }
 
 # System CJK font candidates searched in order; first existing file wins.
-# TTF preferred over TTC as fpdf2 handles single-font TTFs most reliably.
 _CJK_FONT_CANDIDATES = [
     # Windows
     r"C:\Windows\Fonts\simhei.ttf",
@@ -42,6 +39,8 @@ _CJK_FONT_CANDIDATES = [
     "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf",
 ]
 
+_RL_FONT_REGISTERED: set[str] = set()
+
 
 def _replace_special(text: str) -> str:
     for char, repl in _SPECIAL_CHARS.items():
@@ -50,7 +49,6 @@ def _replace_special(text: str) -> str:
 
 
 def _sanitize_latin(text: str) -> str:
-    """Replace special chars then encode to latin-1 (Helvetica fallback)."""
     text = _replace_special(text)
     return text.encode("latin-1", errors="replace").decode("latin-1")
 
@@ -69,57 +67,102 @@ def _find_cjk_font() -> str | None:
     return None
 
 
+def _rl_register_font(font_path: str) -> str:
+    """Register a TTF font with reportlab and return the font name."""
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    font_name = "EpiChatCJK"
+    if font_name not in _RL_FONT_REGISTERED:
+        pdfmetrics.registerFont(TTFont(font_name, font_path))
+        _RL_FONT_REGISTERED.add(font_name)
+    return font_name
+
+
 def to_pdf(
     messages: list[dict],
     plot_path: str | None = None,
 ) -> bytes:
     """Render the conversation as a PDF and return its bytes."""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Image as RLImage
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+
     all_text = " ".join(m.get("content", "") for m in messages)
     cjk_font_path = _find_cjk_font() if _has_cjk(all_text) else None
 
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-
     if cjk_font_path:
-        pdf.add_font("Unicode", fname=cjk_font_path)
-        font = "Unicode"
+        font_name = _rl_register_font(cjk_font_path)
     else:
-        font = "Helvetica"
+        font_name = "Helvetica"
 
-    pdf.set_font(font, size=16)
-    pdf.cell(0, 10, "EpiChat Conversation", new_x="LMARGIN", new_y="NEXT", align="C")
-    pdf.ln(4)
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+        leftMargin=20 * mm,
+        rightMargin=20 * mm,
+    )
+
+    title_style = ParagraphStyle(
+        "title", fontName=font_name, fontSize=16, alignment=1, spaceAfter=8
+    )
+    label_style = ParagraphStyle(
+        "label",
+        fontName=font_name,
+        fontSize=8,
+        textColor=colors.Color(0.31, 0.31, 0.31),
+        spaceAfter=2,
+    )
+    user_style = ParagraphStyle(
+        "user", fontName=font_name, fontSize=9, spaceAfter=4
+    )
+    asst_style = ParagraphStyle(
+        "asst",
+        fontName=font_name,
+        fontSize=9,
+        spaceAfter=4,
+        backColor=colors.Color(0.96, 0.96, 0.96),
+    )
+
+    story = [Paragraph("EpiChat Conversation", title_style), Spacer(1, 4 * mm)]
 
     for msg in messages:
         role = msg.get("role", "")
         raw = msg.get("content", "")
-        content = _replace_special(raw) if cjk_font_path else _sanitize_latin(raw)
-        msg_plot = msg.get("plot_path")
+        content = _replace_special(raw)
+        # Escape HTML special chars and convert newlines for Paragraph
+        content = (
+            content.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\n", "<br/>")
+        )
 
-        pdf.set_font(font, size=9)
         label = "You" if role == "user" else "EpiChat"
-        pdf.set_text_color(80, 80, 80)
-        pdf.cell(0, 5, label, new_x="LMARGIN", new_y="NEXT")
-        pdf.set_text_color(0, 0, 0)
+        story.append(Paragraph(label, label_style))
+        story.append(
+            Paragraph(content, asst_style if role == "assistant" else user_style)
+        )
 
-        pdf.set_fill_color(245, 245, 245) if role == "assistant" else pdf.set_fill_color(255, 255, 255)
-        pdf.set_font(font, size=9)
-        pdf.multi_cell(0, 5, content, fill=(role == "assistant"))
-
-        if msg_plot and Path(msg_plot).exists():
-            pdf.image(msg_plot, x=pdf.l_margin, w=pdf.epw)
-        elif (
+        msg_plot = msg.get("plot_path")
+        target_plot = msg_plot or (
             plot_path
-            and Path(plot_path).exists()
-            and role == "assistant"
-            and "complete" in content.lower()
-        ):
-            pdf.image(plot_path, x=pdf.l_margin, w=pdf.epw)
+            if role == "assistant" and "complete" in raw.lower()
+            else None
+        )
+        if target_plot and Path(target_plot).exists():
+            story.append(RLImage(target_plot, width=170 * mm))
 
-        pdf.ln(3)
+        story.append(Spacer(1, 3 * mm))
 
-    return bytes(pdf.output())
+    doc.build(story)
+    return buf.getvalue()
 
 
 def to_docx(
