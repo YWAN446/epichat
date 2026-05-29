@@ -106,7 +106,7 @@
       "infectious_days": {
         "min": 14,
         "max": 28,
-        "typical": 14,
+        "typical": 21,
         "note": "First 2-4 weeks after cough onset",
         "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/"
       }
