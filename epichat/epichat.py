@@ -29,6 +29,7 @@ class EpiChatResult:
     narration: dict  # {'summary': str, 'key_findings': list[str]}
     error: str | None = None
     data_sources: list[ResolvedField] = field(default_factory=list)
+    param_warnings: list[str] = field(default_factory=list)
 
     def format_cli(self) -> str:
         """Return a formatted string for CLI display."""
@@ -41,6 +42,12 @@ class EpiChatResult:
         sep = "-" * 42
         lines.append("\nRESULTS")
         lines.append(sep)
+
+        if self.param_warnings:
+            lines.append("⚠️  Parameter notes")
+            for w in self.param_warnings:
+                lines.append(f"  • {w}")
+            lines.append(sep)
 
         s = self.stats
         n = s.get("n_agents", 1)
@@ -158,6 +165,13 @@ class EpiChat:
                 error=str(e),
             )
 
+        from .disease_db import detect_disease, check_params as _db_check
+        _disease = detect_disease(user_input)
+        _param_warnings = (
+            _db_check(_disease, params.approx_r0(), params.dur_inf, params.dur_exp)
+            if _disease else []
+        )
+
         # Unique output path for this run
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         plot_path = str(self.output_dir / f"sim_{ts}.png")
@@ -190,6 +204,7 @@ class EpiChat:
             plot_path=exec_result["plot_path"],
             narration=narration,
             data_sources=get_last_resolved(),
+            param_warnings=_param_warnings,
         )
 
     def _execute_with_retry(
