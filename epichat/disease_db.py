@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 _DB_PATH = Path(__file__).parent / "data" / "disease_parameters.json"
@@ -44,14 +45,17 @@ def lookup(disease_name: str) -> dict | None:
 
 
 def detect_disease(user_input: str) -> str | None:
-    """Return canonical disease name if any disease name/alias appears in the query."""
+    """Return canonical disease name if any disease name/alias appears in the query.
+
+    Uses word-boundary matching to avoid false positives (e.g. "flu" in "fluid").
+    """
     db = load_db()
     text = user_input.lower()
     for canonical, entry in db["diseases"].items():
-        if canonical in text:
+        if re.search(r"\b" + re.escape(canonical) + r"\b", text):
             return canonical
         for alias in entry.get("aliases", []):
-            if alias.lower() in text:
+            if re.search(r"\b" + re.escape(alias.lower()) + r"\b", text):
                 return canonical
     return None
 
