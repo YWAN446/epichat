@@ -155,7 +155,7 @@ def next_question(
     return q
 
 
-def build_summary(params, data_sources: list, description: str = "", lang: str = "English") -> str:
+def build_summary(params, data_sources: list, description: str = "", lang: str = "English", param_warnings: list[str] | None = None) -> str:
     """Build a markdown-formatted parameter summary with optional LLM description."""
     parts: list[str] = []
     used_sources: set[str] = set()
@@ -337,6 +337,12 @@ def build_summary(params, data_sources: list, description: str = "", lang: str =
                 ref_blocks.append(f"**{src}** — {_SOURCE_FOOTNOTES[src]}")
         ref_blocks.append("---")
         parts.append("\n\n".join(ref_blocks))
+
+    if param_warnings:
+        warn_lines = ["⚠️ **Parameter notes**"]
+        for w in param_warnings:
+            warn_lines.append(f"- {w}")
+        parts.append("  \n".join(warn_lines))
 
     _RUN_QUESTION = "Would you like to adjust anything, or shall I run the simulation?"
     result = "\n\n".join(parts)
