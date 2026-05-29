@@ -1,7 +1,7 @@
 {
   "diseases": {
     "measles": {
-      "aliases": ["rubeola", "morbilli"],
+      "aliases": ["rubeola", "morbilli", "measle"],
       "r0": {
         "min": 12,
         "max": 18,
