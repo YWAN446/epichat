@@ -192,6 +192,7 @@ class EpiChat:
                 plot_path=None,
                 narration={},
                 error=exec_result["error"],
+                param_warnings=_param_warnings,
             )
 
         print("[EpiChat] Generating plain-language summary...")
