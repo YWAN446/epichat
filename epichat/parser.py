@@ -293,21 +293,23 @@ def _apply_disease_db_r0(user_input: str, params: SimParams) -> SimParams:
     return SimParams.model_validate({**params.model_dump(), "beta": round(corrected_beta, 6)})
 
 
-_R0_KEYWORDS = frozenset({"r0", "r_0", "reproduction number", "r zero", "r-zero", "basic reproduction"})
-
-
 def recalibrate_beta_for_network(
     params: SimParams,
     r0_before: float,
-    user_message: str = "",
+    params_before: SimParams,
 ) -> SimParams:
-    """After a user modification, ensure approx_r0() is correct for the actual network.
+    """After any modification, ensure approx_r0() is correct for the actual network.
 
     The modifier LLM always computes beta with the random network formula.
-    This corrects it for age-structured networks using two rules:
-      - User mentioned R0 in their message → use the modifier's intended R0
-        (recovered from its new beta via the random-network formula)
-      - Otherwise → restore the pre-modification R0
+    This function corrects beta so approx_r0() equals what the user intended:
+
+      - beta changed  → modifier updated R0; recover intended R0 from the
+                        modifier's new beta via the random-network formula,
+                        then recalibrate for the actual network
+      - beta unchanged → user changed dur_inf, interventions, etc.;
+                        recalibrate to restore the pre-modification R0
+
+    For random networks the formula is already correct, so returns unchanged.
     """
     if params.network_type != "age_structured":
         return params
@@ -316,16 +318,15 @@ def recalibrate_beta_for_network(
     if params.disease_type == "seiar":
         asymp_factor = 1 - params.p_asymp * (1 - params.rel_trans_asymp)
 
-    user_changed_r0 = any(kw in user_message.lower() for kw in _R0_KEYWORDS)
-
-    if user_changed_r0:
-        # Recover the R0 the modifier targeted from its new beta (random-network formula)
+    if abs(params.beta - params_before.beta) > 1e-4:
+        # Modifier changed beta → user intended a new R0
+        # Recover it from the modifier's beta using the random-network formula
         target_r0 = (
             params.beta * params.network_beta * asymp_factor
             * (params.dur_inf / 365.0) * params.n_contacts
         )
     else:
-        # User changed something else (dur_inf, interventions, etc.) — keep R0 stable
+        # beta unchanged → user changed something else; keep R0 stable
         target_r0 = r0_before
 
     corrected = _calibrate_beta(params, target_r0)
