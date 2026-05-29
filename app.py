@@ -137,7 +137,13 @@ def _build_summary_with_description() -> str:
         description = generate_sim_description(s.params, s.data_sources, lang=lang)
     except Exception:
         description = ""
-    return build_summary(s.params, s.data_sources, description, lang=lang)
+    from epichat.disease_db import detect_disease, check_params as _db_check
+    _disease = detect_disease(s.context or "")
+    _warnings = (
+        _db_check(_disease, s.params.approx_r0(), s.params.dur_inf, s.params.dur_exp)
+        if _disease else []
+    )
+    return build_summary(s.params, s.data_sources, description, lang=lang, param_warnings=_warnings)
 
 
 def _do_parse() -> None:
@@ -369,7 +375,11 @@ def _apply_modification_and_summarize(text: str) -> None:
         return
 
     try:
+        r0_before = s.params.approx_r0()
+        params_before = s.params
         s.params = apply_modification(s.params, text)
+        from epichat.parser import recalibrate_beta
+        s.params = recalibrate_beta(s.params, r0_before, params_before)
     except Exception as e:
         _add_msg("assistant", f"I couldn't apply that modification: {e}. Please try again.")
         return

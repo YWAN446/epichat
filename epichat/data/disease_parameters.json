@@ -1,0 +1,183 @@
+{
+  "diseases": {
+    "measles": {
+      "aliases": ["rubeola", "morbilli", "measle"],
+      "r0": {
+        "min": 12,
+        "max": 18,
+        "typical": 15,
+        "source": "https://pubmed.ncbi.nlm.nih.gov/28757186/"
+      },
+      "incubation_days": {
+        "min": 6,
+        "max": 21,
+        "typical": 12,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 4,
+        "max": 12,
+        "typical": 8,
+        "note": "4 days before to 4 days after rash onset",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      }
+    },
+    "mumps": {
+      "aliases": ["epidemic parotitis"],
+      "r0": {
+        "min": 10,
+        "max": 12,
+        "typical": 11,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC557899/"
+      },
+      "incubation_days": {
+        "min": 14,
+        "max": 25,
+        "typical": 18,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 7,
+        "max": 25,
+        "typical": 14,
+        "note": "7 days before to 11-14 days after parotitis onset",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      }
+    },
+    "rubella": {
+      "aliases": ["german measles", "three-day measles"],
+      "r0": {
+        "min": 2,
+        "max": 5,
+        "typical": 3,
+        "note": "Literature reports R0 < 5; lower bound set at 2 (minimum viable epidemic threshold)",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/"
+      },
+      "incubation_days": {
+        "min": 13,
+        "max": 24,
+        "typical": 17,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 7,
+        "max": 21,
+        "typical": 14,
+        "note": "7 days before to 7 days after onset (CDC)",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      }
+    },
+    "varicella": {
+      "aliases": ["chickenpox", "varicella-zoster", "chicken pox"],
+      "r0": {
+        "min": 8,
+        "max": 10,
+        "typical": 9,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/"
+      },
+      "incubation_days": {
+        "min": 10,
+        "max": 21,
+        "typical": 14,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 4,
+        "max": 10,
+        "typical": 7,
+        "note": "Typically 1-2 days before to 5-7 days after rash onset",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/"
+      }
+    },
+    "pertussis": {
+      "aliases": ["whooping cough", "bordetella pertussis", "whooping-cough"],
+      "r0": {
+        "min": 12,
+        "max": 17,
+        "typical": 14,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/"
+      },
+      "incubation_days": {
+        "min": 3,
+        "max": 7,
+        "typical": 5,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 14,
+        "max": 28,
+        "typical": 21,
+        "note": "First 2-4 weeks after cough onset",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/"
+      }
+    },
+    "influenza": {
+      "aliases": ["flu", "seasonal flu", "seasonal influenza", "the flu"],
+      "r0": {
+        "min": 1.2,
+        "max": 1.4,
+        "typical": 1.28,
+        "note": "Seasonal community transmission; pandemic strains (H1N1 1918: ~1.8, H5N1: ~0.34) differ significantly",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169819/"
+      },
+      "incubation_days": {
+        "min": 1,
+        "max": 4,
+        "typical": 2,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 1,
+        "max": 10,
+        "typical": 5,
+        "note": "1 day before to 10 days after onset (children); shorter in adults",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      }
+    },
+    "meningococcal": {
+      "aliases": ["meningitis", "neisseria meningitidis", "meningococcal disease", "bacterial meningitis"],
+      "r0": {
+        "min": 1.0,
+        "max": 1.9,
+        "typical": 1.3,
+        "note": "Three estimates from HPD intervals: 1.31 (1.03-1.64), 1.22 (0.90-1.64), 1.4 (0.91-1.9)",
+        "source": "https://www.sciencedirect.com/science/article/abs/pii/S156713482030191X"
+      },
+      "incubation_days": {
+        "min": 1,
+        "max": 10,
+        "typical": 3,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 1,
+        "max": 7,
+        "typical": 2,
+        "note": "Non-infectious 1-2 days after antibiotic treatment starts",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      }
+    },
+    "hepatitis_a": {
+      "aliases": ["hepatitis a", "hep a", "hav", "hepatitis-a"],
+      "r0": {
+        "min": 2.1,
+        "max": 2.8,
+        "typical": 2.4,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6152969/"
+      },
+      "incubation_days": {
+        "min": 20,
+        "max": 125,
+        "typical": 28,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 14,
+        "max": 28,
+        "typical": 21,
+        "note": "2 weeks before to 1 week after onset",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      }
+    }
+  }
+}
