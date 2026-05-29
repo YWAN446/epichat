@@ -293,6 +293,46 @@ def _apply_disease_db_r0(user_input: str, params: SimParams) -> SimParams:
     return SimParams.model_validate({**params.model_dump(), "beta": round(corrected_beta, 6)})
 
 
+_R0_KEYWORDS = frozenset({"r0", "r_0", "reproduction number", "r zero", "r-zero", "basic reproduction"})
+
+
+def recalibrate_beta_for_network(
+    params: SimParams,
+    r0_before: float,
+    user_message: str = "",
+) -> SimParams:
+    """After a user modification, ensure approx_r0() is correct for the actual network.
+
+    The modifier LLM always computes beta with the random network formula.
+    This corrects it for age-structured networks using two rules:
+      - User mentioned R0 in their message → use the modifier's intended R0
+        (recovered from its new beta via the random-network formula)
+      - Otherwise → restore the pre-modification R0
+    """
+    if params.network_type != "age_structured":
+        return params
+
+    asymp_factor = 1.0
+    if params.disease_type == "seiar":
+        asymp_factor = 1 - params.p_asymp * (1 - params.rel_trans_asymp)
+
+    user_changed_r0 = any(kw in user_message.lower() for kw in _R0_KEYWORDS)
+
+    if user_changed_r0:
+        # Recover the R0 the modifier targeted from its new beta (random-network formula)
+        target_r0 = (
+            params.beta * params.network_beta * asymp_factor
+            * (params.dur_inf / 365.0) * params.n_contacts
+        )
+    else:
+        # User changed something else (dur_inf, interventions, etc.) — keep R0 stable
+        target_r0 = r0_before
+
+    corrected = _calibrate_beta(params, target_r0)
+    corrected = max(0.001, min(1000.0, corrected))
+    return SimParams.model_validate({**params.model_dump(), "beta": round(corrected, 6)})
+
+
 def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.

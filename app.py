@@ -375,7 +375,10 @@ def _apply_modification_and_summarize(text: str) -> None:
         return
 
     try:
+        r0_before = s.params.approx_r0()
         s.params = apply_modification(s.params, text)
+        from epichat.parser import recalibrate_beta_for_network
+        s.params = recalibrate_beta_for_network(s.params, r0_before, text)
     except Exception as e:
         _add_msg("assistant", f"I couldn't apply that modification: {e}. Please try again.")
         return
