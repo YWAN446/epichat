@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import anthropic
+import numpy as np
 from dotenv import load_dotenv
 
 from .resolver import DataQuery, ResolvedField, Resolver, SourceAdapter
@@ -230,6 +231,68 @@ def _apply_health_system(params: SimParams, resolved: list[ResolvedField]) -> Si
     })
 
 
+def _calibrate_beta(params: SimParams, target_r0: float) -> float:
+    """Back-solve beta so approx_r0() returns target_r0 for the current network.
+
+    Mirrors the math in SimParams.approx_r0() exactly so the two stay in sync.
+    """
+    asymp_factor = 1.0
+    if params.disease_type == "seiar":
+        asymp_factor = 1 - params.p_asymp * (1 - params.rel_trans_asymp)
+
+    denom_base = params.network_beta * asymp_factor * (params.dur_inf / 365.0)
+
+    if params.network_type == "age_structured":
+        C = np.array([[7.0, 2.5, 0.5],
+                      [2.5, 9.0, 1.5],
+                      [0.5, 1.5, 3.5]])
+        if all(x is not None for x in [params.age_pct_under18, params.age_pct_18_64, params.age_pct_over65]):
+            pop = np.array([params.age_pct_under18, params.age_pct_18_64, params.age_pct_over65]) / 100.0
+            ngm_unit = C * pop[np.newaxis, :]
+        else:
+            ngm_unit = C
+        spectral_radius = float(np.linalg.eigvals(ngm_unit).real.max())
+        denom = denom_base * spectral_radius
+    else:
+        denom = denom_base * params.n_contacts
+
+    return target_r0 / denom
+
+
+def _apply_disease_db_r0(user_input: str, params: SimParams) -> SimParams:
+    """Calibrate beta so approx_r0() matches the disease database typical R0.
+
+    Only applies when the LLM used disease defaults (intended R0 within 2× of
+    the DB typical). Skips silently if user specified an explicit non-default R0,
+    letting the warning system flag that case instead.
+    """
+    from .disease_db import detect_disease, lookup
+
+    disease = detect_disease(user_input)
+    if disease is None:
+        return params
+
+    entry = lookup(disease)
+    if entry is None or "r0" not in entry:
+        return params
+
+    target_r0 = float(entry["r0"]["typical"])
+
+    # Estimate what R0 the LLM intended (computed as if random network)
+    asymp_factor = 1.0
+    if params.disease_type == "seiar":
+        asymp_factor = 1 - params.p_asymp * (1 - params.rel_trans_asymp)
+    r0_llm = params.beta * params.network_beta * asymp_factor * (params.dur_inf / 365.0) * params.n_contacts
+
+    # Only apply correction when LLM used disease defaults, not an explicit user R0
+    if not (target_r0 * 0.5 <= r0_llm <= target_r0 * 2.0):
+        return params
+
+    corrected_beta = _calibrate_beta(params, target_r0)
+    corrected_beta = max(0.001, min(1000.0, corrected_beta))
+    return SimParams.model_validate({**params.model_dump(), "beta": round(corrected_beta, 6)})
+
+
 def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
@@ -261,6 +324,7 @@ def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimP
     params = _apply_wb_disease_prevalence(params, resolved)
     params = _apply_health_system(params, resolved)
     params = _apply_population_scale(params, resolved)
+    params = _apply_disease_db_r0(user_input, params)
     return params
 
 

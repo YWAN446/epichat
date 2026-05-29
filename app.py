@@ -137,7 +137,13 @@ def _build_summary_with_description() -> str:
         description = generate_sim_description(s.params, s.data_sources, lang=lang)
     except Exception:
         description = ""
-    return build_summary(s.params, s.data_sources, description, lang=lang)
+    from epichat.disease_db import detect_disease, check_params as _db_check
+    _disease = detect_disease(s.context or "")
+    _warnings = (
+        _db_check(_disease, s.params.approx_r0(), s.params.dur_inf, s.params.dur_exp)
+        if _disease else []
+    )
+    return build_summary(s.params, s.data_sources, description, lang=lang, param_warnings=_warnings)
 
 
 def _do_parse() -> None:
