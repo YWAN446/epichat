@@ -395,7 +395,8 @@ with st.sidebar:
     st.markdown(
         "<h2 style='font-size:2rem;margin:0;padding:4px 0;line-height:1.2'>🦠 EpiChat</h2>"
         "<p style='font-size:1rem;color:white;margin:6px 0 0 0;line-height:1.4'>"
-        "Ask an epidemiological question. Get a validated simulation.</p>",
+        "Ask an epidemiological question. Get a validated simulation.</p>"
+        "<p style='font-size:0.75rem;color:rgba(255,255,255,0.5);margin:4px 0 0 0'>v0.3</p>",
         unsafe_allow_html=True,
     )
     st.divider()

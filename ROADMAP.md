@@ -4,7 +4,7 @@ This document maps future EpiChat capabilities to the external datasets that wou
 
 ---
 
-## Current State (v0.2)
+## Current State (v0.3)
 
 ### Core simulation
 | Feature | Status |
@@ -12,11 +12,14 @@ This document maps future EpiChat capabilities to the external datasets that wou
 | SIR / SEIR / SIS / SIRS / SEIRS / SEIAR models | Implemented |
 | Random (Erdős–Rényi) network | Implemented |
 | Age-structured contacts (built-in POLYMOD matrix) | Implemented — 3-group European average |
+| β calibration for age-structured networks | Implemented — back-solved from spectral radius so approx_R₀() matches intent |
+| β recalibration after R₀ / dur_inf modifications | Implemented — mid-conversation changes keep R₀ consistent |
 | Vaccination (pre-existing coverage + ongoing campaign) | Implemented |
 | Seasonality connector | Implemented |
 | Demographics (births + deaths with user-supplied rates) | Implemented |
 | Treatment intervention (capacity + coverage) | Implemented |
 | Export to PDF and Word | Implemented |
+| PDF export with CJK (Chinese/Japanese/Korean) support | Implemented — ReportLab + STSong-Light font |
 
 ### Data integration
 | Feature | Status |
@@ -25,6 +28,15 @@ This document maps future EpiChat capabilities to the external datasets that wou
 | WHO GHO — disease surveillance, vaccination coverage | Implemented |
 | World Bank WDI — health system capacity, UHC index, disease prevalence | Implemented |
 | Data source citations in parameter summary | Implemented — citations shown for all resolved fields including intervention coverage |
+
+### Disease parameter database & fact-checking (v0.3)
+| Feature | Status |
+|---|---|
+| Literature-backed disease parameter DB (`disease_parameters.json`) | Implemented — 8 diseases: measles, mumps, rubella, varicella, pertussis, influenza, meningococcal, hepatitis A |
+| R₀ range validation | Implemented — ⚠️ warning shown in chat summary and CLI when R₀ is outside published range |
+| Infectious period validation | Implemented — warns when `dur_inf` is outside literature range |
+| Incubation period validation | Implemented — warns when `dur_exp` is outside literature range (when provided) |
+| Student-extensible JSON schema | Implemented — adding a disease requires only editing `disease_parameters.json` |
 
 ### Input enrichment (v0.2)
 | Feature | Status |
@@ -35,6 +47,14 @@ This document maps future EpiChat capabilities to the external datasets that wou
 | Web search request | Implemented — Anthropic built-in web_search tool |
 | OutbreakContext pre-fills conversation state | Implemented — disease/location/population/interventions inferred |
 | Dev mode inspection card | Implemented — `EPICHAT_DEV_MODE=true` shows extracted fields |
+
+### Multilingual support (v0.3)
+| Feature | Status |
+|---|---|
+| Query input in any language | Implemented — Claude handles extraction language-agnostically |
+| Narration and parameter summary in user's language | Implemented — language auto-detected per session |
+| UI prompts and follow-up questions translated | Implemented — `next_question()`, `build_summary()` accept `lang` parameter |
+| Multilingual typewriter greeting | Implemented — 10 languages in Streamlit landing screen |
 
 ---
 
@@ -186,7 +206,7 @@ This document maps future EpiChat capabilities to the external datasets that wou
 
 ---
 
-## Phase 7 — Multilingual Support
+## Phase 7 — Multilingual Support ✅ Implemented in v0.3
 
 **Feature:** Accept user queries in any language and respond in the same language, making EpiChat accessible to non-English-speaking researchers, public health practitioners, and students.
 
@@ -244,14 +264,14 @@ The underlying Claude model already understands and generates text in ~100 langu
 
 | Priority | Phase | Complexity | Impact |
 |---|---|---|---|
-| 1 | Phase 4 — Country demographics | Low–Medium | High: improves all long-run simulations |
-| 2 | Phase 7 — Multilingual support | Low–Medium | High: removes language barrier for global users |
-| 3 | Phase 1 — Country contact matrices | Medium | High: improves age-structured accuracy |
-| 4 | Phase 3 — Age-specific severity | Medium | High: realistic mortality distribution |
-| 5 | Phase 2 — HouseholdNet | High | Medium: important for household-transmitted diseases |
-| 6 | Phase 5 — Calibration | High | Very High: enables research-grade parameter estimation |
-| 7 | Phase 6 — STI networks | Very High | Medium: expands disease scope |
-| 8 | Phase 8 — Metapopulation | Very High | High: spatial outbreak dynamics |
+| 1 | Phase 1 — Country contact matrices | Medium | High: improves age-structured accuracy beyond the 3-group POLYMOD average |
+| 2 | Phase 3 — Age-specific severity | Medium | High: realistic mortality distribution across age groups |
+| 3 | Phase 2 — HouseholdNet | High | Medium: important for household-transmitted diseases |
+| 4 | Phase 5 — Calibration | High | Very High: enables research-grade parameter estimation |
+| 5 | Phase 6 — STI networks | Very High | Medium: expands disease scope |
+| 6 | Phase 8 — Metapopulation | Very High | High: spatial outbreak dynamics |
+
+*Phase 4 (Country demographics) and Phase 7 (Multilingual support) are complete as of v0.3.*
 
 ---
 

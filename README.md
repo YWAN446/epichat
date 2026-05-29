@@ -20,6 +20,12 @@ Layer 0: Input Enricher        (Claude Haiku + web_search tool)
      ▼
 Layer 1: LLM Parameter Parser  (Claude API + extraction prompt)
      │  Structured JSON (SimParams) — context informs defaults
+     │  ├─ Resolver: pulls real-world data (UN WPP · WHO GHO · WB WDI)
+     │  └─ Beta calibration: corrects β for age-structured networks
+     ▼
+Layer 1b: Fact-Checker         (disease_parameters.json — no LLM)
+     │  Compares R₀, dur_inf, dur_exp against literature ranges
+     │  Emits ⚠️ warnings shown in chat summary and CLI output
      ▼
 Layer 2: Code Generator        (Jinja2 templates → Starsim Python)
      │  Python script
@@ -32,6 +38,34 @@ Layer 4: Results Narrator      (Claude API + narration prompt)
      ▼
 User: epidemic curve + interpretation
 ```
+
+---
+
+## What's New in v0.3
+
+### Disease Parameter Database & Fact-Checking
+
+EpiChat now ships a literature-backed database of 8 infectious diseases (`epichat/data/disease_parameters.json`). When a named disease is detected in a query, EpiChat compares the simulation's R₀, infectious period, and incubation period against published ranges — and shows a warning if any value is out of range.
+
+```
+⚠️  Parameter notes
+  • R₀ ≈ 100.0 is outside the literature range for measles (12–18).
+    Source: https://pubmed.ncbi.nlm.nih.gov/28757186/
+```
+
+The database is **student-extensible**: adding a new disease requires only editing the JSON file — no Python changes needed. Covered diseases: measles, mumps, rubella, varicella, pertussis, influenza (seasonal), meningococcal, hepatitis A.
+
+### Age-Structured Network β Calibration
+
+When real-world demographic data (e.g. Kenya's young age distribution from UN WPP) triggers an age-structured contact network, EpiChat now back-solves β so that `approx_R₀()` matches the literature typical — not the random-network approximation. The same calibration applies when a user modifies R₀ or `dur_inf` mid-conversation.
+
+### Multilingual Support
+
+EpiChat now accepts queries in any language and responds in kind. Language is detected automatically; the UI, parameter summaries, and narration all follow the user's language. Priority languages: Spanish, French, Portuguese, Arabic, Chinese (Simplified).
+
+### PDF/Word Export with CJK Support
+
+PDF export now renders Chinese, Japanese, and Korean characters correctly via ReportLab with a CJK-capable font (STSong-Light), replacing the previous fpdf2 implementation.
 
 ---
 
@@ -153,7 +187,7 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 |-----------|------|-------|---------|-------------|
 | `disease_type` | string | sir, seir, sis, sirs, seirs, seiar | `sir` | Compartmental model |
 | `n_agents` | integer | 10–1,000,000 | 10,000 | Population size |
-| `beta` | float | 0–1000 | computed | Per-year transmission rate. EpiChat computes this from R0: `beta = R0 × 365 / (n_contacts × dur_inf_days)` |
+| `beta` | float | 0–1000 | computed | Per-year transmission rate. EpiChat computes this from R0: `beta = R0 × 365 / (n_contacts × dur_inf_days)` for random networks; for age-structured networks the correct value is back-solved from the POLYMOD spectral radius so that `approx_R₀()` equals the intended R0. |
 | `init_prev` | float | 0–1 | 0.01 | Initial fraction infected (seed cases) |
 | `dur_inf` | float | >0 | 10.0 | Infectious period (days) |
 | `dur_exp` | float or null | >0 | null | Latent/exposed period (days). **Required for SEIR, SEIRS, SEIAR** |
@@ -282,11 +316,16 @@ epichat/
 │   ├── schema.py            # Pydantic models: SimParams + OutbreakContext
 │   ├── enricher.py          # Input enrichment: query/report/URL/search → OutbreakContext
 │   ├── parser.py            # NL + OutbreakContext → SimParams (Claude API)
+│   │                        #   incl. beta calibration for age-structured networks
+│   ├── disease_db.py        # Disease parameter DB: lookup, detect, fact-check
 │   ├── chat_controller.py   # Conversation state machine, summary builder
 │   ├── generator.py         # SimParams → Starsim code (Jinja2)
 │   ├── executor.py          # Sandboxed subprocess execution
 │   ├── narrator.py          # Results → plain-language (Claude API)
+│   ├── modifier.py          # Plain-text modification → updated SimParams
 │   ├── epichat.py           # Main orchestrator + error recovery loop
+│   ├── data/
+│   │   └── disease_parameters.json   # Literature-backed R₀/incubation/infectious ranges
 │   ├── prompts/
 │   │   ├── enrichment.txt   # System prompt for input enrichment (Layer 0)
 │   │   ├── extraction.txt   # System prompt for parameter parsing (Layer 1)
@@ -303,12 +342,15 @@ epichat/
 │   ├── seiar.py.j2          # SEIAR (asymptomatic track) template
 │   └── sis.py.j2            # SIS (no immunity) template
 └── tests/
-    ├── test_queries.json         # Benchmark queries
-    ├── test_parser.py            # Automated accuracy tests
-    ├── test_outbreak_context.py  # OutbreakContext schema validation
-    ├── test_enricher.py          # Enricher unit tests (mocked LLM)
-    ├── test_parser_unit.py       # Parser unit tests with OutbreakContext
-    └── test_chat_controller.py   # Conversation state machine tests
+    ├── test_queries.json              # Benchmark queries
+    ├── test_parser.py                 # Automated accuracy tests
+    ├── test_disease_db.py             # Disease DB: lookup, detect, check_params
+    ├── test_param_warnings.py         # EpiChatResult.param_warnings + CLI display
+    ├── test_build_summary_warnings.py # build_summary() warning block
+    ├── test_outbreak_context.py       # OutbreakContext schema validation
+    ├── test_enricher.py               # Enricher unit tests (mocked LLM)
+    ├── test_parser_unit.py            # Parser unit tests with OutbreakContext
+    └── test_chat_controller.py        # Conversation state machine tests
 ```
 
 ---
@@ -318,11 +360,12 @@ epichat/
 | Risk | Mitigation |
 |------|-----------|
 | Invalid Starsim code | Template-based generation (not free-form LLM code) |
-| Parameter hallucination | Pydantic validation + plausibility checks |
+| Parameter hallucination | Pydantic validation; literature-range fact-checking via `disease_parameters.json`; ⚠️ warning shown when values are outside known ranges |
+| Wrong R₀ on age-structured network | β back-solved from POLYMOD spectral radius after demographics are applied; recalibrated on every R₀ / `dur_inf` modification |
 | Execution failure | 3-attempt error recovery loop with LLM re-parameterization |
 | Timeout | 90-second subprocess limit |
 | API instability | Starsim version pinned in requirements.txt |
 
 ---
 
-*EpiChat v0.2 — Prototype*
+*EpiChat v0.3 — Prototype*
