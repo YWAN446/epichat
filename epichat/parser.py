@@ -293,27 +293,23 @@ def _apply_disease_db_r0(user_input: str, params: SimParams) -> SimParams:
     return SimParams.model_validate({**params.model_dump(), "beta": round(corrected_beta, 6)})
 
 
-def recalibrate_beta_for_network(
+def recalibrate_beta(
     params: SimParams,
     r0_before: float,
     params_before: SimParams,
 ) -> SimParams:
-    """After any modification, ensure approx_r0() is correct for the actual network.
+    """After any modification, recompute beta so approx_r0() matches the user's intent.
 
-    The modifier LLM always computes beta with the random network formula.
-    This function corrects beta so approx_r0() equals what the user intended:
+    The modifier LLM computes beta with the random-network formula and does not
+    account for age-structured networks or dur_inf changes. This ensures beta is
+    always consistent with the intended R0 and the actual network:
 
       - beta changed  → modifier updated R0; recover intended R0 from the
                         modifier's new beta via the random-network formula,
-                        then recalibrate for the actual network
+                        then recalibrate for the actual (possibly age-structured) network
       - beta unchanged → user changed dur_inf, interventions, etc.;
-                        recalibrate to restore the pre-modification R0
-
-    For random networks the formula is already correct, so returns unchanged.
+                        recalibrate so approx_r0() is restored to r0_before
     """
-    if params.network_type != "age_structured":
-        return params
-
     asymp_factor = 1.0
     if params.disease_type == "seiar":
         asymp_factor = 1 - params.p_asymp * (1 - params.rel_trans_asymp)
@@ -326,7 +322,7 @@ def recalibrate_beta_for_network(
             * (params.dur_inf / 365.0) * params.n_contacts
         )
     else:
-        # beta unchanged → user changed something else; keep R0 stable
+        # beta unchanged → user changed dur_inf or other params; keep R0 stable
         target_r0 = r0_before
 
     corrected = _calibrate_beta(params, target_r0)
