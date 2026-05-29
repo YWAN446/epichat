@@ -41,3 +41,64 @@ def lookup(disease_name: str) -> dict | None:
         if any(alias.lower() == name_lower for alias in entry.get("aliases", [])):
             return entry
     return None
+
+
+def detect_disease(user_input: str) -> str | None:
+    """Return canonical disease name if any disease name/alias appears in the query."""
+    db = load_db()
+    text = user_input.lower()
+    for canonical, entry in db["diseases"].items():
+        if canonical in text:
+            return canonical
+        for alias in entry.get("aliases", []):
+            if alias.lower() in text:
+                return canonical
+    return None
+
+
+def check_params(
+    disease_name: str,
+    r0: float,
+    dur_inf: float,
+    dur_exp: float | None,
+) -> list[str]:
+    """Return warning strings for values outside the literature range.
+
+    Returns [] if the disease is not in the database or all values are in range.
+    Never raises.
+    """
+    try:
+        entry = lookup(disease_name)
+        if entry is None:
+            return []
+
+        warnings: list[str] = []
+
+        r0_data = entry.get("r0", {})
+        if r0_data and not (r0_data["min"] <= r0 <= r0_data["max"]):
+            warnings.append(
+                f"R₀ ≈ {r0:.1f} is outside the literature range for "
+                f"{disease_name} ({r0_data['min']}–{r0_data['max']}). "
+                f"Source: {r0_data['source']}"
+            )
+
+        inf_data = entry.get("infectious_days", {})
+        if inf_data and not (inf_data["min"] <= dur_inf <= inf_data["max"]):
+            warnings.append(
+                f"Infectious period {dur_inf:.4g} days is outside the literature range for "
+                f"{disease_name} ({inf_data['min']}–{inf_data['max']} days). "
+                f"Source: {inf_data['source']}"
+            )
+
+        if dur_exp is not None:
+            inc_data = entry.get("incubation_days", {})
+            if inc_data and not (inc_data["min"] <= dur_exp <= inc_data["max"]):
+                warnings.append(
+                    f"Incubation period {dur_exp:.4g} days is outside the literature range for "
+                    f"{disease_name} ({inc_data['min']}–{inc_data['max']} days). "
+                    f"Source: {inc_data['source']}"
+                )
+
+        return warnings
+    except Exception:
+        return []
