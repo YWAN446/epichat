@@ -260,16 +260,75 @@ The underlying Claude model already understands and generates text in ~100 langu
 
 ---
 
+## Phase 9 — Disease Parameter Database Extension
+
+**Feature:** Expand `disease_parameters.json` to cover more diseases and more parameters per entry, deepening the fact-checking system introduced in v0.3.
+
+**Why it matters:** The v0.3 database covers 8 diseases and checks only three parameters (R₀, infectious period, incubation period). EpiChat's other settable parameters — IFR (`p_death`), contact rate (`n_contacts`), immunity duration (`dur_immune`), and asymptomatic fraction (`p_asymp`) — currently have no literature guardrails. Many common diseases a user might simulate (COVID-19, Ebola, dengue, RSV, cholera, TB, polio) are also absent.
+
+**Two parallel tracks of work:**
+
+### Track A — More parameters per existing disease
+
+Extend each existing disease entry with additional parameter ranges as literature permits. Python change: extend `check_params()` in `disease_db.py` to validate each new field when present.
+
+| Parameter | SimParams field | Example (measles) |
+|---|---|---|
+| Infection fatality rate | `p_death` | 0.01–0.1% (high-income), 1–5% (low-income) |
+| Average daily contacts | `n_contacts` | 10–15 (school-age dominated) |
+| Immunity duration (waning) | `dur_immune` | N/A — lifelong for measles |
+| Asymptomatic fraction | `p_asymp` | ~30% (SEIAR models) |
+
+### Track B — More diseases
+
+Add new disease entries to `disease_parameters.json`. No Python changes needed — `detect_disease()` and `check_params()` pick up new entries automatically.
+
+**Priority diseases to add:**
+
+| Disease | Model | Notes |
+|---|---|---|
+| COVID-19 (acute) | SIR / SEIR | R₀ 2–3 (ancestral), up to 8–12 (Omicron); multiple variant entries possible |
+| COVID-19 (endemic) | SIRS / SEIRS | Waning immunity; IFR age-stratified |
+| Ebola | SIR | R₀ 1.5–2.5; high IFR (25–90%); short infectious window |
+| Dengue | SEIR | R₀ 1.3–6.3 (vector-borne; note model limitations) |
+| RSV | SEIR | R₀ 2.5–4; strong seasonality; high burden in infants |
+| Cholera | SIR / SIS | R₀ 1.5–4; waterborne; environmental reservoir |
+| Polio | SIR | R₀ 5–7; high asymptomatic fraction (~72%) |
+| Tuberculosis | SIR / SEIR | Long infectious period; latent TB complicates R₀ |
+| Mpox | SEIR | R₀ 0.6–1.4 (community); network-dependent |
+
+**Data sources:**
+
+All entries should cite peer-reviewed sources in the same format as existing entries. Recommended starting points:
+- PubMed systematic reviews (search `"basic reproduction number" [disease]`)
+- WHO Technical Advisory Group reports
+- CDC epidemiology and prevention guides
+- ECDC rapid risk assessments
+
+**What needs to change in Python (Track A only):**
+
+`check_params()` in `disease_db.py` currently checks `r0`, `infectious_days`, and `incubation_days`. Extending to additional parameters requires:
+1. Adding the parameter field to `check_params()` signature
+2. Adding a check block mirroring the existing three
+3. Calling it with the new SimParams field from `epichat.py`
+
+Each new parameter is a ≈10-line addition — the JSON schema already supports arbitrary keys.
+
+**Implementation complexity:** Low (Track B — data only) / Low–Medium (Track A — small Python extension per new parameter).
+
+---
+
 ## Priority Order
 
 | Priority | Phase | Complexity | Impact |
 |---|---|---|---|
-| 1 | Phase 1 — Country contact matrices | Medium | High: improves age-structured accuracy beyond the 3-group POLYMOD average |
-| 2 | Phase 3 — Age-specific severity | Medium | High: realistic mortality distribution across age groups |
-| 3 | Phase 2 — HouseholdNet | High | Medium: important for household-transmitted diseases |
-| 4 | Phase 5 — Calibration | High | Very High: enables research-grade parameter estimation |
-| 5 | Phase 6 — STI networks | Very High | Medium: expands disease scope |
-| 6 | Phase 8 — Metapopulation | Very High | High: spatial outbreak dynamics |
+| 1 | Phase 9 — Disease parameter DB extension | Low (data) / Low–Medium (Python) | High: broader fact-checking coverage; already in progress |
+| 2 | Phase 1 — Country contact matrices | Medium | High: improves age-structured accuracy beyond the 3-group POLYMOD average |
+| 3 | Phase 3 — Age-specific severity | Medium | High: realistic mortality distribution across age groups |
+| 4 | Phase 2 — HouseholdNet | High | Medium: important for household-transmitted diseases |
+| 5 | Phase 5 — Calibration | High | Very High: enables research-grade parameter estimation |
+| 6 | Phase 6 — STI networks | Very High | Medium: expands disease scope |
+| 7 | Phase 8 — Metapopulation | Very High | High: spatial outbreak dynamics |
 
 *Phase 4 (Country demographics) and Phase 7 (Multilingual support) are complete as of v0.3.*
 
