@@ -16,7 +16,7 @@
           <a href="index.html" class="brand">
             <span class="brand-mark"></span>
             <span>EpiChat</span>
-            <span class="brand-meta">v0.1 · prototype</span>
+            <span class="brand-meta">v0.3 · prototype</span>
           </a>
           <div class="nav-links">
             ${NAV_LINKS.map(l => `
