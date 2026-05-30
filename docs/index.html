@@ -51,9 +51,10 @@
 <span class="prompt user"></span><span style="color: var(--ink);">Simulate measles in Kenya with current vaccination coverage.</span>
 
 <span class="prompt sys"></span><span style="color: var(--ink-3);">layer 01 · parse → </span><span style="color: var(--accent);">disease=measles, model=SEIR, R₀=15</span>
-<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 02 · resolve → </span><span style="color: var(--accent);">country=KEN, MCV1=89%, contact_matrix=prem_2021_KEN</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 02 · resolve → </span><span style="color: var(--accent);">country=KEN, pop=58.6M, MCV1=88%, age_structured, β=127.1</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 02b · check → </span><span style="color: var(--accent);">R₀=15 ✓ · dur_inf=8d ✓ · dur_exp=12d ✓</span>
 <span class="prompt sys"></span><span style="color: var(--ink-3);">layer 03 · generate → </span><span style="color: var(--accent);">seir.py.j2 · 217 lines</span>
-<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 04 · execute → </span><span style="color: var(--accent);">n=1.2M, ensemble=False, t=56s</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">layer 04 · execute → </span><span style="color: var(--accent);">n=100K, age-structured, t=56s</span>
 <span class="prompt sys"></span><span style="color: var(--ink-3);">layer 05 · narrate ↓</span>
 
 <span style="font-family: var(--serif); font-size: 1.02rem; color: var(--ink); display: block; margin: 0.8rem 0; line-height: 1.55; font-style: italic;">
@@ -70,8 +71,8 @@
     <div class="stats-strip" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 3rem; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper-2);">
       <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
         <div class="label">Models supported</div>
-        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">3, more coming</div>
-        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">SIR · SEIR · SIS </div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">6</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">SIR · SEIR · SIS · SIRS · SEIRS · SEIAR</div>
       </div>
       <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
         <div class="label">Typical round-trip</div>
@@ -84,9 +85,9 @@
         <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">for a policy question</div>
       </div>
       <div style="padding: 1.2rem 1.4rem;">
-        <div class="label">Countries (roadmap)</div>
-        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">177</div>
-        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">contact matrices · demographics · vaccination coverage</div>
+        <div class="label">Countries (live data)</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">237</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">UN WPP · WHO GHO · World Bank demographics</div>
       </div>
     </div>
   </div>
@@ -168,7 +169,7 @@
     <div class="section-head">
       <div>
         <div class="section-index">[02 / architecture]</div>
-        <div class="label" style="margin-top: 1.2rem;">Five layers</div>
+        <div class="label" style="margin-top: 1.2rem;">Six layers</div>
       </div>
       <h2 class="section-title">
         The LLM handles language.
@@ -240,7 +241,7 @@
     </div>
 
     <div style="text-align: center; font-family: var(--mono); color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.14em; margin: 2rem 0 1.5rem;">
-      ── extract · validate · generate · execute · narrate ──
+      ── extract · resolve · fact-check · generate · execute · narrate ──
     </div>
 
     <div class="panel" style="padding: 2rem 2.4rem;">
@@ -333,7 +334,7 @@
         <div class="label" style="margin-top: 1.2rem;">From prototype to research-grade tool</div>
       </div>
       <h2 class="section-title">
-        Seven phases, in priority order.
+        Seven phases remaining, in priority order.
       </h2>
     </div>
 

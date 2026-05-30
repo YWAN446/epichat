@@ -157,6 +157,7 @@
   <a href="#parameters">Parameters</a>
   <a href="#interventions">Interventions</a>
   <a href="#nl-tips">NL query tips</a>
+  <a href="#disease-db">Disease parameter DB</a>
   <a href="#roadmap">Roadmap</a>
   <a href="#risks">Risks · mitigations</a>
 </aside>
@@ -166,25 +167,29 @@
 
 <h2 id="architecture">Architecture</h2>
 <p>
-  EpiChat is a five-layer pipeline. The LLM handles language;
+  EpiChat is a six-layer pipeline. The LLM handles language;
   templates handle the simulation. Free-form code is never executed.
 </p>
-<pre><code>User NL query
+<pre><code>User NL query (any language · text · URL · report · web search)
      │
      ▼
+Layer 0  Input Enricher           <span style="color: var(--ink-3);">(Claude Haiku + web_search — extracts OutbreakContext)</span>
+     │   Structured facts: disease, location, cases, R₀, interventions
+     ▼
 Layer 1  LLM Parameter Parser     <span style="color: var(--ink-3);">(Claude API + extraction prompt)</span>
-     │   Structured JSON (SimParams)
+     │   SimParams JSON · resolver pulls UN WPP, WHO GHO, World Bank
+     │   β recalibrated for age-structured networks after demographics applied
      ▼
-Layer 2  Data-informed resolver   <span style="color: var(--ink-3);">(country data — proposed)</span>
-     │   Calibrated params
+Layer 1b Fact-Checker             <span style="color: var(--ink-3);">(disease_parameters.json — no LLM call)</span>
+     │   ⚠ warns if R₀, dur_inf, or dur_exp outside literature ranges
      ▼
-Layer 3  Code generator           <span style="color: var(--ink-3);">(Jinja2 → Starsim Python)</span>
+Layer 2  Code generator           <span style="color: var(--ink-3);">(Jinja2 → Starsim Python)</span>
      │   Python script
      ▼
-Layer 4  Execution engine         <span style="color: var(--ink-3);">(subprocess sandbox, 90s timeout)</span>
+Layer 3  Execution engine         <span style="color: var(--ink-3);">(subprocess sandbox, 90s timeout)</span>
      │   Stats JSON + plot file
      ▼
-Layer 5  Results narrator         <span style="color: var(--ink-3);">(Claude API + narration prompt)</span>
+Layer 4  Results narrator         <span style="color: var(--ink-3);">(Claude API + narration prompt, in user's language)</span>
      │   Plain-language summary
      ▼
 User: epidemic curve + interpretation</code></pre>
@@ -231,7 +236,7 @@ User: epidemic curve + interpretation</code></pre>
   <tbody>
     <tr><td><span class="k">disease_type</span></td><td>string</td><td>sir</td><td>sir · seir · sis · sirs · seirs · seiar</td></tr>
     <tr><td><span class="k">n_agents</span></td><td>int</td><td>10,000</td><td>Population size · 10 → 1,000,000</td></tr>
-    <tr><td><span class="k">beta</span></td><td>float</td><td>computed</td><td>β = R₀ × 365 / (n_contacts × dur_inf)</td></tr>
+    <tr><td><span class="k">beta</span></td><td>float</td><td>computed</td><td>β = R₀ × 365 / (n_contacts × dur_inf) for random networks. For age-structured networks β is back-solved from the POLYMOD spectral radius so approx_R₀() matches the intended value.</td></tr>
     <tr><td><span class="k">init_prev</span></td><td>float</td><td>0.01</td><td>Seed fraction infected</td></tr>
     <tr><td><span class="k">dur_inf</span></td><td>float</td><td>10.0</td><td>Infectious period (days)</td></tr>
     <tr><td><span class="k">dur_exp</span></td><td>float?</td><td>null</td><td>Latent period · required for SEIR/SEIRS/SEIAR</td></tr>
@@ -271,16 +276,39 @@ User: epidemic curve + interpretation</code></pre>
     <tr><td>"age-structured" / "school-age"</td><td><span class="k">network_type=age_structured</span></td></tr>
     <tr><td>"masks" / "50% mask uptake"</td><td><span class="k">network_beta ≈ 0.75</span></td></tr>
     <tr><td>"seed 42" / "reproducible"</td><td><span class="k">rand_seed=42</span></td></tr>
+    <tr><td>Query in French, Spanish, Arabic, Chinese…</td><td>Language auto-detected; narration and summaries respond in kind</td></tr>
+    <tr><td>Paste a WHO situation report or bulletin</td><td>Enricher extracts structured facts (cases, CFR, R₀, interventions) before simulation</td></tr>
+    <tr><td>"https://..." URL to an article</td><td>Page fetched client-side; facts extracted from full text</td></tr>
+    <tr><td>"Search for recent Mpox news in West Africa"</td><td>Built-in web search retrieves context before parameter extraction</td></tr>
   </tbody>
 </table>
 
-<h2 id="roadmap">Roadmap</h2>
-<p>Seven phases in priority order. Complexity is implementation effort; impact is how much it moves the scientific needle.</p>
+<h2 id="disease-db">Disease parameter database</h2>
+<p>EpiChat ships a literature-backed JSON database (<code>epichat/data/disease_parameters.json</code>) covering 8 diseases. When a named disease is detected, the fact-checker compares R₀, infectious period, and incubation period against published ranges and shows a ⚠ warning if any value is out of range. The database is student-extensible: adding a disease requires only editing the JSON file — no Python changes needed.</p>
+
 <table class="ref">
-  <thead><tr><th>#</th><th>Phase</th><th>Data</th><th>Complexity</th><th>Impact</th></tr></thead>
+  <thead><tr><th>Disease</th><th>R₀ range</th><th>Incubation (days)</th><th>Infectious (days)</th><th>Source</th></tr></thead>
   <tbody>
-    <tr><td>1</td><td>Country demographics</td><td>UN WPP · World Bank · WHO GHO</td><td>Low–Medium</td><td>High</td></tr>
-    <tr><td>2</td><td>Country contact matrices</td><td>Prem et al. 2021 · SOCRATES · CoMix</td><td>Medium</td><td>High</td></tr>
+    <tr><td>Measles</td><td>12–18</td><td>6–21</td><td>4–12</td><td>PubMed 28757186 · PMC5930806</td></tr>
+    <tr><td>Mumps</td><td>10–12</td><td>14–25</td><td>7–25</td><td>PMC557899 · PMC5930806</td></tr>
+    <tr><td>Rubella</td><td>2–5</td><td>13–24</td><td>7–21</td><td>PMC8893344 · PMC5930806</td></tr>
+    <tr><td>Varicella</td><td>8–10</td><td>10–21</td><td>4–10</td><td>PMC8954496 · PMC5930806</td></tr>
+    <tr><td>Pertussis</td><td>12–17</td><td>3–7</td><td>14–28</td><td>PMC11679829 · PMC5930806</td></tr>
+    <tr><td>Influenza (seasonal)</td><td>1.2–1.4</td><td>1–4</td><td>1–10</td><td>PMC4169819 · PMC5930806</td></tr>
+    <tr><td>Meningococcal</td><td>1.0–1.9</td><td>1–10</td><td>1–7</td><td>ScienceDirect S1567134820301X · PMC5930806</td></tr>
+    <tr><td>Hepatitis A</td><td>2.1–2.8</td><td>20–125</td><td>14–28</td><td>PMC6152969 · PMC5930806</td></tr>
+  </tbody>
+</table>
+
+<p>The database is being expanded to cover COVID-19, Ebola, dengue, RSV, cholera, TB, polio, and Mpox (Phase 9 in the roadmap). Additional parameters per disease — IFR (<code>p_death</code>), contact rate (<code>n_contacts</code>), immunity duration (<code>dur_immune</code>) — will be added as literature data is collected.</p>
+
+<h2 id="roadmap">Roadmap</h2>
+<p>Seven phases remaining, in priority order. Phases 4 (country demographics) and 7 (multilingual support) are complete as of v0.3. Complexity is implementation effort; impact is how much it moves the scientific needle.</p>
+<table class="ref">
+  <thead><tr><th>#</th><th>Phase</th><th>Data / Notes</th><th>Complexity</th><th>Impact</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Disease parameter DB extension</td><td>More diseases (COVID, Ebola, dengue…) + more params per disease (p_death, n_contacts…)</td><td>Low (data) / Low–Med (Python)</td><td>High</td></tr>
+    <tr><td>2</td><td>Country contact matrices</td><td>Prem et al. 2021 (177 countries) · SOCRATES · CoMix</td><td>Medium</td><td>High</td></tr>
     <tr><td>3</td><td>Age-specific severity</td><td>O'Driscoll 2021 · CDC COVID-NET · FluView</td><td>Medium</td><td>High</td></tr>
     <tr><td>4</td><td>HouseholdNet</td><td>DHS · IPUMS · UN household data · ACS</td><td>High</td><td>Medium</td></tr>
     <tr><td>5</td><td>Calibration vs surveillance</td><td>OWID · CDC Tracker · WHO FluNet · Tycho</td><td>High</td><td>Very High</td></tr>
@@ -294,7 +322,8 @@ User: epidemic curve + interpretation</code></pre>
   <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
   <tbody>
     <tr><td>Invalid Starsim code</td><td>Template-based generation — no free-form LLM code</td></tr>
-    <tr><td>Parameter hallucination</td><td>Pydantic validation + plausibility checks</td></tr>
+    <tr><td>Parameter hallucination</td><td>Pydantic validation; literature-range fact-checking via disease_parameters.json; ⚠ warning shown in chat and CLI when values are outside known ranges</td></tr>
+    <tr><td>Wrong R₀ on age-structured network</td><td>β back-solved from POLYMOD spectral radius after demographics applied; recalibrated on every R₀ / dur_inf modification mid-conversation</td></tr>
     <tr><td>Execution failure</td><td>3-attempt recovery loop with LLM re-parameterization</td></tr>
     <tr><td>Timeout</td><td>90-second subprocess limit</td></tr>
     <tr><td>API instability</td><td>Starsim version pinned in requirements.txt</td></tr>
