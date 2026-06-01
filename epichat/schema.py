@@ -42,7 +42,8 @@ class SimParams(BaseModel):
     auto_demographics:   bool          = True
     demographics_year:   int           = Field(default=2022)
     demographics_source: Optional[str] = None
-
+    network_type:           Literal["random", "age_structured", "household"] = "random"
+    household_data_country: Optional[str] = None
 
     @model_validator(mode="after")
     def check_required_params(self) -> SimParams:

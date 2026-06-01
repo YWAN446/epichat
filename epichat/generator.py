@@ -29,7 +29,33 @@ def resolve_demographics(params: SimParams) -> SimParams:
         params.demographics_source = demo['source']
     except ValueError as e:
         print(f"  ⚠ Demographics lookup failed: {e} — using schema defaults")
+    
+    # Auto-set n_contacts from contact matrix if country is set
+    if params.country and params.n_contacts == 4:
+        try:
+            from .data_loaders.contact_matrices import get_mean_contacts
+            n = get_mean_contacts(params.country)
+            if n is not None:
+                params.n_contacts = int(round(n))
+                print(f"  ✓ n_contacts set from contact matrix: {params.n_contacts}")
+        except Exception:
+            pass
+    
+
     return params
+
+    # Auto-load household data if network_type is household
+    if params.network_type == 'household':
+        try:
+            from .data_loaders.households import get_starsim_household_pars
+            country = params.household_data_country or params.country
+            if country:
+                hh = get_starsim_household_pars(country)
+                print(f"  ✓ Household network: {country} "
+                      f"mean_size={hh['mean_size']} [{hh['source']}]")
+        except Exception as e:
+            print(f"  ⚠ Household data failed: {e}")
+
 
 class CodeGenerator:
     def __init__(self) -> None:
