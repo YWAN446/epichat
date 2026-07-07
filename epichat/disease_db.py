@@ -1,0 +1,151 @@
+"""Disease parameter database loader and lookup utilities."""
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+_DB_PATH = Path(__file__).parent / "data" / "disease_parameters.json"
+_db: dict | None = None
+
+
+def load_db() -> dict:
+    """Load the disease parameters database from JSON file.
+
+    Returns:
+        dict: The loaded database with "diseases" key containing disease entries.
+    """
+    global _db
+    if _db is None:
+        _db = json.loads(_DB_PATH.read_text(encoding="utf-8"))
+    return _db
+
+
+def lookup(disease_name: str) -> dict | None:
+    """Case-insensitive lookup of disease by canonical name or alias.
+
+    Searches the disease database for a case-insensitive match against:
+    1. Canonical disease names (keys in "diseases")
+    2. Aliases listed in each disease entry's "aliases" field
+
+    Args:
+        disease_name: The disease name or alias to search for.
+
+    Returns:
+        dict: The disease entry if found, None otherwise.
+    """
+    db = load_db()
+    name_lower = disease_name.lower().strip()
+    for canonical, entry in db["diseases"].items():
+        if canonical == name_lower:
+            return entry
+        if any(alias.lower() == name_lower for alias in entry.get("aliases", [])):
+            return entry
+    return None
+
+
+def detect_disease(user_input: str) -> str | None:
+    """Return canonical disease name if any disease name/alias appears in the query.
+
+    Uses word-boundary matching to avoid false positives (e.g. "flu" in "fluid").
+    """
+    db = load_db()
+    text = user_input.lower()
+    for canonical, entry in db["diseases"].items():
+        if re.search(r"\b" + re.escape(canonical) + r"\b", text):
+            return canonical
+        for alias in entry.get("aliases", []):
+            if re.search(r"\b" + re.escape(alias.lower()) + r"\b", text):
+                return canonical
+    return None
+
+
+def check_params(
+    disease_name: str,
+    r0: float,
+    dur_inf: float,
+    dur_exp: float | None,
+    p_death: float | None = None,
+    n_contacts: float | None = None,
+    dur_immune: float | None = None,
+    p_asymp: float | None = None,
+
+) -> list[str]:
+    """Return warning strings for values outside the literature range.
+
+    Returns [] if the disease is not in the database or all values are in range.
+    Never raises.
+    """
+    try:
+        entry = lookup(disease_name)
+        if entry is None:
+            return []
+
+        warnings: list[str] = []
+
+        r0_data = entry.get("r0", {})
+        if r0_data and not (r0_data["min"] <= r0 <= r0_data["max"]):
+            warnings.append(
+                f"R₀ ≈ {r0:.1f} is outside the literature range for "
+                f"{disease_name} ({r0_data['min']}–{r0_data['max']}). "
+                f"Source: {r0_data['source']}"
+            )
+
+        inf_data = entry.get("infectious_days", {})
+        if inf_data and not (inf_data["min"] <= dur_inf <= inf_data["max"]):
+            warnings.append(
+                f"Infectious period {dur_inf:.4g} days is outside the literature range for "
+                f"{disease_name} ({inf_data['min']}–{inf_data['max']} days). "
+                f"Source: {inf_data['source']}"
+            )
+
+        if dur_exp is not None:
+            inc_data = entry.get("incubation_days", {})
+            if inc_data and not (inc_data["min"] <= dur_exp <= inc_data["max"]):
+                warnings.append(
+                    f"Incubation period {dur_exp:.4g} days is outside the literature range for "
+                    f"{disease_name} ({inc_data['min']}–{inc_data['max']} days). "
+                    f"Source: {inc_data['source']}"
+                )
+        
+        if p_death is not None:
+            death_data = entry.get("fatality_rate", {})
+            if death_data and not (death_data["min"] <= p_death <= death_data["max"]):
+                warnings.append(
+                    f"Infection fatality rate {p_death:.4g} is outside the literature range for "
+                    f"{disease_name}  ({death_data['min']}–{death_data['max']})."
+                    f"Source: {death_data['source']}"
+                )
+        
+        if n_contacts is not None:
+            contacts_data = entry.get("average_contacts_daily", {})
+            if contacts_data and not (contacts_data["min"] <= n_contacts <= contacts_data["max"]):
+                warnings.append(
+                    f"Daily contacts {n_contacts:.4g} is outside the literature range for"
+                    f"{disease_name} ({contacts_data['min']}-{contacts_data['max']})."
+                    f"Source: {contacts_data['source']}"
+                )
+        
+        if dur_immune is not None:
+            immune_data = entry.get("immunity_duration", {})
+            if immune_data and not (immune_data['min'] <= dur_immune <= immune_data['max']):
+                warnings.append(
+                    f"Immunity duration {dur_immune:.4g} is outside the literature range for"
+                    f"{disease_name} ({immune_data['min']}-{immune_data['max']})."
+                    f"Source: {immune_data['source']}"
+                )
+        
+        if p_asymp is not None:
+            asymp_data = entry.get("asymptomatic_fraction", {})
+            if asymp_data and not (asymp_data['min'] <= p_asymp <= asymp_data['max']):
+                warnings.append(
+                    f"Asymptomatic fraction {p_asymp:.4g} is outside the literature range for"
+                    f"{disease_name} ({asymp_data['min']}-{asymp_data['max']})."
+                    f"Source: {asymp_data['source']}"
+                )
+        
+
+
+        return warnings
+    except Exception:
+        return []
