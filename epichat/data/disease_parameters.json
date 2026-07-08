@@ -21,7 +21,7 @@
               "source_type": "systematic_review",
               "title": "The basic reproduction number (R0) of measles: a systematic review",
               "url": "https://pubmed.ncbi.nlm.nih.gov/28757186/", 
-              "doi": , ##add DOI
+              "doi": "10.1016/S1473-3099(17)30307-9",
               "country": "Multiple countries",
               "year": 2017,
               "notes": "Systematic review of 18 studies and 58 R0 estimates."
@@ -33,7 +33,8 @@
               "population": "Persons who were exposed to measles-infected persons who had experienced SVF",
               "source_type": "systematic_review",
               "title": "Onward Virus Transmission after Measles Secondary Vaccination Failure",
-              "url": "https://wwwnc.cdc.gov/eid/article/30/9/24-0150_article#r1",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11346981/",
+              "doi": "10.3201/eid3009.240150",
               "country": "Multiple countries", 
               "year": 2024,
               "notes": "Uses the conventional measles transmission range cited in public health literature."
@@ -46,8 +47,9 @@
               "source_type": "surveillance",
               "title": "Historical data and modern methods reveal insights in measles epidemiology: a retrospective closed cohort study",
               "url": "https://pubmed.ncbi.nlm.nih.gov/23315518/",
+              "doi": " 10.1136/bmjopen-2012-002033",
               "country": "Australia",
-              "year": "1838 and 1882",
+              "year": 2013,
               "notes": "Pre-vaccination era. Estimated from measles outbreaks aboard migrant ships. Closed populations and limited contact networks may produce lower R0 estimates than those observed in large urban populations."
             },
 
@@ -58,8 +60,9 @@
               "source_type": "outbreak",
               "title": "Estimating the Transmission Rate for a Highly Infectious Disease",
               "url": "https://www.jstor.org/stable/3109779?origin=crossref",
-              "country": "Germany", 
-              "year": 1861,
+              "country": "Germany",
+              "doi": "10.2307/3109779",
+              "year": 1998,
               "notes": "Pre-vaccination era. Derived from a well-documented historical village outbreak."
             },
 
@@ -70,8 +73,9 @@
               "source_type": "serological_survey",
               "title": "Deciphering the relative weights of demographic transition and vaccination in the decrease of measles incidence in Italy",
               "url": "https://royalsocietypublishing.org/rspb/article-abstract/281/1777/20132676/76998/Deciphering-the-relative-weights-of-demographic?redirectedFrom=fulltext",
+              "doi": " 10.1098/rspb.2013.2676",
               "country": "Italy", 
-              "year": [1901, 2009],
+              "year": 2014,
               "notes": "Pre-vaccination era. Estimated from long-term transmission modeling using serological data and vaccination-adjusted transmission parameters."
             },
 
@@ -82,8 +86,9 @@
               "source_type": "surveillance",
               "title": "Seasonality and comparative dynamics of six childhood infections in pre-vaccination Copenhagen",
               "url": "https://royalsocietypublishing.org/rspb/article-abstract/276/1676/4111/72931/Seasonality-and-comparative-dynamics-of-six?redirectedFrom=fulltext",
+              "doi": "10.1098/rspb.2009.1058",
               "country": "Denmark", 
-              "year": [1907, 1930],
+              "year": 2009,
               "notes": "Calculated from mean age of infection and birth rates rather than direct transmission observations."
             },
 
@@ -95,7 +100,8 @@
               "title": "Directly transmitted infections diseases: control by vaccination",
               "url": "https://www.science.org/doi/10.1126/science.7063839",
               "country": "Multiple countries", 
-              "year": [1912, 1979],
+              "doi": "10.1126/science.7063839",
+              "year": 1982,
               "notes": "Pre and post-vaccination era."
             },
 
@@ -106,8 +112,9 @@
               "source_type": "serology_and_surveillance",
               "title": "A review of data needed to parameterize a dynamic model of measles in developing countries",
               "url": "https://link.springer.com/article/10.1186/1756-0500-3-75",
+              "doi": "10.1186/1756-0500-3-75",
               "country": "Multiple countries",
-              "year": [1969, 2006],
+              "year": 2010,
               "notes": "Pre and post-vaccination era. Largest overall range reported in the systematic review. Estimates varied dramatically across countries because of demographic differences, birth rates, and age at infection."
             },
 
@@ -118,8 +125,9 @@
               "source_type": "outbreak",
               "title": "Estimation of the basic reproduction number of measles during an outbreak in a partially vaccinated population",
               "url": "https://www.scopus.com/pages/publications/0034050988",
+              "doi": "10.1017/S0950268899003672",
               "country": "Luxembourg",
-              "year": 1996,
+              "year": 2000,
               "notes": "Post-vaccination era. Estimated from final outbreak size and known susceptible population."
             },
 
@@ -130,6 +138,7 @@
               "source_type": "outbreak",
               "title": "An ongoing large outbreak of measles in Merseyside, England, January to June 2012",
               "url": "https://www.researchgate.net/profile/Roberto-Vivancos/publication/281600869_An_ongoing_large_outbreak_of_measles_in_Merseyside_England_January_to_June_2012/links/5a61dc884585158bca4a2176/An-ongoing-large-outbreak-of-measles-in-Merseyside-England-January-to-June-2012.pdf",
+              "doi": "10.2807/ese.17.31.20234-en",
               "country": "United Kingdom",
               "year": 2012,
               "notes": "Post-vaccination era. Calculated by converting an observed effective reproduction number (R=1.2) into R0 using vaccination coverage and vaccine effectiveness assumptions."
@@ -139,11 +148,12 @@
               "value": 14.4,
               "range": [10.7, 18.1],
               "population": "California school populations",
-              "source_type": "survey",
+              "source_type": "modelling_study",
               "title": "The effect of heterogeneity in uptake of the measles, mumps, and rubella vaccine on the potential for outbreaks of measles: a modelling study",
               "url": "https://www.sciencedirect.com/science/article/pii/S1473309916000049",
+              "doi": "10.1016/S1473-3099(16)00004-9",
               "country": "USA",
-              "year": 2008,
+              "year": 2016,
               "notes": "Post-vaccination era. Estimated using school-specific contact matrices. "
             }
           ]
@@ -167,6 +177,7 @@
               "source_type": "systematic_review",
               "title": "Management and control of communicable diseases in schools and other child care settings: systematic review on the incubation period and period of infectiousness",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
+              "doi": "10.1186/s12879-018-3095-8",
               "country": "Multiple countries",
               "year": 2018,
               "notes": "Identified 7 eligible articles for measles."
@@ -179,6 +190,7 @@
               "source_type": "outbreak",
               "title": "MEASLES IN A PUBLIC SCHOOL",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2313964/",
+              "doi": "10.1136/bmj.1.3652.14",
               "country": "United Kingdom",
               "year": 1931,
               "notes": "Historical description of a measles outbreak in a school setting. Primary observational report rather than a formal epidemiological modeling study."
@@ -191,6 +203,7 @@
               "source_type": "outbreak",
               "title": "A measles outbreak in children under 15 months of age in La Rioja, Spain, 2005-2006",
               "url": "https://www.eurosurveillance.org/content/10.2807/esm.11.10.00649-en",
+              "doi": "10.2807/esm.11.10.00649-en",
               "country": "Spain",
               "year": 2006,
               "notes": "This paper describes a measles outbreak in La Rioja, Spain, which began in December 2005 and mainly affected children under 15 months of age who were not yet immunised with MMR vaccine."
@@ -203,6 +216,7 @@
               "source_type": "government_report",
               "title": "CDC Measles Clinical Diagnosis Fact Sheet",
               "url": "https://www.cdc.gov/measles/hcp/communication-resources/clinical-diagnosis-fact-sheet.html",
+              "doi": "N/A",
               "country": "N/A",
               "year": 2025,
               "notes": "Typically 11–12 days from exposure to prodromal symptoms."
@@ -215,6 +229,7 @@
               "source_type": "government_report",
               "title": "Measles Disease and epidemiology",
               "url": "https://www.emro.who.int/health-topics/measles/disease-and-epidemiology.html",
+              "doi": "N/A",
               "country": "N/A",
               "year": 2026,
               "notes": "WHO report."
@@ -227,6 +242,7 @@
               "source_type": "journal_article",
               "title": "Measles: is it still a threat?",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6104891/",
+              "doi": "10.3399/bjgp18X697961",
               "country": "United Kingdom",
               "year": 2018,
               "notes": "Laboratory-confirmed measles cases reported in England between 1 Jan and 2 Jul 2018 during multiple outbreaks linked to importations from Europe."
@@ -239,7 +255,8 @@
               "source_type": "review_article",
               "title": "Measles 2025",
               "url": "https://www.nejm.org/doi/full/10.1056/NEJMra2504516",
-              "country": "N/A",
+              "doi": "10.1056/NEJMra2504516",
+              "country": "Multiple countries",
               "year": 2025,
               "notes": "Review article published in The New England Journal of Medicine"
             }
@@ -263,6 +280,7 @@
               "source_type": "government_report",
               "title": "Clinical Overview of Measles",
               "url": "https://www.cdc.gov/measles/hcp/clinical-overview/index.html",
+              "doi": "N/A",
               "country": "N/A",
               "year": 2026,
               "notes": "Patients are considered to be contagious from 4 days before to 4 days after the rash appears."
@@ -275,6 +293,7 @@
               "source_type": "government_report",
               "title": "Measles Disease and epidemiology",
               "url": "https://www.emro.who.int/health-topics/measles/disease-and-epidemiology.html",
+              "doi": "N/A",
               "country": "N/A",
               "year": 2026,
               "notes": "Patients are infectious from about 4 days before developing the rash until 4 days after rash."
@@ -287,6 +306,7 @@
               "source_type": "review_article",
               "title": "Measles",
               "url": "https://www.nejm.org/doi/full/10.1056/NEJMcp1905181",
+              "doi": "10.1056/NEJMcp1905181",
               "country": "USA and globally",
               "year": 2019,
               "notes": "Patients with measles are infectious from 4 days before to 4 days after the onset of their rash."
@@ -314,6 +334,7 @@
               "source_type": "systematic_review",
               "title": "Estimates of case-fatality ratios of measles in low-income and middle-income countries: a systematic review and modelling analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6418190/#ceab10",
+              "doi": "10.1016/S2214-109X(18)30537-0",
               "country": "Multiple countries",
               "year": 2019,
               "notes": "124 peer-reviewed journal articles selected (85 community-based studies and 39 hospital-based studies). The mean case-fatality ratio was 2·2% (95% CI 0·7–4·5) in 1990–2015. In community-based settings, the mean case-fatality ratio was 1·5% (0·5–3·1) compared with 2·9% (0·9–6·0) in hospital-based settings. "
@@ -324,10 +345,11 @@
               "range": [3, 4],
               "population": "General",
               "source_type": "review_article",
-              "title": "Measles Case Fatality Rates in Developed Countries",
-              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2951744/",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
               "country": "Scotland",
-              "year": 1900,
+              "year": 2007,
               "notes": "Approximately 100 years before publication, Scotland reported measles case-fatality rates of 30–40 deaths per 1000 cases."
             },
 
@@ -336,10 +358,11 @@
               "range": [2.5, 2.5],
               "population": "General",
               "source_type": "review_article",
-              "title": "Measles Case Fatality Rates in Developed Countries",
-              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2951744/",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
               "country": "USA",
-              "year": 1912,
+              "year": 2007,
               "notes": "Measles mortality was 25 deaths per 1000 reported cases in the United States in 1912."
             },
 
@@ -348,10 +371,11 @@
               "range": [0.1, 0.1],
               "population": "General",
               "source_type": "review_article",
-              "title": "Measles Case Fatality Rates in Developed Countries",
-              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2951744/",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
               "country": "USA",
-              "year": "1940s - 1980s",
+              "year": 2007,
               "notes": "Case-fatality rates were approximately 1 death per 1000 reported measles cases from the 1940s through the 1980s."
             },
 
@@ -360,10 +384,11 @@
               "range": [0.1, 0.1],
               "population": "General",
               "source_type": "review_article",
-              "title": "Measles Case Fatality Rates in Developed Countries",
-              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2951744/",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
               "country": "USA",
-              "year": "1940s - 1980s",
+              "year": 2007,
               "notes": "Case-fatality rates were approximately 1 death per 1000 reported measles cases from the 1940s through the 1980s."
             },
 
@@ -374,8 +399,9 @@
               "source_type": "research_article",
               "title": "High measles mortality in infancy related to intensity of exposure",
               "url": "https://www.sciencedirect.com/science/article/pii/S0022347686805698",
+              "doi": "10.1016/S0022-3476(86)80569-8",
               "country": "Africa",
-              "year": "1979 - 1983",
+              "year": 1986,
               "notes": "Mortality during the first 12 months of life increased with age."
             },
 
@@ -386,6 +412,7 @@
               "source_type": "systematic_review",
               "title": "Attack rate, case fatality rate and determinants of measles infection during a measles outbreak in Ethiopia: systematic review and meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10623867/",
+              "doi": "10.1186/s12879-023-08757-0",
               "country": "Ethiopia",
               "year": 2023,
               "notes": "Eight measles outbreak investigations with 3004 measles cases and 33 deaths were included in this study."
@@ -414,6 +441,7 @@
               "source_type": "research_article",
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi":"10.1186/s12889-015-1766-6",
               "country": "USA",
               "year": 2015,
               "notes": "Based on the child-staff ratio for daycares in California: www.daycare.com/california"
@@ -426,6 +454,7 @@
               "source_type": "research_article",
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi":"10.1186/s12889-015-1766-6",
               "country": "USA",
               "year": 2015,
               "notes": "The average class size in California public schools: www.cde.ca.gov/ds/sd/dr/cefteachavgclssize.asp"
@@ -438,6 +467,7 @@
               "source_type": "research_article",
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi":"10.1186/s12889-015-1766-6",
               "country": "USA",
               "year": 2015,
               "notes": "According to the RTI’s synthetic population used by the model, 61.4% workplaces have the number of workers ≤7"
@@ -450,6 +480,7 @@
               "source_type": "research_article",
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi":"10.1186/s12889-015-1766-6",
               "country": "USA",
               "year": 2015,
               "notes": "Assumption."
@@ -457,11 +488,12 @@
 
             {
               "value": 350,
-              "range": [350, 350],
+              "range": "N/A",
               "population": "Single hospitalized measle case",
               "source_type": "outbreak",
               "title": "Contact Tracing and Prevention of Secondary Measles Transmission in a Pediatric Acute Care Hospital — Los Angeles County, July 2024",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12460729/",
+              "doi": "10.1017/ash.2025.203",
               "country": "USA",
               "year": 2025,
               "notes": "Outbreak investigation describing contact tracing following a single imported measles case at a pediatric hospital in Los Angeles County. A total of 350 contacts (187 staff, 73 patients, and 90 visitors) were identified. Post-exposure prophylaxis was administered to 51 contacts, and no secondary measles infections were reported."
@@ -483,7 +515,8 @@
           "estimates": [],
           "special_value": "lifelong",
           "source_type": "government_report",
-          "url": "https://www.cdc.gov/measles/vaccines/index.html"
+          "url": "https://www.cdc.gov/measles/vaccines/index.html",
+          "doi": "N/A"
         },
 
         "p_asymp": {
@@ -497,7 +530,8 @@
 
           "estimates":[],
           "source_type": "clinical_reference",
-          "url": "https://www.msdmanuals.com/professional/pediatrics/common-viral-infections-in-infants-and-children/measles?ruleredirectid=743&utm_source=chatgpt.com"
+          "url": "https://www.msdmanuals.com/professional/pediatrics/common-viral-infections-in-infants-and-children/measles",
+          "doi": "N/A"
         }
 
 
@@ -528,7 +562,8 @@
                 "population": "General",
                 "source_type": "modeling",
                 "title": "A comparison of COVID-19 outbreaks across US Combined Statistical Areas using new methods for estimating and social distancing behaviour",
-                "url": "https://doi.org/10.1016/j.epidem.2022.100640",
+                "url": "https://www.sciencedirect.com/science/article/pii/S1755436522000809?via%3Dihub",
+                "doi": "10.1016/j.epidem.2022.100640",
                 "country": "USA",
                 "year": 2022,
                 "notes": "Initial outbreak rates and subsequent social distancing behaviour over the initial phase of the COVID-19 pandemic across 29 Combined Statistical Areas (CSAs) of the United States."
@@ -538,9 +573,10 @@
                 "value": 2.68,
                 "range": [2.47, 2.86],
                 "population": "General",
-                "source_type": "outbreak",
+                "source_type": "modelling_study",
                 "title": "Nowcasting and forecasting the potential domestic and international spread of the 2019-nCoV outbreak originating in Wuhan, China: a modelling study",
                 "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30260-9/fulltext",
+                "doi": "10.1016/S0140-6736(20)30260-9 ",
                 "country": "China",
                 "year": 2020,
                 "notes": "An estimate of the size of the epidemic in Wuhan on the basis of the number of cases exported from Wuhan to cities outside mainland China and forecast the extent of the domestic and global public health risks of epidemics."
@@ -550,9 +586,10 @@
                 "value": 4.71,
                 "range": [4.50, 4.92],
                 "population": "General",
-                "source_type": "modeling",
+                "source_type": "modelling_study",
                 "title": "Modelling the epidemic trend of the 2019 novel coronavirus outbreak in China",
                 "url": "https://www.biorxiv.org/content/10.1101/2020.01.23.916726v1",
+                "doi": "10.1101/2020.01.23.916726",
                 "country": "China",
                 "year": 2020,
                 "notes": "Mathematical model, dynamic compartmental model."
@@ -566,6 +603,7 @@
                 "source_type": "systematic_review",
                 "title": "The reproductive number of COVID-19 is higher compared to SARS coronavirus",
                 "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7074654/",
+                "doi": "10.1093/jtm/taaa021",
                 "country": "China and overseas",
                 "year": 2020,
                 "notes": "Identified 12 studies which estimated the basic reproductive number for COVID-19 from China and overseas."
@@ -578,6 +616,7 @@
                 "source_type": "systematic_review",
                 "title": "A Systematic Review of COVID-19 Epidemiology Based on Current Evidence",
                 "url": "https://www.mdpi.com/2077-0383/9/4/967",
+                "doi": "10.3390/jcm9040967",
                 "country": "Multiple countries",
                 "year": 2020,
                 "notes": "Systematic review of 41 studies published during the early COVID-19 pandemic. Twenty-one estimates of the basic reproduction number (R₀) ranged from 1.9 to 6.5, with 13 estimates between 2.0 and 3.0."
@@ -595,10 +634,10 @@
             "r0": {
               "unit": "dimensionless",
               "concensus": {
-                "min": ,
-                "max": ,
-                "typical": ,
-                "notes": ""
+                "min": 5.5,
+                "max": 24,
+                "typical": 9.5,
+                "notes": "Uses R0 from narrative review containing multiple sources in different locations. Omicron R0 estimates vary substantially by subvariant, setting, immunity context, and estimation method."
               },
 
               "estimates":[
@@ -609,6 +648,7 @@
                   "source_type": "narrative_review",
                   "title": "The effective reproductive number of the Omicron variant of SARS-CoV-2 is several times relative to Delta",
                   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8992231/#sec3",
+                  "doi": "10.1093/jtm/taac037",
                   "country": "Multiple countries",
                   "year": 2022,
                   "notes": "Narrative/rapid review. It was found that Omicron variant has a much higher transmissibility than the Delta variant."                
@@ -618,9 +658,10 @@
                   "value": 1.9,
                   "range": [1.5, 2.43],
                   "population": "General community",
-                  "source_type": "preprint",
+                  "source_type": "research_article",
                   "title": "Serial interval and basic reproduction number of SARS-CoV-2 Omicron variant in South Korea",
                   "url": "https://www.medrxiv.org/content/10.1101/2021.12.25.21268301v1.full-text",
+                  "doi": "10.1101/2021.12.25.21268301",
                   "country": "South Korea",
                   "year": 2021,
                   "notes": "Estimated during the early community transmission of the Omicron (B.1.1.529) variant between November 25 and December 16, 2021. Based on 131 confirmed Omicron cases, including 18 identified transmission pairs. The basic reproduction number was estimated using the observed exponential growth rate and the estimated serial interval (mean 2.22 days) as a proxy for the generation interval."
@@ -633,6 +674,7 @@
                   "source_type": "research_article",
                   "title": "Age-specific transmission dynamics under suppression control measures during SARS-CoV-2 Omicron BA.2 epidemic",
                   "url": "https://link.springer.com/article/10.1186/s12889-023-15596-w",
+                  "doi": "10.1186/s12889-023-15596-w",
                   "country": "China",
                   "year": 2023,
                   "notes": "Estimated using an age-structured SEIR model with social contact patterns and the next-generation matrix. The estimate was based on the Omicron BA.2 outbreak in Shanghai (February–June 2022). The study also estimated that Rt declined from 3.6 to below 1 following strict suppression measures."
@@ -660,6 +702,7 @@
               "source_type": "systematic_review",
               "title": "Incubation period of COVID-19: a rapid systematic review and meta-analysis of observational research",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7430485/",
+              "doi": "10.1136/bmjopen-2020-039652",
               "country":"Multiple countries",
               "year": 2020,
               "notes": "Rapid systematic review and meta-analysis of estimates of the incubation period of COVID-19."
@@ -672,6 +715,7 @@
               "source_type": "systematic_review",
               "title": "A Systematic Review of COVID-19 Epidemiology Based on Current Evidence",
               "url": "https://www.mdpi.com/2077-0383/9/4/967",
+              "doi": "10.3390/jcm9040967",
               "country":"Multiple countries",
               "year": 2020,
               "notes": "Of 317 research articles generated from the initial search on PubMed and preprint archives on 21 February 2020, 41 met the inclusion criteria and were included in the review."
@@ -684,6 +728,7 @@
               "source_type": "research_article",
               "title": "Estimation of the incubation period of COVID-19 using viral load data",
               "url": "https://www.sciencedirect.com/science/article/pii/S1755436521000153",
+              "doi": "10.1016/j.epidem.2021.100454",
               "country": "Multiple countries",
               "year": 2021,
               "notes": "Original research using longitudinal viral load data from 30 hospitalized patients and a viral dynamics model to hindcast the time of infection. Estimated a median incubation period of 5.85 days (95% CI 5.05–6.77)."
@@ -708,6 +753,7 @@
               "source_type": "rapid_scoping_review",
               "title": "Inferred duration of infectious period of SARS-CoV-2: rapid scoping review and analysis of available evidence for asymptomatic and symptomatic COVID-19 cases",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/",
+              "doi": "10.1136/bmjopen-2020-039856",
               "country": "Multiple countries",
               "year": 2020,
               "notes": "Median presymptomatic infectious period across included studies varied from <1 to 4 days. Maps to the E→I transition window in SEIR models."
@@ -719,6 +765,7 @@
               "source_type": "rapid_scoping_review",
               "title": "Inferred duration of infectious period of SARS-CoV-2: rapid scoping review and analysis of available evidence for asymptomatic and symptomatic COVID-19 cases",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/",
+              "doi": "10.1136/bmjopen-2020-039856",
               "country": "Multiple countries",
               "year": 2020,
               "notes": "One study in the review (Hu et al.) provided approximate median infectious period of 6.5–9.5 days for asymptomatic infections based on time to two consecutive negative RT-PCR tests."
@@ -730,6 +777,7 @@
               "source_type": "rapid_scoping_review_with_meta_analysis",
               "title": "Inferred duration of infectious period of SARS-CoV-2: rapid scoping review and analysis of available evidence for asymptomatic and symptomatic COVID-19 cases",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/",
+              "doi": "10.1136/bmjopen-2020-039856",
               "country": "Multiple countries",
               "year": 2020,
               "notes": "Mean 13.4 days (95% CI 10.9–15.8) from symptom onset to first of two negative RT-PCR tests, pooled across 15 virological studies (high heterogeneity I²>75%). RT-PCR positivity outlasts true infectious potential by approximately 2–6 days; viral culture studies indicate most transmission ceases by day 8–10 post-symptom onset."
@@ -740,7 +788,8 @@
               "population": "Mild-to-moderate symptomatic cases — viral culture / true infectiousness",
               "source_type": "rapid_review",
               "title": "The duration of infectiousness of individuals infected with SARS-CoV-2",
-              "url": "https://doi.org/10.1016/j.jinf.2020.10.009",
+              "url": "https://www.journalofinfection.com/article/S0163-4453(20)30651-4/fulltext",
+              "doi": "10.1016/j.jinf.2020.10.009 ",
               "country": "Multiple countries",
               "year": 2020,
               "notes": "Rapid review integrating viral culture, contact tracing, and viral shedding data. Concluded that mild-to-moderate COVID-19 patients are highly unlikely to remain infectious beyond 10 days post-symptom onset; most transmission occurs earlier. Viral culture success (the gold-standard infectiousness proxy) drops sharply after day 8. Note: this is a lower estimate than the Byrne et al. RT-PCR-based figure above because culture positivity declines faster than PCR positivity."
@@ -766,6 +815,7 @@
               "source_type": "systematic_review",
               "title": "Case fatality rate of COVID-19: a systematic review and meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8451339/",
+              "doi": "10.15167/2421-4248/jpmh2021.62.2.1627",
               "country": "Multiple countries",
               "year": 2021,
               "notes": "Aimed to assess the pooled CFR of COVID-19."
@@ -779,8 +829,9 @@
               "source_type": "systematic_review",
               "title": "Infection fatality rate of COVID-19 inferred from seroprevalence data",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7947934/",
+              "doi": "10.2471/BLT.20.265892",
               "country": "Multiple countries",
-              "year": 2021,
+              "year": 2020,
               "notes": "Systematic review/evidence synthesis of seroprevalence studies and national estimates available through 9 September 2020. Included 61 studies (74 estimates) plus 8 preliminary national estimates. Across 51 locations, the median inferred COVID-19 infection fatality rate (IFR) was 0.27%, with a corrected median of 0.23%. Reported IFRs ranged from 0.00% to 1.63% (corrected range 0.00% to 1.54%). Reflects largely ancestral / early-pandemic SARS-CoV-2 before later variants became dominant."
             },
 
@@ -792,6 +843,7 @@
               "source_type": "surveillance_report",
               "title": "Global Covid-19 Case Fatality Rates",
               "url": "https://www.cebm.net/covid-19/global-covid-19-case-fatality-rates/",
+              "doi": "N/A",
               "country": "China",
               "year": 2020,
               "notes": "Overall CFR 2.3% (1023 deaths / 44,672 confirmed cases). No deaths in age <10y. CFR 14.8% in 80+y. CFR 0.9% in those with no comorbidities vs 49% case fatality in critical cases. Age-stratified CFRs: 10–19y 0.18%, 20–49y 0.32%, 50–59y 1.3%, 60–69y 3.6%, 70–79y 8.0%, 80+y 14.8%."
@@ -805,6 +857,7 @@
               "source_type": "modelling_study",
               "title": "Global Covid-19 Case Fatality Rates",
               "url": "https://www.cebm.net/covid-19/global-covid-19-case-fatality-rates/",
+              "doi": "N/A",
               "country": "China",
               "year": 2020,
               "notes": "Verity et al. estimated IFR 0.66% (95% CI 0.39–1.33%) using age-stratified CFR from China plus 1,334 individual cases identified outside mainland China. Imperial College London adjusted this to 0.9% (95% CrI 0.4–1.4%) for the UK, accounting for non-uniform attack rate."
@@ -818,6 +871,7 @@
               "source_type": "surveillance_report",
               "title": "Global Covid-19 Case Fatality Rates",
               "url": "https://www.cebm.net/covid-19/global-covid-19-case-fatality-rates/",
+              "doi": "N/A",
               "country": "Iceland",
               "year": 2020,
               "notes": "10 deaths in 1,798 confirmed cases (CFR 0.56%). Assuming 1% of population (364,000) infected gives IFR ~0.3%. Authors note Iceland's test-and-quarantine measures may have shielded elderly, and lag between infection and death means estimates may shift. Considered the most reliable early IFR estimate due to Iceland's near-complete population testing."
@@ -830,7 +884,8 @@
               "population": "General population",
               "source_type": "modelling_study",
               "title": "Estimating the infection fatality rate of emerging diseases using a regression approach applied to global COVID-19 cases",
-              "url": "https://doi.org/10.1016/j.jiph.2025.102856",
+              "url": "https://www.sciencedirect.com/science/article/pii/S1876034125002059?via%3Dihub",
+              "doi": "10.1016/j.jiph.2025.102856",
               "country": "Multiple countries",
               "year": 2025,
               "notes": "Regression-based estimate of the global infection fatality rate (IFR) for early COVID-19 using case fatality rates and population testing data across 139 countries affected before May 2020. Estimated a conservative global IFR of 0.90% (95% CI 0.70–1.16%). Reflects largely ancestral / early-pandemic SARS-CoV-2."
@@ -867,9 +922,10 @@
             "population": "General population under initial COVID-19 mitigation / lockdown measures",
             "source_type": "systematic_review",
             "title": "Quantifying population contact patterns in the United States during the COVID-19 pandemic",
-            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9013035/",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/33563992/",
+            "doi": "10.1038/s41467-021-20990-2",
             "country": "Multiple countries (primarily Europe, with some non-European settings)",
-            "year": 2022,
+            "year": 2021,
             "notes": "Systematic review of 12 studies reporting social contact patterns during the COVID-19 pandemic. During the initial mitigation period in spring 2020, most study settings reported mean contact rates between 2 and 5 contacts per person per day, compared with pre-COVID rates of 7 to 26 contacts per person per day. Reflects contact behavior under lockdown / suppression measures rather than intrinsic baseline contact rates."
            },
 
@@ -877,9 +933,10 @@
             "value": 16.5,
             "range": [7, 26],
             "population": "General population before COVID-19 / pre-pandemic baseline",
-            "source_type": "systematic_review",
+            "source_type": "rapid_review",
             "title": "Rapid Review of Social Contact Patterns During the COVID-19 Pandemic",
             "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8478104/",
+            "doi": "10.1097/EDE.0000000000001412",
             "country": "Multiple countries",
             "year": 2021,
             "notes": "The review summarized pre-COVID comparison data from the included studies and reported pre-pandemic contact rates ranging from 7 to 26 contacts per person per day. This is useful as a baseline comparator for contact behavior before distancing measures."
@@ -892,6 +949,7 @@
             "source_type": "research_article",
             "title": "Nationally Representative Social Contact Patterns among U.S. adults, August 2020-April 2021",
             "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8978954/",
+            "doi": "10.1101/2021.09.22.21263904",
             "country": "USA",
             "year": 2022,
             "notes": "National probability survey of U.S. adults with self-reported daily contacts. Mean daily contacts were 13.9 (baseline, Aug–Dec 2020) and 14.5 (follow-up, Mar–Apr 2021). This reflects contact behavior after the earliest lockdown period and under evolving mitigation measures, not pre-pandemic baseline contact rates."
@@ -904,6 +962,7 @@
             "source_type": "research_article",
             "title": "Quantifying human mixing patterns in Chinese provinces outside Hubei after the 2020 lockdown was lifted",
             "url": "https://arxiv.org/abs/2111.13816",
+            "doi": "10.48550/arXiv.2111.13816",
             "country": "China",
             "year": 2021,
             "notes": "Contact survey conducted in March 2020 after lockdowns were lifted in Chinese provinces outside Hubei. Participants reported 2.3 contacts per day (IQR 1.0–3.0), suggesting that contact behavior remained strongly reduced even after formal lockdown ended."
@@ -930,8 +989,9 @@
               "source_type": "systematic_review",
               "title": "Quantifying the risk of SARS-CoV-2 reinfection over time",
               "url": "https://pubmed.ncbi.nlm.nih.gov/34043841/",
+              "doi": "10.1002/rmv.2260",
               "country": "Multiple countries",
-              "year": 2021,
+              "year": 2022,
               "notes": "Systematic review of 11 large cohort studies of SARS-CoV-2 reinfection. Reinfection remained uncommon, and no clear evidence of waning was observed over follow-up periods extending to more than 10 months in several studies. Useful as an estimate of at least ~10 months of protection against reinfection during the early pandemic."
             },
 
@@ -942,6 +1002,7 @@
               "source_type": "systematic_review_meta_analysis",
               "title": "The prevalence of adaptive immunity to COVID-19 and reinfection after recovery – a comprehensive systematic review and meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9248963/",
+              "doi": "10.1080/20477724.2022.2029301",
               "country": "Multiple countries",
               "year": 2022,
               "notes": "Systematic review and meta-analysis of 54 studies from 18 countries. Around 90% of recovered individuals retained evidence of immunological memory at 6–8 months after recovery, and reinfection prevalence remained low. Good source for a conservative lower-bound estimate of post-infection immune duration."
@@ -954,6 +1015,7 @@
               "source_type": "narrative_review",
               "title": "SARS-CoV-2 reinfections: Overview of efficacy and duration of natural and hybrid immunity",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8824301/",
+              "doi": "10.1016/j.envres.2022.112911",
               "country": "Multiple countries",
               "year": 2022,
               "notes": "Narrative review summarizing evidence that natural immunity after SARS-CoV-2 infection provides strong protection against reinfection for at least one year, with only moderate waning before Omicron. Protection against severe disease appears to last longer than protection against infection."
@@ -966,6 +1028,7 @@
               "source_type": "narrative_review",
               "title": "Durability of Vaccine-Induced and Natural Immunity Against COVID-19: A Narrative Review",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9828372/",
+              "doi": "10.1007/s40121-022-00753-2",
               "country": "Multiple countries",
               "year": 2023,
               "notes": "Narrative review summarizing studies of waning protection after infection and vaccination. Reports high protection from prior infection over at least 7 months in meta-analyses and several studies showing little significant waning through roughly 8–12 months in pre-Omicron settings."
@@ -990,6 +1053,7 @@
               "source_type": "systematic_review_meta_analysis",
               "title": "Asymptomatic SARS-CoV-2 infection: A systematic review and meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8403749/",
+              "doi": "10.1073/pnas.2109229118",
               "country": "Multiple countries",
               "year": 2021,
               "notes": "Systematic review and meta-analysis of more than 350 studies. Estimated that 35.1% of SARS-CoV-2 infections never developed clinical symptoms and were therefore truly asymptomatic. Distinguished asymptomatic infections from presymptomatic infections and removed index cases to reduce bias."
@@ -1002,6 +1066,7 @@
               "source_type": "living_systematic_review_meta_analysis",
               "title": "Occurrence and transmission potential of asymptomatic and presymptomatic SARS-CoV-2 infections: A living systematic review and meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7508369/",
+              "doi": "10.1371/journal.pmed.1003346",
               "country": "Multiple countries",
               "year": 2020,
               "notes": "Living systematic review and meta-analysis of 79 studies. Estimated that 20% of SARS-CoV-2 infections remained asymptomatic throughout infection. Prediction interval was wide because of substantial heterogeneity and risk of selection bias across studies."
@@ -1014,8 +1079,9 @@
               "source_type": "systematic_review_meta_analysis",
               "title": "Asymptomatic SARS-CoV-2 Infection by Age: A Global Systematic Review and Meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9935239/",
+              "doi": "10.1097/INF.0000000000003791",
               "country": "Multiple countries",
-              "year": 2023,
+              "year": 2022,
               "notes": "Global systematic review and meta-analysis of studies conducted during 2020 before routine vaccination. Across 14,850 infected individuals, 44.1% remained asymptomatic throughout infection. Also found strong age variation, with asymptomatic infection more common in children and younger adults than in the elderly."
             }
           ]
