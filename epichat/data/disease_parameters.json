@@ -1088,9 +1088,321 @@
         }
 
       }
-
     }
-  }
+    },
+
+    "mumps": {
+      "display_name": "Mumps",
+      "aliases":["epidemic parotitis", "infectious parotitis", "mumps virus infection"],
+      "parameters": {
+        "r0": {
+        "unit": "dimensionless",
+          "consensus": {
+            "min": 4.0,
+            "max": 19.3,
+            "typical": 10.0,
+            "notes": "Consensus reflects heterogeneous literature on mumps transmissibility. Most commonly cited general-population estimates fall around 4–12, including review and modeling studies from the UK, Europe, South Korea, and the United States. A higher estimate of 19.3 was reported from a Bayesian age-structured pre-vaccination UK serologic modeling study and is retained as an upper-bound historical estimate rather than a typical modern value. A representative typical R0 of 10 is used here to reflect the central tendency of commonly cited historical/general-population estimates while acknowledging substantial model- and setting-dependent variation."
+          },
+            
+
+          "estimates":[
+            {
+              "value": 11,
+              "range": [10, 12],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Mumps and the UK epidemic 2005",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC557899/",
+              "doi": "10.1136/bmj.330.7500.1132",
+              "country": "United Kingdom",
+              "year": 2005,
+              "notes": "BMJ review article discussing the 2005 UK mumps epidemic. The estimate reflects a general-population R0 range for mumps referenced in the review context rather than a new primary estimation performed in this paper."
+            },
+
+            {
+              "value": 5.5,
+              "range": [4, 7],
+              "population": "General",
+              "source_type": "seroprevalence_study",
+              "title": "Seroprevalence of mumps in healthcare workers in South Korea",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7024726/",
+              "doi": "10.7774/cevr.2020.9.1.64",
+              "country": "South Korea",
+              "year": 2020,
+              "notes": "Healthcare-worker seroprevalence study from South Korea. The paper states in the introduction that the basic reproduction number of mumps is 4–7 and corresponding herd immunity threshold is 75%–86%, but this study did not itself estimate R0; the value is background information cited from prior literature."
+            },
+
+            {
+              "value": 4.79,
+              "range": [3, 7],
+              "population": "General",
+              "source_type": "modelling_study",
+              "title": "Vaccine waning and mumps re-emergence in the United States",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5899613/",
+              "doi": "10.1126/scitranslmed.aao5945",
+              "country": "United States",
+              "year": 2018,
+              "notes": "Estimated pre-vaccine-era basic reproduction number of mumps in the United States as 4.79; authors note consistency with prior estimates of 3–7 for high-income settings."
+            },
+
+            {
+              "value": 4,
+              "range": [3.6, 4.5],
+              "population": "General",
+              "source_type": "modelling_study",
+              "title": "The pre-vaccination epidemiology of measles, mumps and rubella in Europe: implications for modelling studies",
+              "url": "https://www.cambridge.org/core/journals/epidemiology-and-infection/article/prevaccination-epidemiology-of-measles-mumps-and-rubella-in-europe-implications-for-modelling-studies/14B5097126336B5D0F8495923E4734DE",
+              "doi": "10.1017/S0950268800004672",
+              "country": "Multiple European countries",
+              "year": 2001,
+              "notes": "Pre-vaccination European analysis of measles, mumps, and rubella. Paper reports that mumps R0 was intermediate between measles and rubella and varied by country/mixing assumptions. Use as a broad historical pre-vaccination estimate rather than a single-country modern estimate."
+            },
+
+            {
+              "value": 19.3,
+              "range": [4.0, 31.5],
+              "population": "Males aged 1–44 years; pre-vaccination serologic survey population",
+              "source_type": "Bayesian transmission modeling study",
+              "title": "Matrix models for childhood infections: a Bayesian approach with applications to rubella and mumps",
+              "url": "https://www.cambridge.org/core/journals/epidemiology-and-infection/article/matrix-models-for-childhood-infections-a-bayesian-approach-with-applications-to-rubella-and-mumps/64A5D4B6D7F0D5B1A3A2A7A4A6D0C5B4",
+              "doi": "10.1017/S0950268805004528",
+              "country": "United Kingdom",
+              "year": 2005,
+              "notes": "Bayesian age-structured matrix modeling study using paired UK serological survey data from 1986. Reported mumps R0 = 19.3 (95% credible region 4.0–31.5) under preferred assortative models with individual heterogeneity. Estimate is model-based and reflects pre-vaccination epidemiology."
+            }         
+          ]
+        },
+
+        "incubation_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 12,
+              "max": 25,
+              "typical": 17
+            },
+
+            "estimates":[
+            {
+              "value": 17,
+              "range": [12, 25],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Mumps",
+              "url": "https://www.cdc.gov/mumps/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "According to CDC, the average incubation period for mumps is 16 to 18 days, with a range of 12 to 25 days."
+            },
+
+            {
+              "value": 17,
+              "range": [12, 25],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Mumps: risk communication and community engagement guidance",
+              "url": "https://www.emro.who.int/cpi/publications/mumps-risk-communication-and-community-engagement-guidance.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2024,
+              "notes": "According to WHO, the average incubation period for mumps is 16 to 18 days, with a range of 12 to 25 days."
+            },
+
+            {
+              "value": 16,
+              "range": [14, 18],
+              "population": "General",
+              "source_type": "reference_chapter",
+              "title": "Mumps virus",
+              "url": "https://www.sciencedirect.com/topics/biochemistry-genetics-and-molecular-biology/mumps-virus",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2014,
+              "notes": "Reference chapter states that mumps has an incubation period of 14–18 days following acquisition by respiratory droplet inhalation."
+            },
+
+            {
+              "value": 21,
+              "range": [14, 28],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Mumps virus pathogenesis: Insights and knowledge gaps",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5215468/",
+              "doi": "10.1080/21645515.2016.1210745",
+              "country": "N/A",
+              "year": 2016,
+              "notes": "Review article states that mumps is transmitted via direct contact or airborne droplets and that the incubation period varies between 2 and 4 weeks."
+            }
+            ]
+          
+          },
+
+          "infectious_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 7,
+              "max": 7,
+              "typical": 7
+            },
+
+            "estimates":[
+
+              {
+                "value": 7,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Clinical Overview of Mumps",
+                "url": "https://www.cdc.gov/mumps/hcp/clinical-overview/index.html",
+                "doi": "N/A",
+                "country": "N/A",
+                "year": 2025,
+                "notes": "The infectious period is considered from 2 days before to 5 days after parotitis onset."
+              },
+
+              {
+                "value": 5,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "review_article",
+                "title": "Guidance for isolation precautions for mumps in the United States: a review of the scientific basis for policy change",
+                "url": "https://pubmed.ncbi.nlm.nih.gov/20455692/",
+                "doi": "10.1086/652770",
+                "country": "United States",
+                "year": 2010,
+                "notes": "Review of the evidence underlying U.S. isolation guidance for mumps. The paper reports that mumps virus has been isolated from 7 days before through 8 days after parotitis onset, but that the highest frequency of positive isolations and highest viral loads occur closest to parotitis onset and decline rapidly thereafter. Most transmission likely occurs before and within 5 days of parotitis onset, supporting a conventional infectious period centered on the interval around symptom onset."
+              }
+            ]
+          },
+
+         "p_death": {
+            "unit": "percentage",
+            "consensus":{
+              "min": 0.016,
+              "max": 0.038,
+              "typical": 0.027,
+              "notes": "Low general death rate for mumps."
+          },
+
+          "estimates":[
+            {
+            "value": 0.027,
+            "range": [0.016, 0.038],
+            "metric": "CFR",
+            "population": "General",
+            "source_type": "review_article",
+            "title": "Molecular biology, pathogenesis and pathology of mumps virus",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4268314/",
+            "doi": "10.1002/path.4445",
+            "country": "N/A",
+            "year": 2014,
+            "notes": "Review article reports a mumps case fatality ratio of 1.6–3.8 deaths per 10,000 cases. Converted here to percent of cases: 0.016%–0.038%, with midpoint 0.027%."
+          },
+
+          {
+            "value": 0.03,
+            "range": "N/A",
+            "metric":"CFR",
+            "population": "Reported mumps cases, pre-vaccine era",
+            "source_type": "government_surveillance_manual",
+            "title": "Manual for the Surveillance of Vaccine-Preventable Diseases, Chapter 9: Mumps",
+            "url": "https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-9-mumps.html",
+            "doi": "N/A",
+            "country": "United States",
+            "year": 2025,
+            "notes": "CDC chapter states that during 1962–1967 in the United States, there were 3 deaths per 10,000 reported mumps cases in the pre-vaccine era. Converted to percent as 0.03%. This is a historical case fatality estimate based on reported cases rather than all infections."
+          } 
+          ]
+          },
+
+        "n_contacts": {
+          "unit": "contacts/day",
+          "consensus":{
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No validateable information found for mumps daily contacts."
+          },
+
+          "estimates":[]
+        },
+
+        "dur_immune": {
+          "unit": "days",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "Long-term (not lifelong for vaccine-induced immunity)",
+            "notes": "Natural infection is generally believed to provide lifelong immunity. Two-dose MMR vaccination provides long-term protection for most individuals, but immunity against mumps may decrease over time (waning immunity), which contributes to outbreaks among previously vaccinated populations."
+          },
+
+          "estimates": [],
+          "special_value": "natural infection: lifelong; vaccine: long-term with waning immunity",
+          "source_type": "government_report",
+          "title": "Mumps Vaccination",
+          "url": "https://www.cdc.gov/mumps/vaccines/index.html",
+          "doi": "N/A",
+          "year": 2025
+        },
+
+        "p_asymp": {
+          "unit": "fraction",
+          "consensus":{
+            "min": 0.15,
+            "max": 0.66,
+            "typical": 0.2,
+            "notes": "Typical reported is for unvaccinated populations."
+          },
+
+          "estimates":[
+          {
+            "value": 0.2,
+            "range": "N/A",
+            "population": "Unvaccinated general population",
+            "source_type": "government_report",
+            "title": "Manual for the Surveillance of Vaccine-Preventable Diseases: Chapter 9 – Mumps",
+            "url": "https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-9-mumps.html",
+            "doi": "N/A",
+            "country": "N/A",
+            "year": 2025,
+            "notes": "Approximately 20% of mumps infections are asymptomatic among unvaccinated individuals. The frequency of asymptomatic infection among vaccinated individuals is unknown."
+          },
+
+          {
+          "value": 0.195,
+          "range": [0.15, 0.24],
+          "population": "General population (pre-vaccination era)",
+          "source_type": "government_report",
+          "title": "Pink Book: Chapter 15 – Mumps",
+          "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-15-mumps.html",
+          "doi": "N/A",
+          "country": "N/A",
+          "year": 2024,
+          "notes": "Before introduction of mumps vaccine, approximately 15–24% of infections were asymptomatic (subclinical). The frequency among vaccinated persons is unknown."
+          },
+
+          {
+            "value": 0.66,
+            "range":"N/A",
+            "population":"MMR vaccinated persons",
+            "source_type": "review_article",
+            "title": "Mumps virus pathogenesis: Insights and knowledge gaps",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5215468/",
+            "doi": "10.1080/21645515.2016.1210745",
+            "country": "N/A",
+            "year": 2016,
+            "notes": "Reviews mumps pathogenesis and summarizes historical epidemiology, noting that many infections are subclinical and citing pre-vaccination estimates from earlier epidemiologic studies."
+          }
+
+
+          ]
+        }
+      }
+    },
+
+    "rubella": {
+      
+    }
 }
 
 
