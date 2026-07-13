@@ -1401,8 +1401,292 @@
     },
 
     "rubella": {
-      
-    }
+      "display_name": "Rubella",
+      "aliases":["German measles","three-day measles","epidemic roseola","rubella virus infection","rubella infection"],
+      "parameters": {
+        "r0": {
+        "unit": "dimensionless",
+          "consensus": {
+            "min": 2,
+            "max": 8,
+            "typical": 5.5,
+            "notes": "Most published estimates of rubella R₀ in general populations fall between 4 and 7, with a typical value around 5–6. Lower estimates (~2–3) have been reported in low-density rural settings, whereas values above 10 are uncommon and generally reflect specific high-transmission populations or modeling assumptions rather than typical community transmission."
+          },
+
+          "estimates":[
+            {
+              "value": 3.7,
+              "range": [3.3, 4.4],
+              "population": "Urban population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Peru",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 2.2,
+              "range": [1.9, 2.4],
+              "population": "Rural population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Peru",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 6.5,
+              "range": [5.4, 7.8],
+              "population": "Urban population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Uruguay",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 2.3,
+              "range": [2.1, 4.0],
+              "population": "Rural population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Uruguay",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 3.9,
+              "range": [3.5, 5.2],
+              "population": "Urban population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Chile",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 16.5,
+              "range": [12.8, 25.2],
+              "population": "Rural population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Chile",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data. Authors note this was an exception to the usual pattern of higher urban than rural transmission."
+            },
+
+            {
+              "value": 7,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella virus : Infectious substances pathogen safety data sheet",
+              "url": "https://www.canada.ca/en/public-health/services/laboratory-biosafety-biosecurity/pathogen-safety-data-sheets-risk-assessment/rubella-virus.html",
+              "doi": "N/A",
+              "country": "Canada",
+              "year": 2025,
+              "notes": "The preferred mode of transmission of RuV is through inhalation of airborne droplets and its reproductive number (Ro) is 7."
+            },
+
+            {
+              "value": 5.5,
+              "range": [4, 7],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Rubella Transmissibility and Reproduction Number (R₀): A Critical Appraisal of the Prospects for its Control in Nigeria",
+              "url": "https://www.ovid.com/jnls/npmj/fulltext/10.4103/npmj.npmj_84_20~rubella-transmissibility-and-reproduction-number-ro-a",
+              "doi": "10.4103/npmj.npmj_84_20",
+              "country": "Nigeria",
+              "year": 2020,
+              "notes": "Narrative review summarizing published estimates of rubella transmissibility. Reports a typical R₀ of 4–7 for rubella in most settings, with values up to 11.8 reported in high-density populations (e.g., Addis Ababa). The article does not derive a new R₀ estimate."
+            },
+
+            {
+              "value": 5.2,
+              "range": [4.0, 6.7],
+              "population": "General population (African countries)",
+              "source_type": "modelling_study",
+              "title": "Balancing Evidence and Uncertainty when Considering Rubella Vaccine Introduction",
+              "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0067639",
+              "doi": "10.1371/journal.pone.0067639",
+              "country": "African Region (multiple countries)",
+              "year": 2013,
+              "notes": "Bayesian hierarchical modeling study estimating the distribution of rubella basic reproduction numbers across African countries using age-specific seroprevalence data. Estimated median R₀ of 5.2, with 90% of countries expected to have R₀ between 4.0 and 6.7."
+            },
+
+            {
+              "value": 7.6,
+              "range": "N/A",
+              "population": "General population (pre-vaccination, China)",
+              "source_type": "modelling_study",
+              "title": "Assessing the burden of Congenital Rubella Syndrome in China and evaluating mitigation strategies: a meta-population modeling study",
+              "url": "https://doi.org/10.1016/S1473-3099(20)30475-8",
+              "doi": "10.1016/S1473-3099(20)30475-8",
+              "country": "China",
+              "year": 2021,
+              "notes": "Age-structured meta-population modeling study integrating serosurvey and surveillance data. Estimated that childhood immunization reduced the effective reproduction number from a pre-vaccination basic reproduction number (R₀) of 7.6 to an effective reproduction number of approximately 1.2 by 2014."
+            }
+
+          ]
+        },
+
+        "incubation_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 12,
+              "max": 23,
+              "typical": 17,
+              "notes": "Based on CDC guidelines for the general population."
+            },
+            
+            "estimates":[
+            {
+              "value": 17,
+              "range": [13, 24],
+              "population": "Children and adolescents (<19 years)",
+              "source_type": "systematic_review",
+              "title": "Systematic review of the incubation period, infectiousness and shedding duration of vaccine-preventable diseases",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
+              "doi": "10.1186/s12879-018-3095-8",
+              "country": "Multiple countries",
+              "year": 2018,
+              "notes": "The review identified two outbreak investigations reporting a rubella incubation period of 13–24 days. Across additional authoritative sources summarized in the review, the incubation period ranged from 13–23 days, with onset occurring most commonly between 16 and 18 days after exposure."
+            },
+
+            {
+              "value": 17,
+              "range": [12, 23],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Rubella",
+              "url": "https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC states that the average incubation period of rubella is 17 days, with a range of 12–23 days."
+            },
+
+            {
+              "value": 14,
+              "range": [12, 23],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella (German Measles or Three-Day Measles)",
+              "url": "https://www.health.ny.gov/diseases/communicable/rubella/fact_sheet.htm",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "New York State Department of Health states the usual incubation period is 14 days, with a range of 12–23 days."
+            },
+
+            {
+              "value": 17,
+              "range": [12, 23],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella Quicksheet",
+              "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Rubella-Quicksheet.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "Average incubation period is 17 days, with a range of 12–23 days."
+            },
+
+            {
+              "value": 15.5,
+              "range": [14, 21],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella",
+              "url": "https://hhs.iowa.gov/center-acute-disease-epidemiology/epi-manual/reportable-diseases/rubella",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "The incubation period is usually 14–17 days, with a reported range of 14–21 days."
+            }
+
+            ]
+
+        },
+
+          "infectious_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 11,
+              "max": 16,
+              "typical": 14,
+              "notes": "Most public health authorities (CDC and state health departments) consider individuals infectious from 7 days before until 7 days after rash onset (14-day infectious period). Some references report infectiousness beginning approximately 8 days before and ending 8 days after rash onset, while others recommend isolation for at least 4 days after rash onset. Peak infectiousness occurs around the time the rash appears."
+            },
+
+            "estimates":[
+              {
+                "value": 14,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Clinical Overview of Rubella",
+                "url": "https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2024,
+                "notes": "People with rubella are contagious from 7 days before until 7 days after rash onset. Peak infectiousness occurs when the rash is erupting."
+              },
+
+              {
+                "value": 16,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "reference_text",
+                "title": "Rubella",
+                "url": "https://www.ncbi.nlm.nih.gov/books/NBK559040/",
+                "doi": "N/A",
+                "country": "N/A",
+                "year": 2025,
+                "notes": "Infected individuals can spread the virus from approximately 8 days before to 8 days after rash onset, with peak contagiousness occurring just before the rash's appearance."
+              },
+
+              {
+                "value": 14,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Rubella Quicksheet",
+                "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Rubella-Quicksheet.pdf",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2025,
+                "notes": "Individuals are infectious from 7 days before until 7 days after rash onset. Peak infectiousness occurs when the rash is erupting."
+              },
+
+              {
+                "value": 11,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Rubella",
+                "url": "https://hhs.iowa.gov/center-acute-disease-epidemiology/epi-manual/reportable-diseases/rubella",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2025,
+                "notes": "Individuals are infectious from 7 days before until at least 4 days after rash onset. Infants with congenital rubella syndrome may shed virus for one year or longer."
+              }
+            ]
+            }
+          }
+
+      }
 }
 
 
