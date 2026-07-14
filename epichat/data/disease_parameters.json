@@ -152,7 +152,7 @@
               "title": "The effect of heterogeneity in uptake of the measles, mumps, and rubella vaccine on the potential for outbreaks of measles: a modelling study",
               "url": "https://www.sciencedirect.com/science/article/pii/S1473309916000049",
               "doi": "10.1016/S1473-3099(16)00004-9",
-              "country": "USA",
+              "country": "United States",
               "year": 2016,
               "notes": "Post-vaccination era. Estimated using school-specific contact matrices. "
             }
@@ -307,7 +307,7 @@
               "title": "Measles",
               "url": "https://www.nejm.org/doi/full/10.1056/NEJMcp1905181",
               "doi": "10.1056/NEJMcp1905181",
-              "country": "USA and globally",
+              "country": "United States and globally",
               "year": 2019,
               "notes": "Patients with measles are infectious from 4 days before to 4 days after the onset of their rash."
             }
@@ -361,7 +361,7 @@
               "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
               "doi": "10.1371/journal.pmed.0040024",
-              "country": "USA",
+              "country": "United States",
               "year": 2007,
               "notes": "Measles mortality was 25 deaths per 1000 reported cases in the United States in 1912."
             },
@@ -374,7 +374,7 @@
               "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
               "doi": "10.1371/journal.pmed.0040024",
-              "country": "USA",
+              "country": "United States",
               "year": 2007,
               "notes": "Case-fatality rates were approximately 1 death per 1000 reported measles cases from the 1940s through the 1980s."
             },
@@ -387,7 +387,7 @@
               "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
               "doi": "10.1371/journal.pmed.0040024",
-              "country": "USA",
+              "country": "United States",
               "year": 2007,
               "notes": "Case-fatality rates were approximately 1 death per 1000 reported measles cases from the 1940s through the 1980s."
             },
@@ -442,7 +442,7 @@
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
               "doi":"10.1186/s12889-015-1766-6",
-              "country": "USA",
+              "country": "United States",
               "year": 2015,
               "notes": "Based on the child-staff ratio for daycares in California: www.daycare.com/california"
             },
@@ -455,7 +455,7 @@
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
               "doi":"10.1186/s12889-015-1766-6",
-              "country": "USA",
+              "country": "United States",
               "year": 2015,
               "notes": "The average class size in California public schools: www.cde.ca.gov/ds/sd/dr/cefteachavgclssize.asp"
             },
@@ -468,7 +468,7 @@
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
               "doi":"10.1186/s12889-015-1766-6",
-              "country": "USA",
+              "country": "United States",
               "year": 2015,
               "notes": "According to the RTI’s synthetic population used by the model, 61.4% workplaces have the number of workers ≤7"
             },
@@ -481,7 +481,7 @@
               "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
               "doi":"10.1186/s12889-015-1766-6",
-              "country": "USA",
+              "country": "United States",
               "year": 2015,
               "notes": "Assumption."
             },
@@ -494,7 +494,7 @@
               "title": "Contact Tracing and Prevention of Secondary Measles Transmission in a Pediatric Acute Care Hospital — Los Angeles County, July 2024",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12460729/",
               "doi": "10.1017/ash.2025.203",
-              "country": "USA",
+              "country": "United States",
               "year": 2025,
               "notes": "Outbreak investigation describing contact tracing following a single imported measles case at a pediatric hospital in Los Angeles County. A total of 350 contacts (187 staff, 73 patients, and 90 visitors) were identified. Post-exposure prophylaxis was administered to 51 contacts, and no secondary measles infections were reported."
             }
@@ -564,7 +564,7 @@
                 "title": "A comparison of COVID-19 outbreaks across US Combined Statistical Areas using new methods for estimating and social distancing behaviour",
                 "url": "https://www.sciencedirect.com/science/article/pii/S1755436522000809?via%3Dihub",
                 "doi": "10.1016/j.epidem.2022.100640",
-                "country": "USA",
+                "country": "United States",
                 "year": 2022,
                 "notes": "Initial outbreak rates and subsequent social distancing behaviour over the initial phase of the COVID-19 pandemic across 29 Combined Statistical Areas (CSAs) of the United States."
               },
@@ -881,7 +881,7 @@
               "value": 0.90,
               "range": [0.70, 1.16],
               "metric": "IFR",
-              "population": "General population",
+              "population": "General",
               "source_type": "modelling_study",
               "title": "Estimating the infection fatality rate of emerging diseases using a regression approach applied to global COVID-19 cases",
               "url": "https://www.sciencedirect.com/science/article/pii/S1876034125002059?via%3Dihub",
@@ -950,7 +950,7 @@
             "title": "Nationally Representative Social Contact Patterns among U.S. adults, August 2020-April 2021",
             "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8978954/",
             "doi": "10.1101/2021.09.22.21263904",
-            "country": "USA",
+            "country": "United States",
             "year": 2022,
             "notes": "National probability survey of U.S. adults with self-reported daily contacts. Mean daily contacts were 13.9 (baseline, Aug–Dec 2020) and 14.5 (follow-up, Mar–Apr 2021). This reflects contact behavior after the earliest lockdown period and under evolving mitigation measures, not pre-pandemic baseline contact rates."
           },
@@ -1049,7 +1049,7 @@
             {
               "value": 35.1,
               "range": [30.7, 39.9],
-              "population": "General population",
+              "population": "General",
               "source_type": "systematic_review_meta_analysis",
               "title": "Asymptomatic SARS-CoV-2 infection: A systematic review and meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8403749/",
@@ -1062,7 +1062,7 @@
             {
               "value": 20,
               "range": [17, 25],
-              "population": "General population",
+              "population": "General",
               "source_type": "living_systematic_review_meta_analysis",
               "title": "Occurrence and transmission potential of asymptomatic and presymptomatic SARS-CoV-2 infections: A living systematic review and meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7508369/",
@@ -1075,7 +1075,7 @@
             {
               "value": 44.1,
               "range": [43.3, 45.0],
-              "population": "General population across ages",
+              "population": "General",
               "source_type": "systematic_review_meta_analysis",
               "title": "Asymptomatic SARS-CoV-2 Infection by Age: A Global Systematic Review and Meta-analysis",
               "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9935239/",
@@ -1516,7 +1516,7 @@
             {
               "value": 5.2,
               "range": [4.0, 6.7],
-              "population": "General population (African countries)",
+              "population": "General",
               "source_type": "modelling_study",
               "title": "Balancing Evidence and Uncertainty when Considering Rubella Vaccine Introduction",
               "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0067639",
@@ -1529,7 +1529,7 @@
             {
               "value": 7.6,
               "range": "N/A",
-              "population": "General population (pre-vaccination, China)",
+              "population": "General population (pre-vaccination)",
               "source_type": "modelling_study",
               "title": "Assessing the burden of Congenital Rubella Syndrome in China and evaluating mitigation strategies: a meta-population modeling study",
               "url": "https://doi.org/10.1016/S1473-3099(20)30475-8",
@@ -1683,13 +1683,170 @@
                 "notes": "Individuals are infectious from 7 days before until at least 4 days after rash onset. Infants with congenital rubella syndrome may shed virus for one year or longer."
               }
             ]
+            },
+
+
+          "p_death": {
+              "unit": "percentage",
+              "consensus":{
+                "min": 0.005,
+                "max": 0.005,
+                "typical": 0.005,
+                "notes": "Death from postnatally acquired rubella is exceptionally rare. Historical U.S. surveillance estimated approximately 1 death per 210,000 cases (~0.00048%)."
+            },
+
+            "estimates":[
+              {
+                "value": 0.0005,
+                "range": "N/A",
+                "population": "General (pre-vaccination era)",
+                "source_type": "review_article",
+                "title": "Measuring the Benefits of Mass Vaccination Programs in the United States",
+                "url": "https://www.mdpi.com/2076-393X/8/4/561",
+                "doi": "10.3390/vaccines8040561",
+                "country": "United States",
+                "year": 2020,
+                "notes": "Review summarizing historical U.S. surveillance data from 1960–1968. Approximately 4 million rubella cases and 19 deaths occurred annually before vaccine introduction, corresponding to a case fatality rate of approximately 0.00048% (19 deaths per 4 million cases)."
+              }
+          ]
+          },
+
+          "n_contacts": {
+            "unit": "contacts/day",
+            "consensus":{
+              "min": "N/A",
+              "max": "N/A",
+              "typical": "N/A",
+              "notes": "No rubella-specific estimates of average daily contacts have been identified."
+            },
+
+            "estimates":[]
+          },
+
+        "dur_immune": {
+          "unit": "days",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "lifelong",
+            "notes": "MMR & MMRV vaccines usually protect people for life against measles and rubella."
+          },
+
+          "estimates": [],
+          "special_value": "vaccine: lifelong",
+          "source_type": "government_report",
+          "title": "Rubella Vaccination",
+          "url": "https://www.cdc.gov/rubella/vaccines/index.html",
+          "doi": "N/A",
+          "year": 2025
+        },
+
+        "p_asymp": {
+          "unit": "fraction",
+          "consensus":{
+            "min": 0.25,
+            "max": 0.50,
+            "typical": 0.375,
+            "notes": "Based on most recent CDC guidelines for the general population."
+          },
+
+          "estimates":[
+            {
+              "value": 0.375,
+              "range": [0.25, 0.50],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Rubella",
+              "url": "https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC states that approximately 25%–50% of rubella infections are asymptomatic (subclinical). Value shown is the midpoint of the reported range."
+            },
+            
+            {
+              "value": 0.35,
+              "range": [0.20, 0.50],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Rubella",
+              "url": "https://www.cdc.gov/mmwr/preview/mmwrhtml/rr5012a1.htm",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2001,
+              "notes": "Prior CDC report states that approximately 20%-50% of rubella infections are asymptomatic."
             }
+          ]
+        }
+      }
+  },
+
+      "varicella": {
+      "display_name": "Varicella",
+      "aliases": ["chickenpox", "varicella-zoster", "chicken pox"],
+      "parameters":{
+        "r0": {
+        "unit": "dimensionless",
+          "consensus": {
+          "min": ,
+          "max": ,
+          "typical": ,
+          "notes": 
+        },
+
+        "estimates":[
+          {
+            "value": 9,
+            "range": [10,12],
+            "population": "General",
+            "source_type": "review_article",
+            "title": "Effect of Routine Varicella Immunization on the Epidemiology and Immunogenicity of Varicella and Shingles",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
+            "doi": "10.3390/v14030588",
+            "country": "Japan",
+            "year": 2022,
+            "notes": "The basic reproduction number of varicella is thought to range from 8 to 10, indicating that the current immunization coverage in Japan is insufficient to prevent varicella, and that additional efforts are needed to promote vaccination against varicella."
+          },
+
+          {
+            "value": 5.67,
+            "range": [5.33, 6.33],
+            "population": "General",
+            "source_type": "modelling_study",
+            "title": "Estimating the basic reproductive number of varicella in South Korea incorporating social contact patterns and seroprevalence",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/33829948/",
+            "doi": "10.1080/21645515.2021.1898917",
+            "country": "South Korea",
+            "year": 2021,
+            "notes": "Estimated the basic reproduction number (R₀) by combining age-specific seroprevalence data with social contact patterns derived from the POLYMOD contact matrix adapted to the Korean population. Estimated R₀ = 5.67 (95% CI: 5.33–6.33)."
+          },
+
+          {
+            "value": 8.5,
+            "range": "N/A",
+            "population": "General",
+            "source_type": "viewpoint_article",
+            "title": "Mathematics for medical practitioners and patients: Understanding how vaccines work for the community",
+            "url": "https://www1.racgp.org.au/ajgp/2020/may/mathematics-for-medical-practitioners",
+            "doi": "10.31128/AJGP-08-19-5038",
+            "country": "Australia",
+            "year": 2020,
+            "notes": "Educational viewpoint article illustrating herd immunity concepts. Reports an R₀ of 8.5 for varicella-zoster virus based on previously published literature rather than presenting a new estimate."
+          },
+
+          {
+            "value": 
           }
 
+
+
+        ]
       }
-}
+    }
 
 
+  }
+  }
 
 
 
