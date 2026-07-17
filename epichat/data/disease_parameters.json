@@ -316,7 +316,7 @@
 
         },
 
-        "p_death": {
+        "fatality_rate": {
           "unit": "percentage",
           "consensus":{
             "min": 0.5,
@@ -424,7 +424,7 @@
         },
 
 
-        "n_contacts": {
+        "average_contacts_daily": {
           "unit": "contacts/day",
           "consensus":{
             "min": 0,
@@ -503,7 +503,7 @@
 
         },
 
-        "dur_immune": {
+        "immunity_duration": {
           "unit": "days",
           "consensus":{
             "min": "N/A",
@@ -519,7 +519,7 @@
           "doi": "N/A"
         },
 
-        "p_asymp": {
+        "asymptomatic_fraction": {
           "unit": "fraction",
           "consensus":{
             "min": "N/A",
@@ -797,7 +797,7 @@
           ]
         },
 
-        "p_death": {
+        "fatality_rate": {
           "unit": "percentage",
           "consensus":{
             "min": 0.70,
@@ -895,7 +895,7 @@
 
         },
 
-        "n_contacts":{
+        "average_contacts_daily":{
           "unit": "contacts/day",
           "consensus": {
             "pre_pandemic": {
@@ -972,7 +972,7 @@
           ]
         },
 
-        "dur_immune": {
+        "immunity_duration": {
           "unit": "months",
           "consensus": {
             "min": 8,
@@ -1036,7 +1036,7 @@
           ]
         },
 
-        "p_asymp": {
+        "asymptomatic_fraction": {
           "unit": "percentage",
           "consensus": {
             "min": 20,
@@ -1275,7 +1275,7 @@
             ]
           },
 
-         "p_death": {
+         "fatality_rate": {
             "unit": "percentage",
             "consensus":{
               "min": 0.016,
@@ -1315,7 +1315,7 @@
           ]
           },
 
-        "n_contacts": {
+        "average_contacts_daily": {
           "unit": "contacts/day",
           "consensus":{
             "min": "N/A",
@@ -1327,7 +1327,7 @@
           "estimates":[]
         },
 
-        "dur_immune": {
+        "immunity_duration": {
           "unit": "days",
           "consensus": {
             "min": "N/A",
@@ -1345,7 +1345,7 @@
           "year": 2025
         },
 
-        "p_asymp": {
+        "asymptomatic_fraction": {
           "unit": "fraction",
           "consensus":{
             "min": 0.15,
@@ -1686,7 +1686,7 @@
             },
 
 
-          "p_death": {
+          "fatality_rate": {
               "unit": "percentage",
               "consensus":{
                 "min": 0.005,
@@ -1711,7 +1711,7 @@
           ]
           },
 
-          "n_contacts": {
+          "average_contacts_daily": {
             "unit": "contacts/day",
             "consensus":{
               "min": "N/A",
@@ -1723,7 +1723,7 @@
             "estimates":[]
           },
 
-        "dur_immune": {
+        "immunity_duration": {
           "unit": "days",
           "consensus": {
             "min": "N/A",
@@ -1741,7 +1741,7 @@
           "year": 2025
         },
 
-        "p_asymp": {
+        "asymptomatic_fraction": {
           "unit": "fraction",
           "consensus":{
             "min": 0.25,
@@ -1788,10 +1788,10 @@
         "r0": {
         "unit": "dimensionless",
           "consensus": {
-          "min": ,
-          "max": ,
-          "typical": ,
-          "notes": 
+          "min": 5.5,
+          "max": 10,
+          "typical": 8,
+          "notes": "Published estimates of the basic reproduction number (R₀) for varicella generally range from approximately 5.5 to 10. Primary modeling studies have estimated R₀ around 5.7 in South Korea, while reviews and public health literature commonly cite values of 8–10. A typical value of 8 is consistent with the broader epidemiologic literature and is commonly used for herd immunity calculations."
         },
 
         "estimates":[
@@ -1832,24 +1832,345 @@
             "country": "Australia",
             "year": 2020,
             "notes": "Educational viewpoint article illustrating herd immunity concepts. Reports an R₀ of 8.5 for varicella-zoster virus based on previously published literature rather than presenting a new estimate."
+          }
+        ]
+      },
+
+        "incubation_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 14,
+              "max": 16,
+              "typical": 15
+            },
+            
+            "estimates":[
+              {
+                "value": 15,
+                "range": [14,16],
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Clinical Overview of Chickenpox (Varicella)",
+                "url": "https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2024,
+                "notes": "The average incubation period for varicella is 14 to 16 days after exposure to a varicella or a herpes zoster rash."
+              },
+
+              {
+                "value": 15,
+                "range": [10,21],
+                "population": "General",
+                "source_type":"government_report",
+                "title": "Varicella Quicksheet",
+                "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2025,
+                "notes": "The incubation period is 10–21 days after exposure, most commonly 14–16 days. The value shown (15 days) is the midpoint of the most common incubation period."
+              },
+
+              {
+                "value": 15,
+                "range": [10, 21],
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Chickenpox",
+                "url": "https://www.who.int/news-room/questions-and-answers/item/chickenpox",
+                "doi": "N/A",
+                "country": "N/A",
+                "year": 2025,
+                "notes": "WHO states that the incubation period is usually 14–16 days, with a range of 10–21 days. The value shown (15 days) is the midpoint of the typical incubation period."
+              }
+
+            ]
+          },
+
+          "infectious_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 6,
+              "max": 7,
+              "typical": 6.5
+            },
+
+            "estimates": [
+              {
+                "value": 6.5,
+                "range": [6, 7],
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Varicella Quicksheet",
+                "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2025,
+                "notes": "Individuals are infectious from 1–2 days before rash onset until all lesions have crusted, usually about 5 days after rash onset. This corresponds to an infectious period of approximately 6–7 days, though it may be longer if lesions crust slowly."
+              },
+
+              {
+                "value": 6.5,
+                "range": [6,7],
+                "population": "General",
+                "source_type":"government_report",
+                "title": "Varicella Quicksheet",
+                "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2025,
+                "notes": "From 1–2 days before rash onset and continuing until all lesions are crusted (usually about 5 days)."
+              },
+
+              {
+                "value": 7,
+                "range": [5, 9],
+                "population": "General",
+                "source_type": "review_article",
+                "title": "Communicability of varicella before rash onset: a literature review",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8193770/",
+                "doi": "10.1017/S0950268821001102",
+                "country": "N/A",
+                "year": 2021,
+                "notes": "Review of epidemiologic and laboratory evidence. Patients are generally infectious from 1–2 days before rash onset until all lesions have crusted, typically 4–7 days after rash onset."
+              }
+            ]
+
+          },
+
+          "fatality_rate": {
+              "unit": "percentage",
+              "consensus": {
+                "min": 0.002,
+                "max": 0.0036,
+                "typical": 0.0028,
+                "notes": "General population case-fatality rate (CFR) for varicella in the pre-vaccine era was approximately 2.0–3.6 deaths per 100,000 cases (0.002–0.0036%). Mortality is highly age-dependent, ranging from approximately 0.001% among children aged 1–14 years to 0.021% among adults, and is substantially higher among immunocompromised individuals."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.001,
+                  "range": "N/A",
+                  "population": "Children (1–14 years)",
+                  "source_type": "government_report",
+                  "title": "Chapter 22: Varicella",
+                  "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Pre-vaccine era case fatality rate of approximately 1 death per 100,000 varicella cases among healthy children aged 1–14 years."
+                },
+                {
+                  "value": 0.006,
+                  "range": "N/A",
+                  "population": "Adolescents (15–19 years)",
+                  "source_type": "government_report",
+                  "title": "Chapter 22: Varicella",
+                  "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Pre-vaccine era case fatality rate of approximately 6 deaths per 100,000 varicella cases."
+                },
+                {
+                  "value": 0.021,
+                  "range": "N/A",
+                  "population": "Adults",
+                  "source_type": "government_report",
+                  "title": "Chapter 22: Varicella",
+                  "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Pre-vaccine era case fatality rate of approximately 21 deaths per 100,000 varicella cases."
+                },
+
+                {
+                  "value": 0.0028,
+                  "range": [0.002, 0.0036],
+                  "metric":"CFR",
+                  "population": "General (pre-vaccination era)",
+                  "source_type": "government_guideline",
+                  "title": "Prevention of Varicella: Recommendations of the Advisory Committee on Immunization Practices (ACIP)",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/17585291/",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2007,
+                  "notes": "Average case-fatality rate of 2.0–3.6 deaths per 100,000 varicella cases during the pre-vaccine era (1970–1994)."
+                }
+
+
+              ]
+          },
+
+          "average_contacts_daily": {
+            "unit": "contacts/day",
+            "consensus":{
+              "min": "N/A",
+              "max": "N/A",
+              "typical": "N/A",
+              "notes": "No varicella-specific estimates of average daily contacts have been identified."
+            },
+
+            "estimates":[]
+          },
+
+            "immunity_duration": {
+              "unit": "days",
+              "consensus": {
+                "min": "N/A",
+                "max": "N/A",
+                "typical": "lifelong",
+                "notes": "Usually, a person will only get chickenpox once in their life. After recovery, their body develops immunity to the virus."
+              },
+
+              "estimates": [],
+              "special_value": "natural infection: lifelong",
+              "source_type": "government_report",
+              "title": "Chickenpox",
+              "url": "https://www.who.int/news-room/questions-and-answers/item/chickenpox",
+              "doi": "N/A",
+              "year": 2025
+            },
+
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus":{
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No varicella-specific estimates of asymptomatic fraction have been identified."
+          },
+
+          "estimates": []
+
+  }
+  }
+  },
+
+    "pertussis": {
+      "display_name": "Pertussis",
+      "aliases": ["whooping cough", "bordetella pertussis", "100-day cough"],
+      "parameters":{
+        "r0": {
+        "unit": "dimensionless",
+          "consensus": {
+            "min": 5.3,
+            "max": 17,
+            "typical": 14.5,
+            "notes": "Published estimates of the basic reproduction number (R₀) for pertussis span approximately 5.3–17. Lower values (5.3–11.5) are derived from modern transmission models incorporating serological data, vaccination, and social contact patterns, whereas public health agencies and expert reviews consistently cite 12–17 (commonly 15–17) as the historical R₀ in a fully susceptible population. For epidemiological modeling of an immunologically naïve population, values around 14–15 are most commonly used."
+          },
+
+        "estimates": [
+          {
+            "value": 14.5,
+            "range": [12,17],
+            "population": "General",
+            "source_type": "review_article",
+            "title": "Epidemiology of Pertussis After the COVID-19 Pandemic: Analysis of the Factors Involved in the Resurgence of the Disease in High-, Middle-, and Low-Income Countries",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/",
+            "doi": "10.3390/vaccines12121346",
+            "country": "Multiple countries",
+            "year": 2024,
+            "notes": "Review article summarizing published epidemiologic evidence. Reports that pertussis has an estimated basic reproduction number (R₀) of approximately 12–17, highlighting its high transmissibility. Does not derive a new R₀ estimate."
           },
 
           {
-            "value": 
+            "value": 5.5,
+            "range": [5.3, 5.9],
+            "population": "General population",
+            "source_type": "modelling_study",
+            "title": "Incidence and Reproduction Numbers of Pertussis: Estimates from Serological and Social Contact Data in Five European Countries",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2889930/",
+            "doi": "10.1371/journal.pmed.1000291",
+            "country": "Finland, Germany, Italy, Netherlands, United Kingdom",
+            "year": 2010,
+            "notes": "Estimated R₀ using serological data combined with POLYMOD social contact matrices. Country-specific estimates ranged from 5.3 to 5.9, with an overall value around 5.5."
+          },
+
+          {
+            "value": 16,
+            "range": [15, 17],
+            "population": "General",
+            "source_type": "expert_consensus",
+            "title": "Expert consultation on pertussis",
+            "url": "https://www.ecdc.europa.eu/en/publications-data/expert-consultation-pertussis",
+            "doi": "N/A",
+            "country": "European Union / European Economic Area",
+            "year": 2014,
+            "notes": "ECDC expert consultation summarizing consensus that pertussis is highly contagious with a basic reproduction number (R₀) of 15–17. This value reflects historical transmission in a fully susceptible population and is intended for public health guidance rather than representing a new modeling estimate."
+          },
+
+          {
+            "value": 14.5,
+            "range": [12,17],
+            "population": "General",
+            "source_type": "government_report",
+            "title": "Bordetella pertussis: Infectious substances pathogen safety data sheet",
+            "url": "https://www.canada.ca/en/public-health/services/laboratory-biosafety-biosecurity/pathogen-safety-data-sheets-risk-assessment/bordetella-pertussis.html",
+            "doi": "N/A",
+            "country": "Canada",
+            "year": 2024,
+            "notes": "The estimated basic reproductive number (Ro) of B. pertussis, which is the expected number of secondary cases arising from a primary case in a completely susceptible population, is 12-17"
+          },
+
+          {
+            "value": 10.6,
+            "range": [9.9, 11.5],
+            "population": "Adolescents and adults (general population model)",
+            "source_type": "modelling_study",
+            "title": "Estimation of the Underlying Burden of Pertussis in Adolescents and Adults in Southern Ontario, Canada",
+            "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0083850",
+            "doi": "10.1371/journal.pone.0083850",
+            "country": "Canada",
+            "year": 2013,
+            "notes": "Age-structured transmission model calibrated to pre-vaccine (1880–1929) and vaccine-era (1993–2004) pertussis data from Southern Ontario. Estimated a basic reproduction number (R₀) of approximately 10.6 with seasonal variation from 9.9 to 11.5. The study concluded that infections in individuals with waning immunity drive most transmission to children."
           }
 
-
-
         ]
-      }
+      },
+
+        "incubation_days": {
+            "unit": "days",
+            "consensus": {
+              "min": ,
+              "max": ,
+              "typical": 
+            },
+            
+            "estimates": [
+
+              {
+                "value": 12.5,
+                "range": [5, 21],
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Clinical Overview of Pertussis",
+                "url": "https://www.cdc.gov/pertussis/hcp/clinical-overview/index.html",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2025,
+                "notes": "Pertussis symptoms usually develop within 5 to 10 days after exposure, but sometimes not for as long as 21 days."
+              },
+
+              {
+                "value": 8.5,
+                "range": [7,10],
+                "population": "General",
+                "source_type": "review_article",
+                "title": "Pertussis",
+                "url": "https://www.ncbi.nlm.nih.gov/books/NBK519008/",
+                "doi": "N/A",
+                "country": "N/A",
+                "year": 2026,
+                "notes": "The incubation period of pertussis is around 7-10 days ( "
+              }
+            ]
+
+          }
     }
-
-
   }
   }
-
-
-
 
 
 
