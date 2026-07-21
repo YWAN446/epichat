@@ -2133,9 +2133,9 @@
         "incubation_days": {
             "unit": "days",
             "consensus": {
-              "min": ,
-              "max": ,
-              "typical": 
+              "min": 4,
+              "max": 21,
+              "typical": 8.5
             },
             
             "estimates": [
@@ -2164,10 +2164,130 @@
                 "country": "N/A",
                 "year": 2026,
                 "notes": "The incubation period of pertussis is around 7-10 days ( "
+              },
+
+              {
+                "value": 8.5,
+                "range": [4,21],
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Pertussis",
+                "url": "https://www.chp.gov.hk/en/healthtopics/content/24/35.html",
+                "doi": "N/A",
+                "country": "Hong Kong",
+                "year": 2025,
+                "notes": "The incubation period ranges from 4 - 21 days, usually 7 - 10 days."
+              },
+
+              {
+                "value": 8.5,
+                "range": [4,21],
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Pertussis (whooping cough)",
+                "url": "https://www.health.wa.gov.au/articles/n_r/pertussis-whooping-cough",
+                "doi":"N/A",
+                "country": "Australia",
+                "year": 2026,
+                "notes": "Incubation period: Usually 7 to 10 days (ranges from 4 to 21 days)."
+              }
+
+            ]
+          },
+
+
+          "infectious_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 21,
+              "max": 35,
+              "typical": 21 
+            },
+
+            "estimates": [
+              {
+                "value": 21,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Pertussis",
+                "url": "https://www.cda.gov.sg/professionals/diseases/pertussis/",
+                "doi": "N/A",
+                "country": "Singapore",
+                "year": 2025,
+                "notes": "Infectious for about 3 weeks, from the catarrhal stage (about 1 week) through the paroxysmal cough stage (about 2 weeks) in an untreated patient. If antibiotics are initiated, the period of infectiousness is usually ≤5 days after onset of treatment."
+              },
+
+              {
+                "value": 31.5,
+                "range": [28, 35],
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Factsheet about pertussis",
+                "url": "https://www.ecdc.europa.eu/en/pertussis/facts",
+                "doi": "N/A",
+                "country": "European Union",
+                "year": 2023,
+                "notes": "An individual with pertussis can be infectious for four to five weeks from the onset of the illness."
+              },
+
+              {
+                "value": 21,
+                "range": "N/A",
+                "population": "General",
+                "source_type": "government_report",
+                "title": "Whooping cough",
+                "url": "https://www.nhs.uk/conditions/whooping-cough/",
+                "doi": "N/A",
+                "country": "United Kingdom",
+                "year": 2023,
+                "notes": "If you have whooping cough, you're contagious for up to 3 weeks after the coughing starts."
               }
             ]
+          },
 
-          }
+          "fatality_rate": {
+              "unit": "percentage",
+              "consensus": {
+                "min": ,
+                "max": ,
+                "typical": ,
+                "notes": ""
+              },
+
+              "estimates": [
+                {
+                  "value": 0.67,
+                  "range": "N/A",
+                  "population": "Children <5 years)",
+                  "source_type": "organization_report",
+                  "title": "Whooping Cough (Pertussis)",
+                  "url": "https://www.nfid.org/infectious-diseases/whooping-cough-pertussis/",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2025,
+                  "notes": "Derived from 24.1 million estimated annual cases and 160,700 deaths reported by CDC. This is not a directly reported case fatality rate and should be interpreted cautiously because the deaths are limited to children younger than 5 years."
+                },
+
+                {
+                  "value": 0.8,
+                  "range": "N/A",
+                  "population": "Unvaccinated infants younger than 6 months",
+                  "source_type": "government_report",
+                  "title": "Pertussis (whooping cough)",
+                  "url": "https://nt.gov.au/wellbeing/health-conditions-treatments/pertussis-whooping-cough",
+                  "doi": "N/A",
+                  "country": "Australia",
+                  "year": 2026,
+                  "notes": "Case fatality rate in unvaccinated infants under 6 months is estimated to be 0.8%. Death is rare in people aged 10–70 years."
+                },
+
+                {
+                  
+                }
+              ]
+            }
+
     }
   }
   }
