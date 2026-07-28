@@ -14,7 +14,8 @@
       <nav class="nav">
         <div class="nav-inner">
           <a href="index.html" class="brand">
-            <span class="brand-mark"></span>
+            <img src="brand/epichat-icon.png" alt="" class="brand-mark theme-light-only">
+            <img src="brand/epichat-icon-dark.png" alt="" class="brand-mark theme-dark-only">
             <span>EpiChat</span>
             <span class="brand-meta">v0.3 · prototype</span>
           </a>
@@ -60,7 +61,11 @@
         <div class="wrap">
           <div class="cols">
             <div>
-              <h4>EpiChat</h4>
+              <h4>
+                <img src="brand/epichat-icon.png" alt="" class="footer-mark theme-light-only">
+                <img src="brand/epichat-icon-dark.png" alt="" class="footer-mark theme-dark-only">
+                EpiChat
+              </h4>
               <p style="font-family: var(--serif); color: var(--ink-2); font-size: 0.95rem; line-height: 1.5; max-width: 36ch;">
                 A conversational AI agent for epidemiological simulation. Natural language in. Validated simulation out.
               </p>

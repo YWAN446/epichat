@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import base64
 import datetime
+import functools
 import os
 import uuid
 from pathlib import Path
@@ -29,7 +31,28 @@ from epichat.enricher import enrich_input
 from epichat.language import detect_language, detect_location_correction
 from epichat.parser import get_last_resolved, get_last_location_queried, parse_query
 
-st.set_page_config(page_title="EpiChat", page_icon="🦠", layout="wide")
+# Logo assets. The Streamlit theme is dark, so the dark variants are the ones in use;
+# paths resolve against this file rather than the working directory.
+_ASSETS = Path(__file__).parent / "assets"
+_LOGO = _ASSETS / "epichat-logo-dark.png"
+_ICON = _ASSETS / "epichat-icon-dark.png"
+
+
+@functools.lru_cache(maxsize=8)
+def _data_uri(path: Path) -> str:
+    """Inline an image for the HTML blocks, which can't reach the filesystem."""
+    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+
+
+st.set_page_config(page_title="EpiChat", page_icon=str(_ICON), layout="wide")
+# Streamlit renders the chrome logo at roughly 24px either way, so both slots get the
+# simplified icon; the full mark is illegible at that size.
+st.logo(
+    str(_ICON),
+    size="large",
+    icon_image=str(_ICON),
+    link="https://ywan446.github.io/epichat/",
+)
 
 Path("results").mkdir(exist_ok=True)
 
@@ -392,8 +415,9 @@ def _apply_modification_and_summarize(text: str) -> None:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
+    # The mark already sits directly above this via st.logo — wordmark only here.
     st.markdown(
-        "<h2 style='font-size:2rem;margin:0;padding:4px 0;line-height:1.2'>🦠 EpiChat</h2>"
+        "<h2 style='font-size:2rem;margin:0;padding:4px 0;line-height:1.2'>EpiChat</h2>"
         "<p style='font-size:1rem;color:white;margin:6px 0 0 0;line-height:1.4'>"
         "Ask an epidemiological question. Get a validated simulation.</p>"
         "<p style='font-size:0.75rem;color:rgba(255,255,255,0.5);margin:4px 0 0 0'>v0.3</p>",
@@ -528,8 +552,10 @@ if not messages:
     # ── Empty state: inline input + suggestion pills ──────────────────────────
     import json as _json
     st.markdown(
-        "<div style='text-align:center;padding-top:14vh'>"
-        "<h1 style='font-size:3rem'>🦠 EpiChat</h1>"
+        "<div style='text-align:center;padding-top:7vh'>"
+        f"<img src='{_data_uri(_LOGO)}' alt='EpiChat' "
+        "style='width:132px;height:132px;object-fit:contain;margin-bottom:0.4rem'>"
+        "<h1 style='font-size:3rem;margin:0'>EpiChat</h1>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -562,7 +588,7 @@ if not messages:
 
 # ── Active state: chat thread + fixed input at bottom ────────────────────────
 for msg in messages:
-    avatar = "🦠" if msg["role"] == "assistant" else None
+    avatar = str(_ICON) if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
         if msg.get("plot_path") and Path(msg["plot_path"]).exists():
@@ -570,13 +596,13 @@ for msg in messages:
 
 # Show thinking indicator and process queued input
 if st.session_state.pending_input:
-    with st.chat_message("assistant", avatar="🦠"):
+    with st.chat_message("assistant", avatar=str(_ICON)):
         with st.spinner(_thinking_text()):
             _process_pending()
     st.rerun()
 
 if st.session_state.stage == "running":
-    with st.chat_message("assistant", avatar="🦠"):
+    with st.chat_message("assistant", avatar=str(_ICON)):
         st.markdown("Running simulation…")
     with st.spinner("Running simulation…"):
         _do_run_simulation()

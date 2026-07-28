@@ -334,6 +334,11 @@ epichat/
 │       ├── un_wpp.py        # UN World Population Prospects — demographics
 │       ├── who_gho.py       # WHO Global Health Observatory — disease surveillance
 │       └── wb_data360.py    # World Bank WDI — health system + disease indicators
+├── assets/
+│   ├── logo-source.png      # Master logo artwork (2048px, opaque background)
+│   ├── build_logo_assets.py # Derives every logo variant; also writes docs/brand/
+│   ├── epichat-logo{,-dark}.png   # Full mark, transparent
+│   └── epichat-icon{,-dark}.png   # Simplified mark for small sizes
 ├── templates/
 │   ├── sir.py.j2            # SIR (+ SIS) simulation template
 │   ├── seir.py.j2           # SEIR simulation template
@@ -365,6 +370,27 @@ epichat/
 | Execution failure | 3-attempt error recovery loop with LLM re-parameterization |
 | Timeout | 90-second subprocess limit |
 | API instability | Starsim version pinned in requirements.txt |
+
+---
+
+## Brand
+
+The logo is a speech bubble holding a transmission network — vermilion nodes
+(infectious) resolving into deep green (recovered). `#F13A25` and `#054E33`.
+
+Every variant is derived from `assets/logo-source.png`, so edit the master and
+regenerate rather than hand-editing the outputs:
+
+```bash
+python assets/build_logo_assets.py
+```
+
+This writes the app's assets into `assets/` and the website's into `docs/brand/`
+(GitHub Pages serves `docs/` and has to be self-contained). Two forms exist: the full
+mark for display sizes, and a simplified mark — bubble plus the major nodes only — for
+favicons and avatars, where the full cluster resolves to noise. Each comes in a light
+and a dark variant; the dark one re-inks the bubble outline so it survives a dark
+background.
 
 ---
 
