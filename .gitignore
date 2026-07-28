@@ -12,3 +12,14 @@ dist/
 build/
 .DS_Store
 EpiChat website/
+
+# Scratch output from PDF/CJK export debugging
+streamlit.log
+cid_text.txt
+extracted.txt
+final_test.txt
+rl_extracted.txt
+rl_final.txt
+rl_out.txt
+user_pdf_text.txt
+/test_*.pdf
