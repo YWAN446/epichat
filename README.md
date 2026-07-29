@@ -375,8 +375,8 @@ epichat/
 
 ## Brand
 
-The logo is a speech bubble holding a transmission network — vermilion nodes
-(infectious) resolving into deep green (recovered). `#F13A25` and `#054E33`.
+The logo is a speech bubble containing a cluster of connected nodes, in red
+(`#F13A25`) and green (`#054E33`).
 
 Every variant is derived from `assets/logo-source.png`, so edit the master and
 regenerate rather than hand-editing the outputs:

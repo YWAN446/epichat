@@ -1,20 +1,22 @@
 # Logo rollout — design
 
 **Date:** 2026-07-28
-**Status:** approved for implementation
+**Status:** implemented, with the identity section since removed
+
+> **Correction (2026-07-28).** The `[00 / identity]` section described below shipped and
+> was then removed. Its copy assigned epidemiological meaning to the mark — red nodes as
+> infectious, green as recovered, the cluster as a contact network — that was invented
+> here, not the designer's intent. The mark is used as chrome only; nothing on the site
+> interprets it. The section below is left as a record of what was built and undone.
 
 ## Problem
 
-EpiChat has a new logo mark: a rounded speech bubble containing a clustered node
-network, with vermilion nodes on the left resolving into deep green on the right. Until
-now both surfaces — the GitHub Pages site under `docs/` and the Streamlit app — used the
-🦠 emoji as a stand-in. Neither surface has a favicon, and shared links have no preview
-image.
+EpiChat has a new logo mark: a rounded speech bubble containing a cluster of connected
+nodes in red and green. Until now both surfaces — the GitHub Pages site under `docs/` and
+the Streamlit app — used the 🦠 emoji as a stand-in. Neither surface has a favicon, and
+shared links have no preview image.
 
-Two goals:
-
-1. Adopt the mark everywhere the emoji stood in.
-2. Give the mark a deliberate moment on the website rather than only using it as chrome.
+Goal: adopt the mark everywhere the emoji stood in.
 
 ## Constraints
 
@@ -71,30 +73,17 @@ simplified icon at 26px. The footer's "EpiChat" column heading gets the same mar
 `.theme-dark-only`, toggled by the existing `[data-theme="dark"]` attribute. Light is the
 default so there is no flash before `site.js` runs.
 
-**Hero.** The mark at 68px above the existing kicker row, which currently opens the page
-with no brand presence at all.
+**~~Hero.~~** *(removed)* The mark at 68px above the kicker row. Taken out along with the
+identity section — the nav mark is the site's only logo placement above the fold.
 
-**The highlight — `[00 / identity]`.** A new section between the hero and
-`[01 / context]`. Numbering it `00` slots it into the site's existing index scheme
-without renumbering the eight sections that follow.
+**~~The highlight — `[00 / identity]`.~~** *(removed — see the correction at the top)* A
+section between the hero and `[01 / context]` showing the mark large alongside four
+interpretive readings of it and a palette strip. The readings ascribed meanings to the
+mark that were not the designer's, so the whole section was removed rather than reworded.
 
-Left column: the full mark large, on a panel with a hairline frame and a mono caption.
-Right column: four readings of the mark, numbered in the site's existing `▍ 0n` style.
-
-1. **The bubble** — every session starts as a question someone typed, not a model
-   someone wrote.
-2. **The cluster** — a transmission network; nodes are people, edges are contacts.
-3. **Red into green** — the vermilion nodes are infectious, the deep green recovered.
-   Read left to right, the mark is an outbreak resolving.
-4. **The overflow** — the cluster breaks past the bubble's edge, because the simulation
-   carries further than the question that started it.
-
-Below the readings, a palette strip naming the two brand colours with hex values.
-
-**Colour.** `--brand-green` and `--brand-red` are added as tokens and used only in the
-identity section's palette strip and node markers. The site's burgundy accent is
-unchanged; the logo's hues stay contained rather than becoming a site-wide palette
-change.
+**Colour.** The site's burgundy accent is unchanged and the logo's hues are not adopted
+into the palette. `--brand-green` / `--brand-red` existed only for the identity section's
+markers and were removed with it.
 
 ## App
 
@@ -115,13 +104,18 @@ level `_ASSETS = Path(__file__).parent / "assets"` is used.
 - Redrawing the mark as vector. Worth doing eventually — it would sharpen the favicon
   and shrink the payload — but it needs the original design file.
 - Restyling the site around the logo's green and red.
-- The `.streamlit/config.toml` theme colours. `primaryColor` is still Streamlit red
-  (`#FF4B4B`), which sits close to the logo's vermilion; changing it is a separate call.
+- Interpreting the mark anywhere in copy. See the correction at the top.
+
+`.streamlit/config.toml`'s `primaryColor` was listed as out of scope in the original
+draft and then changed to `#F13A25` on request, so the app's accent now matches the
+mark's red.
 
 ## Verification
 
 - Regenerate assets from a clean checkout; confirm byte-identical output.
 - Load all three pages in a browser at desktop and mobile widths, in both themes;
-  confirm the mark swaps and the identity section reflows to one column.
+  confirm the nav and footer marks swap variant with the theme.
 - Confirm the favicon renders in the tab strip.
 - Launch the app; confirm page icon, sidebar, empty state, and chat avatars.
+- Bump the `?v=` on `styles.css` and `site.js` in all three pages whenever either
+  changes, or the CDN serves a stale pair.
