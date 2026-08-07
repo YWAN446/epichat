@@ -60,9 +60,11 @@ def _load_who(iso3: Optional[str] = None) -> Optional[pd.DataFrame]:
         if not path.exists():
             continue
         try:
-            df = pd.read_csv(path, skiprows=6, header=0,
-                             index_col=0, low_memory=False)
-            # Fix column names (file has a shifted index issue)
+            # Skip the 6 metadata lines + header row and read positionally:
+            # data rows carry a trailing comma (13 fields for 12 columns),
+            # so named/indexed reads mis-align every column by one.
+            df = pd.read_csv(path, skiprows=7, header=None, low_memory=False)
+            df = df.iloc[:, :12]
             df.columns = [
                 'Region Code', 'Region Name', 'Country Code', 'Country Name',
                 'Year', 'Sex', 'Age group code', 'Age Group', 'Number',
@@ -172,19 +174,22 @@ def get_who_age_distribution(iso3: str) -> Optional[pd.DataFrame]:
     Return age-specific death rates from WHO data as a DataFrame.
     Useful for age-stratified severity modeling (Phase 3).
 
+    Uses the per-age 'Death rate per 100 000 population' column (the
+    age-standardized column is only populated for all-age summary rows).
+
     Returns DataFrame with columns:
-        age_group, age_group_code, agestd_rate_per100k, sex
+        age_group_code, age_group, death_rate_per100k, source
     """
     df = _load_who(iso3)
     if df is None:
         return None
 
     result = df[df['Sex'] == 'All'][
-        ['Age group code', 'Age Group', 'ASdr_per100k']
+        ['Age group code', 'Age Group', 'Death_rate_per100k']
     ].copy()
-    result.columns = ['age_group_code', 'age_group', 'agestd_rate_per100k']
+    result.columns = ['age_group_code', 'age_group', 'death_rate_per100k']
     result = result[~result['age_group_code'].str.contains('unknown', case=False, na=True)]
-    result = result.dropna(subset=['agestd_rate_per100k'])
+    result = result.dropna(subset=['death_rate_per100k'])
     result['source'] = 'WHO Mortality Database'
     return result.reset_index(drop=True)
 

@@ -31,6 +31,12 @@ EPIDATA_API_KEY = os.environ.get("EPIDATA_API_KEY", None)  # set in .env
 
 # ── CovidCast signal catalog ──────────────────────────────────
 # Full list: https://cmu-delphi.github.io/delphi-epidata/api/covidcast_signals.html
+#
+# TODO(annie): most of these sources are discontinued (jhu-csse ended 2023-03,
+# fb-survey ended 2022-06, hhs admissions ended 2024), so the default rolling
+# "last 90 days" window in get_covidcast() returns no records today. Either
+# pin per-signal active date ranges here and clamp the query window to them,
+# or replace the defaults with currently-active signals (e.g. nssp/nhsn).
 COVIDCAST_SIGNALS = {
     # Cases & Testing (JHU-CSSE)
     'cases_rate':        ('jhu-csse',       'confirmed_7dav_incidence_prop'),

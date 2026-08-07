@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -53,9 +54,10 @@ def _load_un_df() -> Optional[pd.DataFrame]:
         # Replace UN missing code
         df = df.replace('..', np.nan)
 
-        # Parse dates
+        # Parse dates (column is dd/mm/yyyy, so day comes first)
         df['_ref_date'] = pd.to_datetime(
             df['Reference date (dd/mm/yyyy)'],
+            dayfirst=True,
             errors='coerce'
         )
 
@@ -118,21 +120,20 @@ def _load_un_household(country: str) -> Optional[dict]:
     if pd.isna(mean_size):
         return None
 
-    # Build grouped size distribution directly from UN percentage columns
+    # Build size distribution from UN percentage columns, expanded to the
+    # same 8-element P(size = 1..8+) convention the DHS/IPUMS loaders use
+    # (grouped bin mass split evenly across its constituent sizes).
     dist = None
     pct_cols = ['1 member', '2-3 members', '4-5 members', '6 or more members']
     pcts = [r[c] for c in pct_cols]
 
     # Only proceed if all required values exist
     if not any(pd.isna(p) for p in pcts):
-
-        # convert percent → fraction
-        dist = {
-            "1":   float(pcts[0]) / 100,
-            "2-3": float(pcts[1]) / 100,
-            "4-5": float(pcts[2]) / 100,
-            "6+":  float(pcts[3]) / 100,
-        }
+        f1, f23, f45, f6p = (float(p) / 100 for p in pcts)
+        dist = [f1, f23 / 2, f23 / 2, f45 / 2, f45 / 2, f6p / 3, f6p / 3, f6p / 3]
+        total = sum(dist)
+        if total > 0:
+            dist = [d / total for d in dist]
 
     ref_date    = r.get('Reference date (dd/mm/yyyy)', '')
     data_source = r.get('Data source category', 'UN')
@@ -147,7 +148,8 @@ def _load_un_household(country: str) -> Optional[dict]:
     }
 
 
-ACS_API_KEY = '64679ad824f17b1253a2f87a95899c53e7db4811'
+# Free key from https://api.census.gov/data/key_signup.html — set in .env
+ACS_API_KEY = os.environ.get('CENSUS_ACS_API_KEY', '')
 ACS_API_BASE = 'https://api.census.gov/data/2023/acs/acs5'
 
 # B25010_001E = Average household size of all occupied housing units
@@ -181,8 +183,10 @@ FIPS_TO_STATE = {v: k for k, v in ACS_STATE_FIPS.items()}
 def _fetch_acs_api(geo_for: str, geo_in: Optional[str] = None) -> Optional[list]:
     """
     Call Census ACS 5-Year API.
-    Returns raw JSON rows or None on failure.
+    Returns raw JSON rows or None on failure (or when no API key is set).
     """
+    if not ACS_API_KEY:
+        return None
     params = {
         'get': f'NAME,{ACS_HH_VAR}',
         'for': geo_for,
@@ -579,15 +583,17 @@ def _mean_to_dist(mean_size: float) -> list:
     """
     Approximate size distribution from mean using negative binomial (r=2).
     Only used when UN percentage columns are missing for a country.
+
+    Returns P(size = 1..8+): a household has at least one member, so we model
+    size = 1 + NB(mean = mean_size - 1) and map pmf(0..7) onto sizes 1..8+.
     """
     try:
         from scipy.stats import nbinom
         r    = 2.0
-        p    = r / (r + mean_size)
-        dist = [float(nbinom.pmf(i, r, p)) for i in range(8)]
-        total = sum(dist)
-        dist  = [d / total for d in dist]
-        dist[7] = max(0.0, 1.0 - sum(dist[:7]))
+        extra = max(0.0, mean_size - 1.0)   # members beyond the first
+        p    = r / (r + extra) if extra > 0 else 1.0
+        dist = [float(nbinom.pmf(i, r, p)) for i in range(7)]
+        dist.append(max(0.0, 1.0 - sum(dist)))  # open-ended 8+ bin takes the tail
         return dist
     except ImportError:
         mid  = max(0, round(mean_size) - 1)

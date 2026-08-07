@@ -135,16 +135,22 @@ def lookup(disease_name: str) -> dict | None:
 def detect_disease(user_input: str) -> str | None:
     """Return canonical disease name if any disease name/alias appears in the query.
 
-    Uses word-boundary matching to avoid false positives (e.g. "flu" in "fluid").
+    Uses word-boundary matching to avoid false positives (e.g. "flu" in
+    "fluid"), and tries longer terms first so a multi-word alias wins over a
+    name embedded inside it (e.g. "german measles" detects rubella, not
+    measles).
     """
     db = load_db()
     text = user_input.lower()
+    terms: list[tuple[str, str]] = []
     for canonical, entry in db["diseases"].items():
-        if re.search(r"\b" + re.escape(canonical) + r"\b", text):
-            return canonical
+        terms.append((canonical, canonical))
         for alias in entry.get("aliases", []):
-            if re.search(r"\b" + re.escape(alias.lower()) + r"\b", text):
-                return canonical
+            terms.append((alias.lower(), canonical))
+    terms.sort(key=lambda t: len(t[0]), reverse=True)
+    for term, canonical in terms:
+        if re.search(r"\b" + re.escape(term) + r"\b", text):
+            return canonical
     return None
 
 

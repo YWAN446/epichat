@@ -1,12 +1,14 @@
+import logging
 import requests ##allows you to send HTTP requests to web servers
-import pandas ##dataframe
+import pandas as pd ##dataframe
 import numpy as np ##numerical/mathematical
 from pathlib import Path
-from datatime import datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Optional #used to indicate that a variable, function argument, or return value can either be a specific type or None
 
+logger = logging.getLogger(__name__)
+
 CACHE_DIR = Path(__file__).parent.parent / 'data' / 'calibration_cache'
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 OWID_URL = "https://catalog.ourworldindata.org/garden/covid/latest/compact/compact.csv"
 
@@ -64,7 +66,15 @@ def fetch_owid(
         end_date: Optional[str] = None,
         use_cache: bool = True,
 ) -> Optional[pd.DataFrame]:
-    
+    """Fetch an OWID COVID time series for calibration.
+
+    WORK IN PROGRESS: only the metric validation exists so far — the OWID
+    download/cache/filter logic has not been written yet, so this always
+    returns None for valid metrics.
+    """
     if metric not in OWID_METRICS:
-        print(f"  ⚠ Unknown metric '{metric}'. Available: {OWID_METRICS}")
+        logger.warning("Unknown metric '%s'. Available: %s", metric, OWID_METRICS)
         return None
+
+    logger.warning("fetch_owid is not implemented yet (work in progress); returning None")
+    return None
