@@ -179,6 +179,37 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 
 ---
 
+## Data Sources
+
+EpiChat grounds simulations in real data from two layers. Which sources a
+query uses is shown in the chat (the understanding card lists the fetch plan,
+each completed fetch gets its own 🔧 line, and the post-run results include a
+"Data sources used" block that also appears in PDF/DOCX exports).
+
+### Live API fetches (planned per query, run in parallel)
+
+| Source | API | Parameters fetched | Used for |
+|--------|-----|--------------------|----------|
+| **UN World Population Prospects 2024** | UN Population Data Portal (`UN_API_KEY`) | Crude birth rate (55), crude death rate (59), total population (49), age shares 0–17/18–64/65+ (71) | Vital dynamics, result scaling to real population, age-structured contact network |
+| **World Bank Data360 (WDI)** | `data360api.worldbank.org` (no key) | Hospital beds / physicians / nurses per 1,000; UHC coverage index; TB incidence; HIV, hepatitis-B, diabetes prevalence; malaria incidence; birth/death rate, population, age shares (fallback) | Treatment-intervention capacity, initial prevalence for those diseases, demographic fallback |
+| **WHO Global Health Observatory** | GHO OData API (no key) | Vaccination coverage (MCV1/2, DTP3, polio, BCG, HepB3, Hib3, PCV3, rotavirus, HPV, MenA, yellow fever, PAB); reported case counts (measles, pertussis, polio, rubella, mumps, diphtheria, tetanus, yellow fever, …) | Auto-added vaccine interventions at reported coverage; surveillance-based initial prevalence |
+
+### Bundled / local data (no API call)
+
+| Source | Location | Provides |
+|--------|----------|----------|
+| **Disease parameter database** | `epichat/data/disease_parameters.json` (16 diseases, citation-backed) | R₀ used for beta calibration; literature ranges (infectious/incubation period, fatality, contacts, immunity, asymptomatic fraction) behind parameter warnings |
+| **UN WPP 2024 indicators CSV** | `epichat/data/demographics/` | Offline birth/death-rate fill for any country at generation time |
+| **WHO Mortality Database CSV** | `epichat/data/demographics/` | Age-specific death rates (supplement) |
+| **Contact matrices** (Prem 2021 / POLYMOD / SOCRATES) | `epichat/data/` (add CSVs to activate) | Country-specific mean daily contacts |
+
+Additional loaders included for future phases: CMU Delphi CovidCast/FluView
+surveillance (`data_loaders/epidata.py`), UN/DHS/Census household size
+distributions (`data_loaders/households.py`), and OWID calibration data
+(`data_loaders/calibration.py`).
+
+---
+
 ## Parameters Reference
 
 ### Core Disease Parameters

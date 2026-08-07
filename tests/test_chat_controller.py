@@ -498,3 +498,39 @@ class TestToolLines:
         from epichat.chat_controller import format_tool_failure
         line = format_tool_failure(_dq(location_code="BRA"), "timed out")
         assert line.startswith("⚠") and "timed out" in line
+
+
+class TestFormatDataSources:
+    def test_lists_each_parameter_with_value_and_citation(self):
+        from epichat.chat_controller import format_data_sources
+        fields = [
+            _rf(field="total_population", value=213_562_666,
+                citation="UN WPP 2024, Brazil (BRA), 2024"),
+            _rf(field="treatment_capacity", value=2.52,
+                citation="WB WDI 2021, hospital beds/1,000"),
+        ]
+        block = format_data_sources(fields)
+        assert "Data sources used" in block
+        assert "total population" in block
+        assert "213,562,666" in block
+        assert "UN WPP 2024, Brazil (BRA), 2024" in block
+        assert "treatment capacity" in block
+        assert "WB WDI 2021" in block
+
+    def test_includes_offline_demographics_source(self):
+        from epichat.chat_controller import format_data_sources
+        from epichat.schema import SimParams
+        params = SimParams(beta=1.0, demographics_source="UN WPP 2024 — KEN (2022)")
+        block = format_data_sources([], params=params)
+        assert "UN WPP 2024 — KEN (2022)" in block
+
+    def test_includes_disease_db_r0_source(self):
+        from epichat.chat_controller import format_data_sources
+        block = format_data_sources([], disease_name="measles")
+        assert block is not None
+        assert "measles" in block
+        assert "http" in block  # the R0 literature source URL
+
+    def test_returns_none_when_nothing_to_attribute(self):
+        from epichat.chat_controller import format_data_sources
+        assert format_data_sources([]) is None

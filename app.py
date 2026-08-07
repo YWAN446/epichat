@@ -21,6 +21,7 @@ from epichat.chat_controller import (
     build_summary,
     detect_new_scenario,
     detect_run_intent,
+    format_data_sources,
     format_tool_failure,
     format_tool_result,
     format_understanding_card,
@@ -394,6 +395,11 @@ def _do_run_simulation() -> None:
     result_text = stats_text + "\n\n" + summary
     if findings:
         result_text += "\n\n" + findings_label + "\n" + "\n".join(f"· {f}" for f in findings)
+    sources_block = format_data_sources(
+        s.data_sources, params=s.params, disease_name=_detected_disease_name(),
+    )
+    if sources_block:
+        result_text += "\n\n---\n" + sources_block
     result_text += "\n\n---\n" + footer
 
     _add_msg("assistant", result_text, plot_path=exec_result["plot_path"])

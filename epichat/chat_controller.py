@@ -138,6 +138,31 @@ def format_tool_failure(query, reason: str) -> str:
     return f"⚠ **{describe_query(query)}** — {reason}; continuing without it"
 
 
+def format_data_sources(data_sources: list, params=None, disease_name: str | None = None) -> str | None:
+    """Markdown block attributing each fetched parameter to its data source.
+
+    Included in the post-run results message (and therefore in PDF/DOCX
+    exports, which render the conversation). Returns None when there is
+    nothing to attribute.
+    """
+    lines = []
+    for rf in data_sources:
+        lines.append(
+            f"- **{rf.field.replace('_', ' ')}** = {_fmt_value(rf.value)} — {rf.citation}"
+        )
+    if params is not None and getattr(params, "demographics_source", None):
+        lines.append(f"- **birth/death rates** — {params.demographics_source}")
+    if disease_name:
+        from .disease_db import lookup
+        entry = lookup(disease_name) or {}
+        r0 = entry.get("r0") or {}
+        if r0.get("source"):
+            lines.append(f"- **R₀ calibration ({disease_name})** — {r0['source']}")
+    if not lines:
+        return None
+    return "**Data sources used:**\n" + "\n".join(lines)
+
+
 def detect_run_intent(message: str) -> bool:
     from .language import detect_run_intent_llm
     return detect_run_intent_llm(message)
