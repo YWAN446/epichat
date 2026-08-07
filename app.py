@@ -53,6 +53,11 @@ st.logo(
     icon_image=str(_ICON),
     link="https://ywan446.github.io/epichat/",
 )
+# st.logo caps out around 32px even at size="large"; scale the mark up past the cap.
+st.markdown(
+    "<style>img[data-testid='stLogo'], .stLogo { height: 3rem; width: auto; }</style>",
+    unsafe_allow_html=True,
+)
 
 Path("results").mkdir(exist_ok=True)
 
