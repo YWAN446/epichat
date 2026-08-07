@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 from epichat.resolver import DataQuery, ResolvedField
 
@@ -71,11 +72,11 @@ class WorldBankData360Adapter:
     source_name = "wb_data360"
 
     def fetch(self, query: DataQuery) -> list[ResolvedField]:
-        # Fetch each requested indicator, keep only valid rows
+        # Fetch the requested indicators concurrently, keep only valid rows
         raw: dict[str, tuple[float, str]] = {}   # code → (value, year)
-        for code in query.indicator_codes:
-            if code not in INDICATOR_MAP:
-                continue
+        codes = [c for c in query.indicator_codes if c in INDICATOR_MAP]
+
+        def _fetch_one(code: str) -> tuple[str, tuple[float, str] | None]:
             url = (
                 f"{_BASE_URL}/data360/data"
                 f"?DATABASE_ID={query.database_id}"
@@ -85,19 +86,24 @@ class WorldBankData360Adapter:
                 f"&timePeriodTo={query.end_year}"
             )
             try:
-                text = _fetch_text(url)
-                data = json.loads(text)
+                data = json.loads(_fetch_text(url))
             except Exception as exc:
                 _logger.warning("WorldBankData360Adapter fetch failed for %s: %s", code, exc)
-                continue
+                return code, None
             rows = [
                 r for r in data.get("value", [])
                 if r.get("OBS_VALUE") is not None and r.get("OBS_VALUE") != "null"
             ]
             if not rows:
-                continue
+                return code, None
             best = max(rows, key=lambda r: r.get("TIME_PERIOD", "") or "")
-            raw[code] = (float(best["OBS_VALUE"]), best.get("TIME_PERIOD", "unknown"))
+            return code, (float(best["OBS_VALUE"]), best.get("TIME_PERIOD", "unknown"))
+
+        if codes:
+            with ThreadPoolExecutor(max_workers=min(8, len(codes))) as pool:
+                for code, value in pool.map(_fetch_one, codes):
+                    if value is not None:
+                        raw[code] = value
 
         if not raw:
             return []

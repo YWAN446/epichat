@@ -308,3 +308,29 @@ def test_fetch_uhc_is_single_candidate():
     assert uhc is not None
     assert uhc.value == 56.0
     assert uhc.alternatives == []
+
+
+def test_fetch_attempts_every_indicator_even_with_overlapping_calls():
+    """Pins behavior for the concurrent implementation: every indicator URL is
+    fetched (thread-safely) and results are identical to the serial build."""
+    import threading
+
+    adapter = _make_adapter()
+    seen: list[str] = []
+    lock = threading.Lock()
+    inner = _mock_fetch({"SH_MED_BEDS_ZS": _BEDS_RESPONSE})
+
+    def recording_fetch(url):
+        with lock:
+            seen.append(url)
+        return inner(url)
+
+    query = _make_query(
+        indicator_codes=["WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS"],
+    )
+    with patch("epichat.adapters.wb_data360._fetch_text",
+               side_effect=recording_fetch):
+        results = adapter.fetch(query)
+    assert len(seen) == 2
+    beds = next((r for r in results if r.field == "treatment_capacity"), None)
+    assert beds is not None and beds.value == 2.3
