@@ -500,6 +500,27 @@ class TestToolLines:
         assert line.startswith("⚠") and "timed out" in line
 
 
+class TestFormatAgentToolLine:
+    def test_known_tool_gets_friendly_label(self):
+        from epichat.chat_controller import format_agent_tool_line
+        line = format_agent_tool_line("fetch_demographics", {"country_iso3": "BRA"})
+        assert "UN WPP" in line and "BRA" in line
+
+    def test_error_prefix(self):
+        from epichat.chat_controller import format_agent_tool_line
+        line = format_agent_tool_line("run_simulation", {}, is_error=True)
+        assert line.startswith("⚠")
+
+    def test_long_payload_truncated(self):
+        from epichat.chat_controller import format_agent_tool_line
+        line = format_agent_tool_line("configure_simulation", {"x": "y" * 500})
+        assert len(line) < 220 and "…" in line
+
+    def test_unknown_tool_falls_back(self):
+        from epichat.chat_controller import format_agent_tool_line
+        assert "mystery_tool" in format_agent_tool_line("mystery_tool", {})
+
+
 class TestFormatDataSources:
     def test_lists_each_parameter_with_value_and_citation(self):
         from epichat.chat_controller import format_data_sources

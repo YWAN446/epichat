@@ -141,6 +141,29 @@ def format_tool_failure(query, reason: str) -> str:
     return f"⚠ **{describe_query(query)}** — {reason}; continuing without it"
 
 
+_AGENT_TOOL_LABELS: dict[str, str] = {
+    "configure_simulation": "⚙️ Configured simulation",
+    "lookup_disease": "📖 Disease database",
+    "fetch_demographics": "🔧 UN WPP demographics",
+    "fetch_health_system": "🔧 World Bank health system",
+    "fetch_vaccination_coverage": "🔧 WHO vaccination coverage",
+    "run_simulation": "▶️ Simulation",
+}
+
+
+def format_agent_tool_line(name: str, payload: dict, is_error: bool = False) -> str:
+    """Persistent chat line for one agent tool call."""
+    label = _AGENT_TOOL_LABELS.get(name, f"🔧 {name}")
+    if isinstance(payload, dict) and payload:
+        text = "; ".join(f"{k}: {_fmt_value(v)}" for k, v in list(payload.items())[:4])
+    else:
+        text = ""
+    if len(text) > 160:
+        text = text[:157] + "…"
+    prefix = "⚠ " if is_error else ""
+    return f"{prefix}**{label}** — {text}" if text else f"{prefix}**{label}**"
+
+
 def format_data_sources(data_sources: list, params=None, disease_name: str | None = None) -> str | None:
     """Markdown block attributing each fetched parameter to its data source.
 

@@ -17,10 +17,12 @@ load_dotenv()
 
 DEV_MODE = os.environ.get("EPICHAT_DEV_MODE", "false").lower() == "true"
 
+from epichat.agent import EpiChatAgent
 from epichat.chat_controller import (
     build_summary,
     detect_new_scenario,
     detect_run_intent,
+    format_agent_tool_line,
     format_data_sources,
     format_tool_failure,
     format_tool_result,
@@ -85,11 +87,15 @@ if "chat" not in st.session_state:
     st.session_state.chat = EpiChat(output_dir="results")
 
 # ── Session state defaults ────────────────────────────────────────────────────
+# Agent chat flow (tool-calling agent) vs the staged pipeline fallback
+_USE_AGENT = os.environ.get("EPICHAT_AGENT", "1") != "0"
+
 _CONV_DEFAULTS: dict = {
     "active_conv_id": None,
     "stage": "greeting",
     "context": "",
     "params": None,
+    "agent": None,
     "parse_clarification": None,
     "pending_intent": None,
     "fetch_cache": {},
@@ -429,11 +435,52 @@ def _thinking_text() -> str:
     return "Thinking…"
 
 
+def _agent_turn(text: str) -> None:
+    """One turn of the tool-calling agent flow (EPICHAT_AGENT=1)."""
+    s = st.session_state
+    if s.get("agent") is None:
+        s.agent = EpiChatAgent(executor=s.chat)
+
+    with st.status("Working…", expanded=True) as status:
+        def on_event(kind: str, payload: dict) -> None:
+            if kind == "text":
+                _add_msg("assistant", payload["text"])
+            elif kind == "tool_use":
+                line = format_agent_tool_line(payload["name"], payload.get("input") or {})
+                status.write(line)
+                _add_msg("assistant", line)
+            elif kind == "tool_result":
+                content = payload.get("content")
+                text_c = content if isinstance(content, str) else ""
+                if payload.get("is_error") or text_c.startswith(
+                        ("CONFIG ERROR", "FETCH ERROR", "SIMULATION ERROR")):
+                    _add_msg("assistant", f"⚠ {text_c[:200] or 'A tool call failed.'}")
+            elif kind == "plot":
+                block = format_data_sources(
+                    payload["sources"], params=s.agent.state.params,
+                    disease_name=s.agent.state.disease,
+                )
+                _add_msg("assistant", block or "Simulation complete.",
+                         plot_path=payload["path"])
+                s.plot_path = payload["path"]
+
+        s.agent.handle(text, on_event)
+        status.update(label="Done", state="complete", expanded=False)
+
+    # Mirror agent state so exports and summaries keep working
+    s.params = s.agent.state.params
+    s.data_sources = list(s.agent.state.data_sources)
+
+
 def _process_pending() -> None:
     """Execute the queued user input. Called from the render loop under a spinner."""
     s = st.session_state
     text = s.pending_input
     s.pending_input = None
+
+    if _USE_AGENT:
+        _agent_turn(text)
+        return
 
     # One-time language detection per conversation (skipped for English)
     if s.user_language is None:

@@ -109,7 +109,18 @@ streamlit run app.py
 
 # 6. Streamlit web app — dev mode (shows OutbreakContext extraction card)
 EPICHAT_DEV_MODE=true streamlit run app.py
+
+# 7. Chat engine selection — the tool-calling agent (claude-opus-5) is the
+#    default; set EPICHAT_AGENT=0 to fall back to the staged pipeline
+EPICHAT_AGENT=0 streamlit run app.py
 ```
+
+The default chat flow is a Claude tool-calling agent that owns the whole
+workflow — configure → confirm → fetch data → parameterize → confirm → run →
+report — with every tool call shown in the chat and all epidemiological
+values produced by deterministic tools (never by the language model). It
+responds in the user's language. `EPICHAT_AGENT=0` restores the previous
+staged pipeline; the CLI always uses the classic pipeline.
 
 ---
 
