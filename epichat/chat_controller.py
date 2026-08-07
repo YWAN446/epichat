@@ -54,6 +54,87 @@ def _abbrev(citation: str) -> str:
     return ""
 
 
+_QUERY_SOURCES: dict[str, str] = {
+    "un_wpp": "UN WPP (population & age structure)",
+    "wb_data360": "World Bank WDI (health & demographic indicators)",
+    "who_gho": "WHO GHO (vaccination coverage)",
+}
+
+
+def describe_query(query) -> str:
+    """Human-readable name for a DataQuery: source + target location."""
+    label = _QUERY_SOURCES.get(query.source, query.source)
+    if query.location_code:
+        where = query.location_code
+    elif getattr(query, "location_id", 0):
+        where = f"location #{query.location_id}"
+    else:
+        where = "global"
+    return f"{label} — {where}"
+
+
+def _fmt_value(v) -> str:
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, int):
+        return f"{v:,}"
+    if isinstance(v, float):
+        return f"{v:,.4g}"
+    if isinstance(v, dict):
+        return ", ".join(f"{k}: {vv}" for k, vv in list(v.items())[:3])
+    return str(v)
+
+
+def format_understanding_card(
+    params,
+    queries: list,
+    disease_name: str | None = None,
+    lang: str = "English",
+) -> str:
+    """The Stage-1 'here is what I understood' message with the fetch plan."""
+    lines = ["**Here's what I understood:**", ""]
+    if disease_name:
+        lines.append(f"- **Disease:** {disease_name}")
+    lines.append(f"- **Model:** {params.disease_type.upper()}")
+    location = next((q.location_code for q in queries if q.location_code), None)
+    if location:
+        lines.append(f"- **Location:** {location}")
+    lines.append(f"- **Population (agents):** {params.n_agents:,}")
+    lines.append(f"- **Duration:** {params.sim_dur_years:g} year(s)")
+    if params.interventions:
+        kinds = ", ".join(i.type for i in params.interventions)
+        lines.append(f"- **Interventions:** {kinds}")
+    if queries:
+        lines.append("")
+        lines.append("**I plan to fetch:**")
+        for q in queries:
+            lines.append(f"- {describe_query(q)}")
+    lines.append("")
+    lines.append("Anything to change, or shall I fetch the data?")
+    card = "\n".join(lines)
+    if lang != "English":
+        from .language import translate
+        card = translate(card, lang)
+    return card
+
+
+def format_tool_result(query, fields: list) -> str:
+    """Persistent chat line for one completed data fetch."""
+    label = describe_query(query)
+    if not fields:
+        return f"⚠ **{label}** — no data returned"
+    parts = [
+        f"{f.field.replace('_', ' ')}: {_fmt_value(f.value)}" for f in fields[:4]
+    ]
+    more = f" (+{len(fields) - 4} more)" if len(fields) > 4 else ""
+    cite = _abbrev(fields[0].citation)
+    return f"🔧 **{label}** — " + "; ".join(parts) + more + f"  [{cite}]"
+
+
+def format_tool_failure(query, reason: str) -> str:
+    return f"⚠ **{describe_query(query)}** — {reason}; continuing without it"
+
+
 def detect_run_intent(message: str) -> bool:
     from .language import detect_run_intent_llm
     return detect_run_intent_llm(message)

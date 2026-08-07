@@ -428,3 +428,73 @@ def test_update_collected_prefill_enables_interventions_gate():
     assert result["location"] is True
     assert result["population"] is True
     assert result["interventions"] is True
+
+
+# ── Staged-pipeline formatting ────────────────────────────────────────────────
+
+def _dq(**kw):
+    from epichat.resolver import DataQuery
+    return DataQuery(**{"source": "wb_data360", **kw})
+
+
+def _rf(field="total_population", value=213_600_000, citation="UN WPP 2024"):
+    from epichat.resolver import ResolvedField
+    return ResolvedField(field=field, value=value, citation=citation)
+
+
+class TestDescribeQuery:
+    def test_known_sources_get_friendly_names(self):
+        from epichat.chat_controller import describe_query
+        assert "World Bank" in describe_query(_dq(location_code="BRA"))
+        assert "UN WPP" in describe_query(_dq(source="un_wpp", location_id=76))
+        assert "WHO" in describe_query(_dq(source="who_gho", location_code="BRA"))
+
+    def test_includes_target_location(self):
+        from epichat.chat_controller import describe_query
+        assert "BRA" in describe_query(_dq(location_code="BRA"))
+
+    def test_unknown_source_falls_back_to_raw_name(self):
+        from epichat.chat_controller import describe_query
+        assert "mystery" in describe_query(_dq(source="mystery"))
+
+
+class TestUnderstandingCard:
+    def test_card_lists_settings_and_fetch_plan(self):
+        from epichat.chat_controller import format_understanding_card
+        from epichat.schema import SimParams
+        params = SimParams(beta=1.0, disease_type="seir", n_agents=100_000, dur_exp=5.0, sim_dur_years=1.0)
+        card = format_understanding_card(
+            params, [_dq(location_code="BRA")], disease_name="dengue",
+        )
+        assert "dengue" in card.lower()
+        assert "SEIR" in card
+        assert "100,000" in card
+        assert "World Bank" in card          # fetch plan present
+        assert "fetch the data" in card      # confirmation ask present
+
+    def test_card_without_queries_omits_fetch_plan(self):
+        from epichat.chat_controller import format_understanding_card
+        from epichat.schema import SimParams
+        card = format_understanding_card(SimParams(beta=1.0), [])
+        assert "plan to fetch" not in card
+
+
+class TestToolLines:
+    def test_result_line_has_source_values_citation(self):
+        from epichat.chat_controller import format_tool_result
+        line = format_tool_result(
+            _dq(source="un_wpp", location_id=76), [_rf()],
+        )
+        assert line.startswith("🔧")
+        assert "UN WPP" in line
+        assert "213,600,000" in line
+
+    def test_empty_fields_marked_as_no_data(self):
+        from epichat.chat_controller import format_tool_result
+        line = format_tool_result(_dq(location_code="BRA"), [])
+        assert line.startswith("⚠")
+
+    def test_failure_line(self):
+        from epichat.chat_controller import format_tool_failure
+        line = format_tool_failure(_dq(location_code="BRA"), "timed out")
+        assert line.startswith("⚠") and "timed out" in line
