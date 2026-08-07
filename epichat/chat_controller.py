@@ -109,8 +109,11 @@ def format_understanding_card(
         lines.append("**I plan to fetch:**")
         for q in queries:
             lines.append(f"- {describe_query(q)}")
+        ask = "Anything to change, or shall I fetch the data?"
+    else:
+        ask = "Anything to change, or shall I set it up?"
     lines.append("")
-    lines.append("Anything to change, or shall I fetch the data?")
+    lines.append(ask)
     card = "\n".join(lines)
     if lang != "English":
         from .language import translate
