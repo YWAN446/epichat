@@ -682,3 +682,28 @@ def test_parse_query_with_all_null_context_not_injected():
 
     user_content = captured["messages"][0]["content"]
     assert "Outbreak context" not in user_content
+
+
+# ── Clarification handling ────────────────────────────────────────────────────
+
+def test_llm_call_1_clarification_raises_typed_exception():
+    import pytest
+    from epichat.parser import ClarificationNeeded
+
+    client = _mock_llm(json.dumps(
+        {"clarification_needed": "Which population size should I use?"}
+    ))
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        with pytest.raises(ClarificationNeeded) as exc_info:
+            _llm_call_1("model something vague")
+    assert exc_info.value.question == "Which population size should I use?"
+
+
+def test_clarification_needed_is_a_value_error():
+    """epichat.py and older callers catch ValueError — must stay compatible."""
+    from epichat.parser import ClarificationNeeded
+
+    exc = ClarificationNeeded("Which disease?")
+    assert isinstance(exc, ValueError)
+    assert exc.question == "Which disease?"
+    assert "Which disease?" in str(exc)

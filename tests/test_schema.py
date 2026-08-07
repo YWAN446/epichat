@@ -46,3 +46,22 @@ def test_approx_r0_age_structured_partial_age_pcts_uses_uniform():
     partial = SimParams(beta=100.0, network_type="age_structured", age_pct_under18=40.0)
     uniform = SimParams(beta=100.0, network_type="age_structured")
     assert partial.approx_r0() == pytest.approx(uniform.approx_r0(), rel=1e-9)
+
+
+# ── country normalization ─────────────────────────────────────────────────────
+
+def test_country_iso3_is_uppercased():
+    assert SimParams(beta=1.0, country="ken").country == "KEN"
+    assert SimParams(beta=1.0, country=" BRA ").country == "BRA"
+
+
+def test_country_full_name_is_dropped_not_fatal():
+    """The refinement LLM sometimes emits full names ('Brazil'); that must not
+    invalidate the whole parameter set — the parser re-fills ISO3 later."""
+    assert SimParams(beta=1.0, country="Brazil").country is None
+    assert SimParams(beta=1.0, country="United States").country is None
+    assert SimParams(beta=1.0, country="B1A").country is None
+
+
+def test_country_none_stays_none():
+    assert SimParams(beta=1.0).country is None

@@ -19,6 +19,19 @@ _REFINEMENT_PROMPT_PATH = Path(__file__).parent / "prompts" / "refinement.txt"
 _MODEL = "claude-sonnet-4-6"
 
 
+class ClarificationNeeded(ValueError):
+    """The LLM understood the query but needs an answer from the user first.
+
+    Subclasses ValueError so existing `except ValueError` callers keep working;
+    UIs should catch this first and show `question` verbatim instead of a
+    generic parse-failure message.
+    """
+
+    def __init__(self, question: str) -> None:
+        super().__init__(f"Query needs clarification: {question}")
+        self.question = question
+
+
 @dataclass
 class IntentResult:
     preliminary_params: SimParams
@@ -96,7 +109,7 @@ def _llm_call_1(user_input: str, context: OutbreakContext | None = None) -> Inte
     data = _parse_json(raw)
 
     if "clarification_needed" in data:
-        raise ValueError(f"Query needs clarification: {data['clarification_needed']}")
+        raise ClarificationNeeded(str(data["clarification_needed"]))
 
     if "preliminary_params" in data:
         prelim = data["preliminary_params"]

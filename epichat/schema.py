@@ -87,11 +87,17 @@ class SimParams(BaseModel):
     @field_validator("country")
     @classmethod
     def normalize_country(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            v = v.strip().upper()
-            if len(v) != 3:
-                raise ValueError(f"country must be an ISO3 code (3 letters), got: '{v}'")
-        return v
+        """Normalize to an upper-case ISO3 code; drop anything else.
+
+        The refinement LLM sometimes emits full country names ("Brazil") when
+        reconstructing params. country is auxiliary — the parser re-fills the
+        correct ISO3 from resolver queries — so dropping an unusable value is
+        safer than failing the entire parameter set.
+        """
+        if v is None:
+            return None
+        v = v.strip().upper()
+        return v if len(v) == 3 and v.isalpha() else None
 
     def approx_r0(self) -> float:
         asymp_factor = 1.0

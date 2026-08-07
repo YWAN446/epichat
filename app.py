@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import datetime
 import functools
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -29,7 +30,14 @@ from epichat.modifier import apply_modification, generate_sim_description
 from epichat.narrator import narrate
 from epichat.enricher import enrich_input
 from epichat.language import detect_language, detect_location_correction
-from epichat.parser import get_last_resolved, get_last_location_queried, parse_query
+from epichat.parser import (
+    ClarificationNeeded,
+    get_last_resolved,
+    get_last_location_queried,
+    parse_query,
+)
+
+_logger = logging.getLogger(__name__)
 
 # Logo assets. The Streamlit theme is dark, so the dark variants are the ones in use;
 # paths resolve against this file rather than the working directory.
@@ -75,6 +83,7 @@ _CONV_DEFAULTS: dict = {
     "stage": "greeting",
     "context": "",
     "params": None,
+    "parse_clarification": None,
     "data_sources": [],
     "plot_path": None,
     "collected": {
@@ -185,14 +194,21 @@ def _build_summary_with_description() -> str:
 
 
 def _do_parse() -> None:
-    try:
-        ctx = st.session_state.get("outbreak_context")
-        st.session_state.params = parse_query(st.session_state.context, context=ctx)
-        st.session_state.data_sources = get_last_resolved()
-        if get_last_location_queried():
-            st.session_state._location_recognized = True
-    except Exception:
-        pass
+    st.session_state.parse_clarification = None
+    for attempt in (1, 2):
+        try:
+            ctx = st.session_state.get("outbreak_context")
+            st.session_state.params = parse_query(st.session_state.context, context=ctx)
+            st.session_state.data_sources = get_last_resolved()
+            if get_last_location_queried():
+                st.session_state._location_recognized = True
+            return
+        except ClarificationNeeded as e:
+            # The LLM understood but needs an answer — surface its question.
+            st.session_state.parse_clarification = e.question
+            return
+        except Exception:
+            _logger.exception("parse_query failed (attempt %d/2)", attempt)
 
 
 def _do_enrich(text: str) -> None:
@@ -326,8 +342,9 @@ def _process_pending() -> None:
         if s.params is None:
             _add_msg(
                 "assistant",
-                "I had trouble understanding that. Could you rephrase? "
-                "For example: 'Simulate HIV in Kenya'.",
+                s.parse_clarification
+                or "I had trouble understanding that. Could you rephrase? "
+                   "For example: 'Simulate HIV in Kenya'.",
             )
             return
         question = next_question(s.collected, s.params, s.data_sources, lang=lang)
