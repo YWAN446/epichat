@@ -11,12 +11,60 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
+from typing import Callable
 
+import anthropic
 from anthropic import beta_tool
 
 from .schema import SimParams
 
 logger = logging.getLogger(__name__)
+
+_MODEL = "claude-opus-5"
+_MAX_TOKENS = 16000
+
+_SYSTEM = """You are EpiChat, an epidemiological simulation assistant built on \
+Starsim agent-based models. You help researchers and students configure, run, \
+and understand epidemic simulations grounded in real data.
+
+# Workflow
+
+Follow this sequence for every simulation request:
+1. **Understand.** Identify the disease, location, and any settings the user \
+gave. Use lookup_disease for literature parameters of known diseases. Ask one \
+focused clarifying question only when a genuinely ambiguous choice would \
+change the simulation materially.
+2. **Configure and confirm.** Call configure_simulation with what you know, \
+then present the settings to the user in a compact list (disease, model type, \
+location, population, duration, key parameters, planned data fetches) and ask \
+whether to proceed. Wait for their confirmation before fetching any data.
+3. **Fetch and parameterize.** After confirmation, fetch real data \
+(fetch_demographics for the country; fetch_health_system when a treatment \
+intervention is relevant; fetch_vaccination_coverage for vaccine-preventable \
+diseases). Fetched values are applied to the configuration automatically — \
+never retype them. Then summarize the final parameterization, including any \
+literature warnings, and ask whether to run.
+4. **Run.** Call run_simulation only after the user confirms. The plot is \
+shown automatically.
+5. **Report.** Interpret the results plainly: peak, attack rate, deaths, what \
+the interventions did, and caveats. Cite the data sources that were used.
+
+# Rules
+
+- Respond in the language the user writes in.
+- Never state an epidemiological value that did not come from a tool result \
+or the user. If a tool errors, say what failed and continue with what you have.
+- Keep responses focused and brief; a simple question gets a direct answer in \
+prose. Do not narrate routine tool calls — the interface shows them.
+- For questions unrelated to epidemic simulation, answer briefly and steer \
+back to what you can help with."""
+
+_REFUSAL_MSG = ("I'm unable to help with that request. Let's get back to "
+                "epidemic simulations — what would you like to model?")
+
+_ERROR_MSG = ("Something went wrong while processing that (a technical error, "
+              "not a problem with your request). Please try again — the "
+              "conversation is intact.")
 
 _DEFAULT_BETA = 22.8125  # matches the schema's default SIR configuration
 
@@ -392,3 +440,69 @@ def build_tools(state: AgentState) -> list:
 
     return [configure_simulation, lookup_disease, fetch_demographics,
             fetch_health_system, fetch_vaccination_coverage, run_simulation]
+
+
+def _system_blocks() -> list[dict]:
+    """System prompt with a cache breakpoint — tools+system form the stable prefix."""
+    return [{"type": "text", "text": _SYSTEM,
+             "cache_control": {"type": "ephemeral"}}]
+
+
+class EpiChatAgent:
+    """One agent per chat conversation: history + state + the tool loop."""
+
+    def __init__(self, executor: object | None = None) -> None:
+        self.state = AgentState(executor=executor)
+        self.history: list = []
+        self.tools = build_tools(self.state)
+        self.client = anthropic.Anthropic()
+
+    def handle(self, user_text: str, on_event: Callable[[str, dict], None]) -> None:
+        """Run one conversational turn, emitting UI events as they happen.
+
+        Event kinds: "text" {text}, "tool_use" {name, input},
+        "tool_result" {tool_use_id, content, is_error}, "plot" {path, sources}.
+        """
+        self.state.context_text = (self.state.context_text + " " + user_text).strip()
+        self.history.append({"role": "user", "content": user_text})
+        appended_since_user = 0
+        try:
+            runner = self.client.beta.messages.tool_runner(
+                model=_MODEL,
+                max_tokens=_MAX_TOKENS,
+                system=_system_blocks(),
+                tools=self.tools,
+                messages=self.history,
+            )
+            for message in runner:
+                if message.stop_reason == "refusal":
+                    on_event("text", {"text": _REFUSAL_MSG})
+                    break
+                for block in message.content:
+                    if block.type == "text" and block.text.strip():
+                        on_event("text", {"text": block.text})
+                    elif block.type == "tool_use":
+                        on_event("tool_use", {"name": block.name, "input": block.input})
+                self.history.append({"role": "assistant", "content": message.content})
+                appended_since_user += 1
+                tool_response = runner.generate_tool_call_response()
+                if tool_response is not None:
+                    for tr in tool_response["content"]:
+                        on_event("tool_result", {
+                            "tool_use_id": tr.get("tool_use_id"),
+                            "content": tr.get("content"),
+                            "is_error": tr.get("is_error", False),
+                        })
+                    self.history.append(tool_response)
+                    appended_since_user += 1
+        except Exception:
+            logger.exception("agent turn failed")
+            if appended_since_user == 0:
+                self.history.pop()  # roll back the unanswered user message
+            on_event("text", {"text": _ERROR_MSG})
+            return
+
+        if self.state.plot_path:
+            on_event("plot", {"path": self.state.plot_path,
+                              "sources": list(self.state.data_sources)})
+            self.state.plot_path = None
