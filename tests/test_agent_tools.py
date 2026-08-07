@@ -67,6 +67,138 @@ class TestConfigureSimulation:
         assert vax is not None and vax.coverage == 0.8
 
 
+class _FakeAdapter:
+    def __init__(self, name, fields, locations=None):
+        self.source_name = name
+        self._fields = fields
+        self._locations = locations or {}
+
+    def location_id(self, key):
+        return self._locations.get(key)
+
+    def iso3_table(self):
+        return dict(self._locations)
+
+    def fetch(self, query):
+        return list(self._fields)
+
+
+def _rf(field, value, citation="test source"):
+    from epichat.resolver import ResolvedField
+    return ResolvedField(field=field, value=value, citation=citation)
+
+
+def _with_adapter(adapter):
+    """Register a fake adapter; return a restore function."""
+    from epichat.parser import _resolver
+    _resolver.register(adapter)
+    return lambda: _resolver._adapters.pop(adapter.source_name, None)
+
+
+class TestFetchDemographics:
+    def test_applies_age_structure_population_and_vitals(self):
+        state = AgentState()
+        _call(state, "configure_simulation", disease="dengue", n_agents=50_000)
+        restore = _with_adapter(_FakeAdapter(
+            "un_wpp",
+            [_rf("age_distribution_pct", {"0-17": 24.0, "18-64": 65.0, "65+": 11.0},
+                 "UN WPP 2024, Brazil (BRA), 2024"),
+             _rf("total_population", 213_000_000, "UN WPP 2024"),
+             _rf("birth_rate", 12.3, "UN WPP 2024"),
+             _rf("death_rate", 7.1, "UN WPP 2024")],
+            locations={"BRA": 76},
+        ))
+        try:
+            out = json.loads(_call(state, "fetch_demographics", country_iso3="BRA"))
+        finally:
+            restore()
+        assert state.params.age_pct_under18 == 24.0
+        assert state.params.network_type == "age_structured"
+        assert state.total_population == 213_000_000
+        assert state.params.birth_rate == 12.3
+        assert state.params.use_demographics is True
+        assert len(state.data_sources) == 4
+        assert "UN WPP" in out["citations"][0]
+
+    def test_offline_fallback_when_no_adapter(self, monkeypatch):
+        from epichat.parser import _resolver
+        monkeypatch.setattr(_resolver, "_adapters", {})
+        state = AgentState()
+        _call(state, "configure_simulation", disease="dengue")
+        monkeypatch.setattr(
+            "epichat.data_loaders.demographics.get_country_demographics",
+            lambda iso3, year=2022: {"birth_rate": 27.3, "death_rate": 7.2,
+                                     "source": "UN WPP 2024 — KEN (2022)"},
+        )
+        out = json.loads(_call(state, "fetch_demographics", country_iso3="KEN"))
+        assert state.params.birth_rate == 27.3
+        assert any("KEN" in c for c in out["citations"])
+
+    def test_requires_configuration_first(self):
+        state = AgentState()
+        result = _call(state, "fetch_demographics", country_iso3="BRA")
+        assert "configure_simulation" in result
+
+
+class TestFetchHealthSystem:
+    def test_applies_capacity_to_existing_treatment(self):
+        state = AgentState()
+        _call(state, "configure_simulation", disease="dengue", n_agents=100_000,
+              treatment_capacity=1)
+        restore = _with_adapter(_FakeAdapter(
+            "wb_data360", [_rf("treatment_capacity", 2.52, "WB WDI 2021")]))
+        try:
+            json.loads(_call(state, "fetch_health_system", country_iso3="BRA"))
+        finally:
+            restore()
+        treat = state.params.get_treatment()
+        assert treat.capacity == round(2.52 * 100_000 / 1000)
+
+    def test_no_treatment_intervention_records_only(self):
+        state = AgentState()
+        _call(state, "configure_simulation", disease="dengue", n_agents=100_000)
+        restore = _with_adapter(_FakeAdapter(
+            "wb_data360", [_rf("treatment_capacity", 2.52, "WB WDI 2021")]))
+        try:
+            _call(state, "fetch_health_system", country_iso3="BRA")
+        finally:
+            restore()
+        assert state.params.get_treatment() is None
+        assert len(state.data_sources) == 1
+
+
+class TestFetchVaccination:
+    def test_adds_vaccine_intervention_once(self):
+        state = AgentState()
+        _call(state, "configure_simulation", disease="measles")
+        restore = _with_adapter(_FakeAdapter(
+            "who_gho", [_rf("mcv1_coverage", 88.0, "WHO GHO 2023")]))
+        try:
+            _call(state, "fetch_vaccination_coverage",
+                  country_iso3="BRA", disease="measles")
+            _call(state, "fetch_vaccination_coverage",
+                  country_iso3="BRA", disease="measles")
+        finally:
+            restore()
+        vaxes = [i for i in state.params.interventions if i.type == "vaccine"]
+        assert len(vaxes) == 1
+        assert vaxes[0].coverage == 0.88
+
+    def test_adapter_error_returns_fetch_error(self):
+        class Boom(_FakeAdapter):
+            def fetch(self, query):
+                raise RuntimeError("api down")
+        state = AgentState()
+        _call(state, "configure_simulation", disease="measles")
+        restore = _with_adapter(Boom("who_gho", []))
+        try:
+            result = _call(state, "fetch_vaccination_coverage",
+                           country_iso3="BRA", disease="measles")
+        finally:
+            restore()
+        assert result.startswith("FETCH ERROR")
+
+
 class TestLookupDisease:
     def test_measles_entry(self):
         state = AgentState()

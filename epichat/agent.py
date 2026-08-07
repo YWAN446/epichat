@@ -191,4 +191,169 @@ def build_tools(state: AgentState) -> list:
                 out[p] = entry[p]
         return json.dumps(out)
 
-    return [configure_simulation, lookup_disease]
+    def _record(fields) -> list[str]:
+        state.data_sources.extend(fields)
+        return [f.citation for f in fields]
+
+    def _adapter(name):
+        from .parser import _resolver
+        return _resolver._adapters.get(name)
+
+    _NEEDS_CONFIG = ("Call configure_simulation first to establish the "
+                     "simulation before fetching data.")
+
+    @beta_tool
+    def fetch_demographics(country_iso3: str) -> str:
+        """Fetch real demographics for a country and apply them deterministically.
+
+        Uses the UN World Population Prospects (live API, offline CSV
+        fallback). Automatically applies age structure (switching to an
+        age-structured contact network), birth/death rates, and records the
+        total population for result scaling — you never copy these numbers
+        yourself. Call after configure_simulation, before running.
+
+        Args:
+            country_iso3: ISO3 country code (e.g. "BRA", "KEN").
+        """
+        if state.params is None:
+            return _NEEDS_CONFIG
+        iso3 = country_iso3.strip().upper()
+        try:
+            fields = []
+            adapter = _adapter("un_wpp")
+            if adapter is not None:
+                loc_id = adapter.location_id(iso3)
+                if loc_id:
+                    from .parser import fetch_query
+                    from .resolver import DataQuery
+                    fields = fetch_query(DataQuery(
+                        source="un_wpp", indicators=[55, 59, 71, 49],
+                        location_id=loc_id))
+            if not fields:
+                from .data_loaders.demographics import get_country_demographics
+                from .resolver import ResolvedField
+                demo = get_country_demographics(iso3)
+                fields = [
+                    ResolvedField(field="birth_rate", value=demo["birth_rate"],
+                                  citation=demo["source"]),
+                    ResolvedField(field="death_rate", value=demo["death_rate"],
+                                  citation=demo["source"]),
+                ]
+
+            applied: dict = {}
+            base = state.params.model_dump()
+            for rf in fields:
+                if rf.field == "age_distribution_pct" and isinstance(rf.value, dict):
+                    base.update({
+                        "network_type": "age_structured",
+                        "age_pct_under18": rf.value.get("0-17"),
+                        "age_pct_18_64": rf.value.get("18-64"),
+                        "age_pct_over65": rf.value.get("65+"),
+                    })
+                    applied["age_structure_pct"] = rf.value
+                elif rf.field == "total_population":
+                    state.total_population = int(rf.value)
+                    applied["total_population"] = state.total_population
+                elif rf.field in ("birth_rate", "death_rate"):
+                    base[rf.field] = rf.value
+                    base["use_demographics"] = True
+                    applied[rf.field] = rf.value
+            base["country"] = iso3
+            state.params = SimParams.model_validate(base)
+            return json.dumps({"applied": applied, "citations": _record(fields)})
+        except Exception as e:
+            logger.exception("fetch_demographics failed for %s", iso3)
+            return f"FETCH ERROR: {e}"
+
+    @beta_tool
+    def fetch_health_system(country_iso3: str) -> str:
+        """Fetch health-system indicators (World Bank WDI) for a country.
+
+        Returns hospital beds, physicians, nurses per 1,000, and UHC
+        coverage. If the simulation has a treatment intervention, its daily
+        capacity is set deterministically from hospital beds scaled to the
+        simulated population. Call after configure_simulation.
+
+        Args:
+            country_iso3: ISO3 country code (e.g. "BRA").
+        """
+        if state.params is None:
+            return _NEEDS_CONFIG
+        iso3 = country_iso3.strip().upper()
+        try:
+            from .parser import fetch_query
+            from .resolver import DataQuery
+            fields = fetch_query(DataQuery(
+                source="wb_data360",
+                indicator_codes=["WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS",
+                                 "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD"],
+                location_code=iso3))
+            if not fields:
+                return f"FETCH ERROR: no health-system data returned for {iso3}"
+            applied: dict = {f.field: f.value for f in fields}
+            cap = next((f for f in fields if f.field == "treatment_capacity"), None)
+            if cap is not None and state.params.get_treatment() is not None:
+                base = state.params.model_dump()
+                treat = next(i for i in base["interventions"] if i["type"] == "treatment")
+                treat["capacity"] = max(1, round(float(cap.value) * state.params.n_agents / 1000))
+                state.params = SimParams.model_validate(base)
+                applied["applied_treatment_capacity"] = treat["capacity"]
+            return json.dumps({"applied": applied, "citations": _record(fields)})
+        except Exception as e:
+            logger.exception("fetch_health_system failed for %s", iso3)
+            return f"FETCH ERROR: {e}"
+
+    _GHO_CODES = {
+        "measles": ["WHS8_110", "MCV2"],
+        "rubella": ["WHS8_110"],
+        "pertussis": ["WHS3_41"],
+        "polio": ["WHS3_43"],
+        "hepatitis_a": ["WHS3_45"],
+        "tuberculosis": ["WHS3_40"],
+        "meningococcal": ["MENGA"],
+    }
+
+    @beta_tool
+    def fetch_vaccination_coverage(country_iso3: str, disease: str) -> str:
+        """Fetch reported vaccination coverage (WHO GHO) for a disease/country.
+
+        If no vaccine intervention is configured yet, one is added
+        deterministically at the reported coverage. Only some diseases have
+        routine-immunization indicators; the result says when none exists.
+
+        Args:
+            country_iso3: ISO3 country code (e.g. "BRA").
+            disease: Disease name (e.g. "measles").
+        """
+        if state.params is None:
+            return _NEEDS_CONFIG
+        iso3 = country_iso3.strip().upper()
+        try:
+            from .disease_db import detect_disease
+            canonical = detect_disease(disease) or disease.lower()
+            codes = _GHO_CODES.get(canonical)
+            if not codes:
+                return (f"NO VACCINE INDICATOR: no routine-immunization coverage "
+                        f"indicator is available for {canonical}.")
+            from .parser import fetch_query
+            from .resolver import DataQuery
+            fields = fetch_query(DataQuery(
+                source="who_gho", indicator_codes=codes, location_code=iso3))
+            if not fields:
+                return f"FETCH ERROR: no vaccination data returned for {iso3}"
+            applied: dict = {f.field: f.value for f in fields}
+            cov = next((f for f in fields if f.field.endswith("_coverage")), None)
+            if cov is not None and state.params.get_vaccine() is None:
+                base = state.params.model_dump()
+                base["interventions"] = _upsert_intervention(
+                    base["interventions"], "vaccine",
+                    coverage=min(1.0, float(cov.value) / 100.0), start_day=0)
+                state.params = SimParams.model_validate(base)
+                applied["applied_vaccine_coverage"] = min(1.0, float(cov.value) / 100.0)
+            return json.dumps({"applied": applied, "citations": _record(fields)})
+        except Exception as e:
+            logger.exception("fetch_vaccination_coverage failed for %s", iso3)
+            return f"FETCH ERROR: {e}"
+
+    return [configure_simulation, lookup_disease, fetch_demographics,
+            fetch_health_system, fetch_vaccination_coverage]
