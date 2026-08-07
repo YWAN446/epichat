@@ -53,9 +53,13 @@ st.logo(
     icon_image=str(_ICON),
     link="https://ywan446.github.io/epichat/",
 )
-# st.logo caps out around 32px even at size="large"; scale the mark up past the cap.
+# st.logo caps out around 32px even at size="large"; scale the mark up past the
+# cap and let the sidebar header grow to hold it (it is fixed at 60px otherwise).
 st.markdown(
-    "<style>img[data-testid='stLogo'], .stLogo { height: 3rem; width: auto; }</style>",
+    "<style>"
+    "img[data-testid='stSidebarLogo'], .stLogo { height: 4.5rem; width: auto; }"
+    "[data-testid='stSidebarHeader'] { height: auto; }"
+    "</style>",
     unsafe_allow_html=True,
 )
 
