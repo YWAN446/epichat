@@ -13,6 +13,17 @@ _MODEL = "claude-haiku-4-5-20251001"
 _log = logging.getLogger(__name__)
 
 
+_DETECT_SYSTEM = (
+    "Identify the language the user's text is WRITTEN in. "
+    "Judge only the words and grammar of the text itself — countries, places, "
+    "diseases, and foreign loanwords merely MENTIONED in the text do not "
+    'count. For example, "Model a dengue epidemic in Brazil" is written in '
+    "English. Reply with ONLY the language name in English — one short "
+    "phrase. Examples: English, French, Spanish, Arabic, Chinese "
+    "(Simplified), Hindi, Portuguese, Japanese, Swahili. Never explain."
+)
+
+
 def detect_language(text: str) -> str:
     """Return the English name of the language *text* is written in.
 
@@ -25,12 +36,7 @@ def detect_language(text: str) -> str:
         resp = client.messages.create(
             model=_MODEL,
             max_tokens=10,
-            system=(
-                "Identify the language of the user text. "
-                "Reply with ONLY the language name in English — one short phrase. "
-                "Examples: English, French, Spanish, Arabic, Chinese (Simplified), "
-                "Hindi, Portuguese, Japanese, Swahili. Never explain."
-            ),
+            system=_DETECT_SYSTEM,
             messages=[{"role": "user", "content": text[:400]}],
         )
         return resp.content[0].text.strip()

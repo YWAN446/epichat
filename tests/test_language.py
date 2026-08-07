@@ -130,3 +130,10 @@ def test_build_summary_non_english_calls_translate():
     # Two calls: one for the main body, one for the run question
     assert mock_t.call_count == 2
     assert result == "TRANSLATED\n\nTRANSLATED"
+
+
+def test_detect_prompt_guards_against_topic_language():
+    """The prompt must judge the written language, not mentioned places/diseases."""
+    from epichat.language import _DETECT_SYSTEM
+    assert "WRITTEN" in _DETECT_SYSTEM
+    assert "dengue epidemic in Brazil" in _DETECT_SYSTEM  # few-shot anchor
