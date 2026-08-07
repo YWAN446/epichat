@@ -355,5 +355,40 @@ def build_tools(state: AgentState) -> list:
             logger.exception("fetch_vaccination_coverage failed for %s", iso3)
             return f"FETCH ERROR: {e}"
 
+    @beta_tool
+    def run_simulation() -> str:
+        """Run the configured Starsim simulation and return the results.
+
+        Only call this after the configuration is complete and the user has
+        confirmed they want to run. Results are scaled to the real
+        population when demographics were fetched. The result plot is shown
+        to the user automatically.
+        """
+        if state.params is None:
+            return _NEEDS_CONFIG.replace("fetching data", "running")
+        if state.executor is None:
+            return "SIMULATION ERROR: no executor is attached to this session"
+        import datetime
+        from pathlib import Path
+
+        pop_scale = (
+            state.total_population / state.params.n_agents
+            if state.total_population and state.params.n_agents > 0 else 1.0
+        )
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        plot_path = str(Path("results") / f"sim_{ts}.png")
+        exec_result = state.executor._execute_with_retry(
+            state.context_text, state.params, plot_path, pop_scale=pop_scale)
+        if exec_result.get("error"):
+            return f"SIMULATION ERROR: {exec_result['error']}"
+        state.stats = exec_result.get("stats", {})
+        state.plot_path = exec_result.get("plot_path")
+        n = state.stats.get("n_agents", state.params.n_agents) or 1
+        return json.dumps({
+            "stats": state.stats,
+            "attack_rate_pct": round(state.stats.get("total_infected", 0) / n * 100, 1),
+            "pop_scale": round(pop_scale, 2),
+        })
+
     return [configure_simulation, lookup_disease, fetch_demographics,
-            fetch_health_system, fetch_vaccination_coverage]
+            fetch_health_system, fetch_vaccination_coverage, run_simulation]

@@ -199,6 +199,48 @@ class TestFetchVaccination:
         assert result.startswith("FETCH ERROR")
 
 
+class _FakeExecutor:
+    def __init__(self, result=None):
+        self.calls = []
+        self.result = result or {
+            "error": None,
+            "stats": {"n_agents": 50_000, "peak_infections": 9_000,
+                      "peak_day": 41, "total_infected": 38_000,
+                      "total_deaths": 120},
+            "plot_path": "results/sim_test.png",
+        }
+
+    def _execute_with_retry(self, context, params, plot_path, pop_scale=1.0):
+        self.calls.append({"params": params, "pop_scale": pop_scale})
+        return self.result
+
+
+class TestRunSimulation:
+    def test_runs_and_stores_stats_and_plot(self):
+        executor = _FakeExecutor()
+        state = AgentState(executor=executor)
+        _call(state, "configure_simulation", disease="dengue", n_agents=50_000)
+        state.total_population = 213_000_000
+        out = json.loads(_call(state, "run_simulation"))
+        assert out["stats"]["peak_infections"] == 9_000
+        assert state.stats["total_infected"] == 38_000
+        assert state.plot_path == "results/sim_test.png"
+        assert executor.calls[0]["pop_scale"] == pytest.approx(213_000_000 / 50_000)
+
+    def test_error_path(self):
+        executor = _FakeExecutor(result={"error": "starsim exploded",
+                                         "stats": {}, "plot_path": None})
+        state = AgentState(executor=executor)
+        _call(state, "configure_simulation", disease="dengue")
+        result = _call(state, "run_simulation")
+        assert result.startswith("SIMULATION ERROR")
+        assert state.stats == {}
+
+    def test_requires_params(self):
+        state = AgentState(executor=_FakeExecutor())
+        assert "configure_simulation" in _call(state, "run_simulation")
+
+
 class TestLookupDisease:
     def test_measles_entry(self):
         state = AgentState()
