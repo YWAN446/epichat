@@ -79,6 +79,9 @@ def _fmt_value(v) -> str:
     if isinstance(v, int):
         return f"{v:,}"
     if isinstance(v, float):
+        # Large whole floats (e.g. populations from APIs) read better as ints
+        if abs(v) >= 1_000_000:
+            return f"{v:,.0f}"
         return f"{v:,.4g}"
     if isinstance(v, dict):
         return ", ".join(f"{k}: {vv}" for k, vv in list(v.items())[:3])
