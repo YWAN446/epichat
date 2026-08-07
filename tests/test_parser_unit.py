@@ -707,3 +707,47 @@ def test_clarification_needed_is_a_value_error():
     assert isinstance(exc, ValueError)
     assert exc.question == "Which disease?"
     assert "Which disease?" in str(exc)
+
+
+# ── Staged API ────────────────────────────────────────────────────────────────
+
+def test_extract_intent_returns_intent_result():
+    client = _mock_llm(_PRELIM_JSON)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        from epichat.parser import extract_intent
+        intent = extract_intent("run a default SIR model")
+    assert isinstance(intent, IntentResult)
+    assert intent.preliminary_params.disease_type == "sir"
+
+
+def test_fetch_query_resolves_single_query():
+    from epichat.parser import fetch_query, _resolver
+    from epichat.resolver import DataQuery
+
+    field = ResolvedField(field="total_population", value=1000, citation="test")
+    fake_adapter = MagicMock()
+    fake_adapter.source_name = "fake_src"
+    fake_adapter.fetch.return_value = [field]
+    _resolver.register(fake_adapter)
+    try:
+        result = fetch_query(DataQuery(source="fake_src"))
+    finally:
+        _resolver._adapters.pop("fake_src", None)
+    assert result == [field]
+
+
+def test_finalize_params_updates_last_resolved():
+    from epichat.parser import finalize_params, get_last_resolved, get_last_location_queried
+    from epichat.resolver import DataQuery
+    from epichat.schema import SimParams
+
+    intent = IntentResult(
+        preliminary_params=SimParams(beta=1.0),
+        data_queries=[DataQuery(source="un_wpp", location_id=76)],
+    )
+    resolved = [ResolvedField(field="total_population", value=5000, citation="test")]
+    with patch("epichat.parser._llm_call_2", side_effect=lambda ui, prelim, res: prelim):
+        params = finalize_params("run a default SIR model", intent, resolved)
+    assert isinstance(params, SimParams)
+    assert get_last_resolved() == resolved
+    assert get_last_location_queried() is True

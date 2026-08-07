@@ -359,30 +359,35 @@ def _apply_country(params: SimParams, queries: list[DataQuery]) -> SimParams:
     return params
 
 
-def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimParams:
+def extract_intent(user_input: str, context: OutbreakContext | None = None) -> IntentResult:
+    """Stage 1 of the chat pipeline: LLM intent extraction.
+
+    Raises ClarificationNeeded when the query is ambiguous.
     """
-    Translate a natural language epidemiological query into validated SimParams.
+    return _llm_call_1(user_input, context)
 
-    Four-step process:
-      1. LLM-1 extracts intent (preliminary params + optional data queries).
-      2. If data queries exist, the resolver fetches real-world values.
-      3. LLM-2 refines preliminary params using resolved data (skipped when no queries).
-      4. Deterministic post-processing applies age distribution, vaccination coverage,
-         and disease surveillance if resolved.
 
-    Raises:
-        ValueError: if the LLM requests clarification or returns invalid JSON/schema.
+def fetch_query(query: DataQuery) -> list[ResolvedField]:
+    """Stage 2: resolve a single data query through the registered adapters."""
+    return _resolver.resolve([query])
+
+
+def finalize_params(
+    user_input: str,
+    intent: IntentResult,
+    resolved: list[ResolvedField],
+) -> SimParams:
+    """Stage 3: refinement plus deterministic post-processing.
+
+    Also records `resolved` so get_last_resolved()/get_last_location_queried()
+    reflect this parse, matching parse_query's behavior.
     """
     global _last_resolved, _last_location_queried
-    _last_resolved = []
-    _last_location_queried = False
-    intent = _llm_call_1(user_input, context)
+    _last_resolved = resolved
     _last_location_queried = any(
         q.source == "un_wpp" and q.location_id != 0
         for q in intent.data_queries
     )
-    resolved = _run_resolver(intent.data_queries)
-    _last_resolved = resolved
     params = _llm_call_2(user_input, intent.preliminary_params, resolved)
     params = _apply_age_distribution(params, resolved)
     params = _apply_vaccination_coverage(params, resolved)
@@ -393,6 +398,31 @@ def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimP
     params = _apply_disease_db_r0(user_input, params)
     params = _apply_country(params, intent.data_queries)
     return params
+
+
+def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimParams:
+    """
+    Translate a natural language epidemiological query into validated SimParams.
+
+    One-shot composition of the staged API:
+      1. extract_intent — LLM-1 extracts intent (preliminary params + queries).
+      2. fetch_query — the resolver fetches real-world values per query.
+      3. finalize_params — LLM-2 refinement (skipped when nothing resolved)
+         plus deterministic post-processing (age distribution, vaccination,
+         surveillance, prevalence, health system, population scale,
+         disease-DB R0 calibration, country).
+
+    Raises:
+        ValueError: if the LLM requests clarification or returns invalid JSON/schema.
+    """
+    global _last_resolved, _last_location_queried
+    _last_resolved = []
+    _last_location_queried = False
+    intent = extract_intent(user_input, context)
+    resolved: list[ResolvedField] = []
+    for query in intent.data_queries:
+        resolved.extend(fetch_query(query))
+    return finalize_params(user_input, intent, resolved)
 
 
 def fix_params(user_input: str, params: SimParams, error_message: str) -> SimParams:
