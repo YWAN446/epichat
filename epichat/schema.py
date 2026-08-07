@@ -56,6 +56,11 @@ class SimParams(BaseModel):
     age_pct_under18: Optional[float] = Field(default=None, ge=0.0, le=100.0)
     age_pct_18_64:   Optional[float] = Field(default=None, ge=0.0, le=100.0)
     age_pct_over65:  Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    # Country-driven demographics (auto-filled from UN WPP / WHO / World Bank)
+    country: Optional[str] = None
+    auto_demographics: bool = True
+    demographics_year: int = Field(default=2022, ge=1950, le=2100)
+    demographics_source: Optional[str] = None
 
     @model_validator(mode="after")
     def check_age_pcts_sum(self) -> SimParams:
@@ -77,6 +82,15 @@ class SimParams(BaseModel):
     @field_validator("beta")
     @classmethod
     def warn_high_r0(cls, v: float) -> float:
+        return v
+
+    @field_validator("country")
+    @classmethod
+    def normalize_country(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            v = v.strip().upper()
+            if len(v) != 3:
+                raise ValueError(f"country must be an ISO3 code (3 letters), got: '{v}'")
         return v
 
     def approx_r0(self) -> float:

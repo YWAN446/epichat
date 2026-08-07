@@ -163,7 +163,13 @@ def _build_summary_with_description() -> str:
     from epichat.disease_db import detect_disease, check_params as _db_check
     _disease = detect_disease(s.context or "")
     _warnings = (
-        _db_check(_disease, s.params.approx_r0(), s.params.dur_inf, s.params.dur_exp)
+        _db_check(
+            _disease, s.params.approx_r0(), s.params.dur_inf, s.params.dur_exp,
+            p_death=s.params.p_death or None,
+            n_contacts=s.params.n_contacts,
+            dur_immune=s.params.dur_immune,
+            p_asymp=s.params.p_asymp if s.params.disease_type == "seiar" else None,
+        )
         if _disease else []
     )
     return build_summary(s.params, s.data_sources, description, lang=lang, param_warnings=_warnings)

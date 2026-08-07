@@ -1,182 +1,2857 @@
 {
   "diseases": {
     "measles": {
-      "aliases": ["rubeola", "morbilli", "measle"],
-      "r0": {
-        "min": 12,
-        "max": 18,
-        "typical": 15,
-        "source": "https://pubmed.ncbi.nlm.nih.gov/28757186/"
-      },
-      "incubation_days": {
-        "min": 6,
-        "max": 21,
-        "typical": 12,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 4,
-        "max": 12,
-        "typical": 8,
-        "note": "4 days before to 4 days after rash onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      "display_name": "Measles",
+      "aliases": [
+        "rubeola",
+        "morbilli",
+        "measle"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 12,
+            "max": 18,
+            "typical": 15,
+            "notes": "12–18 is the most widely accepted range in epidemiology. It is used by the Centers for Disease Control and Prevention, WHO, NEJM reviews, and most transmission models."
+          },
+          "estimates": [
+            {
+              "value": 15,
+              "range": [
+                12,
+                18
+              ],
+              "population": "General",
+              "source_type": "systematic_review",
+              "title": "The basic reproduction number (R0) of measles: a systematic review",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/28757186/",
+              "doi": "10.1016/S1473-3099(17)30307-9",
+              "country": "Multiple countries",
+              "year": 2017,
+              "notes": "Systematic review of 18 studies and 58 R0 estimates."
+            },
+            {
+              "value": 15,
+              "range": [
+                12,
+                18
+              ],
+              "population": "Persons who were exposed to measles-infected persons who had experienced SVF",
+              "source_type": "systematic_review",
+              "title": "Onward Virus Transmission after Measles Secondary Vaccination Failure",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11346981/",
+              "doi": "10.3201/eid3009.240150",
+              "country": "Multiple countries",
+              "year": 2024,
+              "notes": "Uses the conventional measles transmission range cited in public health literature."
+            },
+            {
+              "value": 9.0,
+              "range": [
+                7.1,
+                10.9
+              ],
+              "population": "Passengers and crew on ships traveling from Belfast and Plymouth to Sydney",
+              "source_type": "surveillance",
+              "title": "Historical data and modern methods reveal insights in measles epidemiology: a retrospective closed cohort study",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/23315518/",
+              "doi": " 10.1136/bmjopen-2012-002033",
+              "country": "Australia",
+              "year": 2013,
+              "notes": "Pre-vaccination era. Estimated from measles outbreaks aboard migrant ships. Closed populations and limited contact networks may produce lower R0 estimates than those observed in large urban populations."
+            },
+            {
+              "value": 10.8,
+              "range": [
+                10.3,
+                11.3
+              ],
+              "population": "Residents of Hagelloch village",
+              "source_type": "outbreak",
+              "title": "Estimating the Transmission Rate for a Highly Infectious Disease",
+              "url": "https://www.jstor.org/stable/3109779?origin=crossref",
+              "country": "Germany",
+              "doi": "10.2307/3109779",
+              "year": 1998,
+              "notes": "Pre-vaccination era. Derived from a well-documented historical village outbreak."
+            },
+            {
+              "value": 13.0,
+              "range": [
+                13.0,
+                13.0
+              ],
+              "population": "General",
+              "source_type": "serological_survey",
+              "title": "Deciphering the relative weights of demographic transition and vaccination in the decrease of measles incidence in Italy",
+              "url": "https://royalsocietypublishing.org/rspb/article-abstract/281/1777/20132676/76998/Deciphering-the-relative-weights-of-demographic?redirectedFrom=fulltext",
+              "doi": " 10.1098/rspb.2013.2676",
+              "country": "Italy",
+              "year": 2014,
+              "notes": "Pre-vaccination era. Estimated from long-term transmission modeling using serological data and vaccination-adjusted transmission parameters."
+            },
+            {
+              "value": 8.3,
+              "range": [
+                8.3,
+                8.3
+              ],
+              "population": "General",
+              "source_type": "surveillance",
+              "title": "Seasonality and comparative dynamics of six childhood infections in pre-vaccination Copenhagen",
+              "url": "https://royalsocietypublishing.org/rspb/article-abstract/276/1676/4111/72931/Seasonality-and-comparative-dynamics-of-six?redirectedFrom=fulltext",
+              "doi": "10.1098/rspb.2009.1058",
+              "country": "Denmark",
+              "year": 2009,
+              "notes": "Calculated from mean age of infection and birth rates rather than direct transmission observations."
+            },
+            {
+              "value": 15.3,
+              "range": [
+                12.5,
+                18.0
+              ],
+              "population": "England, Wales, and North American populations",
+              "source_type": "modeling",
+              "title": "Directly transmitted infections diseases: control by vaccination",
+              "url": "https://www.science.org/doi/10.1126/science.7063839",
+              "country": "Multiple countries",
+              "doi": "10.1126/science.7063839",
+              "year": 1982,
+              "notes": "Pre and post-vaccination era."
+            },
+            {
+              "value": 103.5,
+              "range": [
+                3.7,
+                203.3
+              ],
+              "population": "Urban African and Indian populations",
+              "source_type": "serology_and_surveillance",
+              "title": "A review of data needed to parameterize a dynamic model of measles in developing countries",
+              "url": "https://link.springer.com/article/10.1186/1756-0500-3-75",
+              "doi": "10.1186/1756-0500-3-75",
+              "country": "Multiple countries",
+              "year": 2010,
+              "notes": "Pre and post-vaccination era. Largest overall range reported in the systematic review. Estimates varied dramatically across countries because of demographic differences, birth rates, and age at infection."
+            },
+            {
+              "value": 6.95,
+              "range": [
+                6.2,
+                7.7
+              ],
+              "population": "Primary schools and surrounding community",
+              "source_type": "outbreak",
+              "title": "Estimation of the basic reproduction number of measles during an outbreak in a partially vaccinated population",
+              "url": "https://www.scopus.com/pages/publications/0034050988",
+              "doi": "10.1017/S0950268899003672",
+              "country": "Luxembourg",
+              "year": 2000,
+              "notes": "Post-vaccination era. Estimated from final outbreak size and known susceptible population."
+            },
+            {
+              "value": 7.9,
+              "range": [
+                6.2,
+                9.5
+              ],
+              "population": "Merseyside outbreak population",
+              "source_type": "outbreak",
+              "title": "An ongoing large outbreak of measles in Merseyside, England, January to June 2012",
+              "url": "https://www.researchgate.net/profile/Roberto-Vivancos/publication/281600869_An_ongoing_large_outbreak_of_measles_in_Merseyside_England_January_to_June_2012/links/5a61dc884585158bca4a2176/An-ongoing-large-outbreak-of-measles-in-Merseyside-England-January-to-June-2012.pdf",
+              "doi": "10.2807/ese.17.31.20234-en",
+              "country": "United Kingdom",
+              "year": 2012,
+              "notes": "Post-vaccination era. Calculated by converting an observed effective reproduction number (R=1.2) into R0 using vaccination coverage and vaccine effectiveness assumptions."
+            },
+            {
+              "value": 14.4,
+              "range": [
+                10.7,
+                18.1
+              ],
+              "population": "California school populations",
+              "source_type": "modelling_study",
+              "title": "The effect of heterogeneity in uptake of the measles, mumps, and rubella vaccine on the potential for outbreaks of measles: a modelling study",
+              "url": "https://www.sciencedirect.com/science/article/pii/S1473309916000049",
+              "doi": "10.1016/S1473-3099(16)00004-9",
+              "country": "United States",
+              "year": 2016,
+              "notes": "Post-vaccination era. Estimated using school-specific contact matrices. "
+            }
+          ]
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 7,
+            "max": 21,
+            "typical": 12
+          },
+          "estimates": [
+            {
+              "value": 12,
+              "range": [
+                6,
+                21
+              ],
+              "population": "General",
+              "source_type": "systematic_review",
+              "title": "Management and control of communicable diseases in schools and other child care settings: systematic review on the incubation period and period of infectiousness",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
+              "doi": "10.1186/s12879-018-3095-8",
+              "country": "Multiple countries",
+              "year": 2018,
+              "notes": "Identified 7 eligible articles for measles."
+            },
+            {
+              "value": 16,
+              "range": [
+                10,
+                20
+              ],
+              "population": "Public school students",
+              "source_type": "outbreak",
+              "title": "MEASLES IN A PUBLIC SCHOOL",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2313964/",
+              "doi": "10.1136/bmj.1.3652.14",
+              "country": "United Kingdom",
+              "year": 1931,
+              "notes": "Historical description of a measles outbreak in a school setting. Primary observational report rather than a formal epidemiological modeling study."
+            },
+            {
+              "value": 13.8,
+              "range": [
+                9,
+                18
+              ],
+              "population": "Children under 15 months of age",
+              "source_type": "outbreak",
+              "title": "A measles outbreak in children under 15 months of age in La Rioja, Spain, 2005-2006",
+              "url": "https://www.eurosurveillance.org/content/10.2807/esm.11.10.00649-en",
+              "doi": "10.2807/esm.11.10.00649-en",
+              "country": "Spain",
+              "year": 2006,
+              "notes": "This paper describes a measles outbreak in La Rioja, Spain, which began in December 2005 and mainly affected children under 15 months of age who were not yet immunised with MMR vaccine."
+            },
+            {
+              "value": 11.5,
+              "range": [
+                11,
+                12
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "CDC Measles Clinical Diagnosis Fact Sheet",
+              "url": "https://www.cdc.gov/measles/hcp/communication-resources/clinical-diagnosis-fact-sheet.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "Typically 11–12 days from exposure to prodromal symptoms."
+            },
+            {
+              "value": 12.5,
+              "range": [
+                7,
+                18
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Measles Disease and epidemiology",
+              "url": "https://www.emro.who.int/health-topics/measles/disease-and-epidemiology.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2026,
+              "notes": "WHO report."
+            },
+            {
+              "value": 10,
+              "range": [
+                7,
+                21
+              ],
+              "population": "General",
+              "source_type": "journal_article",
+              "title": "Measles: is it still a threat?",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6104891/",
+              "doi": "10.3399/bjgp18X697961",
+              "country": "United Kingdom",
+              "year": 2018,
+              "notes": "Laboratory-confirmed measles cases reported in England between 1 Jan and 2 Jul 2018 during multiple outbreaks linked to importations from Europe."
+            },
+            {
+              "value": 12,
+              "range": [
+                7,
+                23
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Measles 2025",
+              "url": "https://www.nejm.org/doi/full/10.1056/NEJMra2504516",
+              "doi": "10.1056/NEJMra2504516",
+              "country": "Multiple countries",
+              "year": 2025,
+              "notes": "Review article published in The New England Journal of Medicine"
+            }
+          ]
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 8,
+            "max": 8,
+            "typical": 8
+          },
+          "estimates": [
+            {
+              "value": 8,
+              "range": [
+                8,
+                8
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Measles",
+              "url": "https://www.cdc.gov/measles/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2026,
+              "notes": "Patients are considered to be contagious from 4 days before to 4 days after the rash appears."
+            },
+            {
+              "value": 8,
+              "range": [
+                8,
+                8
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Measles Disease and epidemiology",
+              "url": "https://www.emro.who.int/health-topics/measles/disease-and-epidemiology.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2026,
+              "notes": "Patients are infectious from about 4 days before developing the rash until 4 days after rash."
+            },
+            {
+              "value": 8,
+              "range": [
+                8,
+                8
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Measles",
+              "url": "https://www.nejm.org/doi/full/10.1056/NEJMcp1905181",
+              "doi": "10.1056/NEJMcp1905181",
+              "country": "United States and globally",
+              "year": 2019,
+              "notes": "Patients with measles are infectious from 4 days before to 4 days after the onset of their rash."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": 0.5,
+            "max": 6.0,
+            "typical": 1.5,
+            "notes": "Based on the systematic review."
+          },
+          "estimates": [
+            {
+              "value": 1.5,
+              "range": [
+                0.5,
+                6.0
+              ],
+              "population": "Low-income and middle-income countries in all age groups from 1980 to 2016",
+              "source_type": "systematic_review",
+              "title": "Estimates of case-fatality ratios of measles in low-income and middle-income countries: a systematic review and modelling analysis",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6418190/#ceab10",
+              "doi": "10.1016/S2214-109X(18)30537-0",
+              "country": "Multiple countries",
+              "year": 2019,
+              "notes": "124 peer-reviewed journal articles selected (85 community-based studies and 39 hospital-based studies). The mean case-fatality ratio was 2·2% (95% CI 0·7–4·5) in 1990–2015. In community-based settings, the mean case-fatality ratio was 1·5% (0·5–3·1) compared with 2·9% (0·9–6·0) in hospital-based settings. "
+            },
+            {
+              "value": 3.5,
+              "range": [
+                3,
+                4
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
+              "country": "Scotland",
+              "year": 2007,
+              "notes": "Approximately 100 years before publication, Scotland reported measles case-fatality rates of 30–40 deaths per 1000 cases."
+            },
+            {
+              "value": 2.5,
+              "range": [
+                2.5,
+                2.5
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
+              "country": "United States",
+              "year": 2007,
+              "notes": "Measles mortality was 25 deaths per 1000 reported cases in the United States in 1912."
+            },
+            {
+              "value": 0.1,
+              "range": [
+                0.1,
+                0.1
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
+              "country": "United States",
+              "year": 2007,
+              "notes": "Case-fatality rates were approximately 1 death per 1000 reported measles cases from the 1940s through the 1980s."
+            },
+            {
+              "value": 0.1,
+              "range": [
+                0.1,
+                0.1
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Measles Still Has a Devastating Impact in Unvaccinated Populations",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1712354/",
+              "doi": "10.1371/journal.pmed.0040024",
+              "country": "United States",
+              "year": 2007,
+              "notes": "Case-fatality rates were approximately 1 death per 1000 reported measles cases from the 1940s through the 1980s."
+            },
+            {
+              "value": 29,
+              "range": [
+                17,
+                41
+              ],
+              "population": "Infants in urban community",
+              "source_type": "research_article",
+              "title": "High measles mortality in infancy related to intensity of exposure",
+              "url": "https://www.sciencedirect.com/science/article/pii/S0022347686805698",
+              "doi": "10.1016/S0022-3476(86)80569-8",
+              "country": "Africa",
+              "year": 1986,
+              "notes": "Mortality during the first 12 months of life increased with age."
+            },
+            {
+              "value": 2.21,
+              "range": [
+                0.07,
+                2.08
+              ],
+              "population": "General",
+              "source_type": "systematic_review",
+              "title": "Attack rate, case fatality rate and determinants of measles infection during a measles outbreak in Ethiopia: systematic review and meta-analysis",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10623867/",
+              "doi": "10.1186/s12879-023-08757-0",
+              "country": "Ethiopia",
+              "year": 2023,
+              "notes": "Eight measles outbreak investigations with 3004 measles cases and 33 deaths were included in this study."
+            }
+          ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": 0,
+            "max": 20,
+            "typical": 6,
+            "notes": "Dependent on different settings. Outbreak case excluded."
+          },
+          "estimates": [
+            {
+              "value": 9,
+              "range": [
+                3,
+                20
+              ],
+              "population": "Children attending daycare",
+              "source_type": "research_article",
+              "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi": "10.1186/s12889-015-1766-6",
+              "country": "United States",
+              "year": 2015,
+              "notes": "Based on the child-staff ratio for daycares in California: www.daycare.com/california"
+            },
+            {
+              "value": 9,
+              "range": [
+                3,
+                20
+              ],
+              "population": "Students attending school",
+              "source_type": "research_article",
+              "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi": "10.1186/s12889-015-1766-6",
+              "country": "United States",
+              "year": 2015,
+              "notes": "The average class size in California public schools: www.cde.ca.gov/ds/sd/dr/cefteachavgclssize.asp"
+            },
+            {
+              "value": 3,
+              "range": [
+                0,
+                7
+              ],
+              "population": "Workers",
+              "source_type": "research_article",
+              "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi": "10.1186/s12889-015-1766-6",
+              "country": "United States",
+              "year": 2015,
+              "notes": "According to the RTI’s synthetic population used by the model, 61.4% workplaces have the number of workers ≤7"
+            },
+            {
+              "value": 3,
+              "range": [
+                0.5,
+                7
+              ],
+              "population": "Neighborhoods",
+              "source_type": "research_article",
+              "title": "The role of vaccination coverage, individual behaviors, and the public health response in the control of measles epidemics: an agent-based simulation for California",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4438575/",
+              "doi": "10.1186/s12889-015-1766-6",
+              "country": "United States",
+              "year": 2015,
+              "notes": "Assumption."
+            },
+            {
+              "value": 350,
+              "range": "N/A",
+              "population": "Single hospitalized measle case",
+              "source_type": "outbreak",
+              "title": "Contact Tracing and Prevention of Secondary Measles Transmission in a Pediatric Acute Care Hospital — Los Angeles County, July 2024",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12460729/",
+              "doi": "10.1017/ash.2025.203",
+              "country": "United States",
+              "year": 2025,
+              "notes": "Outbreak investigation describing contact tracing following a single imported measles case at a pediatric hospital in Los Angeles County. A total of 350 contacts (187 staff, 73 patients, and 90 visitors) were identified. Post-exposure prophylaxis was administered to 51 contacts, and no secondary measles infections were reported."
+            }
+          ]
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "Lifelong immunity after natural infection or two-dose vaccination."
+          },
+          "estimates": [],
+          "special_value": "lifelong",
+          "source_type": "government_report",
+          "url": "https://www.cdc.gov/measles/vaccines/index.html",
+          "doi": "N/A"
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "Measles has no known asymptomatic carrier state."
+          },
+          "estimates": [],
+          "source_type": "clinical_reference",
+          "url": "https://www.msdmanuals.com/professional/pediatrics/common-viral-infections-in-infants-and-children/measles",
+          "doi": "N/A"
+        }
       }
     },
+    "covid19": {
+      "display_name": "COVID-19",
+      "aliases": [
+        "covid",
+        "sars-cov-2",
+        "coronavirus disease",
+        "covid-19"
+      ],
+      "variants": {
+        "ancestral": {
+          "label": "Ancestral / wild-type",
+          "parameters": {
+            "r0": {
+              "unit": "dimensionless",
+              "consensus": {
+                "min": 1.4,
+                "max": 6.49,
+                "typical": 3.28,
+                "notes": "Uses R0 from systematic review."
+              }
+            },
+            "estimates": [
+              {
+                "value": 2.79,
+                "range": [
+                  2,
+                  3
+                ],
+                "population": "General",
+                "source_type": "modeling",
+                "title": "A comparison of COVID-19 outbreaks across US Combined Statistical Areas using new methods for estimating and social distancing behaviour",
+                "url": "https://www.sciencedirect.com/science/article/pii/S1755436522000809?via%3Dihub",
+                "doi": "10.1016/j.epidem.2022.100640",
+                "country": "United States",
+                "year": 2022,
+                "notes": "Initial outbreak rates and subsequent social distancing behaviour over the initial phase of the COVID-19 pandemic across 29 Combined Statistical Areas (CSAs) of the United States."
+              },
+              {
+                "value": 2.68,
+                "range": [
+                  2.47,
+                  2.86
+                ],
+                "population": "General",
+                "source_type": "modelling_study",
+                "title": "Nowcasting and forecasting the potential domestic and international spread of the 2019-nCoV outbreak originating in Wuhan, China: a modelling study",
+                "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30260-9/fulltext",
+                "doi": "10.1016/S0140-6736(20)30260-9 ",
+                "country": "China",
+                "year": 2020,
+                "notes": "An estimate of the size of the epidemic in Wuhan on the basis of the number of cases exported from Wuhan to cities outside mainland China and forecast the extent of the domestic and global public health risks of epidemics."
+              },
+              {
+                "value": 4.71,
+                "range": [
+                  4.5,
+                  4.92
+                ],
+                "population": "General",
+                "source_type": "modelling_study",
+                "title": "Modelling the epidemic trend of the 2019 novel coronavirus outbreak in China",
+                "url": "https://www.biorxiv.org/content/10.1101/2020.01.23.916726v1",
+                "doi": "10.1101/2020.01.23.916726",
+                "country": "China",
+                "year": 2020,
+                "notes": "Mathematical model, dynamic compartmental model."
+              },
+              {
+                "value": 3.28,
+                "range": [
+                  1.4,
+                  6.49
+                ],
+                "population": "General",
+                "source_type": "systematic_review",
+                "title": "The reproductive number of COVID-19 is higher compared to SARS coronavirus",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7074654/",
+                "doi": "10.1093/jtm/taaa021",
+                "country": "China and overseas",
+                "year": 2020,
+                "notes": "Identified 12 studies which estimated the basic reproductive number for COVID-19 from China and overseas."
+              },
+              {
+                "value": 4.2,
+                "range": [
+                  1.9,
+                  6.5
+                ],
+                "population": "General",
+                "source_type": "systematic_review",
+                "title": "A Systematic Review of COVID-19 Epidemiology Based on Current Evidence",
+                "url": "https://www.mdpi.com/2077-0383/9/4/967",
+                "doi": "10.3390/jcm9040967",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Systematic review of 41 studies published during the early COVID-19 pandemic. Twenty-one estimates of the basic reproduction number (R₀) ranged from 1.9 to 6.5, with 13 estimates between 2.0 and 3.0."
+              }
+            ]
+          }
+        },
+        "omicron": {
+          "label": "Omicron",
+          "parameters": {
+            "r0": {
+              "unit": "dimensionless",
+              "consensus": {
+                "min": 5.5,
+                "max": 24,
+                "typical": 9.5,
+                "notes": "Uses R0 from narrative review containing multiple sources in different locations. Omicron R0 estimates vary substantially by subvariant, setting, immunity context, and estimation method."
+              },
+              "estimates": [
+                {
+                  "value": 9.5,
+                  "range": [
+                    5.5,
+                    24
+                  ],
+                  "population": "General",
+                  "source_type": "narrative_review",
+                  "title": "The effective reproductive number of the Omicron variant of SARS-CoV-2 is several times relative to Delta",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8992231/#sec3",
+                  "doi": "10.1093/jtm/taac037",
+                  "country": "Multiple countries",
+                  "year": 2022,
+                  "notes": "Narrative/rapid review. It was found that Omicron variant has a much higher transmissibility than the Delta variant."
+                },
+                {
+                  "value": 1.9,
+                  "range": [
+                    1.5,
+                    2.43
+                  ],
+                  "population": "General community",
+                  "source_type": "research_article",
+                  "title": "Serial interval and basic reproduction number of SARS-CoV-2 Omicron variant in South Korea",
+                  "url": "https://www.medrxiv.org/content/10.1101/2021.12.25.21268301v1.full-text",
+                  "doi": "10.1101/2021.12.25.21268301",
+                  "country": "South Korea",
+                  "year": 2021,
+                  "notes": "Estimated during the early community transmission of the Omicron (B.1.1.529) variant between November 25 and December 16, 2021. Based on 131 confirmed Omicron cases, including 18 identified transmission pairs. The basic reproduction number was estimated using the observed exponential growth rate and the estimated serial interval (mean 2.22 days) as a proxy for the generation interval."
+                },
+                {
+                  "value": 7.9,
+                  "range": [
+                    7.4,
+                    8.4
+                  ],
+                  "population": "General",
+                  "source_type": "research_article",
+                  "title": "Age-specific transmission dynamics under suppression control measures during SARS-CoV-2 Omicron BA.2 epidemic",
+                  "url": "https://link.springer.com/article/10.1186/s12889-023-15596-w",
+                  "doi": "10.1186/s12889-023-15596-w",
+                  "country": "China",
+                  "year": 2023,
+                  "notes": "Estimated using an age-structured SEIR model with social contact patterns and the next-generation matrix. The estimate was based on the Omicron BA.2 outbreak in Shanghai (February–June 2022). The study also estimated that Rt declined from 3.6 to below 1 following strict suppression measures."
+                }
+              ]
+            }
+          }
+        },
+        "shared_parameters": {
+          "incubation_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 5.0,
+              "max": 6.7,
+              "typical": 5.8,
+              "notes": "Summarizes where the evidence converges instead of combining confidence interval extremes from different studies."
+            },
+            "estimates": [
+              {
+                "value": 5.8,
+                "range": [
+                  5.0,
+                  6.7
+                ],
+                "population": "General",
+                "source_type": "systematic_review",
+                "title": "Incubation period of COVID-19: a rapid systematic review and meta-analysis of observational research",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7430485/",
+                "doi": "10.1136/bmjopen-2020-039652",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Rapid systematic review and meta-analysis of estimates of the incubation period of COVID-19."
+              },
+              {
+                "value": 5,
+                "range": [
+                  4,
+                  6
+                ],
+                "population": "General",
+                "source_type": "systematic_review",
+                "title": "A Systematic Review of COVID-19 Epidemiology Based on Current Evidence",
+                "url": "https://www.mdpi.com/2077-0383/9/4/967",
+                "doi": "10.3390/jcm9040967",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Of 317 research articles generated from the initial search on PubMed and preprint archives on 21 February 2020, 41 met the inclusion criteria and were included in the review."
+              },
+              {
+                "value": 5.85,
+                "range": [
+                  5.05,
+                  6.77
+                ],
+                "population": "Hospitalized COVID-19 patients",
+                "source_type": "research_article",
+                "title": "Estimation of the incubation period of COVID-19 using viral load data",
+                "url": "https://www.sciencedirect.com/science/article/pii/S1755436521000153",
+                "doi": "10.1016/j.epidem.2021.100454",
+                "country": "Multiple countries",
+                "year": 2021,
+                "notes": "Original research using longitudinal viral load data from 30 hospitalized patients and a viral dynamics model to hindcast the time of infection. Estimated a median incubation period of 5.85 days (95% CI 5.05–6.77)."
+              }
+            ]
+          },
+          "infectious_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 6.0,
+              "max": 10.0,
+              "typical": 8.0
+            },
+            "estimates": [
+              {
+                "value": 2.0,
+                "range": [
+                  0.5,
+                  4.0
+                ],
+                "population": "Presymptomatic cases",
+                "source_type": "rapid_scoping_review",
+                "title": "Inferred duration of infectious period of SARS-CoV-2: rapid scoping review and analysis of available evidence for asymptomatic and symptomatic COVID-19 cases",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/",
+                "doi": "10.1136/bmjopen-2020-039856",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Median presymptomatic infectious period across included studies varied from <1 to 4 days. Maps to the E→I transition window in SEIR models."
+              },
+              {
+                "value": 8.0,
+                "range": [
+                  6.5,
+                  9.5
+                ],
+                "population": "Asymptomatic cases",
+                "source_type": "rapid_scoping_review",
+                "title": "Inferred duration of infectious period of SARS-CoV-2: rapid scoping review and analysis of available evidence for asymptomatic and symptomatic COVID-19 cases",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/",
+                "doi": "10.1136/bmjopen-2020-039856",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "One study in the review (Hu et al.) provided approximate median infectious period of 6.5–9.5 days for asymptomatic infections based on time to two consecutive negative RT-PCR tests."
+              },
+              {
+                "value": 13.4,
+                "range": [
+                  10.9,
+                  15.8
+                ],
+                "population": "Symptomatic cases — RT-PCR clearance",
+                "source_type": "rapid_scoping_review_with_meta_analysis",
+                "title": "Inferred duration of infectious period of SARS-CoV-2: rapid scoping review and analysis of available evidence for asymptomatic and symptomatic COVID-19 cases",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/",
+                "doi": "10.1136/bmjopen-2020-039856",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Mean 13.4 days (95% CI 10.9–15.8) from symptom onset to first of two negative RT-PCR tests, pooled across 15 virological studies (high heterogeneity I²>75%). RT-PCR positivity outlasts true infectious potential by approximately 2–6 days; viral culture studies indicate most transmission ceases by day 8–10 post-symptom onset."
+              },
+              {
+                "value": 8.0,
+                "range": [
+                  6.0,
+                  10.0
+                ],
+                "population": "Mild-to-moderate symptomatic cases — viral culture / true infectiousness",
+                "source_type": "rapid_review",
+                "title": "The duration of infectiousness of individuals infected with SARS-CoV-2",
+                "url": "https://www.journalofinfection.com/article/S0163-4453(20)30651-4/fulltext",
+                "doi": "10.1016/j.jinf.2020.10.009 ",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Rapid review integrating viral culture, contact tracing, and viral shedding data. Concluded that mild-to-moderate COVID-19 patients are highly unlikely to remain infectious beyond 10 days post-symptom onset; most transmission occurs earlier. Viral culture success (the gold-standard infectiousness proxy) drops sharply after day 8. Note: this is a lower estimate than the Byrne et al. RT-PCR-based figure above because culture positivity declines faster than PCR positivity."
+              }
+            ]
+          },
+          "fatality_rate": {
+            "unit": "percentage",
+            "consensus": {
+              "min": 0.7,
+              "max": 1.16,
+              "typical": 0.9,
+              "notes": "Using global estimate of IFR."
+            },
+            "estimates": [
+              {
+                "value": 10,
+                "range": [
+                  8,
+                  11
+                ],
+                "metric": "CFR",
+                "population": "General and hospitalized patients",
+                "source_type": "systematic_review",
+                "title": "Case fatality rate of COVID-19: a systematic review and meta-analysis",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8451339/",
+                "doi": "10.15167/2421-4248/jpmh2021.62.2.1627",
+                "country": "Multiple countries",
+                "year": 2021,
+                "notes": "Aimed to assess the pooled CFR of COVID-19."
+              },
+              {
+                "value": 0.27,
+                "range": [
+                  0.0,
+                  1.63
+                ],
+                "metric": "IFR",
+                "population": "General",
+                "source_type": "systematic_review",
+                "title": "Infection fatality rate of COVID-19 inferred from seroprevalence data",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7947934/",
+                "doi": "10.2471/BLT.20.265892",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Systematic review/evidence synthesis of seroprevalence studies and national estimates available through 9 September 2020. Included 61 studies (74 estimates) plus 8 preliminary national estimates. Across 51 locations, the median inferred COVID-19 infection fatality rate (IFR) was 0.27%, with a corrected median of 0.23%. Reported IFRs ranged from 0.00% to 1.63% (corrected range 0.00% to 1.54%). Reflects largely ancestral / early-pandemic SARS-CoV-2 before later variants became dominant."
+              },
+              {
+                "value": 2.3,
+                "range": [
+                  0.0,
+                  14.8
+                ],
+                "metric": "CFR",
+                "population": "All ages, China, age-stratified (0% in <10y to 14.8% in 80+y)",
+                "source_type": "surveillance_report",
+                "title": "Global Covid-19 Case Fatality Rates",
+                "url": "https://www.cebm.net/covid-19/global-covid-19-case-fatality-rates/",
+                "doi": "N/A",
+                "country": "China",
+                "year": 2020,
+                "notes": "Overall CFR 2.3% (1023 deaths / 44,672 confirmed cases). No deaths in age <10y. CFR 14.8% in 80+y. CFR 0.9% in those with no comorbidities vs 49% case fatality in critical cases. Age-stratified CFRs: 10–19y 0.18%, 20–49y 0.32%, 50–59y 1.3%, 60–69y 3.6%, 70–79y 8.0%, 80+y 14.8%."
+              },
+              {
+                "value": 0.66,
+                "range": [
+                  0.39,
+                  1.33
+                ],
+                "metric": "IFR",
+                "population": "All ages, China",
+                "source_type": "modelling_study",
+                "title": "Global Covid-19 Case Fatality Rates",
+                "url": "https://www.cebm.net/covid-19/global-covid-19-case-fatality-rates/",
+                "doi": "N/A",
+                "country": "China",
+                "year": 2020,
+                "notes": "Verity et al. estimated IFR 0.66% (95% CI 0.39–1.33%) using age-stratified CFR from China plus 1,334 individual cases identified outside mainland China. Imperial College London adjusted this to 0.9% (95% CrI 0.4–1.4%) for the UK, accounting for non-uniform attack rate."
+              },
+              {
+                "value": 0.5,
+                "range": [
+                  0.3,
+                  0.56
+                ],
+                "metric": "IFR",
+                "population": "All ages, Iceland — highest per-capita testing rate globally at time of report",
+                "source_type": "surveillance_report",
+                "title": "Global Covid-19 Case Fatality Rates",
+                "url": "https://www.cebm.net/covid-19/global-covid-19-case-fatality-rates/",
+                "doi": "N/A",
+                "country": "Iceland",
+                "year": 2020,
+                "notes": "10 deaths in 1,798 confirmed cases (CFR 0.56%). Assuming 1% of population (364,000) infected gives IFR ~0.3%. Authors note Iceland's test-and-quarantine measures may have shielded elderly, and lag between infection and death means estimates may shift. Considered the most reliable early IFR estimate due to Iceland's near-complete population testing."
+              },
+              {
+                "value": 0.9,
+                "range": [
+                  0.7,
+                  1.16
+                ],
+                "metric": "IFR",
+                "population": "General",
+                "source_type": "modelling_study",
+                "title": "Estimating the infection fatality rate of emerging diseases using a regression approach applied to global COVID-19 cases",
+                "url": "https://www.sciencedirect.com/science/article/pii/S1876034125002059?via%3Dihub",
+                "doi": "10.1016/j.jiph.2025.102856",
+                "country": "Multiple countries",
+                "year": 2025,
+                "notes": "Regression-based estimate of the global infection fatality rate (IFR) for early COVID-19 using case fatality rates and population testing data across 139 countries affected before May 2020. Estimated a conservative global IFR of 0.90% (95% CI 0.70–1.16%). Reflects largely ancestral / early-pandemic SARS-CoV-2."
+              }
+            ]
+          },
+          "average_contacts_daily": {
+            "unit": "contacts/day",
+            "consensus": {
+              "pre_pandemic": {
+                "min": 7,
+                "max": 26,
+                "typical": 14
+              },
+              "initial_lockdown": {
+                "min": 2,
+                "max": 5,
+                "typical": 3.5
+              },
+              "post_relaxation": {
+                "min": 1.0,
+                "max": 3.0,
+                "typical": 2.3
+              }
+            },
+            "estimates": [
+              {
+                "value": 3.5,
+                "range": [
+                  2,
+                  5
+                ],
+                "population": "General population under initial COVID-19 mitigation / lockdown measures",
+                "source_type": "systematic_review",
+                "title": "Quantifying population contact patterns in the United States during the COVID-19 pandemic",
+                "url": "https://pubmed.ncbi.nlm.nih.gov/33563992/",
+                "doi": "10.1038/s41467-021-20990-2",
+                "country": "Multiple countries (primarily Europe, with some non-European settings)",
+                "year": 2021,
+                "notes": "Systematic review of 12 studies reporting social contact patterns during the COVID-19 pandemic. During the initial mitigation period in spring 2020, most study settings reported mean contact rates between 2 and 5 contacts per person per day, compared with pre-COVID rates of 7 to 26 contacts per person per day. Reflects contact behavior under lockdown / suppression measures rather than intrinsic baseline contact rates."
+              },
+              {
+                "value": 16.5,
+                "range": [
+                  7,
+                  26
+                ],
+                "population": "General population before COVID-19 / pre-pandemic baseline",
+                "source_type": "rapid_review",
+                "title": "Rapid Review of Social Contact Patterns During the COVID-19 Pandemic",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8478104/",
+                "doi": "10.1097/EDE.0000000000001412",
+                "country": "Multiple countries",
+                "year": 2021,
+                "notes": "The review summarized pre-COVID comparison data from the included studies and reported pre-pandemic contact rates ranging from 7 to 26 contacts per person per day. This is useful as a baseline comparator for contact behavior before distancing measures."
+              },
+              {
+                "value": 13.9,
+                "range": [
+                  2,
+                  100
+                ],
+                "population": "U.S. adults",
+                "source_type": "research_article",
+                "title": "Nationally Representative Social Contact Patterns among U.S. adults, August 2020-April 2021",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8978954/",
+                "doi": "10.1101/2021.09.22.21263904",
+                "country": "United States",
+                "year": 2022,
+                "notes": "National probability survey of U.S. adults with self-reported daily contacts. Mean daily contacts were 13.9 (baseline, Aug–Dec 2020) and 14.5 (follow-up, Mar–Apr 2021). This reflects contact behavior after the earliest lockdown period and under evolving mitigation measures, not pre-pandemic baseline contact rates."
+              },
+              {
+                "value": 2.3,
+                "range": [
+                  1.0,
+                  3.0
+                ],
+                "population": "General population in Chinese provinces outside Hubei after lockdown lifting",
+                "source_type": "research_article",
+                "title": "Quantifying human mixing patterns in Chinese provinces outside Hubei after the 2020 lockdown was lifted",
+                "url": "https://arxiv.org/abs/2111.13816",
+                "doi": "10.48550/arXiv.2111.13816",
+                "country": "China",
+                "year": 2021,
+                "notes": "Contact survey conducted in March 2020 after lockdowns were lifted in Chinese provinces outside Hubei. Participants reported 2.3 contacts per day (IQR 1.0–3.0), suggesting that contact behavior remained strongly reduced even after formal lockdown ended."
+              }
+            ]
+          },
+          "immunity_duration": {
+            "unit": "months",
+            "consensus": {
+              "min": 8,
+              "max": 14,
+              "typical": 10,
+              "notes": "Represents approximate duration of substantial protection against reinfection after prior SARS-CoV-2 infection in the pre-Omicron / early-pandemic period. This is not the same as duration of detectable antibodies or T-cell memory, and protection is shorter against immune-evasive variants such as Omicron."
+            },
+            "estimates": [
+              {
+                "value": 10,
+                "range": [
+                  7,
+                  10
+                ],
+                "population": "Previously infected unvaccinated individuals",
+                "source_type": "systematic_review",
+                "title": "Quantifying the risk of SARS-CoV-2 reinfection over time",
+                "url": "https://pubmed.ncbi.nlm.nih.gov/34043841/",
+                "doi": "10.1002/rmv.2260",
+                "country": "Multiple countries",
+                "year": 2022,
+                "notes": "Systematic review of 11 large cohort studies of SARS-CoV-2 reinfection. Reinfection remained uncommon, and no clear evidence of waning was observed over follow-up periods extending to more than 10 months in several studies. Useful as an estimate of at least ~10 months of protection against reinfection during the early pandemic."
+              },
+              {
+                "value": 8,
+                "range": [
+                  6,
+                  8
+                ],
+                "population": "Recovered COVID-19 cases",
+                "source_type": "systematic_review_meta_analysis",
+                "title": "The prevalence of adaptive immunity to COVID-19 and reinfection after recovery – a comprehensive systematic review and meta-analysis",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9248963/",
+                "doi": "10.1080/20477724.2022.2029301",
+                "country": "Multiple countries",
+                "year": 2022,
+                "notes": "Systematic review and meta-analysis of 54 studies from 18 countries. Around 90% of recovered individuals retained evidence of immunological memory at 6–8 months after recovery, and reinfection prevalence remained low. Good source for a conservative lower-bound estimate of post-infection immune duration."
+              },
+              {
+                "value": 12,
+                "range": [
+                  12,
+                  14
+                ],
+                "population": "Previously infected individuals",
+                "source_type": "narrative_review",
+                "title": "SARS-CoV-2 reinfections: Overview of efficacy and duration of natural and hybrid immunity",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8824301/",
+                "doi": "10.1016/j.envres.2022.112911",
+                "country": "Multiple countries",
+                "year": 2022,
+                "notes": "Narrative review summarizing evidence that natural immunity after SARS-CoV-2 infection provides strong protection against reinfection for at least one year, with only moderate waning before Omicron. Protection against severe disease appears to last longer than protection against infection."
+              },
+              {
+                "value": 12,
+                "range": [
+                  8,
+                  12
+                ],
+                "population": "Previously infected individuals",
+                "source_type": "narrative_review",
+                "title": "Durability of Vaccine-Induced and Natural Immunity Against COVID-19: A Narrative Review",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9828372/",
+                "doi": "10.1007/s40121-022-00753-2",
+                "country": "Multiple countries",
+                "year": 2023,
+                "notes": "Narrative review summarizing studies of waning protection after infection and vaccination. Reports high protection from prior infection over at least 7 months in meta-analyses and several studies showing little significant waning through roughly 8–12 months in pre-Omicron settings."
+              }
+            ]
+          },
+          "asymptomatic_fraction": {
+            "unit": "percentage",
+            "consensus": {
+              "min": 20,
+              "max": 44,
+              "typical": 35,
+              "notes": "Represents the proportion of SARS-CoV-2 infections that remain asymptomatic throughout the full course of infection. Estimates vary substantially depending on follow-up, age structure, testing strategy, and whether presymptomatic cases were excluded. For ancestral / early-pandemic SARS-CoV-2, a reasonable overall consensus is ~35%, with lower estimates (~20%) from stricter early reviews and higher estimates (~44%) from later age-inclusive meta-analyses."
+            },
+            "estimates": [
+              {
+                "value": 35.1,
+                "range": [
+                  30.7,
+                  39.9
+                ],
+                "population": "General",
+                "source_type": "systematic_review_meta_analysis",
+                "title": "Asymptomatic SARS-CoV-2 infection: A systematic review and meta-analysis",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8403749/",
+                "doi": "10.1073/pnas.2109229118",
+                "country": "Multiple countries",
+                "year": 2021,
+                "notes": "Systematic review and meta-analysis of more than 350 studies. Estimated that 35.1% of SARS-CoV-2 infections never developed clinical symptoms and were therefore truly asymptomatic. Distinguished asymptomatic infections from presymptomatic infections and removed index cases to reduce bias."
+              },
+              {
+                "value": 20,
+                "range": [
+                  17,
+                  25
+                ],
+                "population": "General",
+                "source_type": "living_systematic_review_meta_analysis",
+                "title": "Occurrence and transmission potential of asymptomatic and presymptomatic SARS-CoV-2 infections: A living systematic review and meta-analysis",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7508369/",
+                "doi": "10.1371/journal.pmed.1003346",
+                "country": "Multiple countries",
+                "year": 2020,
+                "notes": "Living systematic review and meta-analysis of 79 studies. Estimated that 20% of SARS-CoV-2 infections remained asymptomatic throughout infection. Prediction interval was wide because of substantial heterogeneity and risk of selection bias across studies."
+              },
+              {
+                "value": 44.1,
+                "range": [
+                  43.3,
+                  45.0
+                ],
+                "population": "General",
+                "source_type": "systematic_review_meta_analysis",
+                "title": "Asymptomatic SARS-CoV-2 Infection by Age: A Global Systematic Review and Meta-analysis",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9935239/",
+                "doi": "10.1097/INF.0000000000003791",
+                "country": "Multiple countries",
+                "year": 2022,
+                "notes": "Global systematic review and meta-analysis of studies conducted during 2020 before routine vaccination. Across 14,850 infected individuals, 44.1% remained asymptomatic throughout infection. Also found strong age variation, with asymptomatic infection more common in children and younger adults than in the elderly."
+              }
+            ]
+          }
+        }
+      },
+      "default_variant": "omicron"
+    },
     "mumps": {
-      "aliases": ["epidemic parotitis"],
-      "r0": {
-        "min": 10,
-        "max": 12,
-        "typical": 11,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC557899/"
-      },
-      "incubation_days": {
-        "min": 14,
-        "max": 25,
-        "typical": 18,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 7,
-        "max": 25,
-        "typical": 14,
-        "note": "7 days before to 11-14 days after parotitis onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      "display_name": "Mumps",
+      "aliases": [
+        "epidemic parotitis",
+        "infectious parotitis",
+        "mumps virus infection"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 4.0,
+            "max": 19.3,
+            "typical": 10.0,
+            "notes": "Consensus reflects heterogeneous literature on mumps transmissibility. Most commonly cited general-population estimates fall around 4–12, including review and modeling studies from the UK, Europe, South Korea, and the United States. A higher estimate of 19.3 was reported from a Bayesian age-structured pre-vaccination UK serologic modeling study and is retained as an upper-bound historical estimate rather than a typical modern value. A representative typical R0 of 10 is used here to reflect the central tendency of commonly cited historical/general-population estimates while acknowledging substantial model- and setting-dependent variation."
+          },
+          "estimates": [
+            {
+              "value": 11,
+              "range": [
+                10,
+                12
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Mumps and the UK epidemic 2005",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC557899/",
+              "doi": "10.1136/bmj.330.7500.1132",
+              "country": "United Kingdom",
+              "year": 2005,
+              "notes": "BMJ review article discussing the 2005 UK mumps epidemic. The estimate reflects a general-population R0 range for mumps referenced in the review context rather than a new primary estimation performed in this paper."
+            },
+            {
+              "value": 5.5,
+              "range": [
+                4,
+                7
+              ],
+              "population": "General",
+              "source_type": "seroprevalence_study",
+              "title": "Seroprevalence of mumps in healthcare workers in South Korea",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7024726/",
+              "doi": "10.7774/cevr.2020.9.1.64",
+              "country": "South Korea",
+              "year": 2020,
+              "notes": "Healthcare-worker seroprevalence study from South Korea. The paper states in the introduction that the basic reproduction number of mumps is 4–7 and corresponding herd immunity threshold is 75%–86%, but this study did not itself estimate R0; the value is background information cited from prior literature."
+            },
+            {
+              "value": 4.79,
+              "range": [
+                3,
+                7
+              ],
+              "population": "General",
+              "source_type": "modelling_study",
+              "title": "Vaccine waning and mumps re-emergence in the United States",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5899613/",
+              "doi": "10.1126/scitranslmed.aao5945",
+              "country": "United States",
+              "year": 2018,
+              "notes": "Estimated pre-vaccine-era basic reproduction number of mumps in the United States as 4.79; authors note consistency with prior estimates of 3–7 for high-income settings."
+            },
+            {
+              "value": 4,
+              "range": [
+                3.6,
+                4.5
+              ],
+              "population": "General",
+              "source_type": "modelling_study",
+              "title": "The pre-vaccination epidemiology of measles, mumps and rubella in Europe: implications for modelling studies",
+              "url": "https://www.cambridge.org/core/journals/epidemiology-and-infection/article/prevaccination-epidemiology-of-measles-mumps-and-rubella-in-europe-implications-for-modelling-studies/14B5097126336B5D0F8495923E4734DE",
+              "doi": "10.1017/S0950268800004672",
+              "country": "Multiple European countries",
+              "year": 2001,
+              "notes": "Pre-vaccination European analysis of measles, mumps, and rubella. Paper reports that mumps R0 was intermediate between measles and rubella and varied by country/mixing assumptions. Use as a broad historical pre-vaccination estimate rather than a single-country modern estimate."
+            },
+            {
+              "value": 19.3,
+              "range": [
+                4.0,
+                31.5
+              ],
+              "population": "Males aged 1–44 years; pre-vaccination serologic survey population",
+              "source_type": "Bayesian transmission modeling study",
+              "title": "Matrix models for childhood infections: a Bayesian approach with applications to rubella and mumps",
+              "url": "https://www.cambridge.org/core/journals/epidemiology-and-infection/article/matrix-models-for-childhood-infections-a-bayesian-approach-with-applications-to-rubella-and-mumps/64A5D4B6D7F0D5B1A3A2A7A4A6D0C5B4",
+              "doi": "10.1017/S0950268805004528",
+              "country": "United Kingdom",
+              "year": 2005,
+              "notes": "Bayesian age-structured matrix modeling study using paired UK serological survey data from 1986. Reported mumps R0 = 19.3 (95% credible region 4.0–31.5) under preferred assortative models with individual heterogeneity. Estimate is model-based and reflects pre-vaccination epidemiology."
+            }
+          ]
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 12,
+            "max": 25,
+            "typical": 17
+          },
+          "estimates": [
+            {
+              "value": 17,
+              "range": [
+                12,
+                25
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Mumps",
+              "url": "https://www.cdc.gov/mumps/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "According to CDC, the average incubation period for mumps is 16 to 18 days, with a range of 12 to 25 days."
+            },
+            {
+              "value": 17,
+              "range": [
+                12,
+                25
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Mumps: risk communication and community engagement guidance",
+              "url": "https://www.emro.who.int/cpi/publications/mumps-risk-communication-and-community-engagement-guidance.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2024,
+              "notes": "According to WHO, the average incubation period for mumps is 16 to 18 days, with a range of 12 to 25 days."
+            },
+            {
+              "value": 16,
+              "range": [
+                14,
+                18
+              ],
+              "population": "General",
+              "source_type": "reference_chapter",
+              "title": "Mumps virus",
+              "url": "https://www.sciencedirect.com/topics/biochemistry-genetics-and-molecular-biology/mumps-virus",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2014,
+              "notes": "Reference chapter states that mumps has an incubation period of 14–18 days following acquisition by respiratory droplet inhalation."
+            },
+            {
+              "value": 21,
+              "range": [
+                14,
+                28
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Mumps virus pathogenesis: Insights and knowledge gaps",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5215468/",
+              "doi": "10.1080/21645515.2016.1210745",
+              "country": "N/A",
+              "year": 2016,
+              "notes": "Review article states that mumps is transmitted via direct contact or airborne droplets and that the incubation period varies between 2 and 4 weeks."
+            }
+          ]
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 7,
+            "max": 7,
+            "typical": 7
+          },
+          "estimates": [
+            {
+              "value": 7,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Mumps",
+              "url": "https://www.cdc.gov/mumps/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "The infectious period is considered from 2 days before to 5 days after parotitis onset."
+            },
+            {
+              "value": 5,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Guidance for isolation precautions for mumps in the United States: a review of the scientific basis for policy change",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/20455692/",
+              "doi": "10.1086/652770",
+              "country": "United States",
+              "year": 2010,
+              "notes": "Review of the evidence underlying U.S. isolation guidance for mumps. The paper reports that mumps virus has been isolated from 7 days before through 8 days after parotitis onset, but that the highest frequency of positive isolations and highest viral loads occur closest to parotitis onset and decline rapidly thereafter. Most transmission likely occurs before and within 5 days of parotitis onset, supporting a conventional infectious period centered on the interval around symptom onset."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": 0.016,
+            "max": 0.038,
+            "typical": 0.027,
+            "notes": "Low general death rate for mumps."
+          },
+          "estimates": [
+            {
+              "value": 0.027,
+              "range": [
+                0.016,
+                0.038
+              ],
+              "metric": "CFR",
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Molecular biology, pathogenesis and pathology of mumps virus",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4268314/",
+              "doi": "10.1002/path.4445",
+              "country": "N/A",
+              "year": 2014,
+              "notes": "Review article reports a mumps case fatality ratio of 1.6–3.8 deaths per 10,000 cases. Converted here to percent of cases: 0.016%–0.038%, with midpoint 0.027%."
+            },
+            {
+              "value": 0.03,
+              "range": "N/A",
+              "metric": "CFR",
+              "population": "Reported mumps cases, pre-vaccine era",
+              "source_type": "government_surveillance_manual",
+              "title": "Manual for the Surveillance of Vaccine-Preventable Diseases, Chapter 9: Mumps",
+              "url": "https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-9-mumps.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "CDC chapter states that during 1962–1967 in the United States, there were 3 deaths per 10,000 reported mumps cases in the pre-vaccine era. Converted to percent as 0.03%. This is a historical case fatality estimate based on reported cases rather than all infections."
+            }
+          ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No validateable information found for mumps daily contacts."
+          },
+          "estimates": []
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "Long-term (not lifelong for vaccine-induced immunity)",
+            "notes": "Natural infection is generally believed to provide lifelong immunity. Two-dose MMR vaccination provides long-term protection for most individuals, but immunity against mumps may decrease over time (waning immunity), which contributes to outbreaks among previously vaccinated populations."
+          },
+          "estimates": [],
+          "special_value": "natural infection: lifelong; vaccine: long-term with waning immunity",
+          "source_type": "government_report",
+          "title": "Mumps Vaccination",
+          "url": "https://www.cdc.gov/mumps/vaccines/index.html",
+          "doi": "N/A",
+          "year": 2025
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": 0.15,
+            "max": 0.66,
+            "typical": 0.2,
+            "notes": "Typical reported is for unvaccinated populations."
+          },
+          "estimates": [
+            {
+              "value": 0.2,
+              "range": "N/A",
+              "population": "Unvaccinated general population",
+              "source_type": "government_report",
+              "title": "Manual for the Surveillance of Vaccine-Preventable Diseases: Chapter 9 – Mumps",
+              "url": "https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-9-mumps.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "Approximately 20% of mumps infections are asymptomatic among unvaccinated individuals. The frequency of asymptomatic infection among vaccinated individuals is unknown."
+            },
+            {
+              "value": 0.195,
+              "range": [
+                0.15,
+                0.24
+              ],
+              "population": "General population (pre-vaccination era)",
+              "source_type": "government_report",
+              "title": "Pink Book: Chapter 15 – Mumps",
+              "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-15-mumps.html",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2024,
+              "notes": "Before introduction of mumps vaccine, approximately 15–24% of infections were asymptomatic (subclinical). The frequency among vaccinated persons is unknown."
+            },
+            {
+              "value": 0.66,
+              "range": "N/A",
+              "population": "MMR vaccinated persons",
+              "source_type": "review_article",
+              "title": "Mumps virus pathogenesis: Insights and knowledge gaps",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5215468/",
+              "doi": "10.1080/21645515.2016.1210745",
+              "country": "N/A",
+              "year": 2016,
+              "notes": "Reviews mumps pathogenesis and summarizes historical epidemiology, noting that many infections are subclinical and citing pre-vaccination estimates from earlier epidemiologic studies."
+            }
+          ]
+        }
       }
     },
     "rubella": {
-      "aliases": ["german measles", "three-day measles"],
-      "r0": {
-        "min": 2,
-        "max": 5,
-        "typical": 3,
-        "note": "Literature reports R0 < 5; lower bound set at 2 (minimum viable epidemic threshold)",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/"
-      },
-      "incubation_days": {
-        "min": 13,
-        "max": 24,
-        "typical": 17,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 7,
-        "max": 21,
-        "typical": 14,
-        "note": "7 days before to 7 days after onset (CDC)",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      "display_name": "Rubella",
+      "aliases": [
+        "German measles",
+        "three-day measles",
+        "epidemic roseola",
+        "rubella virus infection",
+        "rubella infection"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 2,
+            "max": 8,
+            "typical": 5.5,
+            "notes": "Most published estimates of rubella R₀ in general populations fall between 4 and 7, with a typical value around 5–6. Lower estimates (~2–3) have been reported in low-density rural settings, whereas values above 10 are uncommon and generally reflect specific high-transmission populations or modeling assumptions rather than typical community transmission."
+          },
+          "estimates": [
+            {
+              "value": 3.7,
+              "range": [
+                3.3,
+                4.4
+              ],
+              "population": "Urban population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Peru",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 2.2,
+              "range": [
+                1.9,
+                2.4
+              ],
+              "population": "Rural population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Peru",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 6.5,
+              "range": [
+                5.4,
+                7.8
+              ],
+              "population": "Urban population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Uruguay",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 2.3,
+              "range": [
+                2.1,
+                4.0
+              ],
+              "population": "Rural population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Uruguay",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 3.9,
+              "range": [
+                3.5,
+                5.2
+              ],
+              "population": "Urban population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Chile",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data."
+            },
+            {
+              "value": 16.5,
+              "range": [
+                12.8,
+                25.2
+              ],
+              "population": "Rural population (pre-vaccination)",
+              "source_type": "seroepidemiological modeling study",
+              "title": "Rubella transmission and the burden of congenital rubella syndrome in low- and middle-income countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
+              "doi": "10.1371/journal.pcbi.1008858",
+              "country": "Chile",
+              "year": 2022,
+              "notes": "Estimated pre-vaccination basic reproduction number using study-specific seroprevalence data. Authors note this was an exception to the usual pattern of higher urban than rural transmission."
+            },
+            {
+              "value": 7,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella virus : Infectious substances pathogen safety data sheet",
+              "url": "https://www.canada.ca/en/public-health/services/laboratory-biosafety-biosecurity/pathogen-safety-data-sheets-risk-assessment/rubella-virus.html",
+              "doi": "N/A",
+              "country": "Canada",
+              "year": 2025,
+              "notes": "The preferred mode of transmission of RuV is through inhalation of airborne droplets and its reproductive number (Ro) is 7."
+            },
+            {
+              "value": 5.5,
+              "range": [
+                4,
+                7
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Rubella Transmissibility and Reproduction Number (R₀): A Critical Appraisal of the Prospects for its Control in Nigeria",
+              "url": "https://www.ovid.com/jnls/npmj/fulltext/10.4103/npmj.npmj_84_20~rubella-transmissibility-and-reproduction-number-ro-a",
+              "doi": "10.4103/npmj.npmj_84_20",
+              "country": "Nigeria",
+              "year": 2020,
+              "notes": "Narrative review summarizing published estimates of rubella transmissibility. Reports a typical R₀ of 4–7 for rubella in most settings, with values up to 11.8 reported in high-density populations (e.g., Addis Ababa). The article does not derive a new R₀ estimate."
+            },
+            {
+              "value": 5.2,
+              "range": [
+                4.0,
+                6.7
+              ],
+              "population": "General",
+              "source_type": "modelling_study",
+              "title": "Balancing Evidence and Uncertainty when Considering Rubella Vaccine Introduction",
+              "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0067639",
+              "doi": "10.1371/journal.pone.0067639",
+              "country": "African Region (multiple countries)",
+              "year": 2013,
+              "notes": "Bayesian hierarchical modeling study estimating the distribution of rubella basic reproduction numbers across African countries using age-specific seroprevalence data. Estimated median R₀ of 5.2, with 90% of countries expected to have R₀ between 4.0 and 6.7."
+            },
+            {
+              "value": 7.6,
+              "range": "N/A",
+              "population": "General population (pre-vaccination)",
+              "source_type": "modelling_study",
+              "title": "Assessing the burden of Congenital Rubella Syndrome in China and evaluating mitigation strategies: a meta-population modeling study",
+              "url": "https://doi.org/10.1016/S1473-3099(20)30475-8",
+              "doi": "10.1016/S1473-3099(20)30475-8",
+              "country": "China",
+              "year": 2021,
+              "notes": "Age-structured meta-population modeling study integrating serosurvey and surveillance data. Estimated that childhood immunization reduced the effective reproduction number from a pre-vaccination basic reproduction number (R₀) of 7.6 to an effective reproduction number of approximately 1.2 by 2014."
+            }
+          ]
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 12,
+            "max": 23,
+            "typical": 17,
+            "notes": "Based on CDC guidelines for the general population."
+          },
+          "estimates": [
+            {
+              "value": 17,
+              "range": [
+                13,
+                24
+              ],
+              "population": "Children and adolescents (<19 years)",
+              "source_type": "systematic_review",
+              "title": "Systematic review of the incubation period, infectiousness and shedding duration of vaccine-preventable diseases",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
+              "doi": "10.1186/s12879-018-3095-8",
+              "country": "Multiple countries",
+              "year": 2018,
+              "notes": "The review identified two outbreak investigations reporting a rubella incubation period of 13–24 days. Across additional authoritative sources summarized in the review, the incubation period ranged from 13–23 days, with onset occurring most commonly between 16 and 18 days after exposure."
+            },
+            {
+              "value": 17,
+              "range": [
+                12,
+                23
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Rubella",
+              "url": "https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC states that the average incubation period of rubella is 17 days, with a range of 12–23 days."
+            },
+            {
+              "value": 14,
+              "range": [
+                12,
+                23
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella (German Measles or Three-Day Measles)",
+              "url": "https://www.health.ny.gov/diseases/communicable/rubella/fact_sheet.htm",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "New York State Department of Health states the usual incubation period is 14 days, with a range of 12–23 days."
+            },
+            {
+              "value": 17,
+              "range": [
+                12,
+                23
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella Quicksheet",
+              "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Rubella-Quicksheet.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "Average incubation period is 17 days, with a range of 12–23 days."
+            },
+            {
+              "value": 15.5,
+              "range": [
+                14,
+                21
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella",
+              "url": "https://hhs.iowa.gov/center-acute-disease-epidemiology/epi-manual/reportable-diseases/rubella",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "The incubation period is usually 14–17 days, with a reported range of 14–21 days."
+            }
+          ]
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 11,
+            "max": 16,
+            "typical": 14,
+            "notes": "Most public health authorities (CDC and state health departments) consider individuals infectious from 7 days before until 7 days after rash onset (14-day infectious period). Some references report infectiousness beginning approximately 8 days before and ending 8 days after rash onset, while others recommend isolation for at least 4 days after rash onset. Peak infectiousness occurs around the time the rash appears."
+          },
+          "estimates": [
+            {
+              "value": 14,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Rubella",
+              "url": "https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "People with rubella are contagious from 7 days before until 7 days after rash onset. Peak infectiousness occurs when the rash is erupting."
+            },
+            {
+              "value": 16,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "reference_text",
+              "title": "Rubella",
+              "url": "https://www.ncbi.nlm.nih.gov/books/NBK559040/",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "Infected individuals can spread the virus from approximately 8 days before to 8 days after rash onset, with peak contagiousness occurring just before the rash's appearance."
+            },
+            {
+              "value": 14,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella Quicksheet",
+              "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Rubella-Quicksheet.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "Individuals are infectious from 7 days before until 7 days after rash onset. Peak infectiousness occurs when the rash is erupting."
+            },
+            {
+              "value": 11,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Rubella",
+              "url": "https://hhs.iowa.gov/center-acute-disease-epidemiology/epi-manual/reportable-diseases/rubella",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "Individuals are infectious from 7 days before until at least 4 days after rash onset. Infants with congenital rubella syndrome may shed virus for one year or longer."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": 0.005,
+            "max": 0.005,
+            "typical": 0.005,
+            "notes": "Death from postnatally acquired rubella is exceptionally rare. Historical U.S. surveillance estimated approximately 1 death per 210,000 cases (~0.00048%)."
+          },
+          "estimates": [
+            {
+              "value": 0.0005,
+              "range": "N/A",
+              "population": "General (pre-vaccination era)",
+              "source_type": "review_article",
+              "title": "Measuring the Benefits of Mass Vaccination Programs in the United States",
+              "url": "https://www.mdpi.com/2076-393X/8/4/561",
+              "doi": "10.3390/vaccines8040561",
+              "country": "United States",
+              "year": 2020,
+              "notes": "Review summarizing historical U.S. surveillance data from 1960–1968. Approximately 4 million rubella cases and 19 deaths occurred annually before vaccine introduction, corresponding to a case fatality rate of approximately 0.00048% (19 deaths per 4 million cases)."
+            }
+          ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No rubella-specific estimates of average daily contacts have been identified."
+          },
+          "estimates": []
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "lifelong",
+            "notes": "MMR & MMRV vaccines usually protect people for life against measles and rubella."
+          },
+          "estimates": [],
+          "special_value": "vaccine: lifelong",
+          "source_type": "government_report",
+          "title": "Rubella Vaccination",
+          "url": "https://www.cdc.gov/rubella/vaccines/index.html",
+          "doi": "N/A",
+          "year": 2025
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": 0.25,
+            "max": 0.5,
+            "typical": 0.375,
+            "notes": "Based on most recent CDC guidelines for the general population."
+          },
+          "estimates": [
+            {
+              "value": 0.375,
+              "range": [
+                0.25,
+                0.5
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Rubella",
+              "url": "https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC states that approximately 25%–50% of rubella infections are asymptomatic (subclinical). Value shown is the midpoint of the reported range."
+            },
+            {
+              "value": 0.35,
+              "range": [
+                0.2,
+                0.5
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Rubella",
+              "url": "https://www.cdc.gov/mmwr/preview/mmwrhtml/rr5012a1.htm",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2001,
+              "notes": "Prior CDC report states that approximately 20%-50% of rubella infections are asymptomatic."
+            }
+          ]
+        }
       }
     },
     "varicella": {
-      "aliases": ["chickenpox", "varicella-zoster", "chicken pox"],
-      "r0": {
-        "min": 8,
-        "max": 10,
-        "typical": 9,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/"
-      },
-      "incubation_days": {
-        "min": 10,
-        "max": 21,
-        "typical": 14,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 4,
-        "max": 10,
-        "typical": 7,
-        "note": "Typically 1-2 days before to 5-7 days after rash onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/"
+      "display_name": "Varicella",
+      "aliases": [
+        "chickenpox",
+        "varicella-zoster",
+        "chicken pox"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 5.5,
+            "max": 10,
+            "typical": 8,
+            "notes": "Published estimates of the basic reproduction number (R₀) for varicella generally range from approximately 5.5 to 10. Primary modeling studies have estimated R₀ around 5.7 in South Korea, while reviews and public health literature commonly cite values of 8–10. A typical value of 8 is consistent with the broader epidemiologic literature and is commonly used for herd immunity calculations."
+          },
+          "estimates": [
+            {
+              "value": 9,
+              "range": [
+                10,
+                12
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Effect of Routine Varicella Immunization on the Epidemiology and Immunogenicity of Varicella and Shingles",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
+              "doi": "10.3390/v14030588",
+              "country": "Japan",
+              "year": 2022,
+              "notes": "The basic reproduction number of varicella is thought to range from 8 to 10, indicating that the current immunization coverage in Japan is insufficient to prevent varicella, and that additional efforts are needed to promote vaccination against varicella."
+            },
+            {
+              "value": 5.67,
+              "range": [
+                5.33,
+                6.33
+              ],
+              "population": "General",
+              "source_type": "modelling_study",
+              "title": "Estimating the basic reproductive number of varicella in South Korea incorporating social contact patterns and seroprevalence",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/33829948/",
+              "doi": "10.1080/21645515.2021.1898917",
+              "country": "South Korea",
+              "year": 2021,
+              "notes": "Estimated the basic reproduction number (R₀) by combining age-specific seroprevalence data with social contact patterns derived from the POLYMOD contact matrix adapted to the Korean population. Estimated R₀ = 5.67 (95% CI: 5.33–6.33)."
+            },
+            {
+              "value": 8.5,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "viewpoint_article",
+              "title": "Mathematics for medical practitioners and patients: Understanding how vaccines work for the community",
+              "url": "https://www1.racgp.org.au/ajgp/2020/may/mathematics-for-medical-practitioners",
+              "doi": "10.31128/AJGP-08-19-5038",
+              "country": "Australia",
+              "year": 2020,
+              "notes": "Educational viewpoint article illustrating herd immunity concepts. Reports an R₀ of 8.5 for varicella-zoster virus based on previously published literature rather than presenting a new estimate."
+            }
+          ]
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 14,
+            "max": 16,
+            "typical": 15
+          },
+          "estimates": [
+            {
+              "value": 15,
+              "range": [
+                14,
+                16
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Chickenpox (Varicella)",
+              "url": "https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "The average incubation period for varicella is 14 to 16 days after exposure to a varicella or a herpes zoster rash."
+            },
+            {
+              "value": 15,
+              "range": [
+                10,
+                21
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Varicella Quicksheet",
+              "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "The incubation period is 10–21 days after exposure, most commonly 14–16 days. The value shown (15 days) is the midpoint of the most common incubation period."
+            },
+            {
+              "value": 15,
+              "range": [
+                10,
+                21
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Chickenpox",
+              "url": "https://www.who.int/news-room/questions-and-answers/item/chickenpox",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "WHO states that the incubation period is usually 14–16 days, with a range of 10–21 days. The value shown (15 days) is the midpoint of the typical incubation period."
+            }
+          ]
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 6,
+            "max": 7,
+            "typical": 6.5
+          },
+          "estimates": [
+            {
+              "value": 6.5,
+              "range": [
+                6,
+                7
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Varicella Quicksheet",
+              "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "Individuals are infectious from 1–2 days before rash onset until all lesions have crusted, usually about 5 days after rash onset. This corresponds to an infectious period of approximately 6–7 days, though it may be longer if lesions crust slowly."
+            },
+            {
+              "value": 6.5,
+              "range": [
+                6,
+                7
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Varicella Quicksheet",
+              "url": "https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "From 1–2 days before rash onset and continuing until all lesions are crusted (usually about 5 days)."
+            },
+            {
+              "value": 7,
+              "range": [
+                5,
+                9
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Communicability of varicella before rash onset: a literature review",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8193770/",
+              "doi": "10.1017/S0950268821001102",
+              "country": "N/A",
+              "year": 2021,
+              "notes": "Review of epidemiologic and laboratory evidence. Patients are generally infectious from 1–2 days before rash onset until all lesions have crusted, typically 4–7 days after rash onset."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": 0.002,
+            "max": 0.0036,
+            "typical": 0.0028,
+            "notes": "General population case-fatality rate (CFR) for varicella in the pre-vaccine era was approximately 2.0–3.6 deaths per 100,000 cases (0.002–0.0036%). Mortality is highly age-dependent, ranging from approximately 0.001% among children aged 1–14 years to 0.021% among adults, and is substantially higher among immunocompromised individuals."
+          },
+          "estimates": [
+            {
+              "value": 0.001,
+              "range": "N/A",
+              "population": "Children (1–14 years)",
+              "source_type": "government_report",
+              "title": "Chapter 22: Varicella",
+              "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Pre-vaccine era case fatality rate of approximately 1 death per 100,000 varicella cases among healthy children aged 1–14 years."
+            },
+            {
+              "value": 0.006,
+              "range": "N/A",
+              "population": "Adolescents (15–19 years)",
+              "source_type": "government_report",
+              "title": "Chapter 22: Varicella",
+              "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Pre-vaccine era case fatality rate of approximately 6 deaths per 100,000 varicella cases."
+            },
+            {
+              "value": 0.021,
+              "range": "N/A",
+              "population": "Adults",
+              "source_type": "government_report",
+              "title": "Chapter 22: Varicella",
+              "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Pre-vaccine era case fatality rate of approximately 21 deaths per 100,000 varicella cases."
+            },
+            {
+              "value": 0.0028,
+              "range": [
+                0.002,
+                0.0036
+              ],
+              "metric": "CFR",
+              "population": "General (pre-vaccination era)",
+              "source_type": "government_guideline",
+              "title": "Prevention of Varicella: Recommendations of the Advisory Committee on Immunization Practices (ACIP)",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/17585291/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2007,
+              "notes": "Average case-fatality rate of 2.0–3.6 deaths per 100,000 varicella cases during the pre-vaccine era (1970–1994)."
+            }
+          ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No varicella-specific estimates of average daily contacts have been identified."
+          },
+          "estimates": []
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "lifelong",
+            "notes": "Usually, a person will only get chickenpox once in their life. After recovery, their body develops immunity to the virus."
+          },
+          "estimates": [],
+          "special_value": "natural infection: lifelong",
+          "source_type": "government_report",
+          "title": "Chickenpox",
+          "url": "https://www.who.int/news-room/questions-and-answers/item/chickenpox",
+          "doi": "N/A",
+          "year": 2025
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No varicella-specific estimates of asymptomatic fraction have been identified."
+          },
+          "estimates": []
+        }
       }
     },
     "pertussis": {
-      "aliases": ["whooping cough", "bordetella pertussis", "whooping-cough"],
-      "r0": {
-        "min": 12,
-        "max": 17,
-        "typical": 14,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/"
-      },
-      "incubation_days": {
-        "min": 3,
-        "max": 7,
-        "typical": 5,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 14,
-        "max": 28,
-        "typical": 21,
-        "note": "First 2-4 weeks after cough onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/"
+      "display_name": "Pertussis",
+      "aliases": [
+        "whooping cough",
+        "bordetella pertussis",
+        "100-day cough"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 5.3,
+            "max": 17,
+            "typical": 14.5,
+            "notes": "Published estimates of the basic reproduction number (R₀) for pertussis span approximately 5.3–17. Lower values (5.3–11.5) are derived from modern transmission models incorporating serological data, vaccination, and social contact patterns, whereas public health agencies and expert reviews consistently cite 12–17 (commonly 15–17) as the historical R₀ in a fully susceptible population. For epidemiological modeling of an immunologically naïve population, values around 14–15 are most commonly used."
+          },
+          "estimates": [
+            {
+              "value": 14.5,
+              "range": [
+                12,
+                17
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Epidemiology of Pertussis After the COVID-19 Pandemic: Analysis of the Factors Involved in the Resurgence of the Disease in High-, Middle-, and Low-Income Countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/",
+              "doi": "10.3390/vaccines12121346",
+              "country": "Multiple countries",
+              "year": 2024,
+              "notes": "Review article summarizing published epidemiologic evidence. Reports that pertussis has an estimated basic reproduction number (R₀) of approximately 12–17, highlighting its high transmissibility. Does not derive a new R₀ estimate."
+            },
+            {
+              "value": 5.5,
+              "range": [
+                5.3,
+                5.9
+              ],
+              "population": "General population",
+              "source_type": "modelling_study",
+              "title": "Incidence and Reproduction Numbers of Pertussis: Estimates from Serological and Social Contact Data in Five European Countries",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2889930/",
+              "doi": "10.1371/journal.pmed.1000291",
+              "country": "Finland, Germany, Italy, Netherlands, United Kingdom",
+              "year": 2010,
+              "notes": "Estimated R₀ using serological data combined with POLYMOD social contact matrices. Country-specific estimates ranged from 5.3 to 5.9, with an overall value around 5.5."
+            },
+            {
+              "value": 16,
+              "range": [
+                15,
+                17
+              ],
+              "population": "General",
+              "source_type": "expert_consensus",
+              "title": "Expert consultation on pertussis",
+              "url": "https://www.ecdc.europa.eu/en/publications-data/expert-consultation-pertussis",
+              "doi": "N/A",
+              "country": "European Union / European Economic Area",
+              "year": 2014,
+              "notes": "ECDC expert consultation summarizing consensus that pertussis is highly contagious with a basic reproduction number (R₀) of 15–17. This value reflects historical transmission in a fully susceptible population and is intended for public health guidance rather than representing a new modeling estimate."
+            },
+            {
+              "value": 14.5,
+              "range": [
+                12,
+                17
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Bordetella pertussis: Infectious substances pathogen safety data sheet",
+              "url": "https://www.canada.ca/en/public-health/services/laboratory-biosafety-biosecurity/pathogen-safety-data-sheets-risk-assessment/bordetella-pertussis.html",
+              "doi": "N/A",
+              "country": "Canada",
+              "year": 2024,
+              "notes": "The estimated basic reproductive number (Ro) of B. pertussis, which is the expected number of secondary cases arising from a primary case in a completely susceptible population, is 12-17"
+            },
+            {
+              "value": 10.6,
+              "range": [
+                9.9,
+                11.5
+              ],
+              "population": "Adolescents and adults (general population model)",
+              "source_type": "modelling_study",
+              "title": "Estimation of the Underlying Burden of Pertussis in Adolescents and Adults in Southern Ontario, Canada",
+              "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0083850",
+              "doi": "10.1371/journal.pone.0083850",
+              "country": "Canada",
+              "year": 2013,
+              "notes": "Age-structured transmission model calibrated to pre-vaccine (1880–1929) and vaccine-era (1993–2004) pertussis data from Southern Ontario. Estimated a basic reproduction number (R₀) of approximately 10.6 with seasonal variation from 9.9 to 11.5. The study concluded that infections in individuals with waning immunity drive most transmission to children."
+            }
+          ]
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 4,
+            "max": 21,
+            "typical": 8.5
+          },
+          "estimates": [
+            {
+              "value": 12.5,
+              "range": [
+                5,
+                21
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Pertussis",
+              "url": "https://www.cdc.gov/pertussis/hcp/clinical-overview/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "Pertussis symptoms usually develop within 5 to 10 days after exposure, but sometimes not for as long as 21 days."
+            },
+            {
+              "value": 8.5,
+              "range": [
+                7,
+                10
+              ],
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Pertussis",
+              "url": "https://www.ncbi.nlm.nih.gov/books/NBK519008/",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2026,
+              "notes": "The incubation period of pertussis is around 7-10 days ( "
+            },
+            {
+              "value": 8.5,
+              "range": [
+                4,
+                21
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Pertussis",
+              "url": "https://www.chp.gov.hk/en/healthtopics/content/24/35.html",
+              "doi": "N/A",
+              "country": "Hong Kong",
+              "year": 2025,
+              "notes": "The incubation period ranges from 4 - 21 days, usually 7 - 10 days."
+            },
+            {
+              "value": 8.5,
+              "range": [
+                4,
+                21
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Pertussis (whooping cough)",
+              "url": "https://www.health.wa.gov.au/articles/n_r/pertussis-whooping-cough",
+              "doi": "N/A",
+              "country": "Australia",
+              "year": 2026,
+              "notes": "Incubation period: Usually 7 to 10 days (ranges from 4 to 21 days)."
+            }
+          ]
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 21,
+            "max": 35,
+            "typical": 21
+          },
+          "estimates": [
+            {
+              "value": 21,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Pertussis",
+              "url": "https://www.cda.gov.sg/professionals/diseases/pertussis/",
+              "doi": "N/A",
+              "country": "Singapore",
+              "year": 2025,
+              "notes": "Infectious for about 3 weeks, from the catarrhal stage (about 1 week) through the paroxysmal cough stage (about 2 weeks) in an untreated patient. If antibiotics are initiated, the period of infectiousness is usually ≤5 days after onset of treatment."
+            },
+            {
+              "value": 31.5,
+              "range": [
+                28,
+                35
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Factsheet about pertussis",
+              "url": "https://www.ecdc.europa.eu/en/pertussis/facts",
+              "doi": "N/A",
+              "country": "European Union",
+              "year": 2023,
+              "notes": "An individual with pertussis can be infectious for four to five weeks from the onset of the illness."
+            },
+            {
+              "value": 21,
+              "range": "N/A",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Whooping cough",
+              "url": "https://www.nhs.uk/conditions/whooping-cough/",
+              "doi": "N/A",
+              "country": "United Kingdom",
+              "year": 2023,
+              "notes": "If you have whooping cough, you're contagious for up to 3 weeks after the coughing starts."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "In progress: consensus range not yet determined; see estimates for provisional values."
+          },
+          "estimates": [
+            {
+              "value": 0.67,
+              "range": "N/A",
+              "population": "Children <5 years)",
+              "source_type": "organization_report",
+              "title": "Whooping Cough (Pertussis)",
+              "url": "https://www.nfid.org/infectious-diseases/whooping-cough-pertussis/",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "Derived from 24.1 million estimated annual cases and 160,700 deaths reported by CDC. This is not a directly reported case fatality rate and should be interpreted cautiously because the deaths are limited to children younger than 5 years."
+            },
+            {
+              "value": 0.8,
+              "range": "N/A",
+              "population": "Unvaccinated infants younger than 6 months",
+              "source_type": "government_report",
+              "title": "Pertussis (whooping cough)",
+              "url": "https://nt.gov.au/wellbeing/health-conditions-treatments/pertussis-whooping-cough",
+              "doi": "N/A",
+              "country": "Australia",
+              "year": 2026,
+              "notes": "Case fatality rate in unvaccinated infants under 6 months is estimated to be 0.8%. Death is rare in people aged 10–70 years."
+            }
+          ]
+        }
       }
     },
     "influenza": {
-      "aliases": ["flu", "seasonal flu", "seasonal influenza", "the flu"],
-      "r0": {
-        "min": 1.2,
-        "max": 1.4,
-        "typical": 1.28,
-        "note": "Seasonal community transmission; pandemic strains (H1N1 1918: ~1.8, H5N1: ~0.34) differ significantly",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169819/"
-      },
-      "incubation_days": {
-        "min": 1,
-        "max": 4,
-        "typical": 2,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 1,
-        "max": 10,
-        "typical": 5,
-        "note": "1 day before to 10 days after onset (children); shorter in adults",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      "display_name": "Influenza",
+      "aliases": [
+        "flu",
+        "seasonal flu",
+        "seasonal influenza",
+        "the flu"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 1.2,
+            "max": 1.4,
+            "typical": 1.28,
+            "notes": "Seasonal community transmission; pandemic strains (H1N1 1918: ~1.8, H5N1: ~0.34) differ significantly",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169819/"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 1,
+            "max": 4,
+            "typical": 2,
+            "notes": "",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 1,
+            "max": 10,
+            "typical": 5,
+            "notes": "1 day before to 10 days after onset (children); shorter in adults",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+          },
+          "estimates": []
+        }
       }
     },
     "meningococcal": {
-      "aliases": ["meningitis", "neisseria meningitidis", "meningococcal disease", "bacterial meningitis"],
-      "r0": {
-        "min": 1.0,
-        "max": 1.9,
-        "typical": 1.3,
-        "note": "Three estimates from HPD intervals: 1.31 (1.03-1.64), 1.22 (0.90-1.64), 1.4 (0.91-1.9)",
-        "source": "https://www.sciencedirect.com/science/article/abs/pii/S156713482030191X"
-      },
-      "incubation_days": {
-        "min": 1,
-        "max": 10,
-        "typical": 3,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 1,
-        "max": 7,
-        "typical": 2,
-        "note": "Non-infectious 1-2 days after antibiotic treatment starts",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      "display_name": "Meningococcal disease",
+      "aliases": [
+        "meningitis",
+        "neisseria meningitidis",
+        "meningococcal disease",
+        "bacterial meningitis"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 1.0,
+            "max": 1.9,
+            "typical": 1.3,
+            "notes": "Three estimates from HPD intervals: 1.31 (1.03-1.64), 1.22 (0.90-1.64), 1.4 (0.91-1.9)",
+            "source": "https://www.sciencedirect.com/science/article/abs/pii/S156713482030191X"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 1,
+            "max": 10,
+            "typical": 3,
+            "notes": "",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 1,
+            "max": 7,
+            "typical": 2,
+            "notes": "Non-infectious 1-2 days after antibiotic treatment starts",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+          },
+          "estimates": []
+        }
       }
     },
     "hepatitis_a": {
-      "aliases": ["hepatitis a", "hep a", "hav", "hepatitis-a"],
-      "r0": {
-        "min": 2.1,
-        "max": 2.8,
-        "typical": 2.4,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6152969/"
-      },
-      "incubation_days": {
-        "min": 20,
-        "max": 125,
-        "typical": 28,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 14,
-        "max": 28,
-        "typical": 21,
-        "note": "2 weeks before to 1 week after onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      "display_name": "Hepatitis A",
+      "aliases": [
+        "hepatitis a",
+        "hep a",
+        "hav",
+        "hepatitis-a"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 2.1,
+            "max": 2.8,
+            "typical": 2.4,
+            "notes": "",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6152969/"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 20,
+            "max": 125,
+            "typical": 28,
+            "notes": "",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 14,
+            "max": 28,
+            "typical": 21,
+            "notes": "2 weeks before to 1 week after onset",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+          },
+          "estimates": []
+        }
+      }
+    },
+    "ebola": {
+      "display_name": "Ebola",
+      "aliases": [
+        "ebola virus disease",
+        "evd"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 1.3,
+            "max": 2.7,
+            "typical": 1.88,
+            "notes": "High IFR (25–90%).",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169395/"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 1,
+            "max": 21,
+            "typical": 6.2,
+            "notes": "",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/#s4"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 6.5,
+            "max": 21,
+            "typical": 9.4,
+            "notes": "Typical is until resolution of wet symptoms",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/#s4"
+          },
+          "estimates": []
+        }
+      }
+    },
+    "dengue": {
+      "display_name": "Dengue",
+      "aliases": [
+        "dengue fever",
+        "breakbone fever"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 1.0,
+            "max": 103.0,
+            "typical": 4.74,
+            "notes": "Vector-borne; note model limitations.",
+            "source": "https://www.sciencedirect.com/science/article/pii/S0013935120300050"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 3,
+            "max": 14,
+            "typical": 6,
+            "notes": "",
+            "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 2,
+            "max": 5,
+            "typical": 4,
+            "notes": "",
+            "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+          },
+          "estimates": []
+        }
+      }
+    },
+    "rsv": {
+      "display_name": "RSV",
+      "aliases": [
+        "respiratory syncytial virus",
+        "respiratory syncytial virus infection"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 1.2,
+            "max": 9.0,
+            "typical": 3.0,
+            "notes": "Strong seasonality; high burden in infants.",
+            "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 2,
+            "max": 8,
+            "typical": 5,
+            "notes": "",
+            "source": "https://cdphe.colorado.gov/child-care-school-settings/rsv"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 3,
+            "max": 28,
+            "typical": 6,
+            "notes": "",
+            "source": "https://www.cdc.gov/rsv/causes/index.html"
+          },
+          "estimates": []
+        }
+      }
+    },
+    "cholera": {
+      "display_name": "Cholera",
+      "aliases": [
+        "vibrio cholerae"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 0.8,
+            "max": 7.3,
+            "typical": 2.1,
+            "notes": "waterborne; environmental reservoir",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7360044/"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 0.5,
+            "max": 5,
+            "typical": 2,
+            "notes": "",
+            "source": "https://www.who.int/news-room/fact-sheets/detail/cholera"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 1,
+            "max": 10,
+            "typical": 5,
+            "notes": "",
+            "source": "https://www.who.int/news-room/fact-sheets/detail/cholera"
+          },
+          "estimates": []
+        }
+      }
+    },
+    "polio": {
+      "display_name": "Polio",
+      "aliases": [
+        "poliomyelitis",
+        "poliovirus"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 5,
+            "max": 7,
+            "typical": 6,
+            "notes": "High asymptomatic fraction (~72%).",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7785280/"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 4,
+            "max": 35,
+            "typical": 8,
+            "notes": "",
+            "source": "https://www.who.int/health-topics/poliomyelitis#tab=tab_2"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 2,
+            "max": 10,
+            "typical": 6,
+            "notes": "",
+            "source": "https://www.who.int/health-topics/poliomyelitis#tab=tab_2"
+          },
+          "estimates": []
+        }
+      }
+    },
+    "tuberculosis": {
+      "display_name": "Tuberculosis",
+      "aliases": [
+        "tb",
+        "mycobacterium tuberculosis"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 0.24,
+            "max": 4.3,
+            "typical": 2.1,
+            "notes": "Latent TB complicates R₀.",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6092233/#sec4"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 14,
+            "max": 730,
+            "typical": 180,
+            "notes": "",
+            "source": "https://www.healthline.com/health/incubation-period-of-tuberculosis-disease#how-long-is-it-contagious"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 14,
+            "max": 365,
+            "typical": 14,
+            "notes": "",
+            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC80198/"
+          },
+          "estimates": []
+        }
+      }
+    },
+    "mpox": {
+      "display_name": "Mpox",
+      "aliases": [
+        "monkeypox"
+      ],
+      "parameters": {
+        "r0": {
+          "unit": "dimensionless",
+          "consensus": {
+            "min": 1.37,
+            "max": 3.677,
+            "typical": 2.52,
+            "notes": "Network-dependent.",
+            "source": "https://royalsocietypublishing.org/rsif/article/21/216/20230637/90596/Quantifying-the-basic-reproduction-number-and"
+          },
+          "estimates": []
+        },
+        "incubation_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 3,
+            "max": 17,
+            "typical": 10,
+            "notes": "",
+            "source": "https://www.cdc.gov/monkeypox/hcp/clinical-signs/index.html"
+          },
+          "estimates": []
+        },
+        "infectious_days": {
+          "unit": "days",
+          "consensus": {
+            "min": 1,
+            "max": 28,
+            "typical": 21,
+            "notes": "",
+            "source": "https://www.nfid.org/infectious-disease/mpox/"
+          },
+          "estimates": []
+        }
       }
     }
   }

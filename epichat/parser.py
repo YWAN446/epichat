@@ -330,6 +330,22 @@ def recalibrate_beta(
     return SimParams.model_validate({**params.model_dump(), "beta": round(corrected, 6)})
 
 
+def _apply_country(params: SimParams, queries: list[DataQuery]) -> SimParams:
+    """Derive the ISO3 country from resolver queries so country-driven
+    demographics (generator.resolve_demographics) can auto-fill vital rates."""
+    if params.country:
+        return params
+    code = next((q.location_code for q in queries if q.location_code), None)
+    if not code:
+        loc_id = next((q.location_id for q in queries if q.location_id), None)
+        if loc_id and _LOCATION_TABLE:
+            table = json.loads(_LOCATION_TABLE)
+            code = next((iso for iso, lid in table.items() if lid == loc_id), None)
+    if code and len(code) == 3:
+        return SimParams.model_validate({**params.model_dump(), "country": code})
+    return params
+
+
 def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimParams:
     """
     Translate a natural language epidemiological query into validated SimParams.
@@ -362,6 +378,7 @@ def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimP
     params = _apply_health_system(params, resolved)
     params = _apply_population_scale(params, resolved)
     params = _apply_disease_db_r0(user_input, params)
+    params = _apply_country(params, intent.data_queries)
     return params
 
 

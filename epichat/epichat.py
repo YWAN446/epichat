@@ -168,7 +168,13 @@ class EpiChat:
         from .disease_db import detect_disease, check_params as _db_check
         _disease = detect_disease(user_input)
         _param_warnings = (
-            _db_check(_disease, params.approx_r0(), params.dur_inf, params.dur_exp)
+            _db_check(
+                _disease, params.approx_r0(), params.dur_inf, params.dur_exp,
+                p_death=params.p_death or None,
+                n_contacts=params.n_contacts,
+                dur_immune=params.dur_immune,
+                p_asymp=params.p_asymp if params.disease_type == "seiar" else None,
+            )
             if _disease else []
         )
 
