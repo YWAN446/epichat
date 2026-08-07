@@ -21,6 +21,9 @@ from epichat.chat_controller import (
     build_summary,
     detect_new_scenario,
     detect_run_intent,
+    format_tool_failure,
+    format_tool_result,
+    format_understanding_card,
     next_question,
     update_collected,
 )
@@ -32,6 +35,9 @@ from epichat.enricher import enrich_input
 from epichat.language import detect_language, detect_location_correction
 from epichat.parser import (
     ClarificationNeeded,
+    extract_intent,
+    fetch_query,
+    finalize_params,
     get_last_resolved,
     get_last_location_queried,
     parse_query,
@@ -84,6 +90,8 @@ _CONV_DEFAULTS: dict = {
     "context": "",
     "params": None,
     "parse_clarification": None,
+    "pending_intent": None,
+    "fetch_cache": {},
     "data_sources": [],
     "plot_path": None,
     "collected": {
@@ -211,6 +219,109 @@ def _do_parse() -> None:
             _logger.exception("parse_query failed (attempt %d/2)", attempt)
 
 
+def _do_understand() -> None:
+    """Stage 1: extract intent; on ambiguity store the clarifying question."""
+    s = st.session_state
+    s.pending_intent = None
+    s.parse_clarification = None
+    for attempt in (1, 2):
+        try:
+            s.pending_intent = extract_intent(s.context, s.get("outbreak_context"))
+            return
+        except ClarificationNeeded as e:
+            s.parse_clarification = e.question
+            return
+        except Exception:
+            _logger.exception("extract_intent failed (attempt %d/2)", attempt)
+
+
+def _detected_disease_name() -> str | None:
+    s = st.session_state
+    ctx = s.get("outbreak_context")
+    if ctx is not None and ctx.disease_name:
+        return ctx.disease_name
+    from epichat.disease_db import detect_disease
+    return detect_disease(s.context)
+
+
+def _show_understanding_card() -> None:
+    s = st.session_state
+    _add_msg("assistant", format_understanding_card(
+        s.pending_intent.preliminary_params,
+        s.pending_intent.data_queries,
+        disease_name=_detected_disease_name(),
+        lang=_lang(),
+    ))
+    s.stage = "confirm"
+
+
+def _do_fetch_and_finalize() -> None:
+    """Stage 2: parallel data fetches with per-tool chat lines, then finalize."""
+    s = st.session_state
+    intent = s.pending_intent
+    resolved: list = []
+    with st.status("Fetching data…", expanded=True) as status:
+        pending = []
+        for q in intent.data_queries:
+            key = repr(q)
+            if key in s.fetch_cache:
+                resolved.extend(s.fetch_cache[key])   # reuse, no duplicate line
+            else:
+                pending.append((key, q))
+        if pending:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            with ThreadPoolExecutor(max_workers=min(4, len(pending))) as pool:
+                futures = {pool.submit(fetch_query, q): (key, q) for key, q in pending}
+                for fut in as_completed(futures):
+                    key, q = futures[fut]
+                    try:
+                        fields = fut.result()
+                    except Exception as exc:
+                        _logger.exception("fetch_query failed for %s", q.source)
+                        line = format_tool_failure(q, str(exc)[:120])
+                        fields = []
+                    else:
+                        line = format_tool_result(q, fields)
+                    s.fetch_cache[key] = fields
+                    resolved.extend(fields)
+                    status.write(line)
+                    _add_msg("assistant", line)
+        status.update(label="Calibrating parameters…")
+        s.params = None
+        for attempt in (1, 2):
+            try:
+                s.params = finalize_params(s.context, intent, resolved)
+                break
+            except Exception:
+                _logger.exception("finalize_params failed (attempt %d/2)", attempt)
+        s.data_sources = get_last_resolved()
+        if get_last_location_queried():
+            s._location_recognized = True
+        status.update(label="Data ready", state="complete", expanded=False)
+    _add_msg("assistant", "🧮 Parameters calibrated (β matched to literature R₀; "
+                          "demographics filled at generation)")
+
+
+def _finish_collection() -> None:
+    """Shared tail after a successful fetch+finalize: questions or summary."""
+    s = st.session_state
+    s.collected = update_collected(
+        s.collected, s.params, s.data_sources, s.context,
+        outbreak_context=s.outbreak_context,
+    )
+    if st.session_state.get("_location_recognized"):
+        s.collected["location"] = True
+        s.collected["population"] = True
+        st.session_state._location_recognized = False
+    question = next_question(s.collected, s.params, s.data_sources, lang=_lang())
+    if question is None:
+        _add_msg("assistant", _build_summary_with_description())
+        s.stage = "ready"
+    else:
+        _add_msg("assistant", question)
+        s.stage = "collecting"
+
+
 def _do_enrich(text: str) -> None:
     st.session_state.outbreak_context = enrich_input(text)
 
@@ -329,17 +440,8 @@ def _process_pending() -> None:
             _do_enrich(text)
             if DEV_MODE and s.outbreak_context is not None and s.outbreak_context.disease_name is not None:
                 _add_msg("assistant", _format_context_card(s.outbreak_context))
-        _do_parse()
-        s.collected = update_collected(
-            s.collected, s.params, s.data_sources, text,
-            outbreak_context=s.outbreak_context,
-        )
-        # Accept location even when the UN WPP API failed — the LLM still recognised it
-        if st.session_state.get("_location_recognized"):
-            s.collected["location"] = True
-            s.collected["population"] = True
-            st.session_state._location_recognized = False
-        if s.params is None:
+        _do_understand()
+        if s.pending_intent is None:
             _add_msg(
                 "assistant",
                 s.parse_clarification
@@ -347,12 +449,36 @@ def _process_pending() -> None:
                    "For example: 'Simulate HIV in Kenya'.",
             )
             return
-        question = next_question(s.collected, s.params, s.data_sources, lang=lang)
-        if question is None:
-            _add_msg("assistant", _build_summary_with_description())
-            s.stage = "ready"
+        _show_understanding_card()
+
+    elif s.stage == "confirm":
+        if detect_new_scenario(text):
+            _start_new_scenario(text)
+            return
+        if detect_run_intent(text):
+            _do_fetch_and_finalize()
+            if s.params is None:
+                _add_msg(
+                    "assistant",
+                    "I couldn't finalize the parameters — could you rephrase "
+                    "or adjust the settings?",
+                )
+                s.stage = "collecting"
+                return
+            _finish_collection()
         else:
-            _add_msg("assistant", question)
+            # Treat as a correction: fold into context and re-present the card
+            s.context = (s.context + " " + text).strip()
+            _do_understand()
+            if s.pending_intent is None:
+                _add_msg(
+                    "assistant",
+                    s.parse_clarification
+                    or "I had trouble understanding that. Could you rephrase?",
+                )
+                s.stage = "collecting"
+                return
+            _show_understanding_card()
 
     elif s.stage == "ready":
         if detect_new_scenario(text):
@@ -377,28 +503,25 @@ def _start_new_scenario(text: str) -> None:
     s = st.session_state
     s.context = text
     s.params = None
+    s.pending_intent = None
+    s.fetch_cache = {}
+    s.data_sources = []
     s.collected = {k: False for k in s.collected}
     s.outbreak_context = None
     _do_enrich(text)
     if DEV_MODE and s.outbreak_context is not None and s.outbreak_context.disease_name is not None:
         _add_msg("assistant", _format_context_card(s.outbreak_context))
-    _do_parse()
-    s.collected = update_collected(
-        s.collected, s.params, s.data_sources, text,
-        outbreak_context=s.outbreak_context,
-    )
-    # Accept location even when the UN WPP API failed — the LLM still recognised it
-    if st.session_state.get("_location_recognized"):
-        s.collected["location"] = True
-        s.collected["population"] = True
-        st.session_state._location_recognized = False
-    question = next_question(s.collected, s.params, s.data_sources, lang=_lang())
-    if question is None:
-        _add_msg("assistant", _build_summary_with_description())
-        s.stage = "ready"
-    else:
-        _add_msg("assistant", question)
+    _do_understand()
+    if s.pending_intent is None:
+        _add_msg(
+            "assistant",
+            s.parse_clarification
+            or "I had trouble understanding that. Could you rephrase? "
+               "For example: 'Simulate HIV in Kenya'.",
+        )
         s.stage = "collecting"
+        return
+    _show_understanding_card()
 
 
 def _apply_modification_and_summarize(text: str) -> None:
