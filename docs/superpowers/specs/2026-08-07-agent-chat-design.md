@@ -105,3 +105,49 @@ duplicative (five separate LLM call sites doing what one agent can do).
 - Live browser verification: full dengue-in-Brazil flow in English; one
   Portuguese query answered in Portuguese; `EPICHAT_AGENT=0` regression
   check of the staged pipeline.
+
+## Future work
+
+### Citation-backed seasonality field in `disease_parameters.json`
+
+Gap found in live testing (2026-08-12): asked for dengue in Brazil, the agent
+added a `seasonality` intervention on its own initiative. `configure_simulation`
+exposes `seasonality_scale` (0–1), but nothing in the data or the system prompt
+governs *when* to use it or *what amplitude* — the LLM chose both from general
+knowledge. Every other epidemiological number originates in
+`disease_parameters.json` and is range-checked by `check_params`; the
+seasonality amplitude is the single exception to "the model orchestrates but
+never invents parameter values". Today it is guarded only by the user
+confirmation step and the schema's 0–1 bound.
+
+Proposed fix — extend the per-disease schema with a `seasonality` parameter in
+the same consensus format as the rest:
+
+```json
+"seasonality": {
+  "unit": "dimensionless",
+  "consensus": {
+    "min": 0.1, "max": 0.4, "typical": 0.25,
+    "notes": "e.g. transmission peaks in the rainy season",
+    "source": "<citation URL>"
+  }
+}
+```
+
+Wiring once the data exists:
+
+1. `disease_db.load_db()` — `_flatten_param` is generic over `parameters.*`;
+   verify the new key flows through to the flat view.
+2. `lookup_disease` (`epichat/agent.py`) — add `"seasonality"` to the
+   parameter allow-list so the agent receives it with the other literature
+   values.
+3. `check_params` (`epichat/disease_db.py`) — warn when a configured
+   seasonality scale falls outside the literature range.
+4. System prompt — propose seasonal forcing only when the database provides a
+   value or the user asks for it; cite the source at the confirm step.
+5. Populate entries for well-characterized seasonal diseases first (dengue,
+   influenza, RSV, measles); leave the field absent elsewhere — absence means
+   no unsolicited seasonality.
+
+Data curation follows the same citation-backed workflow as the rest of the
+disease database.

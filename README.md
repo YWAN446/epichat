@@ -45,7 +45,7 @@ User: epidemic curve + interpretation
 
 ### Disease Parameter Database & Fact-Checking
 
-EpiChat now ships a literature-backed database of 8 infectious diseases (`epichat/data/disease_parameters.json`). When a named disease is detected in a query, EpiChat compares the simulation's R₀, infectious period, and incubation period against published ranges — and shows a warning if any value is out of range.
+EpiChat now ships a literature-backed database of 16 infectious diseases (`epichat/data/disease_parameters.json`). When a named disease is detected in a query, EpiChat compares the simulation's R₀, infectious period, and incubation period against published ranges — and shows a warning if any value is out of range.
 
 ```
 ⚠️  Parameter notes
@@ -218,6 +218,13 @@ Additional loaders included for future phases: CMU Delphi CovidCast/FluView
 surveillance (`data_loaders/epidata.py`), UN/DHS/Census household size
 distributions (`data_loaders/households.py`), and OWID calibration data
 (`data_loaders/calibration.py`).
+
+> **Known gap (future work):** the seasonality intervention amplitude is the
+> one epidemiological value not yet backed by `disease_parameters.json` — in
+> agent mode the model proposes it from general knowledge (always surfaced for
+> user confirmation before running). Planned: a citation-backed `seasonality`
+> field per disease; see the *Future work* section of
+> `docs/superpowers/specs/2026-08-07-agent-chat-design.md`.
 
 ---
 
