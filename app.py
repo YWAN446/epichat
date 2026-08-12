@@ -19,6 +19,7 @@ DEV_MODE = os.environ.get("EPICHAT_DEV_MODE", "false").lower() == "true"
 
 from epichat.agent import EpiChatAgent
 from epichat.chat_controller import (
+    agent_status_label,
     build_summary,
     detect_new_scenario,
     detect_run_intent,
@@ -424,6 +425,8 @@ def _handle_user_message(text: str) -> None:
 
 def _thinking_text() -> str:
     """Return an appropriate status label for the current stage and pending input."""
+    if _USE_AGENT:
+        return "Thinking…"
     stage = st.session_state.stage
     text = st.session_state.pending_input or ""
     if stage == "collecting":
@@ -446,10 +449,12 @@ def _agent_turn(text: str) -> None:
             if kind == "text":
                 _add_msg("assistant", payload["text"])
             elif kind == "tool_use":
+                status.update(label=agent_status_label(payload["name"]))
                 line = format_agent_tool_line(payload["name"], payload.get("input") or {})
                 status.write(line)
                 _add_msg("assistant", line)
             elif kind == "tool_result":
+                status.update(label="Thinking…")
                 content = payload.get("content")
                 text_c = content if isinstance(content, str) else ""
                 if payload.get("is_error") or text_c.startswith(

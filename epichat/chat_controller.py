@@ -151,6 +151,21 @@ _AGENT_TOOL_LABELS: dict[str, str] = {
 }
 
 
+_AGENT_STATUS_LABELS: dict[str, str] = {
+    "configure_simulation": "Configuring the simulation…",
+    "lookup_disease": "Looking up disease parameters…",
+    "fetch_demographics": "Fetching UN demographics…",
+    "fetch_health_system": "Fetching World Bank health-system data…",
+    "fetch_vaccination_coverage": "Fetching WHO vaccination coverage…",
+    "run_simulation": "Running the simulation — this usually takes 1–2 minutes…",
+}
+
+
+def agent_status_label(name: str) -> str:
+    """Live status-panel label shown while an agent tool call executes."""
+    return _AGENT_STATUS_LABELS.get(name, f"Running {name}…")
+
+
 def format_agent_tool_line(name: str, payload: dict, is_error: bool = False) -> str:
     """Persistent chat line for one agent tool call."""
     label = _AGENT_TOOL_LABELS.get(name, f"🔧 {name}")

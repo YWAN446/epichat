@@ -521,6 +521,24 @@ class TestFormatAgentToolLine:
         assert "mystery_tool" in format_agent_tool_line("mystery_tool", {})
 
 
+class TestAgentStatusLabel:
+    def test_run_simulation_mentions_expected_duration(self):
+        from epichat.chat_controller import agent_status_label
+        label = agent_status_label("run_simulation")
+        assert "Running the simulation" in label and "1–2 minutes" in label
+
+    def test_every_agent_tool_has_a_label(self):
+        from epichat.agent import AgentState, build_tools
+        from epichat.chat_controller import _AGENT_STATUS_LABELS, agent_status_label
+        for tool in build_tools(AgentState()):
+            assert tool.name in _AGENT_STATUS_LABELS
+            assert agent_status_label(tool.name).strip()
+
+    def test_unknown_tool_falls_back(self):
+        from epichat.chat_controller import agent_status_label
+        assert "mystery_tool" in agent_status_label("mystery_tool")
+
+
 class TestFormatDataSources:
     def test_lists_each_parameter_with_value_and_citation(self):
         from epichat.chat_controller import format_data_sources
