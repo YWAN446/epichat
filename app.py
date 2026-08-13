@@ -449,12 +449,15 @@ def _agent_turn(text: str) -> None:
             if kind == "text":
                 _add_msg("assistant", payload["text"])
             elif kind == "tool_use":
-                status.update(label=agent_status_label(payload["name"]))
+                # Progress must be status.write() lines only: status.update()
+                # mid-run desyncs Streamlit 1.54's frontend element tree
+                # ("Bad delta path", white screen).
+                if payload["name"] == "run_simulation":
+                    status.write(f"⏳ {agent_status_label('run_simulation')}")
                 line = format_agent_tool_line(payload["name"], payload.get("input") or {})
                 status.write(line)
                 _add_msg("assistant", line)
             elif kind == "tool_result":
-                status.update(label="Thinking…")
                 content = payload.get("content")
                 text_c = content if isinstance(content, str) else ""
                 if payload.get("is_error") or text_c.startswith(
