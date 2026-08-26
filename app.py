@@ -755,11 +755,13 @@ setTimeout(tick, 900);
 </html>"""
 
 _SUGGESTIONS = [
+    # Each pill was run through the agent (2026-08-26) and flows to a proposed
+    # setup without errors, follow-up questions, or improvised values.
     "Simulate a generic SIR epidemic",
-    "COVID-19 endemic with waning immunity",
-    "Measles with 80% vaccination coverage",
-    "Ebola outbreak in DRC",
-    "Search for the latest Mpox outbreak news",
+    "COVID-19 in the United States with immunity waning after a year",
+    "Measles in Kenya with current vaccination coverage",
+    "Polio in Pakistan with current vaccination coverage",
+    "Simula un brote de cólera en Haití",
 ]
 
 messages = st.session_state.messages
