@@ -2249,10 +2249,10 @@
           "fatality_rate": {
               "unit": "percentage",
               "consensus": {
-                "min": ,
-                "max": ,
-                "typical": ,
-                "notes": ""
+                "min": 0.67,
+                "max": 0.8,
+                "typical": 0.8,
+                "notes": "Available estimates are population-specific rather than generalizable. The 0.8% estimate is a directly reported case fatality rate for unvaccinated infants younger than 6 months, while the 0.67% estimate is a derived global estimate based on estimated annual cases and deaths in children younger than 5 years. Fatality is highest in young, incompletely vaccinated infants and is rare in older children and adults."
               },
 
               "estimates": [
@@ -2283,15 +2283,540 @@
                 },
 
                 {
-                  
+
+                }
+              ]
+            },
+
+            "average_contacts_daily": {
+                "unit": "contacts/day",
+                "consensus":{
+                  "min": 1,
+                  "max": 19,
+                  "typical": 6.68,
+                  "notes": "Based on infant daily contact in the UK. Limited information on daily contacts for pertussis in general."
+                },
+
+                "estimates":[
+                      {
+                        "value": 6.68,
+                        "range": [1,19],
+                        "population": "Infants",
+                        "source_type": "cross_sectional_contact_survey",
+                        "title": "The social life of infants in the context of infectious disease transmission; social contacts and mixing patterns of the very young",
+                        "url": "https://pubmed.ncbi.nlm.nih.gov/24146835/",
+                        "doi": "10.1371/journal.pone.0076180",
+                        "country": "United Kingdom",
+                        "year": 2013,
+                        "notes": "The average number of daily contacts for an infant was 6.68 overall and 5.7 for those aged ≤10 weeks."
+                        
+                      }
+                ]
+            },
+
+            "immunity_duration": {
+              "unit": "days",
+              "consensus": {
+                "min": 1460,
+                "max": 7300,
+                "typical": 4380,
+                "notes": "Natural immunity following Bordetella pertussis infection is not lifelong. Most reviews estimate protection lasts approximately 4–20 years, with many citing 7–10 years as the typical duration."
+              },
+
+              "estimates": [
+                {
+                  "value": 4380,
+                  "range": [1460, 7300],
+                  "population": "Previously infected individuals",
+                  "source_type": "review_article",
+                  "title": "Duration of Immunity Against Pertussis After Natural Infection or Vaccination",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/15876927/",
+                  "doi": "10.1097/01.inf.0000160914.59160.41",
+                  "country": "Multiple countries",
+                  "year": 2005,
+                  "notes": "Review of published evidence concluded that infection-acquired immunity against pertussis wanes after approximately 4–20 years."
+                },
+                {
+                  "value": 4380,
+                  "range": [1460, 7300],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Clinical Overview of Pertussis",
+                  "url": "https://www.cdc.gov/pertussis/hcp/clinical-overview/",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2025,
+                  "notes": "CDC states observational studies suggest immunity lasts 4–20 years but is not lifelong."
+                }
+              ]
+            },
+
+            "asymptomatic_fraction": {
+                "unit": "fraction",
+                "consensus": {
+                  "min": 0.556,
+                  "max": 0.60,
+                  "typical": 0.58,
+                  "notes": "Among laboratory-confirmed infections, available evidence suggests approximately 56–60% may remain asymptomatic in household and vaccinated adolescent settings. Estimates are based on different study populations and should be interpreted with caution."
+                },
+
+                "estimates": [
+                  {
+                    "value": 0.556,
+                    "range": [0, 0.556],
+                    "population": "Laboratory-confirmed household contacts of pertussis cases",
+                    "source_type": "systematic_review",
+                    "title": "Asymptomatic Infection and Transmission of Pertussis in Households: A Systematic Review",
+                    "url": "https://pubmed.ncbi.nlm.nih.gov/31257450/",
+                    "doi": "10.1093/cid/ciz531",
+                    "country": "Multiple countries",
+                    "year": 2020,
+                    "notes": "Twenty-four studies reported laboratory-confirmed asymptomatic infections among household contacts. Asymptomatic infections comprised up to 55.6% of laboratory-confirmed contacts. The review did not report a pooled asymptomatic proportion."
+                  },
+
+                  {
+                    "value": 0.60,
+                    "range": "N/A",
+                    "population": "Acellular pertussis-vaccinated adolescents during a high school outbreak",
+                    "source_type": "prospective_cohort_study",
+                    "title": "Longitudinal Assessment of Asymptomatic Infection of Bordetella pertussis Among Pertussis Acellular Vaccinated Adolescents",
+                    "url": "https://www.sciencedirect.com/science/article/abs/pii/S0264410X26003750",
+                    "doi": "10.1016/j.vaccine.2026.128567",
+                    "country": "United States",
+                    "year": 2026,
+                    "notes": "Nine of 15 laboratory-confirmed infections remained asymptomatic (60%). The reported 1.7% represents prevalence in the entire study population, not the asymptomatic fraction among infected individuals."
+                  }
+                ]
+
+        }
+
+    }
+  },
+
+
+    "influenza": {
+      "display_name": "Influenza",
+      "aliases": ["flu", "seasonal flu", "seasonal influenza", "the flu"],
+      "parameters":{
+        "r0": {
+        "unit": "dimensionless",
+          "consensus": {
+            "min": 1.19,
+            "max": 1.37,
+            "typical": 1.28,
+            "notes":"Estimates from systematic review of multiple countries."
+          },
+
+        "estimates": [
+          {
+            "value": 1.28,
+            "range": [1.19, 1.37],
+            "population": "General",
+            "source_type": "systematic_review",
+            "title": "Estimates of the reproduction number for seasonal, pandemic, and zoonotic influenza: a systematic review of the literature",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169819/",
+            "doi": "10.1186/1471-2334-14-480",
+            "country": "Multiple countries",
+            "year": 2014,
+            "notes": "Systematic review of 111 studies. For seasonal influenza, 24 studies reported 47 reproduction number (R) estimates. Median R = 1.28 with an interquartile range (IQR) of 1.19–1.37."
+          },
+
+          {
+            "value": 1.6,
+            "range": "N/A",
+            "population": "General population during the 2009 influenza A(H1N1)pdm09 epidemic",
+            "source_type": "modeling_study",
+            "title": "Estimation of the reproduction number of influenza A(H1N1)pdm09 in South Korea using heterogeneous models",
+            "url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/s12879-021-06354-7",
+            "doi": "10.1186/s12879-021-06354-7",
+            "country": "South Korea",
+            "year": 2021,
+            "notes": "Estimated using an age-structured transmission model. The estimated infectious period was approximately 3.8 days, yielding an estimated basic reproduction number (R₀) of 1.6."
+          },
+
+          {
+            "value": 1.4,
+            "range": "N/A",
+            "population": "General population during the 2009 influenza A(H1N1)pdm09 epidemic",
+            "source_type": "modeling_study",
+            "title": "Estimation of the reproduction number of influenza A(H1N1)pdm09 in South Korea using heterogeneous models",
+            "url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/s12879-021-06354-7",
+            "doi": "10.1186/s12879-021-06354-7",
+            "country": "South Korea",
+            "year": 2021,
+            "notes": "Estimated using a region-structured transmission model. The estimated infectious period was approximately 2.1 days, yielding an estimated basic reproduction number (R₀) of 1.4."
+          },
+
+          {
+            "value": 1.3,
+            "range": "N/A",
+            "population": "General",
+            "source_type": "review_article",
+            "title": "Influenza",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9411419/",
+            "doi": "10.1016/S0140-6736(22)00982-5",
+            "country": "N/A",
+            "year": 2022,
+            "notes": "Uyeki et al., Lancet Seminar. States the basic reproduction number for seasonal influenza is estimated to be approximately 1.3, citing prior literature."
+          }
+        ]
+
+        },
+
+          "incubation_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 1,
+                "max": 4,
+                "typical": 2,
+                "notes": "Widely cited CDC/WHO range for seasonal influenza; most people develop symptoms around 2 days post-exposure."
+              },
+              
+              "estimates": [
+                {
+                  "value": 1.4,
+                  "range": [1.3, 1.5],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "Incubation periods of acute respiratory viral infections: a systematic review",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+                  "doi": "10.1016/S1473-3099(09)70069-6",
+                  "country": "Multiple countries",
+                  "year": 2009,
+                  "notes": "Lessler et al., Lancet Infectious Diseases. Pooled log-normal fit across published studies gave a median incubation period of 1.4 days (95% CI 1.3-1.5) for influenza A."
+                },
+
+                {
+                  "value": 0.6,
+                  "range": [0.5, 0.6],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "Incubation periods of acute respiratory viral infections: a systematic review",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+                  "doi": "10.1016/S1473-3099(09)70069-6",
+                  "country": "Multiple countries",
+                  "year": 2009,
+                  "notes": "Same review as above; median incubation period of 0.6 days (95% CI 0.5-0.6) reported for influenza B, notably shorter than influenza A."
+                },
+
+                {
+                  "value": 1.4,
+                  "range": "N/A",
+                  "population": "Influenza A",
+                  "source_type": "review_article",
+                  "title": "Influenza",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9411419/",
+                  "doi": "10.1016/S0140-6736(22)00982-5",
+                  "country": "N/A",
+                  "year": 2022,
+                  "notes": "Cites the same Lessler et al. systematic review (median incubation 1.4 days for influenza A, 0.6 days for influenza B), confirming this figure remains the standard reference as of 2022."
+                },
+
+                {
+                  "value": 2,
+                  "range": [1, 4],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "How Flu Spreads",
+                  "url": "https://www.cdc.gov/flu/spread/index.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "CDC states symptoms typically begin about two days (range 1-4 days) after influenza virus infects a person's respiratory tract. Also notes people can be contagious starting ~1 day before symptom onset, and remain contagious through 5-7 days after becoming sick, with the first 3 days being most contagious."
+                }
+              ]
+      },
+
+            "infectious_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 6,
+                "max": 8,
+                "typical": 7,
+                "notes": "Infectiousness typically begins about 1 day before symptom onset and continues for roughly 5-7 days after becoming sick, with peak shedding in the first 3-4 days of illness. Children and immunocompromised individuals can shed virus considerably longer."
+              },
+
+              "estimates": [
+                {
+                  "value": 7,
+                  "range": [6, 8],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "How Flu Spreads",
+                  "url": "https://www.cdc.gov/flu/spread/index.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "CDC states influenza viruses can be detected beginning one day before symptoms develop and up to five to seven days after becoming sick, with people most contagious during the first three days of illness."
+                },
+
+                {
+                  "value": 7,
+                  "range": [6, 8],
+                  "population": "General",
+                  "source_type": "health_organization_summary",
+                  "title": "Contagious Period for Influenza (Flu)",
+                  "url": "https://healthanswers.pfizer.com/respiratory/upper-infections/contagious-period-for-influenza-flu",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "States the contagious period generally lasts from about a day before symptoms appear to up to 7 days after becoming ill; longer in people with weakened immune systems."
+                }
+              ]
+            },
+
+            "fatality_rate": {
+              "unit": "percentage",
+              "consensus": {
+                "min": 0.001,
+                "max": 13.5,
+                "typical": 0.07,
+                "notes": "Symptomatic case-fatality rate for seasonal influenza is low and varies substantially by season severity and age group. Mortality is heavily concentrated in adults 65+ (about two-thirds of deaths in recent U.S. seasons) and is far lower in children and young adults. The typical value (0.07%) reflects symptomatic-case denominators for seasonal influenza. Case definition drives fatality rate estimates by orders of magnitude: a systematic review of the 2009 H1N1 pandemic found estimates ranging from ~0.001-0.01% using an infections denominator, ~0-1.2% using a symptomatic-cases denominator, and ~0-13.5% using a laboratory-confirmed-cases denominator, with the latter most prone to ascertainment bias since testing is typically reserved for more severe presentations. Any fatality rate figure should be interpreted alongside its denominator definition."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.07,
+                  "range": "N/A",
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "2023-2024 Influenza Season Summary: Severity Assessment, Burden and Burden Prevented",
+                  "url": "https://www.cdc.gov/flu/whats-new/flu-summary-addendum-2023-2024.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "CDC estimated 40 million symptomatic illnesses and 28,000 deaths for the 2023-2024 season (~0.07% symptomatic CFR). Adults 65+ accounted for only 8% of medical visits but 68% of deaths."
+                },
+
+                {
+                  "value": 0.005,
+                  "range": [0.001, 0.01],
+                  "population": "General population, H1N1pdm09 pandemic (infection-based denominator)",
+                  "source_type": "systematic_review",
+                  "title": "Case fatality risk of influenza A(H1N1pdm09): a systematic review",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3809029/",
+                  "doi": "10.1097/EDE.0b013e3182a67448",
+                  "country": "Multiple countries",
+                  "year": 2013,
+                  "notes": "Wong, Kelly, Ip, Wu, Leung & Cowling, Epidemiology. Systematic review of 77 estimates from 50 studies on the 2009 H1N1 pandemic. When the denominator was total infections (including asymptomatic/subclinical), point estimates ranged from 1-10 deaths per 100,000 infections (0.001%-0.01%) — comparable in magnitude to seasonal influenza IFR estimates."
+                },
+
+                {
+                  "value": 0.4,
+                  "range": [0, 1.2],
+                  "population": "Symptomatic cases, H1N1pdm09 pandemic",
+                  "source_type": "systematic_review",
+                  "title": "Case fatality risk of influenza A(H1N1pdm09): a systematic review",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3809029/",
+                  "doi": "10.1097/EDE.0b013e3182a67448",
+                  "country": "Multiple countries",
+                  "year": 2013,
+                  "notes": "When the denominator was symptomatic cases, point estimates ranged from 0-1,200 deaths per 100,000 symptomatic cases (0%-1.2%). Risk based on symptomatic cases increased substantially with age. This is roughly an order of magnitude higher than infection-based estimates and reflects the exclusion of asymptomatic/mild infections from the denominator."
+                },
+
+                {
+                  "value": 6.75,
+                  "range": [0, 13.5],
+                  "population": "Laboratory-confirmed cases, H1N1pdm09 pandemic",
+                  "source_type": "systematic_review",
+                  "title": "Case fatality risk of influenza A(H1N1pdm09): a systematic review",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3809029/",
+                  "doi": "10.1097/EDE.0b013e3182a67448",
+                  "country": "Multiple countries",
+                  "year": 2013,
+                  "notes": "When the denominator was laboratory-confirmed cases only, point estimates ranged from 0-13,500 deaths per 100,000 confirmed cases (0%-13.5%) — the highest and most heterogeneous set of estimates, since testing was typically reserved for more severe presentations, inflating apparent severity. Authors caution this reflects a strong ascertainment bias rather than true disease severity."
+                }
+              ]
+            },
+
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus":{
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No validateable information found for influenza daily contacts."
+          },
+
+          "estimates":[]
+        },
+
+            "immunity_duration": {
+              "unit": "days",
+              "consensus": {
+                "min": 1278,
+                "max": 2920,
+                "typical": 1825,
+                "notes": "Homologous strain protection wanes gradually over several years, but influenza's rapid antigenic drift means functional protection against currently circulating strains erodes much faster in practice (often within a single year or two), since new variants can partially evade prior immunity."
+              },
+
+              "estimates": [
+                {
+                  "value": 1917,
+                  "range": [1278, 2555],
+                  "population": "Children and adults, longitudinal serology cohorts",
+                  "source_type": "modeling_study",
+                  "title": "Age-specific differences in the dynamics of protective immunity to influenza",
+                  "url": "https://link.springer.com/10.1038/s41467-019-09652-6",
+                  "doi": "10.1038/s41467-019-09652-6",
+                  "country": "Multiple",
+                  "year": 2019,
+                  "notes": "Ranjeva et al., Nature Communications. Fitted mechanistic models to longitudinal serology found protection against circulating strains wanes to half of peak levels 3.5-7 years after infection, waning faster against H3N2 than H1N1pdm09."
+                },
+
+                {
+                  "value": 2190,
+                  "range": [1460, 2920],
+                  "population": "General",
+                  "source_type": "modeling_study",
+                  "title": "Impact of viral drift on vaccination dynamics and patterns of seasonal influenza",
+                  "url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/1471-2334-13-589",
+                  "doi": "10.1186/1471-2334-13-589",
+                  "country": "N/A",
+                  "year": 2013,
+                  "notes": "Transmission-dynamic model exploring duration of natural-infection-induced immunity across 4, 6, and 8-year assumptions to reproduce observed seasonal epidemic patterns."
+                }
+              ]
+            },
+
+            "asymptomatic_fraction": {
+              "unit": "fraction",
+              "consensus": {
+                "min": 0.16,
+                "max": 0.85,
+                "typical": 0.30, 
+                "notes": "Estimates vary enormously by study design: short-term outbreak investigations with virologic confirmation report a pooled ~16% asymptomatic fraction, while epidemic-wide serology studies adjusted for background illness report 65-85%."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.16,
+                  "range": [0.04, 0.28],
+                  "population": "General, outbreak-investigation cohorts",
+                  "source_type": "systematic_review",
+                  "title": "Review Article: The Fraction of Influenza Virus Infections That Are Asymptomatic: A Systematic Review and Meta-analysis",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/26133025/",
+                  "doi": "10.1097/EDE.0000000000000340",
+                  "country": "Multiple countries",
+                  "year": 2015,
+                  "notes": "Point estimates from outbreak investigations with virologic confirmation fell mostly in the 4-28% range, pooled mean 16% (95% CI 13-19%), low heterogeneity."
+                },
+
+                {
+                  "value": 0.75,
+                  "range": [0.65, 0.85],
+                  "population": "General, epidemic-wide serology cohorts",
+                  "source_type": "systematic_review",
+                  "title": "Review Article: The Fraction of Influenza Virus Infections That Are Asymptomatic: A Systematic Review and Meta-analysis",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/26133025/",
+                  "doi": "10.1097/EDE.0000000000000340",
+                  "country": "Multiple countries",
+                  "year": 2015,
+                  "notes": "Studies conducted across epidemics using serologic evidence of infection, adjusted for background rates of illness from other causes, reported more consistent estimates in the 65-85% range."
+                },
+
+                {
+                  "value": 0.066,
+                  "range": "N/A",
+                  "population": "Children 0-14 years, household cohort",
+                  "source_type": "prospective_cohort_study",
+                  "title": "The Spectrum of Influenza in Children",
+                  "url": "https://academic.oup.com/cid/article/76/3/e1012/6693473",
+                  "doi": "doi.org/10.1093/cid/ciac734",
+                  "country": "Nicaragua",
+                  "year": 2023,
+                  "notes": "6.6% of PCR/serologically-confirmed influenza infections in children were asymptomatic, increasing with age (1.7% in infants to 9.1% in ages 5-14). Asymptomatic infection is much less common in children than the ~50%+ often reported in adults."
                 }
               ]
             }
 
     }
-  }
-  }
+  },
 
+        "meningococcal": {
+          "display_name": "meningococcal",
+          "aliases": ["meningitis", "neisseria meningitidis", "meningococcal disease", "bacterial meningitis"],
+          "parameters":{
+            "r0": {
+            "unit": "dimensionless",
+              "consensus": {
+                "min": 1.03,
+                "max": ,
+                "typical": ,
+                "notes": ""
+              },
+
+      "estimates": [
+        {
+          "value": 1.31,
+          "range": [1.03, 1.64],
+          "population": "Invasive disease, C:P1.5-1,10-8:F3-6:ST-11(cc11) strain, entire dataset",
+          "source_type": "genomic_epidemiology_study",
+          "title": "Estimates of the reproductive numbers and demographic reconstruction of outbreak associated with C:P1.5-1,10-8:F3-6:ST-11(cc11) Neisseria meningitidis strains",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32407793/",
+          "doi": "10.1016/j.meegid.2020.104360",
+          "country": "Italy",
+          "year": 2020,
+          "notes": "Lo Presti et al., Infection, Genetics and Evolution. Bayesian method applied to whole-genome-sequenced isolates from invasive MenC disease, 2012-2017, including the Tuscany outbreak. R0 = 1.31 (95% HPD: 1.03-1.64) for the full dataset."
+        },
+
+        {
+          "value": 1.22,
+          "range": [0.90, 1.64],
+          "population": "Invasive disease, first genomic subset",
+          "source_type": "genomic_epidemiology_study",
+          "title": "Estimates of the reproductive numbers and demographic reconstruction of outbreak associated with C:P1.5-1,10-8:F3-6:ST-11(cc11) Neisseria meningitidis strains",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32407793/",
+          "doi": "10.1016/j.meegid.2020.104360",
+          "country": "Italy",
+          "year": 2020,
+          "notes": "R0 = 1.22 (95% HPD: 0.90-1.64) estimated from the first of two genomic subsets analyzed."
+        },
+
+        {
+          "value": 1.4,
+          "range": [0.91, 1.9],
+          "population": "Invasive disease, second genomic subset",
+          "source_type": "genomic_epidemiology_study",
+          "title": "Estimates of the reproductive numbers and demographic reconstruction of outbreak associated with C:P1.5-1,10-8:F3-6:ST-11(cc11) Neisseria meningitidis strains",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32407793/",
+          "doi": "10.1016/j.meegid.2020.104360",
+          "country": "Italy",
+          "year": 2020,
+          "notes": "R0 = 1.4 (95% HPD: 0.91-1.9) estimated from the second genomic subset, corresponding to the Tuscany outbreak period. An effective reproduction number R(t) was also estimated separately, rising to an average of 3.22 in 2015 before declining below 1 from 2016 onward following a vaccination campaign — that time-varying R(t) data would fit better as a distinct outbreak-specific parameter if your schema tracks Rt separately from R0."
+        }
+      ]
+
+        },
+
+      }
+
+    "meningococcal": {
+      "aliases": ["meningitis", "neisseria meningitidis", "meningococcal disease", "bacterial meningitis"],
+      "r0": {
+        "min": 1.0,
+        "max": 1.9,
+        "typical": 1.3,
+        "note": "Three estimates from HPD intervals: 1.31 (1.03-1.64), 1.22 (0.90-1.64), 1.4 (0.91-1.9)",
+        "source": "https://www.sciencedirect.com/science/article/abs/pii/S156713482030191X"
+      },
+      "incubation_days": {
+        "min": 1,
+        "max": 10,
+        "typical": 3,
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      },
+      "infectious_days": {
+        "min": 1,
+        "max": 7,
+        "typical": 2,
+        "note": "Non-infectious 1-2 days after antibiotic treatment starts",
+        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+      }
+    },
+
+
+}
 
 
 
