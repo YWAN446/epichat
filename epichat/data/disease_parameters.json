@@ -2784,36 +2784,609 @@
           "country": "Italy",
           "year": 2020,
           "notes": "R0 = 1.4 (95% HPD: 0.91-1.9) estimated from the second genomic subset, corresponding to the Tuscany outbreak period. An effective reproduction number R(t) was also estimated separately, rising to an average of 3.22 in 2015 before declining below 1 from 2016 onward following a vaccination campaign — that time-varying R(t) data would fit better as a distinct outbreak-specific parameter if your schema tracks Rt separately from R0."
+        },
+
+        {
+          "value": 1.36,
+          "range": "N/A",
+          "population": "General population, serogroup C meningococcal disease",
+          "source_type": "modeling_study",
+          "title": "Dynamic Models of Meningococcal Carriage, Disease, and the Impact of Serogroup C Conjugate Vaccination",
+          "url": "https://academic.oup.com/aje/article-abstract/162/1/89/166230",
+          "doi": "10.1093/aje/kwi160",
+          "country": "England and Wales",
+          "year": 2005,
+          "notes": "Trotter, Gay & Edmunds, American Journal of Epidemiology. Age-structured, dynamic compartmental model of carriage and disease, fitted to epidemiologic surveillance data from England and Wales prior to serogroup C conjugate vaccine introduction. Basic reproduction number estimated at 1.36, closely matching the genomic/phylodynamic estimates (1.22-1.4) from the 2020 Lo Presti et al. Italian outbreak study — good convergence across very different estimation methods."
         }
-      ]
+              ]
 
         },
 
+          "incubation_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 1,
+                "max": 10,
+                "typical": 3.5,
+                "notes": "Full range spans 1-10 days. Because meningococcal disease can progress from first symptoms to severe illness or death within hours, the short incubation period is clinically significant for prophylaxis timing in close contacts."
+              },
+
+              "estimates": [
+                {
+                  "value": 3.5,
+                  "range": [2, 10],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Meningococcal Disease (Bacterial Meningitis) Fact Sheet",
+                  "url": "https://www.pa.gov/content/dam/copapwp-pagov/en/health/documents/topics/documents/diseases-and-conditions/Meningococcal%20Disease%20.pdf",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2016,
+                  "notes": "Pennsylvania Department of Health states the incubation period is three to four days, with a range of two to ten days."
+                },
+
+                {
+                  "value": 5.5,
+                  "range": [1, 10],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Meningococcal Invasive Disease",
+                  "url": "https://www.azdhs.gov/documents/preparedness/epidemiology-disease-control/investigations/sections/meningococcal.pdf",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Arizona Department of Health Services lists incubation period as 1-10 days."
+                },
+
+                {
+                  "value": 6,
+                  "range": [2, 10],
+                  "population": "General, close contacts",
+                  "source_type": "government_report",
+                  "title": "Emergency Preparedness and Response",
+                  "url": "https://cybercemetery.unt.edu/oilspill/20130227085030mp_/http://emergency.cdc.gov/HAN/han00166.asp",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2003,
+                  "notes": "CDC Health Alert Network states incubation period from exposure to symptoms is usually 2 to 10 days, with symptoms then progressing over several hours to several days. Used a slightly wider window than the more commonly cited 1-10 day range."
+                }
+              ]
+          },
+
+          "infectious_days": {
+            "unit": "days",
+            "consensus": {
+              "min": 1,
+              "max": 1,
+              "typical": 1,
+              "notes": "Persons are generally considered infectious from about 7 days before symptom onset until 24 hours after starting appropriate antibiotic therapy. Without treatment, meningococci can persist in nasopharyngeal secretions considerably longer, since clearance is driven by antibiotics rather than natural resolution."
+            },
+
+            "estimates": [
+              {
+                "value": 1,
+                "range": "N/A",
+                "population": "General, treated cases",
+                "source_type": "government_report",
+                "title": "Meningococcal Disease (Communicable Disease Control Manual)",
+                "url": "https://health.alaska.gov/media/kqhlhxqs/mmm_chapter_meningococcal.pdf",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2023,
+                "notes": "Alaska DHSS states the infectious period lasts until meningococci are no longer present in nasal/oral discharges, usually within 24 hours after appropriate antimicrobial treatment begins."
+              }
+            ]
+          },
+
+          "fatality_rate": {
+            "unit": "percentage",
+            "consensus": {
+              "min": 6,
+              "max": 15,
+              "typical": 12,
+              "notes": "Fatality is high without treatment (historically ~50-80%) but drops sharply with prompt antibiotic therapy to roughly 10-15% overall. U.S. age-stratified data (1998-2007) shows a clear age gradient even among treated cases: 6% in infants <1 year, 9.7% in adolescents 14-17, and 13.6% in young adults 18-24 — the opposite pattern from raw incidence, which is highest in infants. Recent surveillance also found an unusually high 18% fatality rate for an emerging serogroup Y strain (2023-2024), compared to 11% in the preceding 2017-2021 period."
+            },
+
+            "estimates": [
+              {
+                "value": 12.5,
+                "range": [10, 15],
+                "metric":"CFR",
+                "population": "General, treated invasive disease, United States",
+                "source_type": "government_report",
+                "title": "CDC Yellow Book: Meningococcal Disease",
+                "url": "https://wwwnc.cdc.gov/travel/yellowbook/2026/infections-diseases/meningococcal-disease",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2026,
+                "notes": "CDC Yellow Book (2026 edition, ch. 4.12) states meningococcal disease has a case-fatality rate of 10-15% even with antimicrobial treatment, with much higher fatality if treatment is delayed. Up to 20% of survivors have long-term sequelae (deafness, amputation)."
+              },
+
+              {
+                "value": 12,
+                "range": "N/A",
+                "metric":"CFR",
+                "population": "General, all ages, United States",
+                "source_type": "review_article",
+                "title": "The Burden of Infant Meningococcal Disease in the United States",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2012,
+                "notes": "Judelsohn & Marshall, Journal of the Pediatric Infectious Diseases Society. Overall U.S. case fatality rate from invasive meningococcal disease is approximately 12%, despite N. meningitidis being highly antibiotic-susceptible, reflecting the disease's extremely rapid clinical course."
+              },
+
+              {
+                "value": 6,
+                "range": "N/A",
+                "metric":"CFR",
+                "population": "Infants aged <1 year, United States, 1998-2007",
+                "source_type": "review_article",
+                "title": "The Burden of Infant Meningococcal Disease in the United States",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2012,
+                "notes": "Case fatality rate was 6% in infants aged <1 year, the lowest age-stratified rate reported, despite infants having the highest overall incidence of disease. Estimated 13 annual deaths in this age group."
+              },
+
+              {
+                "value": 9.7,
+                "range": "N/A",
+                "metric":"CFR",
+                "population": "Adolescents aged 14-17 years, United States, 1998-2007",
+                "source_type": "review_article",
+                "title": "The Burden of Infant Meningococcal Disease in the United States",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2012,
+                "notes": "Case fatality rate was 9.7% in adolescents aged 14-17 years."
+              },
+
+              {
+                "value": 13.6,
+                "range": "N/A",
+                "metric":"CFR",
+                "population": "Young adults aged 18-24 years, United States, 1998-2007",
+                "source_type": "review_article",
+                "title": "The Burden of Infant Meningococcal Disease in the United States",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2012,
+                "notes": "Case fatality rate was 13.6% in those aged 18-24 years — the highest of the three age strata reported, consistent with the general pattern of case fatality rates increasing with age. Estimated 41 annual deaths across the combined 14-24 age range."
+              }
+            ]
+          },
+
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus":{
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No validateable information found for Meningococcal daily contacts."
+          },
+
+          "estimates":[]
+        },
+
+
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": 730,
+            "max": 3650,
+            "typical": 1460,
+            "notes": "Natural immunity is continuously reinforced by intermittent carriage rather than following a single post-infection decay curve (see estimates below). Vaccine-induced immunity duration differs by vaccine type: CDC's booster schedule implies MenACWY protection lasts roughly 4-5 years before meaningful waning (booster at 16 after initial dose at 11-12; every-5-year boosters for ongoing high risk), while MenB protection appears shorter-lived, with boosters recommended as early as 1-3 years post-series, or within 6-12 months during active outbreaks. Antibody-persistence cohort studies (Zangwill et al.) found vaccine-induced bactericidal activity detectable up to 10 years post-vaccination, though substantially declined by year 2."
+          },
+
+            "estimates": [
+              {
+                "value": 1825,
+                "range": [730, 3650],
+                "population": "Adults, vaccine-induced bactericidal antibody (proxy for immune persistence)",
+                "source_type": "cohort_study",
+                "title": "Duration of Antibody Response after Meningococcal Polysaccharide Vaccination in US Air Force Personnel",
+                "url": "https://dbpia.nl.go.kr/jid/article/169/4/847/825945",
+                "doi": "10.1093/infdis/169.4.847",
+                "country": "United States",
+                "year": 1994,
+                "notes": "Zangwill et al., Journal of Infectious Diseases. Anti-capsular antibody and bactericidal activity peaked 1 month post-vaccination and declined substantially by 2 years, but remained detectable above pre-vaccination baseline for up to 10 years."
+              },
+
+              {
+                "value": 1460,
+                "range": [1095, 1825],
+                "population": "Adolescents, MenACWY vaccine-induced protection",
+                "source_type": "government_report",
+                "title": "Meningococcal Vaccine Recommendations",
+                "url": "https://www.cdc.gov/meningococcal/hcp/vaccine-recommendations/",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2026,
+                "notes": "CDC recommends the initial MenACWY dose at age 11-12, with a booster at age 16 specifically because protection wanes over that ~4-year interval and adolescents face highest risk in the years the booster is designed to cover. For those at sustained increased risk, CDC recommends boosters every 5 years (age 7+) or every 3 years then every 5 years (under age 7), implying an assumed protective duration in that range before meaningful waning."
+              },
+
+              {
+                "value": 730,
+                "range": [365, 1095],
+                "population": "Adolescents and adults, MenB vaccine-induced protection",
+                "source_type": "government_report",
+                "title": "Meningococcal Vaccine Recommendations",
+                "url": "https://www.cdc.gov/meningococcal/hcp/vaccine-recommendations/",
+                "doi": "N/A",
+                "country": "United States",
+                "year": 2026,
+                "notes": "For individuals at increased risk, CDC recommends a MenB booster 1 year after primary series completion, then every 2-3 years thereafter — suggesting CDC considers MenB-induced protection shorter-lived than MenACWY protection. During outbreaks, boosters are recommended after just 1 year (or even 6 months in some outbreak situations), reflecting more conservative assumptions about protection duration when stakes are highest."
+              }
+            ]
+          },
+
+          "asymptomatic_fraction": {
+            "unit": "fraction",
+            "consensus": {
+              "min": 0.045,
+              "max": 0.237,
+              "typical": 0.10,
+              "notes": "Refers to general population estimate.",
+
+            "estimates": [
+              {
+                "value": 0.141,
+                "range": [0.045, 0.237],
+                "population": "General population, all ages, Europe",
+                "source_type": "systematic_review",
+                "title": "Meningococcal carriage by age: a systematic review and meta-analysis",
+                "url": "https://pubmed.ncbi.nlm.nih.gov/21075057/",
+                "doi": "10.1016/S1473-3099(10)70251-6",
+                "country": "Multiple European countries",
+                "year": 2010,
+                "notes": "Christensen, May, Bowen, Hickman & Trotter, Lancet Infectious Diseases. Landmark meta-analysis of 66 European studies (1970-2007). Carriage prevalence rises from early childhood, peaks at approximately 24% around age 19, and declines in older adults."
+              },
+
+              {
+                "value": 0.10,
+                "range": "N/A",
+                "population": "General population, worldwide",
+                "source_type": "review_article",
+                "title": "Carriage as a prerequisite for invasive meningococcal disease",
+                "url": "https://openaccess.sgul.ac.uk/id/eprint/111228",
+                "doi": "N/A",
+                "country": "N/A",
+                "year": 2019,
+                "notes": "States meningococcus is carried asymptomatically in the nasopharynx of approximately 10% of the population at any given time, with rates varying by age and social/behavioural factors."
+              },
+
+              {
+                "value": 0.237,
+                "range": "N/A",
+                "population": "Age 19 years, peak carriage prevalence",
+                "source_type": "review_article",
+                "title": "The Burden of Infant Meningococcal Disease in the United States",
+                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+                "doi": "N/A",
+                "country": "Multiple (89 studies, 28 countries)",
+                "year": 2012,
+                "notes": "Citing a meta-analysis of 89 studies across 28 countries, peak meningococcal carriage prevalence is 23.7% at age 19 — closely corroborating the Christensen et al. (2010) Lancet ID estimate of ~24% peak carriage already in this dataset, despite drawing on a different (larger, more geographically diverse) set of underlying studies."
+              }
+            ]
+          }
+
+        }
+
+
+
       }
 
-    "meningococcal": {
-      "aliases": ["meningitis", "neisseria meningitidis", "meningococcal disease", "bacterial meningitis"],
-      "r0": {
-        "min": 1.0,
-        "max": 1.9,
-        "typical": 1.3,
-        "note": "Three estimates from HPD intervals: 1.31 (1.03-1.64), 1.22 (0.90-1.64), 1.4 (0.91-1.9)",
-        "source": "https://www.sciencedirect.com/science/article/abs/pii/S156713482030191X"
-      },
-      "incubation_days": {
-        "min": 1,
-        "max": 10,
-        "typical": 3,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 1,
-        "max": 7,
-        "typical": 2,
-        "note": "Non-infectious 1-2 days after antibiotic treatment starts",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      }
+
     },
+
+        "hepatitis_a": {
+          "display_name": "Hepatitis A",
+          "aliases": ["hep a", "hepatitis a virus", "hav", "infectious hepatitis"],
+          "parameters": {
+
+            "r0": {
+              "unit": "dimensionless",
+              "consensus": {
+                "min": 1.71,
+                "max": 5.6,
+                "typical": 2.5,
+                "notes": "Estimates vary enormously by transmission setting rather than clustering around one 'general population' value, since most HAV transmission is fecal-oral/foodborne rather than driven by the direct-contact networks these R0 estimates characterize. Close-contact/direct-transmission outbreaks among naive children (e.g., schools) show R0 of 1.9-2.5; modeling of sexual/close-contact transmission in high-risk adult populations (MSM) spans 1.71-3.67. People who inject drugs (PWID) — a leading driver of recent U.S. person-to-person HAV outbreaks — show the widest and often highest state-level estimates (2.2-5.0 across 16 US states), with a pooled herd immunity threshold of 64% (90% prediction interval: 52-76%), reflecting dense, frequent direct-contact/sharing networks."
+              },
+
+              "estimates": [
+                {
+                  "value": 2.1,
+                  "range": [1.9, 2.3],
+                  "population": "Children, elementary school outbreak",
+                  "source_type": "outbreak_investigation",
+                  "title": "Estimating human-to-human transmissibility of hepatitis A virus in an outbreak at an elementary school in China, 2011",
+                  "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6152969/",
+                  "doi": "10.1371/journal.pone.0204201",
+                  "country": "China",
+                  "year": 2018,
+                  "notes": "Zhang & Lo Iacono, PLoS ONE. Used transmission tree, renewal equation, and general growth methods on a 2011 outbreak involving direct child-to-child transmission at a 698-pupil elementary school. Mean serial interval was 23.9 days (SD 20.9). Estimates were higher than typical U.S. estimates but consistent with estimates from England."
+                },
+
+                {
+                  "value": 2.69,
+                  "range": [1.71, 3.67],
+                  "population": "Men who have sex with men (MSM)",
+                  "source_type": "modeling_study",
+                  "title": "Estimating the critical immunity threshold for preventing hepatitis A outbreaks in men who have sex with men",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9150569/",
+                  "doi": "N/A",
+                  "country": "Australia",
+                  "year": 2015,
+                  "notes": "Modeled the 1991/1992 Sydney HAV outbreak concentrated in MSM, where sexual contact was the predominant transmission route. Found sustained epidemics cannot occur once population immunity exceeds ~70%, implying a herd-immunity threshold consistent with this R0 range."
+                },
+
+                {
+                  "value": 2.2,
+                  "range": [1.9, 2.5],
+                  "population": "People who inject drugs (PWID), North Carolina",
+                  "source_type": "modeling_study",
+                  "title": "Determining Herd Immunity Thresholds for Hepatitis A Virus Transmission to Inform Vaccination Strategies Among People Who Inject Drugs in 16 US States",
+                  "url": "https://academic.oup.com/cid/article/78/4/976/7280117",
+                  "doi": "10.1093/cid/ciad552",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Yang, Lo, Dankwa, Donnelly, Gupta, Montgomery, Weng & Martin, Clinical Infectious Diseases. State-level dynamic transmission model calibrated to PWID outbreak surveillance data across 16 U.S. states, 2016-2020 era outbreaks. North Carolina had the lowest state-level R0 estimate at 2.2, closely matching the elementary-school outbreak R0 already in this dataset despite a completely different transmission setting and population."
+                },
+
+                {
+                  "value": 5.0,
+                  "range": [4.5, 5.6],
+                  "population": "People who inject drugs (PWID), West Virginia",
+                  "source_type": "modeling_study",
+                  "title": "Determining Herd Immunity Thresholds for Hepatitis A Virus Transmission to Inform Vaccination Strategies Among People Who Inject Drugs in 16 US States",
+                  "url": "https://academic.oup.com/cid/article/78/4/976/7280117",
+                  "doi": "10.1093/cid/ciad552",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "West Virginia had the highest state-level R0 estimate at 5.0, corresponding to a herd immunity threshold of 80% (95% CI, 78-82%) — substantially higher transmissibility than other settings in this dataset, likely reflecting dense, high-frequency direct contact networks characteristic of PWID outbreaks."
+                },
+
+                {
+                  "value": 2.78,
+                  "range": [2.56, 3.13],
+                  "population": "People who inject drugs (PWID), pooled across 16 US states",
+                  "source_type": "systematic_review",
+                  "title": "Determining Herd Immunity Thresholds for Hepatitis A Virus Transmission to Inform Vaccination Strategies Among People Who Inject Drugs in 16 US States",
+                  "url": "https://academic.oup.com/cid/article/78/4/976/7280117",
+                  "doi": "10.1093/cid/ciad552",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Meta-analysis across all 16 state-level models yielded a pooled herd immunity threshold of 64% (95% CI, 61-68%; 90% prediction interval, 52-76%). Value shown here is back-calculated from the pooled threshold using R0 = 1/(1-threshold) as an approximation; the paper reports thresholds directly rather than a single pooled R0. Authors conclude ~80% vaccination coverage (assuming 95% efficacy) could prevent most PWID-associated HAV outbreaks."
+                }
+              ]
+            },
+
+            "incubation_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 14,
+                "max": 50,
+                "typical": 28,
+                "notes": "Incubation length is inversely related to inoculum dose — larger exposures produce shorter incubation periods."
+              },
+
+              "estimates": [
+                {
+                  "value": 28,
+                  "range": [15, 50],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Chapter 9: Hepatitis A",
+                  "url": "https://www.cdc.gov/vaccines/pubs/pinkbook/hepa.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "CDC's standard reference states the incubation period of hepatitis A is approximately 28 days, with a documented range of 15-50 days."
+                },
+
+                {
+                  "value": 21,
+                  "range": [14, 28],
+                  "population": "General",
+                  "source_type": "organization_report",
+                  "title": "Hepatitis A",
+                  "url": "https://www.who.int/news-room/fact-sheets/detail/hepatitis-a",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2026,
+                  "notes": "WHO states the incubation period of hepatitis A is usually 14-28 days — a narrower 'usual' range than the CDC's commonly cited 15-50 day range with a 28-day average. The two are not contradictory: WHO's range likely reflects the typical/modal window, while CDC's wider range captures the full observed spread including outliers."
+                },
+
+                {
+                  "value": 28,
+                  "range": [14, 42],
+                  "population": "General",
+                  "source_type": "health_organization_summary",
+                  "title": "Hepatitis A and E",
+                  "url": "https://www.hopkinsmedicine.org/health/conditions-and-diseases/hepatitis",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Johns Hopkins Medicine states the incubation period is two to six weeks (14-42 days), consistent with but slightly narrower than the CDC's 15-50 day range. Also states the person is contagious throughout the incubation period — a looser characterization than CDC's more precise infectious-window guidance (peak shedding 1-2 weeks pre-symptom, tapering ~1 week post-jaundice), worth treating as a general-audience simplification rather than a clinical benchmark."
+                }
+      ]
+            },
+
+            "infectious_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 7,
+                "max": 28,
+                "typical": 21,
+                "notes": "Peak infectivity/shedding occurs during the 1-2 weeks before symptom (or jaundice) onset. Most people are no longer infectious about 1 week after jaundice appears, though shedding can continue longer in young children and infants, and up to 15% of patients experience a relapse (with renewed shedding) within 6 months of acute illness."
+              },
+
+              "estimates": [
+                {
+                  "value": 10.5,
+                  "range": [7, 14],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Epidemiology and Prevention of Vaccine-Preventable Diseases (Pink Book), Chapter: Hepatitis A",
+                  "url": "https://www.cdc.gov/vaccines/pubs/pinkbook/hepa.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024, 
+                  "notes": "Most infectious 1-2 weeks before onset of illness."
+                },
+
+                {
+                  "value": 21,
+                  "range": [14, 28],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Hepatitis A",
+                  "url": "https://www.cda.gov.sg/professionals/diseases/hepatitis-a/",
+                  "doi": "N/A",
+                  "country": "Singapore",
+                  "year": 2026,
+                  "notes": "States infectious period is 2-3 weeks before and 1 week after onset of jaundice, matching CDC/NC DHHS guidance. People are most infectious 1-2 weeks before symptom onset, when viral concentration in stool and blood is greatest; shedding and transmission risk diminish rapidly after symptoms appear."
+                }
+              ]
+            },
+
+            "fatality_rate": {
+              "unit": "percentage",
+              "consensus": {
+                "min": ,
+                "max": ,
+                "typical": ,
+                "notes": "Overall case-fatality rate is low; hepatitis A does not cause chronic infection or chronic liver disease. Fatality is driven almost entirely by rare acute (fulminant) liver failure, and risk rises sharply with age and pre-existing liver disease."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.5,
+                  "range": "N/A",
+                  "metric":"CFR",
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Hepatitis A",
+                  "url": "https://cybercemetery.unt.edu/oilspill/20121017125418mp_/http://www.cdc.gov/std/treatment/2006/hepatitis-a.htm",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2007,
+                  "notes": "CDC states acute liver failure from hepatitis A is rare, with an overall case-fatality rate of 0.5%. Infection produces self-limited disease that does not result in chronic infection or chronic liver disease, though 10-15% of patients may experience symptom relapse within 6 months."
+                },
+
+                {
+                  "value": 0.3,
+                  "range": "N/A",
+                  "metric": "CFR",
+                  "population": "General, non-elderly",
+                  "source_type": "review_article",
+                  "title": "Infectious Diseases: Hepatitis A",
+                  "url": "https://www.sciencedirect.com/topics/immunology-and-microbiology/hepatitis-a",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2020,
+                  "notes": "The case-fatality rate for hepatitis A is generally low (about 0.3%) but increases substantially with age and in people with chronic liver disease. The cited chapter reports a case-fatality rate of 1.8% among adults older than 50 years."
+                }
+
+              ]
+            },
+
+          
+            "average_contacts_daily": {
+              "unit": "contacts/day",
+              "consensus": {
+                "min": "N/A",
+                "max": "N/A",
+                "typical": "N/A",
+                "notes": "Not well-suited to a general daily-contacts metric: HAV is transmitted primarily via the fecal-oral route (contaminated food, water, and surfaces) rather than through respiratory/droplet close contact, so standard social-contact-survey data (e.g., POLYMOD) is a poor proxy for transmission risk. Household secondary attack rates (10-25% among susceptible household contacts, per UK literature; 4.3-7.1% in a Korean communal-living outbreak) may be a more directly relevant transmission parameter for this disease than a raw daily-contact count."
+              },
+
+              "estimates": []
+            },
+
+### DOUBLE CHECK FOLLOWING INFO   ###         
+            "immunity_duration": {
+              "unit": "days",
+              "consensus": {
+                "min": 10950,
+                "max": 29200,
+                "typical": 29200,
+                "notes": "Natural infection with hepatitis A is universally described as conferring lifelong immunity — reinfection is considered exceedingly rare, even in cases of severe immunosuppression. The figures here (30-80 years, i.e., functionally lifelong) are illustrative upper-bound placeholders rather than a measured decay curve, since no study has identified waning of natural post-infection immunity. Vaccine-induced immunity is separately documented to last at least 20-25 years and is also considered likely lifelong."
+              },
+
+              "estimates": [
+                {
+                  "value": 29200,
+                  "range": "N/A",
+                  "population": "General, post-natural-infection",
+                  "source_type": "government_report",
+                  "title": "Hepatitis A",
+                  "url": "https://www.ecdc.europa.eu/en/hepatitis",
+                  "doi": "N/A",
+                  "country": "European Union",
+                  "year": 2024,
+                  "notes": "ECDC states chronic infection with hepatitis A is not known to occur and that infection gives lifelong immunity to the disease."
+                },
+
+                {
+                  "value": 7300,
+                  "range": [7300, 9125],
+                  "population": "General, vaccine-induced",
+                  "source_type": "review_article",
+                  "title": "How Long Does Vaccine for Hepatitis A Last?",
+                  "url": "https://advancestudy.org/?p=363175",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2024,
+                  "notes": "States hepatitis A vaccine provides at least 20-25 years of protection following the full two-dose series, and CDC does not routinely recommend booster doses for healthy individuals who complete the series, implying protection is expected to persist well beyond this window (potentially lifelong)."
+                }
+              ]
+            },
+
+            "asymptomatic_fraction": {
+              "unit": "fraction",
+              "consensus": {
+                "min": 0.30,
+                "max": 0.70,
+                "typical": 0.70,
+                "notes": "Strongly age-dependent: the large majority of infections in young children are asymptomatic, while most infections in older children and adults are symptomatic (jaundice occurs in >70% of adult cases). This makes a single population-wide 'typical' figure highly dependent on the age structure of the population being modeled."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.70,
+                  "range": "N/A",
+                  "population": "Children under 6 years",
+                  "source_type": "review_article",
+                  "title": "CDC Surveillance Manual, Chapter 3: Hepatitis A",
+                  "url": "https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-3-hepatitis-a.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2023,
+                  "notes": "States that in children younger than 6 years of age, most (70%) infections are asymptomatic; in older children and adults, infection is usually symptomatic, with jaundice occurring in more than 70% of patients."
+                },
+
+                {
+                  "value": 0.25,
+                  "range": "N/A",
+                  "population": "General, all ages",
+                  "source_type": "review_article",
+                  "title": "Hepatitis A Fact Sheet",
+                  "url": "https://bhhcsafetycenter.com/hepatitis-a/?print=pdf",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2023,
+                  "notes": "States three of every four persons infected with hepatitis A virus have symptoms (i.e., ~25% asymptomatic), reflecting an all-ages population average skewed toward adults, which contrasts sharply with the much higher asymptomatic fraction seen specifically in young children."
+                }
+              ]
+            }
+
+          }
+        }
 
 
 }
