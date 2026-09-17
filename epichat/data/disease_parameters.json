@@ -3257,9 +3257,9 @@
             "fatality_rate": {
               "unit": "percentage",
               "consensus": {
-                "min": ,
-                "max": ,
-                "typical": ,
+                "min": 0.3,
+                "max": 0.5,
+                "typical": 0.4,
                 "notes": "Overall case-fatality rate is low; hepatitis A does not cause chronic infection or chronic liver disease. Fatality is driven almost entirely by rare acute (fulminant) liver failure, and risk rises sharply with age and pre-existing liver disease."
               },
 
@@ -3302,30 +3302,29 @@
                 "min": "N/A",
                 "max": "N/A",
                 "typical": "N/A",
-                "notes": "Not well-suited to a general daily-contacts metric: HAV is transmitted primarily via the fecal-oral route (contaminated food, water, and surfaces) rather than through respiratory/droplet close contact, so standard social-contact-survey data (e.g., POLYMOD) is a poor proxy for transmission risk. Household secondary attack rates (10-25% among susceptible household contacts, per UK literature; 4.3-7.1% in a Korean communal-living outbreak) may be a more directly relevant transmission parameter for this disease than a raw daily-contact count."
+                "notes": "Not well-suited to a general daily-contacts metric: HAV is transmitted primarily via the fecal-oral route (contaminated food, water, and surfaces) rather than through respiratory/droplet close contact, so standard social-contact-survey data (e.g., POLYMOD) is a poor proxy for transmission risk."
               },
 
               "estimates": []
             },
 
-### DOUBLE CHECK FOLLOWING INFO   ###         
             "immunity_duration": {
               "unit": "days",
               "consensus": {
-                "min": 10950,
-                "max": 29200,
-                "typical": 29200,
-                "notes": "Natural infection with hepatitis A is universally described as conferring lifelong immunity — reinfection is considered exceedingly rare, even in cases of severe immunosuppression. The figures here (30-80 years, i.e., functionally lifelong) are illustrative upper-bound placeholders rather than a measured decay curve, since no study has identified waning of natural post-infection immunity. Vaccine-induced immunity is separately documented to last at least 20-25 years and is also considered likely lifelong."
+                "min": "7300",
+                "max": "lifelong",
+                "typical": "natural infection: lifelong; vaccine: long-term with waning immunity",
+                "notes": "Natural infection is generally believed to provide lifelong immunity. Hepatitis A vaccine provides at least 20 years of protection."
               },
 
               "estimates": [
                 {
-                  "value": 29200,
+                  "special_value": "lifelong",
                   "range": "N/A",
                   "population": "General, post-natural-infection",
                   "source_type": "government_report",
                   "title": "Hepatitis A",
-                  "url": "https://www.ecdc.europa.eu/en/hepatitis",
+                  "url": "https://www.ecdc.europa.eu/en/hepatitis-A/facts",
                   "doi": "N/A",
                   "country": "European Union",
                   "year": 2024,
@@ -3334,7 +3333,7 @@
 
                 {
                   "value": 7300,
-                  "range": [7300, 9125],
+                  "range": "N/A",
                   "population": "General, vaccine-induced",
                   "source_type": "review_article",
                   "title": "How Long Does Vaccine for Hepatitis A Last?",
@@ -3342,7 +3341,7 @@
                   "doi": "N/A",
                   "country": "N/A",
                   "year": 2024,
-                  "notes": "States hepatitis A vaccine provides at least 20-25 years of protection following the full two-dose series, and CDC does not routinely recommend booster doses for healthy individuals who complete the series, implying protection is expected to persist well beyond this window (potentially lifelong)."
+                  "notes": "States hepatitis A vaccine provides at least 20 years of protection following the full two-dose series, and CDC does not routinely recommend booster doses for healthy individuals who complete the series, implying protection is expected to persist well beyond this window (potentially lifelong)."
                 }
               ]
             },
@@ -3352,35 +3351,35 @@
               "consensus": {
                 "min": 0.30,
                 "max": 0.70,
-                "typical": 0.70,
+                "typical": 0.50,
                 "notes": "Strongly age-dependent: the large majority of infections in young children are asymptomatic, while most infections in older children and adults are symptomatic (jaundice occurs in >70% of adult cases). This makes a single population-wide 'typical' figure highly dependent on the age structure of the population being modeled."
               },
 
               "estimates": [
                 {
-                  "value": 0.70,
-                  "range": "N/A",
+                  "value": 0.50,
+                  "range": [0.30, 0.70],
                   "population": "Children under 6 years",
                   "source_type": "review_article",
                   "title": "CDC Surveillance Manual, Chapter 3: Hepatitis A",
                   "url": "https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-3-hepatitis-a.html",
                   "doi": "N/A",
                   "country": "United States",
-                  "year": 2023,
+                  "year": 2025,
                   "notes": "States that in children younger than 6 years of age, most (70%) infections are asymptomatic; in older children and adults, infection is usually symptomatic, with jaundice occurring in more than 70% of patients."
                 },
 
                 {
-                  "value": 0.25,
+                  "value": 0.50,
                   "range": "N/A",
-                  "population": "General, all ages",
+                  "population": "Children under 6 years",
                   "source_type": "review_article",
-                  "title": "Hepatitis A Fact Sheet",
-                  "url": "https://bhhcsafetycenter.com/hepatitis-a/?print=pdf",
-                  "doi": "N/A",
-                  "country": "N/A",
-                  "year": 2023,
-                  "notes": "States three of every four persons infected with hepatitis A virus have symptoms (i.e., ~25% asymptomatic), reflecting an all-ages population average skewed toward adults, which contrasts sharply with the much higher asymptomatic fraction seen specifically in young children."
+                  "title": "Hepatitis A: Epidemiology and prevention in developing countries",
+                  "url": "https://www.wjgnet.com/1948-5182/full/v4/i3/68.htm",
+                  "doi": "10.4254/wjh.v4.i3.68",
+                  "country": "Global (developing countries focus)",
+                  "year": 2012,
+                  "notes": "Approximately 50% of children with hepatitis A under the age of 6 years are asymptomatic, with most of the remaining having mild symptoms, often not recognized as hepatitis. Less than 5% of children below 4 years of age and less than 10% of children between ages 4 and 6 years develop jaundice."
                 }
               ]
             }
