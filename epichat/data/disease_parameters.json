@@ -3385,11 +3385,380 @@
             }
 
           }
-        }
+        },
+
+        "ebola": {
+          "display_name": "Ebola",
+          "aliases": ["ebola virus disease", "evd", "ebola hemorrhagic fever", "ebov", "zaire ebolavirus", "ebola haemorrhagic fever"],
+          "parameters": {
+
+            "r0": {
+              "unit": "dimensionless",
+              "consensus": {
+                "min": 1.34,
+                "max": 2.53,
+                "typical": 1.95,
+                "notes": "Typical value taken from mean of systematic review of multiple countries with over 2000 studies reviewed."
+              },
+
+              "estimates": [
+                {
+                  "value": 1.83,
+                  "range": "N/A",
+                  "population": "General",
+                  "source_type": "modeling_study",
+                  "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/15178190/",
+                  "doi": "10.1016/j.jtbi.2004.03.006",
+                  "country": "Democratic Republic of the Congo",
+                  "year": 2004,
+                  "notes": "Estimate of R0 is 1.83 (SD 0.06) for Congo (1995) and 1.34 (SD 0.03) for Uganda (2000)."
+                },
+
+                {
+                  "value": 1.34,
+                  "range": "N/A",
+                  "population": "General",
+                  "source_type": "modeling_study",
+                  "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/15178190/",
+                  "doi": "10.1016/j.jtbi.2004.03.006",
+                  "country": "Uganda",
+                  "year": 2004,
+                  "notes": "Estimate of R0 is 1.83 (SD 0.06) for Congo (1995) and 1.34 (SD 0.03) for Uganda (2000)."
+                },
+
+                {
+                  "value": 1.51,
+                  "range": [1.50, 1.52],
+                  "population": "General",
+                  "source_type": "modeling_study",
+                  "title": "Estimating the Reproduction Number of Ebola Virus (EBOV) During the 2014 Outbreak in West Africa",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/25642364/",
+                  "doi": "10.1371/currents.outbreaks.91afb5e0f279e7f29e7056095255b288",
+                  "country": "Guinea",
+                  "year": 2014,
+                  "notes": "Althaus, PLOS Currents Outbreaks. SEIR model fit to WHO case and death reports through August 2014. Confidence intervals are implausibly narrow because they reflect fit uncertainty against smoothed cumulative counts rather than true epistemic uncertainty — treat the point estimate, not the interval. Guinea's epidemic was the longest-running and lowest-intensity of the three, with repeated flare-ups from community resistance to burial teams."
+                },
+
+                {
+                  "value": 2.53,
+                  "range": [2.41, 2.67],
+                  "population": "General",
+                  "source_type": "modeling_study",
+                  "title": "Estimating the Reproduction Number of Ebola Virus (EBOV) During the 2014 Outbreak in West Africa",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/25642364/",
+                  "doi": "10.1371/currents.outbreaks.91afb5e0f279e7f29e7056095255b288",
+                  "country": "Sierra Leone",
+                  "year": 2014,
+                  "notes": "Highest of the three country-level estimates in this study, and the upper anchor for the consensus range. Sierra Leone's epidemic was seeded by a single funeral of a traditional healer in Kailahun that has been linked to well over a hundred subsequent cases — a textbook superspreading event, which inflates an early-phase R0 estimate relative to the typical transmission chain."
+                },
+
+                {
+                  "value": 1.59,
+                  "range": [1.57, 1.60],
+                  "population": "General",
+                  "source_type": "modeling_study",
+                  "title": "Estimating the Reproduction Number of Ebola Virus (EBOV) During the 2014 Outbreak in West Africa",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/25642364/",
+                  "doi": "10.1371/currents.outbreaks.91afb5e0f279e7f29e7056095255b288",
+                  "country": "Liberia",
+                  "year": 2014,
+                  "notes": "Estimated basic reproduction number (R0) for Ebola virus disease (EBOV) during the 2014 West Africa outbreak in Liberia. The study estimated R0 at 1.59, with a 95% confidence interval of 1.57–1.60. This estimate reflects transmission dynamics during the early phase of the outbreak and is specific to the Liberian outbreak context."
+                },
+
+                {
+                  "value": 1.95,
+                  "range": [1.74, 2.15],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "The basic reproduction number (R0) of ebola virus disease: A systematic review and meta-analysis",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/38181864/",
+                  "doi": "10.1016/j.tmaid.2023.102685",
+                  "country": "Multiple (six African countries)",
+                  "year": 2024,
+                  "notes": "The search yielded 2042 studies. It included 53 studies from six African countries in the systematic review providing 97 Ebola mean R0 estimates."
+                }
+              ]
+            },
+
+
+            "incubation_days": {
+              "unit": "days",
+              "consensus": {
+                "min": ,
+                "max": ,
+                "typical": ,
+                "notes": ""
+                 },
+
+              "estimates": [
+                {
+                  "value": 9,
+                  "range": [2, 21],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Ebola Disease Signs and Symptoms",
+                  "url": "https://www.cdc.gov/ebola/signs-symptoms/index.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "CDC's standard reference states symptoms appear 2 to 21 days after contact with the virus, with an average of 8 to 10 days. Value shown is the midpoint of that stated average window. This is the range used to set the 21-day monitoring period for exposed contacts."
+                },
+
+                {
+                  "value": 11.4,
+                  "range": "N/A",
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
+                  "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+                  "doi": "10.1056/NEJMoa1411100",
+                  "country": "Guinea, Liberia, Sierra Leone",
+                  "year": 2014,
+                  "notes": "WHO Ebola Response Team. Mean incubation of 11.4 days fitted to patients with a single reported exposure date, notably longer than the CDC's 8-10 day general figure. The gap is most likely recall and ascertainment bias — patients reporting a single identifiable exposure skew toward discrete events like funerals rather than continuous household exposure, and the earliest exposure in a continuous window tends to get reported, lengthening the apparent incubation."
+                },
+
+###DOUBLE CHECK FOLLOWING ESTIMATES - UNDER REVIEW               
+                {
+                  "value": 12.7,
+                  "range": [2, 26],
+                  "population": "General, Kikwit outbreak 1995",
+                  "source_type": "modeling_study",
+                  "title": "Incubation period of Ebola hemorrhagic virus subtype Zaire",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3766904/",
+                  "doi": "10.1016/j.phrp.2011.04.001",
+                  "country": "Democratic Republic of the Congo",
+                  "year": 2011,
+                  "notes": "Eichner, Dowell & Firese, Osong Public Health Research and Perspectives. Fitted a distribution to 196 cases from the 1995 Kikwit outbreak, estimating mean 12.7 days (SD 4.3). The paper is the main source for the claim that a 21-day quarantine misses a small but non-zero fraction of cases; the exact fraction is sensitive to the fitted distribution and later reanalyses (notably Haas 2014) produced a wide spread of answers. Range shown is approximate observed spread, not a confidence interval."
+                }
+              ]
+            },
+
+            "infectious_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 4,
+                "max": 10,
+                "typical": 7,
+                "notes": "Patients are not infectious during incubation — infectiousness begins with symptom onset and rises with viral load as illness progresses, so the effective infectious window runs from onset until isolation, recovery, or death. Untreated, mean time from onset to death is roughly 7-8 days and onset to recovery roughly 11-12 days, but isolation typically truncates community exposure well before either endpoint. Two features break the simple SEIR framing: corpses are highly infectious and traditional burial washing has driven a large share of transmission, effectively extending the infectious period past death; and viral RNA persists in immune-privileged sites in survivors, with semen positive for many months (documented sexual transmission more than a year after recovery) and rare relapse with CNS or ocular involvement. Models that ignore the post-death and post-recovery channels will understate tail transmission."
+              },
+
+              "estimates": [
+                {
+                  "value": 7.5,
+                  "range": [6.0, 9.0],
+                  "population": "Fatal cases, West Africa 2014",
+                  "source_type": "government_report",
+                  "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
+                  "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+                  "doi": "10.1056/NEJMoa1411100",
+                  "country": "Guinea, Liberia, Sierra Leone",
+                  "year": 2014,
+                  "notes": "WHO Ebola Response Team reported mean time from symptom onset to death of approximately 7.5 days, versus roughly 11.8 days from onset to hospital discharge among survivors. Used here as the upper bound on community infectious duration for fatal cases in the absence of isolation."
+                },
+
+                {
+                  "value": 5.61,
+                  "range": [3.5, 7.0],
+                  "population": "General, model parameter",
+                  "source_type": "modeling_study",
+                  "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/15178190/",
+                  "doi": "10.1016/j.jtbi.2004.03.006",
+                  "country": "Democratic Republic of the Congo / Uganda",
+                  "year": 2004,
+                  "notes": "Chowell et al. used a mean infectious period of 5.61 days for the 1976 Congo outbreak and 3.5 days for the 2000 Uganda outbreak. These are model-calibrated compartment residence times, not directly observed clinical durations, and they absorb the effect of isolation — which is why they are shorter than onset-to-death. Do not interpret as a biological shedding duration."
+                },
+
+                {
+                  "value": 115,
+                  "range": [30, 565],
+                  "population": "Male survivors, viral RNA persistence in semen",
+                  "source_type": "review_article",
+                  "title": "Ebola RNA Persistence in Semen of Ebola Virus Disease Survivors — Final Report",
+                  "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1511410",
+                  "doi": "10.1056/NEJMoa1511410",
+                  "country": "Sierra Leone",
+                  "year": 2017,
+                  "notes": "Deen et al., New England Journal of Medicine. Cohort of male survivors tested by RT-PCR; RNA detected in semen in the large majority of men tested within 3 months of onset, declining over time but with individual cases positive beyond 500 days. Critical caveat: RNA detection is not the same as infectious virus, and the documented sexual transmission events are rare relative to the number of RNA-positive survivors. Included as a separate entry because it is a genuinely different transmission channel, not a continuation of the acute infectious period — do not sum it with the acute estimates above."
+                }
+              ]
+            },
+
+            "fatality_rate": {
+              "unit": "percentage",
+              "consensus": {
+                "min": 25,
+                "max": 90,
+                "typical": 50,
+                "notes": "Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others."
+              },
+
+              "estimates": [
+                {
+                  "value": 50,
+                  "range": [25, 90],
+                  "metric": "CFR",
+                  "population": "General, all outbreaks and species",
+                  "source_type": "organization_report",
+                  "title": "Ebola disease caused by Zaire ebolavirus",
+                  "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2025,
+                  "notes": "WHO states the average case fatality rate is around 50%, having varied from 25% to 90% in past outbreaks. This is the most widely cited headline figure and the basis for the consensus block, though it aggregates across species, decades, and wildly different standards of supportive care."
+                },
+
+                {
+                  "value": 70.8,
+                  "range": [68.6, 72.8],
+                  "metric": "CFR",
+                  "population": "Cases with definitive outcome, West Africa 2014",
+                  "source_type": "government_report",
+                  "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
+                  "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+                  "doi": "10.1056/NEJMoa1411100",
+                  "country": "Guinea, Liberia, Sierra Leone",
+                  "year": 2014,
+                  "notes": "WHO Ebola Response Team. 70.8% (95% CI 68.6-72.8) restricted to patients with a recorded final outcome — substantially higher than the roughly 40% obtained by dividing total reported deaths by total reported cases across the whole epidemic, because cases with unknown outcome were common and were not evenly split. This pair is the clearest illustration in the dataset of how much CFR depends on denominator choice; prefer the definitive-outcome figure for modeling severity and the crude figure only for comparing against other crude surveillance ratios."
+                },
+
+                {
+                  "value": 88,
+                  "range": "N/A",
+                  "metric": "CFR",
+                  "population": "General, Yambuku outbreak 1976",
+                  "source_type": "government_report",
+                  "title": "Ebola disease distribution by species and outbreak",
+                  "url": "https://www.cdc.gov/ebola/outbreaks/index.html",
+                  "doi": "N/A",
+                  "country": "Democratic Republic of the Congo",
+                  "year": 2024,
+                  "notes": "280 deaths among 318 cases in the index outbreak for Zaire ebolavirus. Upper anchor of the WHO range. Occurred with essentially no supportive care, in a setting with active nosocomial amplification, and with case finding biased toward severe presentations — so this should be read as a near-worst-case rather than an intrinsic species lethality."
+                },
+
+                {
+                  "value": 33.5,
+                  "range": [29.5, 37.5],
+                  "metric": "CFR",
+                  "population": "Patients receiving monoclonal antibody therapy, DRC 2018-2019",
+                  "source_type": "modeling_study",
+                  "title": "A Randomized, Controlled Trial of Ebola Virus Disease Therapeutics (PALM trial)",
+                  "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1910993",
+                  "doi": "10.1056/NEJMoa1910993",
+                  "country": "Democratic Republic of the Congo",
+                  "year": 2019,
+                  "notes": "Mulangu et al., New England Journal of Medicine. Mortality at 28 days was roughly 33.5% with REGN-EB3 and 35.1% with mAb114, versus roughly 50-53% in the ZMapp and remdesivir comparison groups. Mortality among patients presenting early with low viral load fell into the roughly 10% range. Range shown is approximate. This entry breaks the historical consensus band deliberately: any forward-looking model of an outbreak with therapeutic access should not use the 50% headline figure."
+                }
+              ]
+            },
+
+            "average_contacts_daily": {
+              "unit": "contacts/day",
+              "consensus": {
+                "min": "N/A",
+                "max": "N/A",
+                "typical": "N/A",
+                "notes": "Not meaningfully captured by a general daily-contacts metric. Transmission requires direct contact with blood, vomit, stool, or other body fluids from a symptomatic patient or a corpse, so conversational-contact surveys such as POLYMOD are a poor proxy — the relevant exposure set is caregivers, burial participants, and unprotected health workers, not the general contact network. The usual substitutes in the literature are household secondary attack rate (pooled at roughly 12-17%, rising sharply with the intimacy of care provided) and funeral attendance, and transmission is strongly overdispersed at the individual level. If a contact-network model is required, parameterize on household and care-contact structure plus discrete funeral events rather than on a mean daily contact count."
+              },
+
+              "estimates": []
+            },
+
+            "immunity_duration": {
+              "unit": "days",
+              "consensus": {
+                "min": 3650,
+                "max": "lifelong",
+                "typical": "natural infection: likely lifelong or multi-decade; vaccine: at least 2-4 years, durability beyond that not established",
+                "notes": "Survivors of natural infection carry detectable IgG for decades, and no well-documented case of reinfection with the same species has been reported, so natural immunity is generally treated as long-lasting to lifelong. Antibody persistence is not the same as demonstrated protection — the decades-long evidence is serological, since challenge studies are impossible and reinfection exposure is rare. Cross-protection between species (Zaire, Sudan, Bundibugyo) is limited and should not be assumed; the licensed rVSV-ZEBOV vaccine (Ervebo) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine available."
+              },
+
+              "estimates": [
+                {
+                  "special_value": "lifelong",
+                  "range": [14600, "lifelong"],
+                  "population": "Survivors of natural infection, Yambuku 1976 cohort",
+                  "source_type": "review_article",
+                  "title": "Ebola Virus Neutralizing Antibodies Detectable in Survivors of the Yambuku, Zaire Outbreak 40 Years after Infection",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6009669/",
+                  "doi": "10.1093/infdis/jix584",
+                  "country": "Democratic Republic of the Congo",
+                  "year": 2018,
+                  "notes": "Rimoin et al., Journal of Infectious Diseases. Traced survivors of the 1976 Yambuku outbreak and found IgG against Ebola glycoprotein in all 14 tested, with neutralizing activity in a subset, 40 years after infection. Strongest available evidence for durable natural immunity, though the sample is tiny and serology is a correlate rather than a demonstration of protection."
+                },
+
+                {
+                  "value": 730,
+                  "range": [365, 1460],
+                  "population": "General, vaccine-induced (rVSV-ZEBOV / Ervebo)",
+                  "source_type": "organization_report",
+                  "title": "Ebola disease caused by Zaire ebolavirus",
+                  "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2025,
+                  "notes": "Ervebo is a single-dose live attenuated vesicular stomatitis virus vector vaccine, shown highly effective in the Guinea ring-vaccination trial with protection evident from roughly 10 days post-vaccination. Immunogenicity studies show antibody responses persisting at least 2 years and in follow-up cohorts beyond that, but duration of clinical protection is not established and no booster schedule is defined for the general population. Value shown is a conservative planning figure, not a measured waning half-life — flag as low-confidence if the model is sensitive to it. Protects against Zaire ebolavirus only."
+                }
+              ]
+            },
+
+            "asymptomatic_fraction": {
+              "unit": "fraction",
+              "consensus": {
+                "min": 0.03,
+                "max": 0.46,
+                "typical": 0.15,
+                "notes": "The single most contested parameter for this pathogen, with credible published estimates spanning more than an order of magnitude. The disagreement is largely methodological: seroprevalence studies in contacts pick up antibody-positive people who never reported illness, but Ebola serological assays have known specificity problems in populations with high background reactivity, and recall of mild illness months after an epidemic is poor. Studies using stricter case definitions and better-validated assays tend to land far lower than the early Gabon work. Consequential modeling caveat: asymptomatic or minimally symptomatic individuals are not believed to transmit, since infectiousness tracks viral load and symptom severity — so unlike most respiratory pathogens, a high asymptomatic fraction here reduces the susceptible pool without adding hidden transmission chains. Setting this parameter high therefore makes outbreaks easier to control in most model structures, which is the opposite of the usual intuition and worth checking explicitly in sensitivity analysis."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.46,
+                  "range": "N/A",
+                  "population": "Close contacts of symptomatic cases, Gabon",
+                  "source_type": "review_article",
+                  "title": "Human asymptomatic Ebola infection and strong inflammatory response",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/10881895/",
+                  "doi": "10.1016/S0140-6736(00)02405-3",
+                  "country": "Gabon",
+                  "year": 2000,
+                  "notes": "Leroy et al., The Lancet. Found that 11 of 24 close contacts of symptomatic patients during the 1996 Gabon outbreaks were IgG-positive and PCR-positive without ever developing symptoms. The origin of the widely repeated claim that a large share of Ebola infections are asymptomatic. Small sample, early-generation assays, and subsequent work has not reproduced a fraction this high — treat as the upper bound of plausibility rather than a central estimate."
+                },
+
+                {
+                  "value": 0.27,
+                  "range": [0.14, 0.40],
+                  "population": "Household contacts, pooled",
+                  "source_type": "systematic_review",
+                  "title": "Transmissibility and Pathogenicity of Ebola Virus: A Systematic Review and Meta-analysis of Household Secondary Attack Rate and Asymptomatic Infection",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4826455/",
+                  "doi": "10.1093/cid/ciw114",
+                  "country": "Multiple",
+                  "year": 2016,
+                  "notes": "Dean, Halloran, Yang & Longini, Clinical Infectious Diseases. Meta-analysis across household studies estimating both secondary attack rate (roughly 12.5%) and the proportion of infections that are asymptomatic among seropositive contacts. The authors are explicit that the asymptomatic estimate rests on a small number of serosurveys with heterogeneous assays and that the pooled interval is wide."
+                },
+
+                {
+                  "value": 0.03,
+                  "range": [0.01, 0.06],
+                  "population": "Household contacts, Sierra Leone 2014-2016",
+                  "source_type": "review_article",
+                  "title": "Asymptomatic infection and unrecognised Ebola virus disease in Ebola-affected households in Sierra Leone: a cross-sectional study using a new non-invasive assay for antibodies to Ebola virus",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/28347469/",
+                  "doi": "10.1016/S1473-3099(17)30111-1",
+                  "country": "Sierra Leone",
+                  "year": 2017,
+                  "notes": "Glynn et al., The Lancet Infectious Diseases. Used a validated oral-fluid antibody assay in households from the West African epidemic and found only a small fraction of contacts with asymptomatic or unrecognised infection — roughly an order of magnitude below Leroy et al. The largest and best-controlled study of the question, and the main reason the consensus 'typical' here is set well below the meta-analytic pooled value. If the model is sensitive to this parameter, run it at both 0.03 and 0.27 rather than picking one."
+                }
+              ]
+            }
 
 
 }
 
+        }
 
 
 
@@ -3399,266 +3768,6 @@
 
 
 
-
-
-
-
-{
-  "diseases": {
-    "measles": {
-      "aliases": ["rubeola", "morbilli", "measle"],
-      "r0": {
-        "min": 12,
-        "max": 18,
-        "typical": 15,
-        "source": "https://pubmed.ncbi.nlm.nih.gov/28757186/"
-      },
-      "incubation_days": {
-        "min": 6,
-        "max": 21,
-        "typical": 12,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 4,
-        "max": 12,
-        "typical": 8,
-        "note": "4 days before to 4 days after rash onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-
-      "fatality_rate": {
-        "min": 0.5,
-        "max": 4.5,
-        "typical": 2.2,
-        "note": "Mean case-fatality ratio was 1.5% in community-based settings while it was 1.5% in hospital-based settings from 1990-2015.",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6418190/"
-      },
-
-      "average_contacts_daily": {
-
-      },
-
-      "immunity_duration": {
-        "min": "N/A",
-        "max": "N/A",
-        "typical": "N/A",
-        "note": "Lifelong immunity after infection.",
-        "source": "https://www.cdc.gov/measles/vaccines/index.html"
-      },
-
-      "asymptomatic_fraction": {
-        "typical": 30,
-        "source": "SEIAR models"
-      }
-
-
-    },
-    "mumps": {
-      "aliases": ["epidemic parotitis"],
-      "r0": {
-        "min": 10,
-        "max": 12,
-        "typical": 11,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC557899/"
-      },
-      "incubation_days": {
-        "min": 14,
-        "max": 25,
-        "typical": 18,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 7,
-        "max": 25,
-        "typical": 14,
-        "note": "7 days before to 11-14 days after parotitis onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      }
-    },
-    "rubella": {
-      "aliases": ["german measles", "three-day measles"],
-      "r0": {
-        "min": 2,
-        "max": 5,
-        "typical": 3,
-        "note": "Literature reports R0 < 5; lower bound set at 2 (minimum viable epidemic threshold)",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/"
-      },
-      "incubation_days": {
-        "min": 13,
-        "max": 24,
-        "typical": 17,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 7,
-        "max": 21,
-        "typical": 14,
-        "note": "7 days before to 7 days after onset (CDC)",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      }
-    },
-    "varicella": {
-      "aliases": ["chickenpox", "varicella-zoster", "chicken pox"],
-      "r0": {
-        "min": 8,
-        "max": 10,
-        "typical": 9,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/"
-      },
-      "incubation_days": {
-        "min": 10,
-        "max": 21,
-        "typical": 14,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 4,
-        "max": 10,
-        "typical": 7,
-        "note": "Typically 1-2 days before to 5-7 days after rash onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/"
-      }
-    },
-    "pertussis": {
-      "aliases": ["whooping cough", "bordetella pertussis", "whooping-cough"],
-      "r0": {
-        "min": 12,
-        "max": 17,
-        "typical": 14,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/"
-      },
-      "incubation_days": {
-        "min": 3,
-        "max": 7,
-        "typical": 5,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 14,
-        "max": 28,
-        "typical": 21,
-        "note": "First 2-4 weeks after cough onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11679829/"
-      }
-    },
-    "influenza": {
-      "aliases": ["flu", "seasonal flu", "seasonal influenza", "the flu"],
-      "r0": {
-        "min": 1.2,
-        "max": 1.4,
-        "typical": 1.28,
-        "note": "Seasonal community transmission; pandemic strains (H1N1 1918: ~1.8, H5N1: ~0.34) differ significantly",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169819/"
-      },
-      "incubation_days": {
-        "min": 1,
-        "max": 4,
-        "typical": 2,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 1,
-        "max": 10,
-        "typical": 5,
-        "note": "1 day before to 10 days after onset (children); shorter in adults",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      }
-    },
-    "meningococcal": {
-      "aliases": ["meningitis", "neisseria meningitidis", "meningococcal disease", "bacterial meningitis"],
-      "r0": {
-        "min": 1.0,
-        "max": 1.9,
-        "typical": 1.3,
-        "note": "Three estimates from HPD intervals: 1.31 (1.03-1.64), 1.22 (0.90-1.64), 1.4 (0.91-1.9)",
-        "source": "https://www.sciencedirect.com/science/article/abs/pii/S156713482030191X"
-      },
-      "incubation_days": {
-        "min": 1,
-        "max": 10,
-        "typical": 3,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 1,
-        "max": 7,
-        "typical": 2,
-        "note": "Non-infectious 1-2 days after antibiotic treatment starts",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      }
-    },
-    "hepatitis_a": {
-      "aliases": ["hepatitis a", "hep a", "hav", "hepatitis-a"],
-      "r0": {
-        "min": 2.1,
-        "max": 2.8,
-        "typical": 2.4,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6152969/"
-      },
-      "incubation_days": {
-        "min": 20,
-        "max": 125,
-        "typical": 28,
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      },
-      "infectious_days": {
-        "min": 14,
-        "max": 28,
-        "typical": 21,
-        "note": "2 weeks before to 1 week after onset",
-        "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
-      }
-    },
-    "covid19_acute_ancestral": {
-      "aliases": ["covid", "covid-19", "sars-cov-2", "coronavirus disease"],
-      "r0":{
-      "min": 2,
-      "max": 3,
-      "typical": 2.79,
-      "note": "multiple variant entries possible",
-      "source": "https://www.sciencedirect.com/science/article/pii/S1755436522000809"
-    },
-
-    "incubation_days":{
-      "min": 4.5,
-      "max": 14.2,
-      "typical": 5.1,
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7430485/"
-    },
-
-    "infectious_days": {
-      "min": 6.5,
-      "max": 18.1,
-      "typical": 13.4,
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/"
-    }
-  },
-  "covid19_acute_omicron": {
-    "aliases": ["covid", "covid-19", "sars-cov-2", "coronavirus disease"],
-    "r0":{
-      "min": 5.5,
-      "max": 24.0,
-      "typical": 9.5,
-      "note": "multiple variant entries possible",
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8992231/#sec3"
-    },
-
-    "incubation_days":{
-      "min": 4.5,
-      "max": 14.2,
-      "typical": 5.1,
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7430485/"
-    },
-
-    "infectious_days": {
-      "min": 6.5,
-      "max": 18.1,
-      "typical": 13.4,
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7409948/"
-    }
-  },
 
   "ebola": {
     "aliases":["ebola virus disease", "evd"],
@@ -3836,5 +3945,4 @@
       }
   }
 
-}
 }
