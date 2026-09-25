@@ -541,7 +541,7 @@
             },
             {
               "value": 350,
-              "range": "N/A",
+              "range": null,
               "population": "Single hospitalized measle case",
               "source_type": "outbreak",
               "title": "Contact Tracing and Prevention of Secondary Measles Transmission in a Pediatric Acute Care Hospital — Los Angeles County, July 2024",
@@ -556,9 +556,9 @@
         "immunity_duration": {
           "unit": "days",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "N/A",
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "Lifelong immunity after natural infection or two-dose vaccination."
           },
           "estimates": [],
@@ -570,9 +570,9 @@
         "asymptomatic_fraction": {
           "unit": "fraction",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "N/A",
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "Measles has no known asymptomatic carrier state."
           },
           "estimates": [],
@@ -601,85 +601,85 @@
                 "max": 6.49,
                 "typical": 3.28,
                 "notes": "Uses R0 from systematic review."
-              }
-            },
-            "estimates": [
-              {
-                "value": 2.79,
-                "range": [
-                  2,
-                  3
-                ],
-                "population": "General",
-                "source_type": "modeling",
-                "title": "A comparison of COVID-19 outbreaks across US Combined Statistical Areas using new methods for estimating and social distancing behaviour",
-                "url": "https://www.sciencedirect.com/science/article/pii/S1755436522000809?via%3Dihub",
-                "doi": "10.1016/j.epidem.2022.100640",
-                "country": "United States",
-                "year": 2022,
-                "notes": "Initial outbreak rates and subsequent social distancing behaviour over the initial phase of the COVID-19 pandemic across 29 Combined Statistical Areas (CSAs) of the United States."
               },
-              {
-                "value": 2.68,
-                "range": [
-                  2.47,
-                  2.86
-                ],
-                "population": "General",
-                "source_type": "modelling_study",
-                "title": "Nowcasting and forecasting the potential domestic and international spread of the 2019-nCoV outbreak originating in Wuhan, China: a modelling study",
-                "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30260-9/fulltext",
-                "doi": "10.1016/S0140-6736(20)30260-9 ",
-                "country": "China",
-                "year": 2020,
-                "notes": "An estimate of the size of the epidemic in Wuhan on the basis of the number of cases exported from Wuhan to cities outside mainland China and forecast the extent of the domestic and global public health risks of epidemics."
-              },
-              {
-                "value": 4.71,
-                "range": [
-                  4.5,
-                  4.92
-                ],
-                "population": "General",
-                "source_type": "modelling_study",
-                "title": "Modelling the epidemic trend of the 2019 novel coronavirus outbreak in China",
-                "url": "https://www.biorxiv.org/content/10.1101/2020.01.23.916726v1",
-                "doi": "10.1101/2020.01.23.916726",
-                "country": "China",
-                "year": 2020,
-                "notes": "Mathematical model, dynamic compartmental model."
-              },
-              {
-                "value": 3.28,
-                "range": [
-                  1.4,
-                  6.49
-                ],
-                "population": "General",
-                "source_type": "systematic_review",
-                "title": "The reproductive number of COVID-19 is higher compared to SARS coronavirus",
-                "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7074654/",
-                "doi": "10.1093/jtm/taaa021",
-                "country": "China and overseas",
-                "year": 2020,
-                "notes": "Identified 12 studies which estimated the basic reproductive number for COVID-19 from China and overseas."
-              },
-              {
-                "value": 4.2,
-                "range": [
-                  1.9,
-                  6.5
-                ],
-                "population": "General",
-                "source_type": "systematic_review",
-                "title": "A Systematic Review of COVID-19 Epidemiology Based on Current Evidence",
-                "url": "https://www.mdpi.com/2077-0383/9/4/967",
-                "doi": "10.3390/jcm9040967",
-                "country": "Multiple countries",
-                "year": 2020,
-                "notes": "Systematic review of 41 studies published during the early COVID-19 pandemic. Twenty-one estimates of the basic reproduction number (R₀) ranged from 1.9 to 6.5, with 13 estimates between 2.0 and 3.0."
-              }
-            ]
+              "estimates": [
+                {
+                  "value": 2.79,
+                  "range": [
+                    2,
+                    3
+                  ],
+                  "population": "General",
+                  "source_type": "modeling",
+                  "title": "A comparison of COVID-19 outbreaks across US Combined Statistical Areas using new methods for estimating and social distancing behaviour",
+                  "url": "https://www.sciencedirect.com/science/article/pii/S1755436522000809?via%3Dihub",
+                  "doi": "10.1016/j.epidem.2022.100640",
+                  "country": "United States",
+                  "year": 2022,
+                  "notes": "Initial outbreak rates and subsequent social distancing behaviour over the initial phase of the COVID-19 pandemic across 29 Combined Statistical Areas (CSAs) of the United States."
+                },
+                {
+                  "value": 2.68,
+                  "range": [
+                    2.47,
+                    2.86
+                  ],
+                  "population": "General",
+                  "source_type": "modelling_study",
+                  "title": "Nowcasting and forecasting the potential domestic and international spread of the 2019-nCoV outbreak originating in Wuhan, China: a modelling study",
+                  "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30260-9/fulltext",
+                  "doi": "10.1016/S0140-6736(20)30260-9 ",
+                  "country": "China",
+                  "year": 2020,
+                  "notes": "An estimate of the size of the epidemic in Wuhan on the basis of the number of cases exported from Wuhan to cities outside mainland China and forecast the extent of the domestic and global public health risks of epidemics."
+                },
+                {
+                  "value": 4.71,
+                  "range": [
+                    4.5,
+                    4.92
+                  ],
+                  "population": "General",
+                  "source_type": "modelling_study",
+                  "title": "Modelling the epidemic trend of the 2019 novel coronavirus outbreak in China",
+                  "url": "https://www.biorxiv.org/content/10.1101/2020.01.23.916726v1",
+                  "doi": "10.1101/2020.01.23.916726",
+                  "country": "China",
+                  "year": 2020,
+                  "notes": "Mathematical model, dynamic compartmental model."
+                },
+                {
+                  "value": 3.28,
+                  "range": [
+                    1.4,
+                    6.49
+                  ],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "The reproductive number of COVID-19 is higher compared to SARS coronavirus",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7074654/",
+                  "doi": "10.1093/jtm/taaa021",
+                  "country": "China and overseas",
+                  "year": 2020,
+                  "notes": "Identified 12 studies which estimated the basic reproductive number for COVID-19 from China and overseas."
+                },
+                {
+                  "value": 4.2,
+                  "range": [
+                    1.9,
+                    6.5
+                  ],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "A Systematic Review of COVID-19 Epidemiology Based on Current Evidence",
+                  "url": "https://www.mdpi.com/2077-0383/9/4/967",
+                  "doi": "10.3390/jcm9040967",
+                  "country": "Multiple countries",
+                  "year": 2020,
+                  "notes": "Systematic review of 41 studies published during the early COVID-19 pandemic. Twenty-one estimates of the basic reproduction number (R₀) ranged from 1.9 to 6.5, with 13 estimates between 2.0 and 3.0."
+                }
+              ]
+            }
           }
         },
         "omicron": {
@@ -980,20 +980,22 @@
           "average_contacts_daily": {
             "unit": "contacts/day",
             "consensus": {
-              "pre_pandemic": {
-                "min": 7,
-                "max": 26,
-                "typical": 14
-              },
-              "initial_lockdown": {
-                "min": 2,
-                "max": 5,
-                "typical": 3.5
-              },
-              "post_relaxation": {
-                "min": 1.0,
-                "max": 3.0,
-                "typical": 2.3
+              "scenarios": {
+                "pre_pandemic": {
+                  "min": 7,
+                  "max": 26,
+                  "typical": 14
+                },
+                "initial_lockdown": {
+                  "min": 2,
+                  "max": 5,
+                  "typical": 3.5
+                },
+                "post_relaxation": {
+                  "min": 1.0,
+                  "max": 3.0,
+                  "typical": 2.3
+                }
               }
             },
             "estimates": [
@@ -1364,7 +1366,7 @@
           "estimates": [
             {
               "value": 7,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "government_report",
               "title": "Clinical Overview of Mumps",
@@ -1376,7 +1378,7 @@
             },
             {
               "value": 5,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "review_article",
               "title": "Guidance for isolation precautions for mumps in the United States: a review of the scientific basis for policy change",
@@ -1415,7 +1417,7 @@
             },
             {
               "value": 0.03,
-              "range": "N/A",
+              "range": null,
               "metric": "CFR",
               "population": "Reported mumps cases, pre-vaccine era",
               "source_type": "government_surveillance_manual",
@@ -1431,9 +1433,9 @@
         "average_contacts_daily": {
           "unit": "contacts/day",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "N/A",
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "No validateable information found for mumps daily contacts."
           },
           "estimates": []
@@ -1441,10 +1443,11 @@
         "immunity_duration": {
           "unit": "days",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "Long-term (not lifelong for vaccine-induced immunity)",
-            "notes": "Natural infection is generally believed to provide lifelong immunity. Two-dose MMR vaccination provides long-term protection for most individuals, but immunity against mumps may decrease over time (waning immunity), which contributes to outbreaks among previously vaccinated populations."
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "Natural infection is generally believed to provide lifelong immunity. Two-dose MMR vaccination provides long-term protection for most individuals, but immunity against mumps may decrease over time (waning immunity), which contributes to outbreaks among previously vaccinated populations.",
+            "special_value": "Long-term (not lifelong for vaccine-induced immunity)"
           },
           "estimates": [],
           "special_value": "natural infection: lifelong; vaccine: long-term with waning immunity",
@@ -1465,7 +1468,7 @@
           "estimates": [
             {
               "value": 0.2,
-              "range": "N/A",
+              "range": null,
               "population": "Unvaccinated general population",
               "source_type": "government_report",
               "title": "Manual for the Surveillance of Vaccine-Preventable Diseases: Chapter 9 – Mumps",
@@ -1492,7 +1495,7 @@
             },
             {
               "value": 0.66,
-              "range": "N/A",
+              "range": null,
               "population": "MMR vaccinated persons",
               "source_type": "review_article",
               "title": "Mumps virus pathogenesis: Insights and knowledge gaps",
@@ -1617,7 +1620,7 @@
             },
             {
               "value": 7,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "government_report",
               "title": "Rubella virus : Infectious substances pathogen safety data sheet",
@@ -1659,7 +1662,7 @@
             },
             {
               "value": 7.6,
-              "range": "N/A",
+              "range": null,
               "population": "General population (pre-vaccination)",
               "source_type": "modelling_study",
               "title": "Assessing the burden of Congenital Rubella Syndrome in China and evaluating mitigation strategies: a meta-population modeling study",
@@ -1768,7 +1771,7 @@
           "estimates": [
             {
               "value": 14,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "government_report",
               "title": "Clinical Overview of Rubella",
@@ -1780,7 +1783,7 @@
             },
             {
               "value": 16,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "reference_text",
               "title": "Rubella",
@@ -1792,7 +1795,7 @@
             },
             {
               "value": 14,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "government_report",
               "title": "Rubella Quicksheet",
@@ -1804,7 +1807,7 @@
             },
             {
               "value": 11,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "government_report",
               "title": "Rubella",
@@ -1827,7 +1830,7 @@
           "estimates": [
             {
               "value": 0.0005,
-              "range": "N/A",
+              "range": null,
               "population": "General (pre-vaccination era)",
               "source_type": "review_article",
               "title": "Measuring the Benefits of Mass Vaccination Programs in the United States",
@@ -1842,9 +1845,9 @@
         "average_contacts_daily": {
           "unit": "contacts/day",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "N/A",
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "No rubella-specific estimates of average daily contacts have been identified."
           },
           "estimates": []
@@ -1852,10 +1855,11 @@
         "immunity_duration": {
           "unit": "days",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "lifelong",
-            "notes": "MMR & MMRV vaccines usually protect people for life against measles and rubella."
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "MMR & MMRV vaccines usually protect people for life against measles and rubella.",
+            "special_value": "lifelong"
           },
           "estimates": [],
           "special_value": "vaccine: lifelong",
@@ -1957,7 +1961,7 @@
             },
             {
               "value": 8.5,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "viewpoint_article",
               "title": "Mathematics for medical practitioners and patients: Understanding how vaccines work for the community",
@@ -2090,7 +2094,7 @@
           "estimates": [
             {
               "value": 0.001,
-              "range": "N/A",
+              "range": null,
               "population": "Children (1–14 years)",
               "source_type": "government_report",
               "title": "Chapter 22: Varicella",
@@ -2102,7 +2106,7 @@
             },
             {
               "value": 0.006,
-              "range": "N/A",
+              "range": null,
               "population": "Adolescents (15–19 years)",
               "source_type": "government_report",
               "title": "Chapter 22: Varicella",
@@ -2114,7 +2118,7 @@
             },
             {
               "value": 0.021,
-              "range": "N/A",
+              "range": null,
               "population": "Adults",
               "source_type": "government_report",
               "title": "Chapter 22: Varicella",
@@ -2145,9 +2149,9 @@
         "average_contacts_daily": {
           "unit": "contacts/day",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "N/A",
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "No varicella-specific estimates of average daily contacts have been identified."
           },
           "estimates": []
@@ -2155,10 +2159,11 @@
         "immunity_duration": {
           "unit": "days",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "lifelong",
-            "notes": "Usually, a person will only get chickenpox once in their life. After recovery, their body develops immunity to the virus."
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "Usually, a person will only get chickenpox once in their life. After recovery, their body develops immunity to the virus.",
+            "special_value": "lifelong"
           },
           "estimates": [],
           "special_value": "natural infection: lifelong",
@@ -2171,9 +2176,9 @@
         "asymptomatic_fraction": {
           "unit": "fraction",
           "consensus": {
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "N/A",
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "No varicella-specific estimates of asymptomatic fraction have been identified."
           },
           "estimates": []
@@ -2354,7 +2359,7 @@
           "estimates": [
             {
               "value": 21,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "government_report",
               "title": "Pertussis",
@@ -2381,7 +2386,7 @@
             },
             {
               "value": 21,
-              "range": "N/A",
+              "range": null,
               "population": "General",
               "source_type": "government_report",
               "title": "Whooping cough",
@@ -2404,7 +2409,7 @@
           "estimates": [
             {
               "value": 0.67,
-              "range": "N/A",
+              "range": null,
               "population": "Children <5 years)",
               "source_type": "organization_report",
               "title": "Whooping Cough (Pertussis)",
@@ -2416,7 +2421,7 @@
             },
             {
               "value": 0.8,
-              "range": "N/A",
+              "range": null,
               "population": "Unvaccinated infants younger than 6 months",
               "source_type": "government_report",
               "title": "Pertussis (whooping cough)",
