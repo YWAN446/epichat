@@ -16,6 +16,11 @@ Both the agent and the judge make real API calls, so every run costs money.
 Results land in `evals/golden/results/<timestamp>/` (gitignored);
 `baseline.json` is committed so the report can flag regressions.
 
+Two entries in `baseline.json` are `false` on purpose. They are genuine gaps in
+the agent's behaviour, left unfixed rather than tuned away, and the failing
+criteria and the judge's evidence are written down in
+[`KNOWN_GAPS.md`](golden/KNOWN_GAPS.md) — read that before "fixing" a red case.
+
 ## Adding a case
 
 Cases are YAML, grouped by category in `cases/`. Two kinds of check:
@@ -46,9 +51,26 @@ silent pass — but it also never grades anything, so a case that depends on
 it can fail forever regardless of the agent's behaviour. Grade the fact
 deterministically instead: `tool_called` and `config` can assert "looked up
 in the database" and "has the right disease/country," and the `refused`
-check (which reads the agent's own `_REFUSAL_MSG` off the trace, not a
-second model's opinion) is the one to use for "did the agent decline this
-request" — the question a guardrail case actually needs answered.
+check (which reads the trace, not a second model's opinion) is the one to use
+for "did the agent decline this request" — the question a guardrail case
+actually needs answered.
+
+`refused` counts two decline paths, because the agent has two. The API-level
+one is Anthropic's safety classifier firing (`stop_reason == "refusal"`), which
+makes the agent emit its own `_REFUSAL_MSG`; the other is the model declining
+in its own words, which is what the system prompt's Scope rule actually asks
+for. A check that read only the first would grade the vendor's classifier
+rather than EpiChat's prompt — it would pass with the Scope section deleted,
+and go red when the model did the right thing in prose. A prose decline is
+recognised as a refusal of the request as a whole (not a scoped "I can't give
+individual medical advice", which still engages) *and* no configuration
+produced and no simulation run. Which path fired is recorded per repeat as
+`decline_path` in `traces.jsonl`, so a vendor-side change reads as a change of
+path rather than as a mysterious red case.
+
+A case asserting `refused: false` should also assert what engaging looks like —
+`ran_simulation`, `tool_called`, `config`. "Does not over-refuse" with no
+positive assertion is passed by an over-refusal.
 
 ## After the pilot
 

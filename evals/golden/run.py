@@ -17,7 +17,7 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
-from .checks import run_checks
+from .checks import decline_path, run_checks
 from .harness import run_case
 from .judge import DEFAULT_JUDGE_MODEL, judge_case
 
@@ -61,6 +61,10 @@ def run_once(case: dict, judge_model: str) -> dict:
     return {"passed": not failures, "failures": failures,
             "transcript": trace.transcript(case["turns"]),
             "tool_calls": [c["name"] for c in trace.tool_calls],
+            # "api" or "prose" if the agent declined, else None. Recorded so a
+            # vendor-side change to the API-level refusal reads as a change of
+            # path in the trace rather than as a mystery.
+            "decline_path": decline_path(trace),
             "judge_usage": usage, "judge_declined": declined}
 
 

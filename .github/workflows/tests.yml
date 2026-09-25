@@ -17,10 +17,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # evals/requirements.txt (PyYAML, for tests/test_golden_run.py) does not
-          # exist yet; `|| true` keeps this step green today and picks it up
-          # automatically once a later task adds the file.
-          pip install -r evals/requirements.txt || true
+          # PyYAML, which tests/test_golden_run.py imports via evals.golden.run.
+          # No `|| true`: the file exists, so a failure here is a real failure.
+          pip install -r evals/requirements.txt
           pip install pytest
       - name: Run tests
         run: pytest tests/ -q
