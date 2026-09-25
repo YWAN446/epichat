@@ -64,7 +64,7 @@ def judge_case(transcript: str, criteria: list[str],
     prompt = (f"<transcript>\n{transcript}\n</transcript>\n\n"
               f"Grade the transcript above against these criteria:\n{numbered}")
     try:
-        response = client.messages.create(
+        response = client.beta.messages.create(
             model=model, max_tokens=4000, system=_SYSTEM,
             messages=[{"role": "user", "content": prompt}],
             output_config={"format": {"type": "json_schema", "schema": _SCHEMA}},
