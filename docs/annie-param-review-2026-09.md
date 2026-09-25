@@ -14,11 +14,12 @@ something misleading. Each needs your call.
 **Imported as:** no numeric consensus. Your value was min 1 / typical 1 / max 1 day.
 
 The one-day figure is the public-health rule that a case stops being
-infectious about 24 hours after effective antibiotics. A transmission model
-needs something different: how long an infectious person actually transmits,
-which for meningococcus is dominated by asymptomatic nasopharyngeal carriage
-lasting weeks to months. Simulating one day would make outbreaks die out far
-too fast.
+infectious about 24 hours after effective antibiotics. That measures
+treatment policy, not transmission. A model needs how long an infectious
+person actually transmits, which for meningococcus is driven by asymptomatic
+nasopharyngeal carriage rather than by the treated illness — a duration this
+database does not yet hold a sourced value for. Simulating one day would make
+outbreaks die out far too fast.
 
 **Needed:** an infectious or carriage duration with a citation, and a note
 saying which of the two it describes.
