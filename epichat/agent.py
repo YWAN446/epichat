@@ -23,6 +23,17 @@ logger = logging.getLogger(__name__)
 _MODEL = "claude-opus-5"
 _MAX_TOKENS = 16000
 
+_MAX_CONTINUATIONS = 5  # resumes allowed after a pause_turn, per user turn
+
+# Anthropic-hosted tools. The _20260209 variants run code execution
+# internally for dynamic filtering — declaring code_execution alongside them
+# gives the model two execution environments and confuses it.
+_WEB_TOOLS: list[dict] = [
+    {"type": "web_search_20260209", "name": "web_search", "max_uses": 5},
+    {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 3,
+     "citations": {"enabled": True}, "max_content_tokens": 20000},
+]
+
 _SYSTEM = """You are EpiChat, an epidemiological simulation assistant built on \
 Starsim agent-based models. You help researchers and students configure, run, \
 and understand epidemic simulations grounded in real data.
@@ -478,8 +489,92 @@ class EpiChatAgent:
     def __init__(self, executor: object | None = None) -> None:
         self.state = AgentState(executor=executor)
         self.history: list = []
-        self.tools = build_tools(self.state)
+        self.tools = [*build_tools(self.state), *_WEB_TOOLS]
         self.client = anthropic.Anthropic()
+
+    def _consume(self, runner, on_event) -> tuple[str, int]:
+        """Drive one runner to completion.
+
+        Returns (outcome, messages appended to history). The outcome is
+        "done" when the turn finished, "refused" when the model declined, or
+        "paused" when the API's server-tool loop hit its per-turn iteration
+        limit — the SDK runner does not resume by itself, so handle() starts
+        a fresh runner over the accumulated history.
+        """
+        appended = 0
+        for message in runner:
+            if message.stop_reason == "refusal":
+                on_event("text", {"text": _REFUSAL_MSG})
+                return "refused", appended
+            for block in message.content:
+                self._emit_block(block, on_event)
+            self.history.append({"role": "assistant", "content": message.content})
+            appended += 1
+            if message.stop_reason == "pause_turn":
+                return "paused", appended
+            tool_response = runner.generate_tool_call_response()
+            if tool_response is None:
+                continue
+            for tr in tool_response["content"]:
+                on_event("tool_result", {
+                    "tool_use_id": tr.get("tool_use_id"),
+                    "content": tr.get("content"),
+                    "is_error": tr.get("is_error", False),
+                })
+            self.history.append(tool_response)
+            appended += 1
+        return "done", appended
+
+    def _emit_block(self, block, on_event) -> None:
+        """Turn one response content block into a UI event."""
+        kind = getattr(block, "type", None)
+        if kind == "text":
+            if block.text.strip():
+                on_event("text", {"text": block.text})
+        elif kind in ("tool_use", "server_tool_use"):
+            on_event("tool_use", {"name": block.name, "input": block.input or {}})
+        elif kind in ("web_search_tool_result", "web_fetch_tool_result"):
+            self._emit_web_result(block, on_event)
+
+    def _emit_web_result(self, block, on_event) -> None:
+        """Report a server-tool result and cite the pages actually read.
+
+        Server tools report failure as data: the result content is a list
+        (search hits) or a result object (a fetched page) on success, and an
+        object carrying error_code on failure. Branch before indexing.
+
+        Only fetched pages become citations. Search hits are things the model
+        looked at, not sources it relied on, and five searches of ten hits
+        would swamp the sources block under the plot.
+        """
+        tool_use_id = getattr(block, "tool_use_id", None)
+        content = getattr(block, "content", None)
+        error_code = getattr(content, "error_code", None)
+        if error_code:
+            on_event("tool_result", {"tool_use_id": tool_use_id, "is_error": True,
+                                     "content": f"WEB ERROR: {error_code}"})
+            return
+
+        pages: list[tuple[str, str]] = []
+        if block.type == "web_fetch_tool_result" and content is not None:
+            url = getattr(content, "url", None)
+            if url:
+                pages.append((getattr(content, "title", None) or url, url))
+
+        if pages:
+            from .resolver import ResolvedField
+            cited = {getattr(f, "citation", None) for f in self.state.data_sources}
+            for title, url in pages:
+                if url not in cited:
+                    cited.add(url)
+                    self.state.data_sources.append(ResolvedField(
+                        field="web_source", value=title, citation=url,
+                        description="Page the agent read during this conversation"))
+
+        on_event("tool_result", {
+            "tool_use_id": tool_use_id, "is_error": False,
+            "content": json.dumps({"pages": [u for _, u in pages]}),
+        })
 
     def handle(self, user_text: str, on_event: Callable[[str, dict], None]) -> None:
         """Run one conversational turn, emitting UI events as they happen.
@@ -491,34 +586,18 @@ class EpiChatAgent:
         self.history.append({"role": "user", "content": user_text})
         appended_since_user = 0
         try:
-            runner = self.client.beta.messages.tool_runner(
-                model=_MODEL,
-                max_tokens=_MAX_TOKENS,
-                system=_system_blocks(),
-                tools=self.tools,
-                messages=self.history,
-            )
-            for message in runner:
-                if message.stop_reason == "refusal":
-                    on_event("text", {"text": _REFUSAL_MSG})
+            for _ in range(_MAX_CONTINUATIONS):
+                runner = self.client.beta.messages.tool_runner(
+                    model=_MODEL,
+                    max_tokens=_MAX_TOKENS,
+                    system=_system_blocks(),
+                    tools=self.tools,
+                    messages=self.history,
+                )
+                outcome, appended = self._consume(runner, on_event)
+                appended_since_user += appended
+                if outcome != "paused":
                     break
-                for block in message.content:
-                    if block.type == "text" and block.text.strip():
-                        on_event("text", {"text": block.text})
-                    elif block.type == "tool_use":
-                        on_event("tool_use", {"name": block.name, "input": block.input})
-                self.history.append({"role": "assistant", "content": message.content})
-                appended_since_user += 1
-                tool_response = runner.generate_tool_call_response()
-                if tool_response is not None:
-                    for tr in tool_response["content"]:
-                        on_event("tool_result", {
-                            "tool_use_id": tr.get("tool_use_id"),
-                            "content": tr.get("content"),
-                            "is_error": tr.get("is_error", False),
-                        })
-                    self.history.append(tool_response)
-                    appended_since_user += 1
         except Exception:
             logger.exception("agent turn failed")
             if appended_since_user == 0:
