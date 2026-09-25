@@ -59,7 +59,7 @@ def main() -> None:
             tally[state] = tally.get(state, 0) + 1
             row += state.ljust(WIDTH)
             if state == "review":
-                note = (blocks[param].get("review_note") or "").split(".")[0]
+                note = (blocks[param].get("review_note") or "").split(". ")[0]
                 reviews.append(f"  {disease}.{param}: {note}.")
         print(row)
     total = sum(tally.values())

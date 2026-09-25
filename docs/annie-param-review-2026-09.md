@@ -75,7 +75,7 @@ mpox           ok       ok       ok       -        -        -        -
 -: 32  cites: 7  ok: 70  review: 3   (of 112)
 
 held back pending review:
-  influenza.fatality_rate: Maximum of 13.
+  influenza.fatality_rate: Maximum of 13.5% is far above any population-level influenza CFR and looks like a hospitalized-cohort or pandemic-subtype figure.
   meningococcal.infectious_days: Consensus of 1/1/1 day encodes the public-health rule that a case is non-infectious ~24 h after effective antibiotics - not the untreated infectious period or the carriage duration that drives transmission.
   hepatitis_a.immunity_duration: Consensus mixes a numeric string ('7300') with qualitative text ('lifelong', and a sentence contrasting natural with vaccine-induced immunity).
 ```
