@@ -58,6 +58,20 @@ class _FakeRunner:
         return self._responses.pop(0)
 
 
+class _RaisingRunner:
+    """Yields one message, then fails — as a dropped connection mid-turn does."""
+
+    def __init__(self, message):
+        self._message = message
+
+    def __iter__(self):
+        yield self._message
+        raise RuntimeError("connection reset")
+
+    def generate_tool_call_response(self):
+        return None
+
+
 def _agent(*runners):
     agent = EpiChatAgent.__new__(EpiChatAgent)
     agent.state = AgentState()
@@ -82,6 +96,7 @@ def test_web_tools_are_declared_with_the_documented_types():
     assert by_name["web_search"]["max_uses"] == 5
     assert by_name["web_fetch"]["type"] == "web_fetch_20260209"
     assert by_name["web_fetch"]["max_uses"] == 3
+    assert by_name["web_fetch"]["max_content_tokens"] == 20000
     assert by_name["web_fetch"]["citations"] == {"enabled": True}
     assert not any(t["type"].startswith("code_execution") for t in _WEB_TOOLS), \
         "the _20260209 variants run code execution internally"
@@ -168,8 +183,13 @@ def test_a_paused_turn_resumes_on_a_fresh_runner():
     events = _run(agent)
     assert agent.client.beta.messages.tool_runner.call_count == 2
     assert [p["text"] for k, p in events if k == "text"] == ["Here is the summary."]
-    second = agent.client.beta.messages.tool_runner.call_args_list[1].kwargs
-    assert second["messages"] is agent.history, "resume from the accumulated history"
+    # Compare contents, not list identity, so this survives a refactor that
+    # passes a copy: either way the resume must carry the user turn and the
+    # paused assistant message it is picking up from.
+    resumed = agent.client.beta.messages.tool_runner.call_args_list[1].kwargs["messages"]
+    assert resumed[0] == {"role": "user",
+                          "content": "what is happening with measles in Texas?"}
+    assert resumed[1]["role"] == "assistant", "resume from the accumulated history"
 
 
 def test_endless_pausing_stops_rather_than_looping():
@@ -218,6 +238,50 @@ def test_text_around_a_tool_call_keeps_its_order():
     assert [k for k, _ in events] == ["text", "tool_use", "tool_result", "text"]
     texts = [p["text"] for k, p in events if k == "text"]
     assert texts == ["Let me check the latest figures.", "Here is what I found."]
+
+
+def test_sandbox_blocks_do_not_split_the_prose_around_them():
+    """A block the UI drops must not re-fragment the reply it sits inside."""
+    agent = _agent(_FakeRunner([
+        (_message([_text("Measles cases rose in "),
+                   _server_tool_use("code_execution", {"code": "x = 1"}),
+                   _text("Texas this year.")]), None),
+    ]))
+    events = _run(agent)
+    assert [p["text"] for k, p in events if k == "text"] == [
+        "Measles cases rose in Texas this year."]
+
+
+def test_a_mid_turn_failure_keeps_what_was_already_appended():
+    """Regression: rolling back here orphaned a tool_use with no tool_result,
+    which 400s every later turn and bricks the conversation."""
+    agent = _agent(_RaisingRunner(_message([
+        _server_tool_use("web_search", {"query": "q"}),
+        _search_result(["https://who.int/a"])])))
+    events = _run(agent)
+    assert [m["role"] for m in agent.history] == ["user", "assistant"], \
+        "the appended assistant message must survive the rollback"
+    assert any(k == "text" and "went wrong" in p["text"] for k, p in events)
+
+
+def test_a_failure_before_any_reply_still_rolls_back_the_user_message():
+    runner = MagicMock()
+    runner.__iter__ = MagicMock(side_effect=RuntimeError("boom"))
+    agent = _agent(runner)
+    _run(agent)
+    assert agent.history == [], "an unanswered user message is rolled back"
+
+
+def test_giving_up_on_a_paused_turn_answers_and_leaves_a_clean_history():
+    """Running out of resumes must not close the panel on silence."""
+    runners = [_FakeRunner([(_message([_text("…")], stop_reason="pause_turn"), None)])
+               for _ in range(12)]
+    agent = _agent(*runners)
+    events = _run(agent)
+    texts = [p["text"] for k, p in events if k == "text"]
+    assert texts and "Ask me again" in texts[-1]
+    assert [m["role"] for m in agent.history] == ["user"], \
+        "the dangling paused messages are dropped"
 
 
 def test_local_tool_calls_still_work_alongside_web_tools():

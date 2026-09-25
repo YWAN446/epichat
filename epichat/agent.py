@@ -23,7 +23,9 @@ logger = logging.getLogger(__name__)
 _MODEL = "claude-opus-5"
 _MAX_TOKENS = 16000
 
-_MAX_CONTINUATIONS = 5  # resumes allowed after a pause_turn, per user turn
+# Runners per user turn: the first attempt plus up to four resumes after a
+# pause_turn. Bounds a turn that keeps coming back paused.
+_MAX_RUNNERS = 5
 
 # Anthropic-hosted tools. The _20260209 variants run code execution
 # internally for dynamic filtering — declaring code_execution alongside them
@@ -82,6 +84,9 @@ _REFUSAL_MSG = ("I'm unable to help with that request. Let's get back to "
 _ERROR_MSG = ("Something went wrong while processing that (a technical error, "
               "not a problem with your request). Please try again — the "
               "conversation is intact.")
+
+_PAUSED_MSG = ("That search ran longer than I can continue in one turn. Ask me "
+               "again and I'll pick it up.")
 
 _DEFAULT_BETA = 22.8125  # matches the schema's default SIR configuration
 
@@ -498,37 +503,41 @@ class EpiChatAgent:
         self.tools = [*build_tools(self.state), *_WEB_TOOLS]
         self.client = anthropic.Anthropic()
 
-    def _consume(self, runner, on_event) -> tuple[str, int]:
+    def _consume(self, runner, on_event) -> str:
         """Drive one runner to completion.
 
-        Returns (outcome, messages appended to history). The outcome is
-        "done" when the turn finished, "refused" when the model declined, or
-        "paused" when the API's server-tool loop hit its per-turn iteration
-        limit — the SDK runner does not resume by itself, so handle() starts
-        a fresh runner over the accumulated history.
+        Returns the outcome: "done" when the turn finished, "refused" when the
+        model declined, or "paused" when the API's server-tool loop hit its
+        per-turn iteration limit — the SDK runner does not resume by itself, so
+        handle() starts a fresh runner over the accumulated history.
+
+        Every message is appended to self.history the moment it is emitted, and
+        each tool_use is followed by its tool_result before anything else can
+        fail. handle() therefore measures self.history directly rather than
+        trusting a count this may never live to return.
         """
-        appended = 0
         for message in runner:
             if message.stop_reason == "refusal":
                 on_event("text", {"text": _REFUSAL_MSG})
-                return "refused", appended
+                return "refused"
             self._emit_message(message, on_event)
             self.history.append({"role": "assistant", "content": message.content})
-            appended += 1
-            if message.stop_reason == "pause_turn":
-                return "paused", appended
+            # Ask for the tool response even on a paused message: a pause can
+            # land on a message that also called one of our own tools, and
+            # leaving that tool_use unanswered would 400 every later turn. With
+            # no client tool_use the runner returns None and nothing changes.
             tool_response = runner.generate_tool_call_response()
-            if tool_response is None:
-                continue
-            for tr in tool_response["content"]:
-                on_event("tool_result", {
-                    "tool_use_id": tr.get("tool_use_id"),
-                    "content": tr.get("content"),
-                    "is_error": tr.get("is_error", False),
-                })
-            self.history.append(tool_response)
-            appended += 1
-        return "done", appended
+            if tool_response is not None:
+                for tr in tool_response["content"]:
+                    on_event("tool_result", {
+                        "tool_use_id": tr.get("tool_use_id"),
+                        "content": tr.get("content"),
+                        "is_error": tr.get("is_error", False),
+                    })
+                self.history.append(tool_response)
+            if message.stop_reason == "pause_turn":
+                return "paused"
+        return "done"
 
     def _emit_message(self, message, on_event) -> None:
         """Emit one message's blocks, coalescing consecutive text.
@@ -546,12 +555,21 @@ class EpiChatAgent:
             if text:
                 on_event("text", {"text": text})
 
+        def emit(kind: str, payload: dict) -> None:
+            """Flush buffered prose only when a block really emits something.
+
+            Blocks _emit_block drops — the internal code sandbox — must not
+            split the prose around them back into separate events, and this
+            keeps that decision inside _emit_block where it belongs.
+            """
+            flush()
+            on_event(kind, payload)
+
         for block in message.content:
             if getattr(block, "type", None) == "text":
                 buffer.append(block.text)
                 continue
-            flush()
-            self._emit_block(block, on_event)
+            self._emit_block(block, emit)
         flush()
 
     def _emit_block(self, block, on_event) -> None:
@@ -619,10 +637,10 @@ class EpiChatAgent:
         "tool_result" {tool_use_id, content, is_error}, "plot" {path, sources}.
         """
         self.state.context_text = (self.state.context_text + " " + user_text).strip()
+        base_len = len(self.history)
         self.history.append({"role": "user", "content": user_text})
-        appended_since_user = 0
         try:
-            for _ in range(_MAX_CONTINUATIONS):
+            for _ in range(_MAX_RUNNERS):
                 runner = self.client.beta.messages.tool_runner(
                     model=_MODEL,
                     max_tokens=_MAX_TOKENS,
@@ -630,13 +648,20 @@ class EpiChatAgent:
                     tools=self.tools,
                     messages=self.history,
                 )
-                outcome, appended = self._consume(runner, on_event)
-                appended_since_user += appended
-                if outcome != "paused":
+                if self._consume(runner, on_event) != "paused":
                     break
+            else:
+                # Out of resumes with the turn still paused. Drop the dangling
+                # exchange so the next turn starts from a clean boundary, and
+                # say so — otherwise the status panel just closes on nothing.
+                del self.history[base_len + 1:]
+                on_event("text", {"text": _PAUSED_MSG})
         except Exception:
             logger.exception("agent turn failed")
-            if appended_since_user == 0:
+            # Measure history rather than counting: an exception can escape
+            # _consume after it has already appended, and popping then would
+            # orphan a tool_use and 400 every later turn.
+            if len(self.history) == base_len + 1:
                 self.history.pop()  # roll back the unanswered user message
             on_event("text", {"text": _ERROR_MSG})
             return
