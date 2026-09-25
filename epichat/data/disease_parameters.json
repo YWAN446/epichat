@@ -2401,10 +2401,10 @@
         "fatality_rate": {
           "unit": "percentage",
           "consensus": {
-            "min": null,
-            "max": null,
-            "typical": null,
-            "notes": "In progress: consensus range not yet determined; see estimates for provisional values."
+            "min": 0.67,
+            "max": 0.8,
+            "typical": 0.8,
+            "notes": "Available estimates are population-specific rather than generalizable. The 0.8% estimate is a directly reported case fatality rate for unvaccinated infants younger than 6 months, while the 0.67% estimate is a derived global estimate based on estimated annual cases and deaths in children younger than 5 years. Fatality is highest in young, incompletely vaccinated infants and is rare in older children and adults."
           },
           "estimates": [
             {
@@ -2432,6 +2432,111 @@
               "notes": "Case fatality rate in unvaccinated infants under 6 months is estimated to be 0.8%. Death is rare in people aged 10–70 years."
             }
           ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": 1,
+            "max": 19,
+            "typical": 6.68,
+            "notes": "Based on infant daily contact in the UK. Limited information on daily contacts for pertussis in general."
+          },
+          "estimates": [
+            {
+              "value": 6.68,
+              "range": [
+                1,
+                19
+              ],
+              "population": "Infants",
+              "source_type": "cross_sectional_contact_survey",
+              "title": "The social life of infants in the context of infectious disease transmission; social contacts and mixing patterns of the very young",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/24146835/",
+              "doi": "10.1371/journal.pone.0076180",
+              "country": "United Kingdom",
+              "year": 2013,
+              "notes": "The average number of daily contacts for an infant was 6.68 overall and 5.7 for those aged ≤10 weeks."
+            }
+          ]
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": 1460,
+            "max": 7300,
+            "typical": 4380,
+            "notes": "Natural immunity following Bordetella pertussis infection is not lifelong. Most reviews estimate protection lasts approximately 4–20 years, with many citing 7–10 years as the typical duration."
+          },
+          "estimates": [
+            {
+              "value": 4380,
+              "range": [
+                1460,
+                7300
+              ],
+              "population": "Previously infected individuals",
+              "source_type": "review_article",
+              "title": "Duration of Immunity Against Pertussis After Natural Infection or Vaccination",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/15876927/",
+              "doi": "10.1097/01.inf.0000160914.59160.41",
+              "country": "Multiple countries",
+              "year": 2005,
+              "notes": "Review of published evidence concluded that infection-acquired immunity against pertussis wanes after approximately 4–20 years."
+            },
+            {
+              "value": 4380,
+              "range": [
+                1460,
+                7300
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Clinical Overview of Pertussis",
+              "url": "https://www.cdc.gov/pertussis/hcp/clinical-overview/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "CDC states observational studies suggest immunity lasts 4–20 years but is not lifelong."
+            }
+          ]
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": 0.556,
+            "max": 0.6,
+            "typical": 0.58,
+            "notes": "Among laboratory-confirmed infections, available evidence suggests approximately 56–60% may remain asymptomatic in household and vaccinated adolescent settings. Estimates are based on different study populations and should be interpreted with caution."
+          },
+          "estimates": [
+            {
+              "value": 0.556,
+              "range": [
+                0,
+                0.556
+              ],
+              "population": "Laboratory-confirmed household contacts of pertussis cases",
+              "source_type": "systematic_review",
+              "title": "Asymptomatic Infection and Transmission of Pertussis in Households: A Systematic Review",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/31257450/",
+              "doi": "10.1093/cid/ciz531",
+              "country": "Multiple countries",
+              "year": 2020,
+              "notes": "Twenty-four studies reported laboratory-confirmed asymptomatic infections among household contacts. Asymptomatic infections comprised up to 55.6% of laboratory-confirmed contacts. The review did not report a pooled asymptomatic proportion."
+            },
+            {
+              "value": 0.6,
+              "range": null,
+              "population": "Acellular pertussis-vaccinated adolescents during a high school outbreak",
+              "source_type": "prospective_cohort_study",
+              "title": "Longitudinal Assessment of Asymptomatic Infection of Bordetella pertussis Among Pertussis Acellular Vaccinated Adolescents",
+              "url": "https://www.sciencedirect.com/science/article/abs/pii/S0264410X26003750",
+              "doi": "10.1016/j.vaccine.2026.128567",
+              "country": "United States",
+              "year": 2026,
+              "notes": "Nine of 15 laboratory-confirmed infections remained asymptomatic (60%). The reported 1.7% represents prevalence in the entire study population, not the asymptomatic fraction among infected individuals."
+            }
+          ]
         }
       }
     },
@@ -2447,13 +2552,64 @@
         "r0": {
           "unit": "dimensionless",
           "consensus": {
-            "min": 1.2,
-            "max": 1.4,
+            "min": 1.19,
+            "max": 1.37,
             "typical": 1.28,
-            "notes": "Seasonal community transmission; pandemic strains (H1N1 1918: ~1.8, H5N1: ~0.34) differ significantly",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169819/"
+            "notes": "Estimates from systematic review of multiple countries."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 1.28,
+              "range": [
+                1.19,
+                1.37
+              ],
+              "population": "General",
+              "source_type": "systematic_review",
+              "title": "Estimates of the reproduction number for seasonal, pandemic, and zoonotic influenza: a systematic review of the literature",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169819/",
+              "doi": "10.1186/1471-2334-14-480",
+              "country": "Multiple countries",
+              "year": 2014,
+              "notes": "Systematic review of 111 studies. For seasonal influenza, 24 studies reported 47 reproduction number (R) estimates. Median R = 1.28 with an interquartile range (IQR) of 1.19–1.37."
+            },
+            {
+              "value": 1.6,
+              "range": null,
+              "population": "General population during the 2009 influenza A(H1N1)pdm09 epidemic",
+              "source_type": "modeling_study",
+              "title": "Estimation of the reproduction number of influenza A(H1N1)pdm09 in South Korea using heterogeneous models",
+              "url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/s12879-021-06354-7",
+              "doi": "10.1186/s12879-021-06354-7",
+              "country": "South Korea",
+              "year": 2021,
+              "notes": "Estimated using an age-structured transmission model. The estimated infectious period was approximately 3.8 days, yielding an estimated basic reproduction number (R₀) of 1.6."
+            },
+            {
+              "value": 1.4,
+              "range": null,
+              "population": "General population during the 2009 influenza A(H1N1)pdm09 epidemic",
+              "source_type": "modeling_study",
+              "title": "Estimation of the reproduction number of influenza A(H1N1)pdm09 in South Korea using heterogeneous models",
+              "url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/s12879-021-06354-7",
+              "doi": "10.1186/s12879-021-06354-7",
+              "country": "South Korea",
+              "year": 2021,
+              "notes": "Estimated using a region-structured transmission model. The estimated infectious period was approximately 2.1 days, yielding an estimated basic reproduction number (R₀) of 1.4."
+            },
+            {
+              "value": 1.3,
+              "range": null,
+              "population": "General",
+              "source_type": "review_article",
+              "title": "Influenza",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9411419/",
+              "doi": "10.1016/S0140-6736(22)00982-5",
+              "country": "N/A",
+              "year": 2022,
+              "notes": "Uyeki et al., Lancet Seminar. States the basic reproduction number for seasonal influenza is estimated to be approximately 1.3, citing prior literature."
+            }
+          ]
         },
         "incubation_days": {
           "unit": "days",
@@ -2461,21 +2617,281 @@
             "min": 1,
             "max": 4,
             "typical": 2,
-            "notes": "",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+            "notes": "Widely cited CDC/WHO range for seasonal influenza; most people develop symptoms around 2 days post-exposure."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 1.4,
+              "range": [
+                1.3,
+                1.5
+              ],
+              "population": "General",
+              "source_type": "systematic_review",
+              "title": "Incubation periods of acute respiratory viral infections: a systematic review",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+              "doi": "10.1016/S1473-3099(09)70069-6",
+              "country": "Multiple countries",
+              "year": 2009,
+              "notes": "Lessler et al., Lancet Infectious Diseases. Pooled log-normal fit across published studies gave a median incubation period of 1.4 days (95% CI 1.3-1.5) for influenza A."
+            },
+            {
+              "value": 0.6,
+              "range": [
+                0.5,
+                0.6
+              ],
+              "population": "General",
+              "source_type": "systematic_review",
+              "title": "Incubation periods of acute respiratory viral infections: a systematic review",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+              "doi": "10.1016/S1473-3099(09)70069-6",
+              "country": "Multiple countries",
+              "year": 2009,
+              "notes": "Same review as above; median incubation period of 0.6 days (95% CI 0.5-0.6) reported for influenza B, notably shorter than influenza A."
+            },
+            {
+              "value": 1.4,
+              "range": null,
+              "population": "Influenza A",
+              "source_type": "review_article",
+              "title": "Influenza",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9411419/",
+              "doi": "10.1016/S0140-6736(22)00982-5",
+              "country": "N/A",
+              "year": 2022,
+              "notes": "Cites the same Lessler et al. systematic review (median incubation 1.4 days for influenza A, 0.6 days for influenza B), confirming this figure remains the standard reference as of 2022."
+            },
+            {
+              "value": 2,
+              "range": [
+                1,
+                4
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "How Flu Spreads",
+              "url": "https://www.cdc.gov/flu/spread/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC states symptoms typically begin about two days (range 1-4 days) after influenza virus infects a person's respiratory tract. Also notes people can be contagious starting ~1 day before symptom onset, and remain contagious through 5-7 days after becoming sick, with the first 3 days being most contagious."
+            }
+          ]
         },
         "infectious_days": {
           "unit": "days",
           "consensus": {
-            "min": 1,
-            "max": 10,
-            "typical": 5,
-            "notes": "1 day before to 10 days after onset (children); shorter in adults",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+            "min": 6,
+            "max": 8,
+            "typical": 7,
+            "notes": "Infectiousness typically begins about 1 day before symptom onset and continues for roughly 5-7 days after becoming sick, with peak shedding in the first 3-4 days of illness. Children and immunocompromised individuals can shed virus considerably longer."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 7,
+              "range": [
+                6,
+                8
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "How Flu Spreads",
+              "url": "https://www.cdc.gov/flu/spread/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC states influenza viruses can be detected beginning one day before symptoms develop and up to five to seven days after becoming sick, with people most contagious during the first three days of illness."
+            },
+            {
+              "value": 7,
+              "range": [
+                6,
+                8
+              ],
+              "population": "General",
+              "source_type": "health_organization_summary",
+              "title": "Contagious Period for Influenza (Flu)",
+              "url": "https://healthanswers.pfizer.com/respiratory/upper-infections/contagious-period-for-influenza-flu",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "States the contagious period generally lasts from about a day before symptoms appear to up to 7 days after becoming ill; longer in people with weakened immune systems."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "Symptomatic case-fatality rate for seasonal influenza is low and varies substantially by season severity and age group. Mortality is heavily concentrated in adults 65+ (about two-thirds of deaths in recent U.S. seasons) and is far lower in children and young adults. The typical value (0.07%) reflects symptomatic-case denominators for seasonal influenza. Case definition drives fatality rate estimates by orders of magnitude: a systematic review of the 2009 H1N1 pandemic found estimates ranging from ~0.001-0.01% using an infections denominator, ~0-1.2% using a symptomatic-cases denominator, and ~0-13.5% using a laboratory-confirmed-cases denominator, with the latter most prone to ascertainment bias since testing is typically reserved for more severe presentations. Any fatality rate figure should be interpreted alongside its denominator definition."
+          },
+          "estimates": [
+            {
+              "value": 0.07,
+              "range": null,
+              "population": "General",
+              "source_type": "government_report",
+              "title": "2023-2024 Influenza Season Summary: Severity Assessment, Burden and Burden Prevented",
+              "url": "https://www.cdc.gov/flu/whats-new/flu-summary-addendum-2023-2024.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC estimated 40 million symptomatic illnesses and 28,000 deaths for the 2023-2024 season (~0.07% symptomatic CFR). Adults 65+ accounted for only 8% of medical visits but 68% of deaths."
+            },
+            {
+              "value": 0.005,
+              "range": [
+                0.001,
+                0.01
+              ],
+              "population": "General population, H1N1pdm09 pandemic (infection-based denominator)",
+              "source_type": "systematic_review",
+              "title": "Case fatality risk of influenza A(H1N1pdm09): a systematic review",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3809029/",
+              "doi": "10.1097/EDE.0b013e3182a67448",
+              "country": "Multiple countries",
+              "year": 2013,
+              "notes": "Wong, Kelly, Ip, Wu, Leung & Cowling, Epidemiology. Systematic review of 77 estimates from 50 studies on the 2009 H1N1 pandemic. When the denominator was total infections (including asymptomatic/subclinical), point estimates ranged from 1-10 deaths per 100,000 infections (0.001%-0.01%) — comparable in magnitude to seasonal influenza IFR estimates."
+            },
+            {
+              "value": 0.4,
+              "range": [
+                0,
+                1.2
+              ],
+              "population": "Symptomatic cases, H1N1pdm09 pandemic",
+              "source_type": "systematic_review",
+              "title": "Case fatality risk of influenza A(H1N1pdm09): a systematic review",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3809029/",
+              "doi": "10.1097/EDE.0b013e3182a67448",
+              "country": "Multiple countries",
+              "year": 2013,
+              "notes": "When the denominator was symptomatic cases, point estimates ranged from 0-1,200 deaths per 100,000 symptomatic cases (0%-1.2%). Risk based on symptomatic cases increased substantially with age. This is roughly an order of magnitude higher than infection-based estimates and reflects the exclusion of asymptomatic/mild infections from the denominator."
+            },
+            {
+              "value": 6.75,
+              "range": [
+                0,
+                13.5
+              ],
+              "population": "Laboratory-confirmed cases, H1N1pdm09 pandemic",
+              "source_type": "systematic_review",
+              "title": "Case fatality risk of influenza A(H1N1pdm09): a systematic review",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3809029/",
+              "doi": "10.1097/EDE.0b013e3182a67448",
+              "country": "Multiple countries",
+              "year": 2013,
+              "notes": "When the denominator was laboratory-confirmed cases only, point estimates ranged from 0-13,500 deaths per 100,000 confirmed cases (0%-13.5%) — the highest and most heterogeneous set of estimates, since testing was typically reserved for more severe presentations, inflating apparent severity. Authors caution this reflects a strong ascertainment bias rather than true disease severity."
+            }
+          ],
+          "status": "under_review",
+          "review_note": "Maximum of 13.5% is far above any population-level influenza CFR and looks like a hospitalized-cohort or pandemic-subtype figure. Needs the population denominator confirmed, or the estimate scoped to the population it describes."
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "No validateable information found for influenza daily contacts."
+          }
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": 1278,
+            "max": 2920,
+            "typical": 1825,
+            "notes": "Homologous strain protection wanes gradually over several years, but influenza's rapid antigenic drift means functional protection against currently circulating strains erodes much faster in practice (often within a single year or two), since new variants can partially evade prior immunity."
+          },
+          "estimates": [
+            {
+              "value": 1917,
+              "range": [
+                1278,
+                2555
+              ],
+              "population": "Children and adults, longitudinal serology cohorts",
+              "source_type": "modeling_study",
+              "title": "Age-specific differences in the dynamics of protective immunity to influenza",
+              "url": "https://link.springer.com/10.1038/s41467-019-09652-6",
+              "doi": "10.1038/s41467-019-09652-6",
+              "country": "Multiple",
+              "year": 2019,
+              "notes": "Ranjeva et al., Nature Communications. Fitted mechanistic models to longitudinal serology found protection against circulating strains wanes to half of peak levels 3.5-7 years after infection, waning faster against H3N2 than H1N1pdm09."
+            },
+            {
+              "value": 2190,
+              "range": [
+                1460,
+                2920
+              ],
+              "population": "General",
+              "source_type": "modeling_study",
+              "title": "Impact of viral drift on vaccination dynamics and patterns of seasonal influenza",
+              "url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/1471-2334-13-589",
+              "doi": "10.1186/1471-2334-13-589",
+              "country": "N/A",
+              "year": 2013,
+              "notes": "Transmission-dynamic model exploring duration of natural-infection-induced immunity across 4, 6, and 8-year assumptions to reproduce observed seasonal epidemic patterns."
+            }
+          ]
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": 0.16,
+            "max": 0.85,
+            "typical": 0.3,
+            "notes": "Estimates vary enormously by study design: short-term outbreak investigations with virologic confirmation report a pooled ~16% asymptomatic fraction, while epidemic-wide serology studies adjusted for background illness report 65-85%."
+          },
+          "estimates": [
+            {
+              "value": 0.16,
+              "range": [
+                0.04,
+                0.28
+              ],
+              "population": "General, outbreak-investigation cohorts",
+              "source_type": "systematic_review",
+              "title": "Review Article: The Fraction of Influenza Virus Infections That Are Asymptomatic: A Systematic Review and Meta-analysis",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/26133025/",
+              "doi": "10.1097/EDE.0000000000000340",
+              "country": "Multiple countries",
+              "year": 2015,
+              "notes": "Point estimates from outbreak investigations with virologic confirmation fell mostly in the 4-28% range, pooled mean 16% (95% CI 13-19%), low heterogeneity."
+            },
+            {
+              "value": 0.75,
+              "range": [
+                0.65,
+                0.85
+              ],
+              "population": "General, epidemic-wide serology cohorts",
+              "source_type": "systematic_review",
+              "title": "Review Article: The Fraction of Influenza Virus Infections That Are Asymptomatic: A Systematic Review and Meta-analysis",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/26133025/",
+              "doi": "10.1097/EDE.0000000000000340",
+              "country": "Multiple countries",
+              "year": 2015,
+              "notes": "Studies conducted across epidemics using serologic evidence of infection, adjusted for background rates of illness from other causes, reported more consistent estimates in the 65-85% range."
+            },
+            {
+              "value": 0.066,
+              "range": null,
+              "population": "Children 0-14 years, household cohort",
+              "source_type": "prospective_cohort_study",
+              "title": "The Spectrum of Influenza in Children",
+              "url": "https://academic.oup.com/cid/article/76/3/e1012/6693473",
+              "doi": "doi.org/10.1093/cid/ciac734",
+              "country": "Nicaragua",
+              "year": 2023,
+              "notes": "6.6% of PCR/serologically-confirmed influenza infections in children were asymptomatic, increasing with age (1.7% in infants to 9.1% in ages 5-14). Asymptomatic infection is much less common in children than the ~50%+ often reported in adults."
+            }
+          ]
         }
       }
     },
@@ -2491,35 +2907,345 @@
         "r0": {
           "unit": "dimensionless",
           "consensus": {
-            "min": 1.0,
-            "max": 1.9,
-            "typical": 1.3,
-            "notes": "Three estimates from HPD intervals: 1.31 (1.03-1.64), 1.22 (0.90-1.64), 1.4 (0.91-1.9)",
-            "source": "https://www.sciencedirect.com/science/article/abs/pii/S156713482030191X"
+            "min": 1.03,
+            "max": null,
+            "typical": null,
+            "notes": ""
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 1.31,
+              "range": [
+                1.03,
+                1.64
+              ],
+              "population": "Invasive disease, C:P1.5-1,10-8:F3-6:ST-11(cc11) strain, entire dataset",
+              "source_type": "genomic_epidemiology_study",
+              "title": "Estimates of the reproductive numbers and demographic reconstruction of outbreak associated with C:P1.5-1,10-8:F3-6:ST-11(cc11) Neisseria meningitidis strains",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/32407793/",
+              "doi": "10.1016/j.meegid.2020.104360",
+              "country": "Italy",
+              "year": 2020,
+              "notes": "Lo Presti et al., Infection, Genetics and Evolution. Bayesian method applied to whole-genome-sequenced isolates from invasive MenC disease, 2012-2017, including the Tuscany outbreak. R0 = 1.31 (95% HPD: 1.03-1.64) for the full dataset."
+            },
+            {
+              "value": 1.22,
+              "range": [
+                0.9,
+                1.64
+              ],
+              "population": "Invasive disease, first genomic subset",
+              "source_type": "genomic_epidemiology_study",
+              "title": "Estimates of the reproductive numbers and demographic reconstruction of outbreak associated with C:P1.5-1,10-8:F3-6:ST-11(cc11) Neisseria meningitidis strains",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/32407793/",
+              "doi": "10.1016/j.meegid.2020.104360",
+              "country": "Italy",
+              "year": 2020,
+              "notes": "R0 = 1.22 (95% HPD: 0.90-1.64) estimated from the first of two genomic subsets analyzed."
+            },
+            {
+              "value": 1.4,
+              "range": [
+                0.91,
+                1.9
+              ],
+              "population": "Invasive disease, second genomic subset",
+              "source_type": "genomic_epidemiology_study",
+              "title": "Estimates of the reproductive numbers and demographic reconstruction of outbreak associated with C:P1.5-1,10-8:F3-6:ST-11(cc11) Neisseria meningitidis strains",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/32407793/",
+              "doi": "10.1016/j.meegid.2020.104360",
+              "country": "Italy",
+              "year": 2020,
+              "notes": "R0 = 1.4 (95% HPD: 0.91-1.9) estimated from the second genomic subset, corresponding to the Tuscany outbreak period. An effective reproduction number R(t) was also estimated separately, rising to an average of 3.22 in 2015 before declining below 1 from 2016 onward following a vaccination campaign — that time-varying R(t) data would fit better as a distinct outbreak-specific parameter if your schema tracks Rt separately from R0."
+            },
+            {
+              "value": 1.36,
+              "range": null,
+              "population": "General population, serogroup C meningococcal disease",
+              "source_type": "modeling_study",
+              "title": "Dynamic Models of Meningococcal Carriage, Disease, and the Impact of Serogroup C Conjugate Vaccination",
+              "url": "https://academic.oup.com/aje/article-abstract/162/1/89/166230",
+              "doi": "10.1093/aje/kwi160",
+              "country": "England and Wales",
+              "year": 2005,
+              "notes": "Trotter, Gay & Edmunds, American Journal of Epidemiology. Age-structured, dynamic compartmental model of carriage and disease, fitted to epidemiologic surveillance data from England and Wales prior to serogroup C conjugate vaccine introduction. Basic reproduction number estimated at 1.36, closely matching the genomic/phylodynamic estimates (1.22-1.4) from the 2020 Lo Presti et al. Italian outbreak study — good convergence across very different estimation methods."
+            }
+          ]
         },
         "incubation_days": {
           "unit": "days",
           "consensus": {
             "min": 1,
             "max": 10,
-            "typical": 3,
-            "notes": "",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+            "typical": 3.5,
+            "notes": "Full range spans 1-10 days. Because meningococcal disease can progress from first symptoms to severe illness or death within hours, the short incubation period is clinically significant for prophylaxis timing in close contacts."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 3.5,
+              "range": [
+                2,
+                10
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Meningococcal Disease (Bacterial Meningitis) Fact Sheet",
+              "url": "https://www.pa.gov/content/dam/copapwp-pagov/en/health/documents/topics/documents/diseases-and-conditions/Meningococcal%20Disease%20.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2016,
+              "notes": "Pennsylvania Department of Health states the incubation period is three to four days, with a range of two to ten days."
+            },
+            {
+              "value": 5.5,
+              "range": [
+                1,
+                10
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Meningococcal Invasive Disease",
+              "url": "https://www.azdhs.gov/documents/preparedness/epidemiology-disease-control/investigations/sections/meningococcal.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Arizona Department of Health Services lists incubation period as 1-10 days."
+            },
+            {
+              "value": 6,
+              "range": [
+                2,
+                10
+              ],
+              "population": "General, close contacts",
+              "source_type": "government_report",
+              "title": "Emergency Preparedness and Response",
+              "url": "https://cybercemetery.unt.edu/oilspill/20130227085030mp_/http://emergency.cdc.gov/HAN/han00166.asp",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2003,
+              "notes": "CDC Health Alert Network states incubation period from exposure to symptoms is usually 2 to 10 days, with symptoms then progressing over several hours to several days. Used a slightly wider window than the more commonly cited 1-10 day range."
+            }
+          ]
         },
         "infectious_days": {
           "unit": "days",
           "consensus": {
-            "min": 1,
-            "max": 7,
-            "typical": 2,
-            "notes": "Non-infectious 1-2 days after antibiotic treatment starts",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "Persons are generally considered infectious from about 7 days before symptom onset until 24 hours after starting appropriate antibiotic therapy. Without treatment, meningococci can persist in nasopharyngeal secretions considerably longer, since clearance is driven by antibiotics rather than natural resolution."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 1,
+              "range": null,
+              "population": "General, treated cases",
+              "source_type": "government_report",
+              "title": "Meningococcal Disease (Communicable Disease Control Manual)",
+              "url": "https://health.alaska.gov/media/kqhlhxqs/mmm_chapter_meningococcal.pdf",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2023,
+              "notes": "Alaska DHSS states the infectious period lasts until meningococci are no longer present in nasal/oral discharges, usually within 24 hours after appropriate antimicrobial treatment begins."
+            }
+          ],
+          "status": "under_review",
+          "review_note": "Consensus of 1/1/1 day encodes the public-health rule that a case is non-infectious ~24 h after effective antibiotics - not the untreated infectious period or the carriage duration that drives transmission. Simulating 1 day would badly understate spread. Needs a transmission-relevant value with a citation."
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": 6,
+            "max": 15,
+            "typical": 12,
+            "notes": "Fatality is high without treatment (historically ~50-80%) but drops sharply with prompt antibiotic therapy to roughly 10-15% overall. U.S. age-stratified data (1998-2007) shows a clear age gradient even among treated cases: 6% in infants <1 year, 9.7% in adolescents 14-17, and 13.6% in young adults 18-24 — the opposite pattern from raw incidence, which is highest in infants. Recent surveillance also found an unusually high 18% fatality rate for an emerging serogroup Y strain (2023-2024), compared to 11% in the preceding 2017-2021 period."
+          },
+          "estimates": [
+            {
+              "value": 12.5,
+              "range": [
+                10,
+                15
+              ],
+              "metric": "CFR",
+              "population": "General, treated invasive disease, United States",
+              "source_type": "government_report",
+              "title": "CDC Yellow Book: Meningococcal Disease",
+              "url": "https://wwwnc.cdc.gov/travel/yellowbook/2026/infections-diseases/meningococcal-disease",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2026,
+              "notes": "CDC Yellow Book (2026 edition, ch. 4.12) states meningococcal disease has a case-fatality rate of 10-15% even with antimicrobial treatment, with much higher fatality if treatment is delayed. Up to 20% of survivors have long-term sequelae (deafness, amputation)."
+            },
+            {
+              "value": 12,
+              "range": null,
+              "metric": "CFR",
+              "population": "General, all ages, United States",
+              "source_type": "review_article",
+              "title": "The Burden of Infant Meningococcal Disease in the United States",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2012,
+              "notes": "Judelsohn & Marshall, Journal of the Pediatric Infectious Diseases Society. Overall U.S. case fatality rate from invasive meningococcal disease is approximately 12%, despite N. meningitidis being highly antibiotic-susceptible, reflecting the disease's extremely rapid clinical course."
+            },
+            {
+              "value": 6,
+              "range": null,
+              "metric": "CFR",
+              "population": "Infants aged <1 year, United States, 1998-2007",
+              "source_type": "review_article",
+              "title": "The Burden of Infant Meningococcal Disease in the United States",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2012,
+              "notes": "Case fatality rate was 6% in infants aged <1 year, the lowest age-stratified rate reported, despite infants having the highest overall incidence of disease. Estimated 13 annual deaths in this age group."
+            },
+            {
+              "value": 9.7,
+              "range": null,
+              "metric": "CFR",
+              "population": "Adolescents aged 14-17 years, United States, 1998-2007",
+              "source_type": "review_article",
+              "title": "The Burden of Infant Meningococcal Disease in the United States",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2012,
+              "notes": "Case fatality rate was 9.7% in adolescents aged 14-17 years."
+            },
+            {
+              "value": 13.6,
+              "range": null,
+              "metric": "CFR",
+              "population": "Young adults aged 18-24 years, United States, 1998-2007",
+              "source_type": "review_article",
+              "title": "The Burden of Infant Meningococcal Disease in the United States",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2012,
+              "notes": "Case fatality rate was 13.6% in those aged 18-24 years — the highest of the three age strata reported, consistent with the general pattern of case fatality rates increasing with age. Estimated 41 annual deaths across the combined 14-24 age range."
+            }
+          ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "No validateable information found for Meningococcal daily contacts."
+          }
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": 730,
+            "max": 3650,
+            "typical": 1460,
+            "notes": "Natural immunity is continuously reinforced by intermittent carriage rather than following a single post-infection decay curve (see estimates below). Vaccine-induced immunity duration differs by vaccine type: CDC's booster schedule implies MenACWY protection lasts roughly 4-5 years before meaningful waning (booster at 16 after initial dose at 11-12; every-5-year boosters for ongoing high risk), while MenB protection appears shorter-lived, with boosters recommended as early as 1-3 years post-series, or within 6-12 months during active outbreaks. Antibody-persistence cohort studies (Zangwill et al.) found vaccine-induced bactericidal activity detectable up to 10 years post-vaccination, though substantially declined by year 2."
+          },
+          "estimates": [
+            {
+              "value": 1825,
+              "range": [
+                730,
+                3650
+              ],
+              "population": "Adults, vaccine-induced bactericidal antibody (proxy for immune persistence)",
+              "source_type": "cohort_study",
+              "title": "Duration of Antibody Response after Meningococcal Polysaccharide Vaccination in US Air Force Personnel",
+              "url": "https://dbpia.nl.go.kr/jid/article/169/4/847/825945",
+              "doi": "10.1093/infdis/169.4.847",
+              "country": "United States",
+              "year": 1994,
+              "notes": "Zangwill et al., Journal of Infectious Diseases. Anti-capsular antibody and bactericidal activity peaked 1 month post-vaccination and declined substantially by 2 years, but remained detectable above pre-vaccination baseline for up to 10 years."
+            },
+            {
+              "value": 1460,
+              "range": [
+                1095,
+                1825
+              ],
+              "population": "Adolescents, MenACWY vaccine-induced protection",
+              "source_type": "government_report",
+              "title": "Meningococcal Vaccine Recommendations",
+              "url": "https://www.cdc.gov/meningococcal/hcp/vaccine-recommendations/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2026,
+              "notes": "CDC recommends the initial MenACWY dose at age 11-12, with a booster at age 16 specifically because protection wanes over that ~4-year interval and adolescents face highest risk in the years the booster is designed to cover. For those at sustained increased risk, CDC recommends boosters every 5 years (age 7+) or every 3 years then every 5 years (under age 7), implying an assumed protective duration in that range before meaningful waning."
+            },
+            {
+              "value": 730,
+              "range": [
+                365,
+                1095
+              ],
+              "population": "Adolescents and adults, MenB vaccine-induced protection",
+              "source_type": "government_report",
+              "title": "Meningococcal Vaccine Recommendations",
+              "url": "https://www.cdc.gov/meningococcal/hcp/vaccine-recommendations/",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2026,
+              "notes": "For individuals at increased risk, CDC recommends a MenB booster 1 year after primary series completion, then every 2-3 years thereafter — suggesting CDC considers MenB-induced protection shorter-lived than MenACWY protection. During outbreaks, boosters are recommended after just 1 year (or even 6 months in some outbreak situations), reflecting more conservative assumptions about protection duration when stakes are highest."
+            }
+          ]
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": 0.045,
+            "max": 0.237,
+            "typical": 0.1,
+            "notes": "Refers to general population estimate."
+          },
+          "estimates": [
+            {
+              "value": 0.141,
+              "range": [
+                0.045,
+                0.237
+              ],
+              "population": "General population, all ages, Europe",
+              "source_type": "systematic_review",
+              "title": "Meningococcal carriage by age: a systematic review and meta-analysis",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/21075057/",
+              "doi": "10.1016/S1473-3099(10)70251-6",
+              "country": "Multiple European countries",
+              "year": 2010,
+              "notes": "Christensen, May, Bowen, Hickman & Trotter, Lancet Infectious Diseases. Landmark meta-analysis of 66 European studies (1970-2007). Carriage prevalence rises from early childhood, peaks at approximately 24% around age 19, and declines in older adults."
+            },
+            {
+              "value": 0.1,
+              "range": null,
+              "population": "General population, worldwide",
+              "source_type": "review_article",
+              "title": "Carriage as a prerequisite for invasive meningococcal disease",
+              "url": "https://openaccess.sgul.ac.uk/id/eprint/111228",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2019,
+              "notes": "States meningococcus is carried asymptomatically in the nasopharynx of approximately 10% of the population at any given time, with rates varying by age and social/behavioural factors."
+            },
+            {
+              "value": 0.237,
+              "range": null,
+              "population": "Age 19 years, peak carriage prevalence",
+              "source_type": "review_article",
+              "title": "The Burden of Infant Meningococcal Disease in the United States",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3656548/",
+              "doi": "N/A",
+              "country": "Multiple (89 studies, 28 countries)",
+              "year": 2012,
+              "notes": "Citing a meta-analysis of 89 studies across 28 countries, peak meningococcal carriage prevalence is 23.7% at age 19 — closely corroborating the Christensen et al. (2010) Lancet ID estimate of ~24% peak carriage already in this dataset, despite drawing on a different (larger, more geographically diverse) set of underlying studies."
+            }
+          ]
         }
       }
     },
@@ -2535,35 +3261,295 @@
         "r0": {
           "unit": "dimensionless",
           "consensus": {
-            "min": 2.1,
-            "max": 2.8,
-            "typical": 2.4,
-            "notes": "",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6152969/"
+            "min": 1.71,
+            "max": 5.6,
+            "typical": 2.5,
+            "notes": "Estimates vary enormously by transmission setting rather than clustering around one 'general population' value, since most HAV transmission is fecal-oral/foodborne rather than driven by the direct-contact networks these R0 estimates characterize. Close-contact/direct-transmission outbreaks among naive children (e.g., schools) show R0 of 1.9-2.5; modeling of sexual/close-contact transmission in high-risk adult populations (MSM) spans 1.71-3.67. People who inject drugs (PWID) — a leading driver of recent U.S. person-to-person HAV outbreaks — show the widest and often highest state-level estimates (2.2-5.0 across 16 US states), with a pooled herd immunity threshold of 64% (90% prediction interval: 52-76%), reflecting dense, frequent direct-contact/sharing networks."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 2.1,
+              "range": [
+                1.9,
+                2.3
+              ],
+              "population": "Children, elementary school outbreak",
+              "source_type": "outbreak_investigation",
+              "title": "Estimating human-to-human transmissibility of hepatitis A virus in an outbreak at an elementary school in China, 2011",
+              "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6152969/",
+              "doi": "10.1371/journal.pone.0204201",
+              "country": "China",
+              "year": 2018,
+              "notes": "Zhang & Lo Iacono, PLoS ONE. Used transmission tree, renewal equation, and general growth methods on a 2011 outbreak involving direct child-to-child transmission at a 698-pupil elementary school. Mean serial interval was 23.9 days (SD 20.9). Estimates were higher than typical U.S. estimates but consistent with estimates from England."
+            },
+            {
+              "value": 2.69,
+              "range": [
+                1.71,
+                3.67
+              ],
+              "population": "Men who have sex with men (MSM)",
+              "source_type": "modeling_study",
+              "title": "Estimating the critical immunity threshold for preventing hepatitis A outbreaks in men who have sex with men",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9150569/",
+              "doi": "N/A",
+              "country": "Australia",
+              "year": 2015,
+              "notes": "Modeled the 1991/1992 Sydney HAV outbreak concentrated in MSM, where sexual contact was the predominant transmission route. Found sustained epidemics cannot occur once population immunity exceeds ~70%, implying a herd-immunity threshold consistent with this R0 range."
+            },
+            {
+              "value": 2.2,
+              "range": [
+                1.9,
+                2.5
+              ],
+              "population": "People who inject drugs (PWID), North Carolina",
+              "source_type": "modeling_study",
+              "title": "Determining Herd Immunity Thresholds for Hepatitis A Virus Transmission to Inform Vaccination Strategies Among People Who Inject Drugs in 16 US States",
+              "url": "https://academic.oup.com/cid/article/78/4/976/7280117",
+              "doi": "10.1093/cid/ciad552",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Yang, Lo, Dankwa, Donnelly, Gupta, Montgomery, Weng & Martin, Clinical Infectious Diseases. State-level dynamic transmission model calibrated to PWID outbreak surveillance data across 16 U.S. states, 2016-2020 era outbreaks. North Carolina had the lowest state-level R0 estimate at 2.2, closely matching the elementary-school outbreak R0 already in this dataset despite a completely different transmission setting and population."
+            },
+            {
+              "value": 5.0,
+              "range": [
+                4.5,
+                5.6
+              ],
+              "population": "People who inject drugs (PWID), West Virginia",
+              "source_type": "modeling_study",
+              "title": "Determining Herd Immunity Thresholds for Hepatitis A Virus Transmission to Inform Vaccination Strategies Among People Who Inject Drugs in 16 US States",
+              "url": "https://academic.oup.com/cid/article/78/4/976/7280117",
+              "doi": "10.1093/cid/ciad552",
+              "country": "United States",
+              "year": 2024,
+              "notes": "West Virginia had the highest state-level R0 estimate at 5.0, corresponding to a herd immunity threshold of 80% (95% CI, 78-82%) — substantially higher transmissibility than other settings in this dataset, likely reflecting dense, high-frequency direct contact networks characteristic of PWID outbreaks."
+            },
+            {
+              "value": 2.78,
+              "range": [
+                2.56,
+                3.13
+              ],
+              "population": "People who inject drugs (PWID), pooled across 16 US states",
+              "source_type": "systematic_review",
+              "title": "Determining Herd Immunity Thresholds for Hepatitis A Virus Transmission to Inform Vaccination Strategies Among People Who Inject Drugs in 16 US States",
+              "url": "https://academic.oup.com/cid/article/78/4/976/7280117",
+              "doi": "10.1093/cid/ciad552",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Meta-analysis across all 16 state-level models yielded a pooled herd immunity threshold of 64% (95% CI, 61-68%; 90% prediction interval, 52-76%). Value shown here is back-calculated from the pooled threshold using R0 = 1/(1-threshold) as an approximation; the paper reports thresholds directly rather than a single pooled R0. Authors conclude ~80% vaccination coverage (assuming 95% efficacy) could prevent most PWID-associated HAV outbreaks."
+            }
+          ]
         },
         "incubation_days": {
           "unit": "days",
           "consensus": {
-            "min": 20,
-            "max": 125,
+            "min": 14,
+            "max": 50,
             "typical": 28,
-            "notes": "",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+            "notes": "Incubation length is inversely related to inoculum dose — larger exposures produce shorter incubation periods."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 28,
+              "range": [
+                15,
+                50
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Chapter 9: Hepatitis A",
+              "url": "https://www.cdc.gov/vaccines/pubs/pinkbook/hepa.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC's standard reference states the incubation period of hepatitis A is approximately 28 days, with a documented range of 15-50 days."
+            },
+            {
+              "value": 21,
+              "range": [
+                14,
+                28
+              ],
+              "population": "General",
+              "source_type": "organization_report",
+              "title": "Hepatitis A",
+              "url": "https://www.who.int/news-room/fact-sheets/detail/hepatitis-a",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2026,
+              "notes": "WHO states the incubation period of hepatitis A is usually 14-28 days — a narrower 'usual' range than the CDC's commonly cited 15-50 day range with a 28-day average. The two are not contradictory: WHO's range likely reflects the typical/modal window, while CDC's wider range captures the full observed spread including outliers."
+            },
+            {
+              "value": 28,
+              "range": [
+                14,
+                42
+              ],
+              "population": "General",
+              "source_type": "health_organization_summary",
+              "title": "Hepatitis A and E",
+              "url": "https://www.hopkinsmedicine.org/health/conditions-and-diseases/hepatitis",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Johns Hopkins Medicine states the incubation period is two to six weeks (14-42 days), consistent with but slightly narrower than the CDC's 15-50 day range. Also states the person is contagious throughout the incubation period — a looser characterization than CDC's more precise infectious-window guidance (peak shedding 1-2 weeks pre-symptom, tapering ~1 week post-jaundice), worth treating as a general-audience simplification rather than a clinical benchmark."
+            }
+          ]
         },
         "infectious_days": {
           "unit": "days",
           "consensus": {
-            "min": 14,
+            "min": 7,
             "max": 28,
             "typical": 21,
-            "notes": "2 weeks before to 1 week after onset",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/"
+            "notes": "Peak infectivity/shedding occurs during the 1-2 weeks before symptom (or jaundice) onset. Most people are no longer infectious about 1 week after jaundice appears, though shedding can continue longer in young children and infants, and up to 15% of patients experience a relapse (with renewed shedding) within 6 months of acute illness."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 10.5,
+              "range": [
+                7,
+                14
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Epidemiology and Prevention of Vaccine-Preventable Diseases (Pink Book), Chapter: Hepatitis A",
+              "url": "https://www.cdc.gov/vaccines/pubs/pinkbook/hepa.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "Most infectious 1-2 weeks before onset of illness."
+            },
+            {
+              "value": 21,
+              "range": [
+                14,
+                28
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Hepatitis A",
+              "url": "https://www.cda.gov.sg/professionals/diseases/hepatitis-a/",
+              "doi": "N/A",
+              "country": "Singapore",
+              "year": 2026,
+              "notes": "States infectious period is 2-3 weeks before and 1 week after onset of jaundice, matching CDC/NC DHHS guidance. People are most infectious 1-2 weeks before symptom onset, when viral concentration in stool and blood is greatest; shedding and transmission risk diminish rapidly after symptoms appear."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": 0.3,
+            "max": 0.5,
+            "typical": 0.4,
+            "notes": "Overall case-fatality rate is low; hepatitis A does not cause chronic infection or chronic liver disease. Fatality is driven almost entirely by rare acute (fulminant) liver failure, and risk rises sharply with age and pre-existing liver disease."
+          },
+          "estimates": [
+            {
+              "value": 0.5,
+              "range": null,
+              "metric": "CFR",
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Hepatitis A",
+              "url": "https://cybercemetery.unt.edu/oilspill/20121017125418mp_/http://www.cdc.gov/std/treatment/2006/hepatitis-a.htm",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2007,
+              "notes": "CDC states acute liver failure from hepatitis A is rare, with an overall case-fatality rate of 0.5%. Infection produces self-limited disease that does not result in chronic infection or chronic liver disease, though 10-15% of patients may experience symptom relapse within 6 months."
+            },
+            {
+              "value": 0.3,
+              "range": null,
+              "metric": "CFR",
+              "population": "General, non-elderly",
+              "source_type": "review_article",
+              "title": "Infectious Diseases: Hepatitis A",
+              "url": "https://www.sciencedirect.com/topics/immunology-and-microbiology/hepatitis-a",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2020,
+              "notes": "The case-fatality rate for hepatitis A is generally low (about 0.3%) but increases substantially with age and in people with chronic liver disease. The cited chapter reports a case-fatality rate of 1.8% among adults older than 50 years."
+            }
+          ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "Not well-suited to a general daily-contacts metric: HAV is transmitted primarily via the fecal-oral route (contaminated food, water, and surfaces) rather than through respiratory/droplet close contact, so standard social-contact-survey data (e.g., POLYMOD) is a poor proxy for transmission risk."
+          }
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "Natural infection is generally believed to provide lifelong immunity. Hepatitis A vaccine provides at least 20 years of protection.",
+            "special_value": "7300; lifelong; natural infection: lifelong; vaccine: long-term with waning immunity"
+          },
+          "estimates": [
+            {
+              "value": 7300,
+              "range": null,
+              "population": "General, vaccine-induced",
+              "source_type": "review_article",
+              "title": "How Long Does Vaccine for Hepatitis A Last?",
+              "url": "https://advancestudy.org/?p=363175",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2024,
+              "notes": "States hepatitis A vaccine provides at least 20 years of protection following the full two-dose series, and CDC does not routinely recommend booster doses for healthy individuals who complete the series, implying protection is expected to persist well beyond this window (potentially lifelong)."
+            }
+          ],
+          "status": "under_review",
+          "review_note": "Consensus mixes a numeric string ('7300') with qualitative text ('lifelong', and a sentence contrasting natural with vaccine-induced immunity). Needs a numeric representation, with the qualitative part moved to special_value."
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": 0.3,
+            "max": 0.7,
+            "typical": 0.5,
+            "notes": "Strongly age-dependent: the large majority of infections in young children are asymptomatic, while most infections in older children and adults are symptomatic (jaundice occurs in >70% of adult cases). This makes a single population-wide 'typical' figure highly dependent on the age structure of the population being modeled."
+          },
+          "estimates": [
+            {
+              "value": 0.5,
+              "range": [
+                0.3,
+                0.7
+              ],
+              "population": "Children under 6 years",
+              "source_type": "review_article",
+              "title": "CDC Surveillance Manual, Chapter 3: Hepatitis A",
+              "url": "https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-3-hepatitis-a.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2025,
+              "notes": "States that in children younger than 6 years of age, most (70%) infections are asymptomatic; in older children and adults, infection is usually symptomatic, with jaundice occurring in more than 70% of patients."
+            },
+            {
+              "value": 0.5,
+              "range": null,
+              "population": "Children under 6 years",
+              "source_type": "review_article",
+              "title": "Hepatitis A: Epidemiology and prevention in developing countries",
+              "url": "https://www.wjgnet.com/1948-5182/full/v4/i3/68.htm",
+              "doi": "10.4254/wjh.v4.i3.68",
+              "country": "Global (developing countries focus)",
+              "year": 2012,
+              "notes": "Approximately 50% of children with hepatitis A under the age of 6 years are asymptomatic, with most of the remaining having mild symptoms, often not recognized as hepatitis. Less than 5% of children below 4 years of age and less than 10% of children between ages 4 and 6 years develop jaundice."
+            }
+          ]
         }
       }
     },
@@ -2577,35 +3563,367 @@
         "r0": {
           "unit": "dimensionless",
           "consensus": {
-            "min": 1.3,
-            "max": 2.7,
-            "typical": 1.88,
-            "notes": "High IFR (25–90%).",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169395/"
+            "min": 1.34,
+            "max": 2.53,
+            "typical": 1.95,
+            "notes": "Typical value taken from mean of systematic review of multiple countries with over 2000 studies reviewed."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 1.83,
+              "range": null,
+              "population": "General",
+              "source_type": "modeling_study",
+              "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/15178190/",
+              "doi": "10.1016/j.jtbi.2004.03.006",
+              "country": "Democratic Republic of the Congo",
+              "year": 2004,
+              "notes": "Estimate of R0 is 1.83 (SD 0.06) for Congo (1995) and 1.34 (SD 0.03) for Uganda (2000)."
+            },
+            {
+              "value": 1.34,
+              "range": null,
+              "population": "General",
+              "source_type": "modeling_study",
+              "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/15178190/",
+              "doi": "10.1016/j.jtbi.2004.03.006",
+              "country": "Uganda",
+              "year": 2004,
+              "notes": "Estimate of R0 is 1.83 (SD 0.06) for Congo (1995) and 1.34 (SD 0.03) for Uganda (2000)."
+            },
+            {
+              "value": 1.51,
+              "range": [
+                1.5,
+                1.52
+              ],
+              "population": "General",
+              "source_type": "modeling_study",
+              "title": "Estimating the Reproduction Number of Ebola Virus (EBOV) During the 2014 Outbreak in West Africa",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/25642364/",
+              "doi": "10.1371/currents.outbreaks.91afb5e0f279e7f29e7056095255b288",
+              "country": "Guinea",
+              "year": 2014,
+              "notes": "Althaus, PLOS Currents Outbreaks. SEIR model fit to WHO case and death reports through August 2014. Confidence intervals are implausibly narrow because they reflect fit uncertainty against smoothed cumulative counts rather than true epistemic uncertainty — treat the point estimate, not the interval. Guinea's epidemic was the longest-running and lowest-intensity of the three, with repeated flare-ups from community resistance to burial teams."
+            },
+            {
+              "value": 2.53,
+              "range": [
+                2.41,
+                2.67
+              ],
+              "population": "General",
+              "source_type": "modeling_study",
+              "title": "Estimating the Reproduction Number of Ebola Virus (EBOV) During the 2014 Outbreak in West Africa",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/25642364/",
+              "doi": "10.1371/currents.outbreaks.91afb5e0f279e7f29e7056095255b288",
+              "country": "Sierra Leone",
+              "year": 2014,
+              "notes": "Highest of the three country-level estimates in this study, and the upper anchor for the consensus range. Sierra Leone's epidemic was seeded by a single funeral of a traditional healer in Kailahun that has been linked to well over a hundred subsequent cases — a textbook superspreading event, which inflates an early-phase R0 estimate relative to the typical transmission chain."
+            },
+            {
+              "value": 1.59,
+              "range": [
+                1.57,
+                1.6
+              ],
+              "population": "General",
+              "source_type": "modeling_study",
+              "title": "Estimating the Reproduction Number of Ebola Virus (EBOV) During the 2014 Outbreak in West Africa",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/25642364/",
+              "doi": "10.1371/currents.outbreaks.91afb5e0f279e7f29e7056095255b288",
+              "country": "Liberia",
+              "year": 2014,
+              "notes": "Estimated basic reproduction number (R0) for Ebola virus disease (EBOV) during the 2014 West Africa outbreak in Liberia. The study estimated R0 at 1.59, with a 95% confidence interval of 1.57–1.60. This estimate reflects transmission dynamics during the early phase of the outbreak and is specific to the Liberian outbreak context."
+            },
+            {
+              "value": 1.95,
+              "range": [
+                1.74,
+                2.15
+              ],
+              "population": "General",
+              "source_type": "systematic_review",
+              "title": "The basic reproduction number (R0) of ebola virus disease: A systematic review and meta-analysis",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/38181864/",
+              "doi": "10.1016/j.tmaid.2023.102685",
+              "country": "Multiple (six African countries)",
+              "year": 2024,
+              "notes": "The search yielded 2042 studies. It included 53 studies from six African countries in the systematic review providing 97 Ebola mean R0 estimates."
+            }
+          ]
         },
         "incubation_days": {
           "unit": "days",
           "consensus": {
-            "min": 1,
-            "max": 21,
-            "typical": 6.2,
-            "notes": "",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/#s4"
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": ""
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 9,
+              "range": [
+                2,
+                21
+              ],
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Ebola Disease Signs and Symptoms",
+              "url": "https://www.cdc.gov/ebola/signs-symptoms/index.html",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2024,
+              "notes": "CDC's standard reference states symptoms appear 2 to 21 days after contact with the virus, with an average of 8 to 10 days. Value shown is the midpoint of that stated average window. This is the range used to set the 21-day monitoring period for exposed contacts."
+            },
+            {
+              "value": 11.4,
+              "range": null,
+              "population": "General",
+              "source_type": "government_report",
+              "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
+              "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+              "doi": "10.1056/NEJMoa1411100",
+              "country": "Guinea, Liberia, Sierra Leone",
+              "year": 2014,
+              "notes": "WHO Ebola Response Team. Mean incubation of 11.4 days fitted to patients with a single reported exposure date, notably longer than the CDC's 8-10 day general figure. The gap is most likely recall and ascertainment bias — patients reporting a single identifiable exposure skew toward discrete events like funerals rather than continuous household exposure, and the earliest exposure in a continuous window tends to get reported, lengthening the apparent incubation."
+            },
+            {
+              "value": 12.7,
+              "range": [
+                2,
+                26
+              ],
+              "population": "General, Kikwit outbreak 1995",
+              "source_type": "modeling_study",
+              "title": "Incubation period of Ebola hemorrhagic virus subtype Zaire",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3766904/",
+              "doi": "10.1016/j.phrp.2011.04.001",
+              "country": "Democratic Republic of the Congo",
+              "year": 2011,
+              "notes": "Eichner, Dowell & Firese, Osong Public Health Research and Perspectives. Fitted a distribution to 196 cases from the 1995 Kikwit outbreak, estimating mean 12.7 days (SD 4.3). The paper is the main source for the claim that a 21-day quarantine misses a small but non-zero fraction of cases; the exact fraction is sensitive to the fitted distribution and later reanalyses (notably Haas 2014) produced a wide spread of answers. Range shown is approximate observed spread, not a confidence interval."
+            }
+          ]
         },
         "infectious_days": {
           "unit": "days",
           "consensus": {
-            "min": 6.5,
-            "max": 21,
-            "typical": 9.4,
-            "notes": "Typical is until resolution of wet symptoms",
-            "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/#s4"
+            "min": 4,
+            "max": 10,
+            "typical": 7,
+            "notes": "Patients are not infectious during incubation — infectiousness begins with symptom onset and rises with viral load as illness progresses, so the effective infectious window runs from onset until isolation, recovery, or death. Untreated, mean time from onset to death is roughly 7-8 days and onset to recovery roughly 11-12 days, but isolation typically truncates community exposure well before either endpoint. Two features break the simple SEIR framing: corpses are highly infectious and traditional burial washing has driven a large share of transmission, effectively extending the infectious period past death; and viral RNA persists in immune-privileged sites in survivors, with semen positive for many months (documented sexual transmission more than a year after recovery) and rare relapse with CNS or ocular involvement. Models that ignore the post-death and post-recovery channels will understate tail transmission."
           },
-          "estimates": []
+          "estimates": [
+            {
+              "value": 7.5,
+              "range": [
+                6.0,
+                9.0
+              ],
+              "population": "Fatal cases, West Africa 2014",
+              "source_type": "government_report",
+              "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
+              "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+              "doi": "10.1056/NEJMoa1411100",
+              "country": "Guinea, Liberia, Sierra Leone",
+              "year": 2014,
+              "notes": "WHO Ebola Response Team reported mean time from symptom onset to death of approximately 7.5 days, versus roughly 11.8 days from onset to hospital discharge among survivors. Used here as the upper bound on community infectious duration for fatal cases in the absence of isolation."
+            },
+            {
+              "value": 5.61,
+              "range": [
+                3.5,
+                7.0
+              ],
+              "population": "General, model parameter",
+              "source_type": "modeling_study",
+              "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/15178190/",
+              "doi": "10.1016/j.jtbi.2004.03.006",
+              "country": "Democratic Republic of the Congo / Uganda",
+              "year": 2004,
+              "notes": "Chowell et al. used a mean infectious period of 5.61 days for the 1976 Congo outbreak and 3.5 days for the 2000 Uganda outbreak. These are model-calibrated compartment residence times, not directly observed clinical durations, and they absorb the effect of isolation — which is why they are shorter than onset-to-death. Do not interpret as a biological shedding duration."
+            },
+            {
+              "value": 115,
+              "range": [
+                30,
+                565
+              ],
+              "population": "Male survivors, viral RNA persistence in semen",
+              "source_type": "review_article",
+              "title": "Ebola RNA Persistence in Semen of Ebola Virus Disease Survivors — Final Report",
+              "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1511410",
+              "doi": "10.1056/NEJMoa1511410",
+              "country": "Sierra Leone",
+              "year": 2017,
+              "notes": "Deen et al., New England Journal of Medicine. Cohort of male survivors tested by RT-PCR; RNA detected in semen in the large majority of men tested within 3 months of onset, declining over time but with individual cases positive beyond 500 days. Critical caveat: RNA detection is not the same as infectious virus, and the documented sexual transmission events are rare relative to the number of RNA-positive survivors. Included as a separate entry because it is a genuinely different transmission channel, not a continuation of the acute infectious period — do not sum it with the acute estimates above."
+            }
+          ]
+        },
+        "fatality_rate": {
+          "unit": "percentage",
+          "consensus": {
+            "min": 25,
+            "max": 90,
+            "typical": 50,
+            "notes": "Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others."
+          },
+          "estimates": [
+            {
+              "value": 50,
+              "range": [
+                25,
+                90
+              ],
+              "metric": "CFR",
+              "population": "General, all outbreaks and species",
+              "source_type": "organization_report",
+              "title": "Ebola disease caused by Zaire ebolavirus",
+              "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "WHO states the average case fatality rate is around 50%, having varied from 25% to 90% in past outbreaks. This is the most widely cited headline figure and the basis for the consensus block, though it aggregates across species, decades, and wildly different standards of supportive care."
+            },
+            {
+              "value": 70.8,
+              "range": [
+                68.6,
+                72.8
+              ],
+              "metric": "CFR",
+              "population": "Cases with definitive outcome, West Africa 2014",
+              "source_type": "government_report",
+              "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
+              "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+              "doi": "10.1056/NEJMoa1411100",
+              "country": "Guinea, Liberia, Sierra Leone",
+              "year": 2014,
+              "notes": "WHO Ebola Response Team. 70.8% (95% CI 68.6-72.8) restricted to patients with a recorded final outcome — substantially higher than the roughly 40% obtained by dividing total reported deaths by total reported cases across the whole epidemic, because cases with unknown outcome were common and were not evenly split. This pair is the clearest illustration in the dataset of how much CFR depends on denominator choice; prefer the definitive-outcome figure for modeling severity and the crude figure only for comparing against other crude surveillance ratios."
+            },
+            {
+              "value": 88,
+              "range": null,
+              "metric": "CFR",
+              "population": "General, Yambuku outbreak 1976",
+              "source_type": "government_report",
+              "title": "Ebola disease distribution by species and outbreak",
+              "url": "https://www.cdc.gov/ebola/outbreaks/index.html",
+              "doi": "N/A",
+              "country": "Democratic Republic of the Congo",
+              "year": 2024,
+              "notes": "280 deaths among 318 cases in the index outbreak for Zaire ebolavirus. Upper anchor of the WHO range. Occurred with essentially no supportive care, in a setting with active nosocomial amplification, and with case finding biased toward severe presentations — so this should be read as a near-worst-case rather than an intrinsic species lethality."
+            },
+            {
+              "value": 33.5,
+              "range": [
+                29.5,
+                37.5
+              ],
+              "metric": "CFR",
+              "population": "Patients receiving monoclonal antibody therapy, DRC 2018-2019",
+              "source_type": "modeling_study",
+              "title": "A Randomized, Controlled Trial of Ebola Virus Disease Therapeutics (PALM trial)",
+              "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1910993",
+              "doi": "10.1056/NEJMoa1910993",
+              "country": "Democratic Republic of the Congo",
+              "year": 2019,
+              "notes": "Mulangu et al., New England Journal of Medicine. Mortality at 28 days was roughly 33.5% with REGN-EB3 and 35.1% with mAb114, versus roughly 50-53% in the ZMapp and remdesivir comparison groups. Mortality among patients presenting early with low viral load fell into the roughly 10% range. Range shown is approximate. This entry breaks the historical consensus band deliberately: any forward-looking model of an outbreak with therapeutic access should not use the 50% headline figure."
+            }
+          ]
+        },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus": {
+            "min": null,
+            "max": null,
+            "typical": null,
+            "notes": "Not meaningfully captured by a general daily-contacts metric. Transmission requires direct contact with blood, vomit, stool, or other body fluids from a symptomatic patient or a corpse, so conversational-contact surveys such as POLYMOD are a poor proxy — the relevant exposure set is caregivers, burial participants, and unprotected health workers, not the general contact network. The usual substitutes in the literature are household secondary attack rate (pooled at roughly 12-17%, rising sharply with the intimacy of care provided) and funeral attendance, and transmission is strongly overdispersed at the individual level. If a contact-network model is required, parameterize on household and care-contact structure plus discrete funeral events rather than on a mean daily contact count."
+          }
+        },
+        "immunity_duration": {
+          "unit": "days",
+          "consensus": {
+            "min": 3650,
+            "max": null,
+            "typical": null,
+            "notes": "Survivors of natural infection carry detectable IgG for decades, and no well-documented case of reinfection with the same species has been reported, so natural immunity is generally treated as long-lasting to lifelong. Antibody persistence is not the same as demonstrated protection — the decades-long evidence is serological, since challenge studies are impossible and reinfection exposure is rare. Cross-protection between species (Zaire, Sudan, Bundibugyo) is limited and should not be assumed; the licensed rVSV-ZEBOV vaccine (Ervebo) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine available.",
+            "special_value": "lifelong; natural infection: likely lifelong or multi-decade; vaccine: at least 2-4 years, durability beyond that not established"
+          },
+          "estimates": [
+            {
+              "value": 730,
+              "range": [
+                365,
+                1460
+              ],
+              "population": "General, vaccine-induced (rVSV-ZEBOV / Ervebo)",
+              "source_type": "organization_report",
+              "title": "Ebola disease caused by Zaire ebolavirus",
+              "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
+              "doi": "N/A",
+              "country": "N/A",
+              "year": 2025,
+              "notes": "Ervebo is a single-dose live attenuated vesicular stomatitis virus vector vaccine, shown highly effective in the Guinea ring-vaccination trial with protection evident from roughly 10 days post-vaccination. Immunogenicity studies show antibody responses persisting at least 2 years and in follow-up cohorts beyond that, but duration of clinical protection is not established and no booster schedule is defined for the general population. Value shown is a conservative planning figure, not a measured waning half-life — flag as low-confidence if the model is sensitive to it. Protects against Zaire ebolavirus only."
+            }
+          ]
+        },
+        "asymptomatic_fraction": {
+          "unit": "fraction",
+          "consensus": {
+            "min": 0.03,
+            "max": 0.46,
+            "typical": 0.15,
+            "notes": "The single most contested parameter for this pathogen, with credible published estimates spanning more than an order of magnitude. The disagreement is largely methodological: seroprevalence studies in contacts pick up antibody-positive people who never reported illness, but Ebola serological assays have known specificity problems in populations with high background reactivity, and recall of mild illness months after an epidemic is poor. Studies using stricter case definitions and better-validated assays tend to land far lower than the early Gabon work. Consequential modeling caveat: asymptomatic or minimally symptomatic individuals are not believed to transmit, since infectiousness tracks viral load and symptom severity — so unlike most respiratory pathogens, a high asymptomatic fraction here reduces the susceptible pool without adding hidden transmission chains. Setting this parameter high therefore makes outbreaks easier to control in most model structures, which is the opposite of the usual intuition and worth checking explicitly in sensitivity analysis."
+          },
+          "estimates": [
+            {
+              "value": 0.46,
+              "range": null,
+              "population": "Close contacts of symptomatic cases, Gabon",
+              "source_type": "review_article",
+              "title": "Human asymptomatic Ebola infection and strong inflammatory response",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/10881895/",
+              "doi": "10.1016/S0140-6736(00)02405-3",
+              "country": "Gabon",
+              "year": 2000,
+              "notes": "Leroy et al., The Lancet. Found that 11 of 24 close contacts of symptomatic patients during the 1996 Gabon outbreaks were IgG-positive and PCR-positive without ever developing symptoms. The origin of the widely repeated claim that a large share of Ebola infections are asymptomatic. Small sample, early-generation assays, and subsequent work has not reproduced a fraction this high — treat as the upper bound of plausibility rather than a central estimate."
+            },
+            {
+              "value": 0.27,
+              "range": [
+                0.14,
+                0.4
+              ],
+              "population": "Household contacts, pooled",
+              "source_type": "systematic_review",
+              "title": "Transmissibility and Pathogenicity of Ebola Virus: A Systematic Review and Meta-analysis of Household Secondary Attack Rate and Asymptomatic Infection",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4826455/",
+              "doi": "10.1093/cid/ciw114",
+              "country": "Multiple",
+              "year": 2016,
+              "notes": "Dean, Halloran, Yang & Longini, Clinical Infectious Diseases. Meta-analysis across household studies estimating both secondary attack rate (roughly 12.5%) and the proportion of infections that are asymptomatic among seropositive contacts. The authors are explicit that the asymptomatic estimate rests on a small number of serosurveys with heterogeneous assays and that the pooled interval is wide."
+            },
+            {
+              "value": 0.03,
+              "range": [
+                0.01,
+                0.06
+              ],
+              "population": "Household contacts, Sierra Leone 2014-2016",
+              "source_type": "review_article",
+              "title": "Asymptomatic infection and unrecognised Ebola virus disease in Ebola-affected households in Sierra Leone: a cross-sectional study using a new non-invasive assay for antibodies to Ebola virus",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/28347469/",
+              "doi": "10.1016/S1473-3099(17)30111-1",
+              "country": "Sierra Leone",
+              "year": 2017,
+              "notes": "Glynn et al., The Lancet Infectious Diseases. Used a validated oral-fluid antibody assay in households from the West African epidemic and found only a small fraction of contacts with asymptomatic or unrecognised infection — roughly an order of magnitude below Leroy et al. The largest and best-controlled study of the question, and the main reason the consensus 'typical' here is set well below the meta-analytic pooled value. If the model is sensitive to this parameter, run it at both 0.03 and 0.27 rather than picking one."
+            }
+          ]
         }
       }
     },
