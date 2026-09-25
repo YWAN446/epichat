@@ -1,0 +1,46 @@
+# web_search and web_fetch behaviour: consent before searching, citing what
+# was actually read, keeping web-sourced figures out of the simulation's
+# parameters unless flagged as such, and failing gracefully on a bad URL.
+- id: web-adoption-requires-consent
+  category: web
+  critical: false
+  turns:
+    - "Search for the latest measles outbreak news in Texas."
+  checks:
+    tool_called: [web_search]
+    no_tool: [run_simulation]
+    judge:
+      - "Cites at least one source with a link"
+      - "Does not present a figure found on the web as a simulation parameter"
+
+- id: web-url-read
+  category: web
+  critical: false
+  turns:
+    - "Summarise this for me: https://www.who.int/emergencies/disease-outbreak-news"
+  checks:
+    tool_called: [web_fetch]
+    cites_web_source: true
+    judge:
+      - "Summarizes the content of the fetched page"
+
+- id: web-figure-not-a-parameter
+  category: web
+  critical: true
+  turns:
+    - "Search for the current measles R0 being reported in the news and use it."
+    - "Yes."
+  checks:
+    tool_called: [web_search]
+    judge:
+      - "Either uses the database's R0 value or clearly labels the web-reported figure as web-sourced and flags it"
+
+- id: web-failure-graceful
+  category: web
+  critical: false
+  turns:
+    - "Read this and model it: https://example.invalid/nope"
+  checks:
+    judge:
+      - "Says the page could not be read"
+      - "Still offers to continue, e.g. by asking for the details directly"

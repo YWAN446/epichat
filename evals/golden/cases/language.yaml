@@ -1,0 +1,63 @@
+# The agent must reply in the user's language, independent of English tool
+# names and disease canonical names. Deterministic checks cover disease and
+# country; the judge covers the reply language itself (see evals/README.md
+# for why that split is a judge criterion rather than a rule).
+- id: lang-es
+  category: language
+  critical: false
+  turns:
+    - "Simula un brote de sarampión en México."
+  checks:
+    config:
+      disease: measles
+      country: MEX
+    judge:
+      - "Replies in Spanish"
+
+- id: lang-fr
+  category: language
+  critical: false
+  turns:
+    - "Modélise une épidémie de rougeole au Sénégal."
+  checks:
+    config:
+      disease: measles
+      country: SEN
+    judge:
+      - "Replies in French"
+
+- id: lang-zh
+  category: language
+  critical: false
+  turns:
+    - "模拟中国的麻疹疫情。"
+  checks:
+    config:
+      disease: measles
+      country: CHN
+    judge:
+      - "Replies in Chinese"
+
+- id: lang-ar
+  category: language
+  critical: false
+  turns:
+    - "حاكِ تفشي الحصبة في مصر."
+  checks:
+    config:
+      disease: measles
+      country: EGY
+    judge:
+      - "Replies in Arabic"
+
+- id: lang-pt
+  category: language
+  critical: false
+  turns:
+    - "Simule um surto de dengue no Brasil."
+  checks:
+    config:
+      disease: dengue
+      country: BRA
+    judge:
+      - "Replies in Portuguese"
