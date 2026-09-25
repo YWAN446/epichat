@@ -194,6 +194,32 @@ def test_sandbox_internals_are_not_shown_to_the_user():
     assert names == ["web_search"], f"code_execution leaked into the UI: {names}"
 
 
+def test_a_reply_split_by_citations_arrives_as_one_message():
+    """With citations enabled the model's prose comes back in fragments;
+    the user should see one answer, not five bubbles."""
+    agent = _agent(_FakeRunner([
+        (_message([_text("Measles cases rose in "), _text("Texas this year"),
+                   _text(", per the state health department.")]), None),
+    ]))
+    events = _run(agent)
+    texts = [p["text"] for k, p in events if k == "text"]
+    assert texts == ["Measles cases rose in Texas this year, per the state health department."]
+
+
+def test_text_around_a_tool_call_keeps_its_order():
+    """Coalescing must not merge across a tool call or reorder the events."""
+    agent = _agent(_FakeRunner([
+        (_message([_text("Let me check "), _text("the latest figures."),
+                   _server_tool_use("web_search", {"query": "measles Texas"}),
+                   _search_result(["https://who.int/a"]),
+                   _text("Here is what I found.")]), None),
+    ]))
+    events = _run(agent)
+    assert [k for k, _ in events] == ["text", "tool_use", "tool_result", "text"]
+    texts = [p["text"] for k, p in events if k == "text"]
+    assert texts == ["Let me check the latest figures.", "Here is what I found."]
+
+
 def test_local_tool_calls_still_work_alongside_web_tools():
     tool_response = {"role": "user", "content": [
         {"type": "tool_result", "tool_use_id": "toolu_1",

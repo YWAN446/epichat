@@ -512,8 +512,7 @@ class EpiChatAgent:
             if message.stop_reason == "refusal":
                 on_event("text", {"text": _REFUSAL_MSG})
                 return "refused", appended
-            for block in message.content:
-                self._emit_block(block, on_event)
+            self._emit_message(message, on_event)
             self.history.append({"role": "assistant", "content": message.content})
             appended += 1
             if message.stop_reason == "pause_turn":
@@ -531,14 +530,38 @@ class EpiChatAgent:
             appended += 1
         return "done", appended
 
+    def _emit_message(self, message, on_event) -> None:
+        """Emit one message's blocks, coalescing consecutive text.
+
+        With web-fetch citations enabled the model's prose arrives split at
+        citation boundaries: one answer can be five text blocks, some starting
+        mid-clause. Joining them keeps a reply one chat bubble, one paragraph
+        in exported reports, and one block in evaluation transcripts.
+        """
+        buffer: list[str] = []
+
+        def flush() -> None:
+            text = "".join(buffer).strip()
+            buffer.clear()
+            if text:
+                on_event("text", {"text": text})
+
+        for block in message.content:
+            if getattr(block, "type", None) == "text":
+                buffer.append(block.text)
+                continue
+            flush()
+            self._emit_block(block, on_event)
+        flush()
+
     def _emit_block(self, block, on_event) -> None:
-        """Turn one response content block into a UI event."""
+        """Turn one non-text response content block into a UI event.
+
+        Text is handled by _emit_message, which coalesces it.
+        """
         kind = getattr(block, "type", None)
-        if kind == "text":
-            if block.text.strip():
-                on_event("text", {"text": block.text})
-        elif kind == "tool_use" or (kind == "server_tool_use"
-                                    and block.name in _VISIBLE_SERVER_TOOLS):
+        if kind == "tool_use" or (kind == "server_tool_use"
+                                  and block.name in _VISIBLE_SERVER_TOOLS):
             on_event("tool_use", {"name": block.name, "input": block.input or {}})
         elif kind in ("web_search_tool_result", "web_fetch_tool_result"):
             self._emit_web_result(block, on_event)
