@@ -566,7 +566,13 @@ class EpiChatAgent:
         if block.type == "web_fetch_tool_result" and content is not None:
             url = getattr(content, "url", None)
             if url:
-                pages.append((getattr(content, "title", None) or url, url))
+                # BetaWebFetchBlock carries the url, but the page title lives on
+                # the nested BetaDocumentBlock — so the obvious one-level
+                # getattr(content, "title") silently always yields None and
+                # every citation falls back to showing its own URL.
+                document = getattr(content, "content", None)
+                title = getattr(document, "title", None) or url
+                pages.append((title, url))
 
         if pages:
             from .resolver import ResolvedField

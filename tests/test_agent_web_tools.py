@@ -27,7 +27,9 @@ def _search_result(urls, tool_use_id="srvtoolu_1"):
 def _fetch_result(url, title="A fetched page", tool_use_id="srvtoolu_2"):
     return SimpleNamespace(
         type="web_fetch_tool_result", tool_use_id=tool_use_id,
-        content=SimpleNamespace(type="web_fetch_result", url=url, title=title))
+        content=SimpleNamespace(
+            type="web_fetch_result", url=url,
+            content=SimpleNamespace(type="document", title=title)))
 
 
 def _error_result(code="unavailable", tool_use_id="srvtoolu_3",
