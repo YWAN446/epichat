@@ -246,8 +246,9 @@ class TestLookupDisease:
         state = AgentState()
         out = json.loads(_call(state, "lookup_disease", disease_name="measles"))
         assert out["canonical_name"] == "measles"
-        assert out["r0"]["min"] == 12 and out["r0"]["max"] == 18
-        assert "http" in out["r0"]["source"]
+        r0 = out["parameters"]["r0"]
+        assert r0["min"] == 12 and r0["max"] == 18
+        assert "http" in r0["source"]
 
     def test_alias_resolves(self):
         state = AgentState()

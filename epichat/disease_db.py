@@ -165,6 +165,68 @@ def _range_of(entry: dict, param: str) -> tuple[float, float, dict] | None:
     return lo, hi, data
 
 
+def _rich_param(entry: dict, param: str) -> dict | None:
+    """The citation-carrying block for a parameter, variants included."""
+    params = entry.get("parameters") or {}
+    if param in params:
+        return params[param]
+    variants = entry.get("variants") or {}
+    shared = variants.get("shared_parameters") or {}
+    if param in shared:
+        return shared[param]
+    default = variants.get(entry.get("default_variant", "")) or {}
+    return (default.get("parameters") or {}).get(param)
+
+
+def parameter_summary(entry: dict, param: str) -> dict | None:
+    """Uncertainty-aware view of one parameter, for the agent's lookup tool.
+
+    Returns None when the disease has no such parameter at all. Otherwise the
+    result always carries a "status" so the agent can tell three situations
+    apart:
+
+      "ok"            a usable consensus number, with the spread of the
+                      underlying estimates alongside it
+      "under_review"  held back pending review — cite the note, never the
+                      number
+      "no_source"     nothing usable; say so rather than improvising
+
+    Never raises: a malformed block degrades to "no_source".
+    """
+    rich = _rich_param(entry, param)
+    if rich is None:
+        return None
+    if not isinstance(rich, dict):
+        return {"status": "no_source", "n_estimates": 0}
+
+    consensus = rich.get("consensus") or {}
+    estimates = rich.get("estimates") or []
+    values = [e["value"] for e in estimates if _num(e.get("value")) is not None]
+    flat = entry.get(param) if isinstance(entry.get(param), dict) else None
+
+    if rich.get("status") == "under_review":
+        status = "under_review"
+    elif flat is None:
+        status = "no_source"
+    else:
+        status = "ok"
+
+    summary: dict = {"status": status, "n_estimates": len(estimates)}
+    if rich.get("unit"):
+        summary["unit"] = rich["unit"]
+    if status == "ok":
+        summary.update({k: flat[k] for k in ("min", "max", "typical", "source")
+                        if k in flat})
+    if values:
+        summary["estimate_range"] = [min(values), max(values)]
+    for key in ("notes", "special_value"):
+        if consensus.get(key):
+            summary[key] = consensus[key]
+    if rich.get("review_note"):
+        summary["review_note"] = rich["review_note"]
+    return summary
+
+
 def check_params(
     disease_name: str,
     r0: float,

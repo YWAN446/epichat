@@ -218,9 +218,12 @@ def build_tools(state: AgentState) -> list:
     def lookup_disease(disease_name: str) -> str:
         """Look up a disease in the curated, citation-backed parameter database.
 
-        Call this before configuring a known disease to get its literature
-        R0, incubation and infectious periods, and fatality rate — then pass
-        the chosen values to configure_simulation. Covers 16 diseases.
+        Call this before configuring a known disease. Each parameter comes
+        back with a status: "ok" (a usable consensus value, with
+        estimate_range showing how far published estimates spread),
+        "under_review" (held back — cite review_note, never invent a number),
+        or "no_source" (nothing published in the database). Pass only "ok"
+        values to configure_simulation. Covers 16 diseases.
 
         Args:
             disease_name: Disease name or alias (e.g. "whooping cough").
@@ -232,11 +235,19 @@ def build_tools(state: AgentState) -> list:
         if entry is None:
             names = ", ".join(load_db()["diseases"].keys())
             return f"UNKNOWN DISEASE: '{disease_name}'. Known diseases: {names}"
+
+        from .disease_db import parameter_summary
+
         out: dict = {"canonical_name": canonical or disease_name.lower(),
                      "display_name": entry.get("display_name")}
-        for p in ("r0", "incubation_days", "infectious_days", "fatality_rate"):
-            if isinstance(entry.get(p), dict):
-                out[p] = entry[p]
+        parameters: dict = {}
+        for p in ("r0", "incubation_days", "infectious_days", "fatality_rate",
+                  "average_contacts_daily", "immunity_duration",
+                  "asymptomatic_fraction"):
+            summary = parameter_summary(entry, p)
+            if summary is not None:
+                parameters[p] = summary
+        out["parameters"] = parameters
         return json.dumps(out)
 
     def _record(fields) -> list[str]:
