@@ -66,6 +66,38 @@ class TestConfigureSimulation:
         vax = state.params.get_vaccine()
         assert vax is not None and vax.coverage == 0.8
 
+    def test_vaccine_start_day_schedules_a_campaign(self):
+        state = AgentState()
+        _call(state, "configure_simulation", disease="measles", n_agents=5000,
+              vaccine_coverage=0.8, vaccine_start_day=30)
+        vax = state.params.get_vaccine()
+        assert vax.coverage == 0.8
+        assert vax.start_day == 30
+
+    def test_vaccine_start_day_defaults_to_pre_existing_immunity(self):
+        state = AgentState()
+        _call(state, "configure_simulation", disease="measles", n_agents=5000,
+              vaccine_coverage=0.8)
+        assert state.params.get_vaccine().start_day == 0
+
+    def test_vaccine_start_day_alone_updates_an_existing_campaign(self):
+        state = AgentState()
+        _call(state, "configure_simulation", disease="measles", n_agents=5000,
+              vaccine_coverage=0.6)
+        _call(state, "configure_simulation", vaccine_start_day=60)
+        vax = state.params.get_vaccine()
+        assert vax.coverage == 0.6, "changing the start day must not drop coverage"
+        assert vax.start_day == 60
+
+    def test_vaccine_start_day_without_coverage_is_rejected(self):
+        """Review Focus 5: never create a campaign that vaccinates nobody."""
+        state = AgentState()
+        _call(state, "configure_simulation", disease="measles", n_agents=5000)
+        result = _call(state, "configure_simulation", vaccine_start_day=30)
+        assert result.startswith("CONFIG ERROR")
+        assert "coverage" in result.lower()
+        assert state.params.get_vaccine() is None
+
 
 class _FakeAdapter:
     def __init__(self, name, fields, locations=None):

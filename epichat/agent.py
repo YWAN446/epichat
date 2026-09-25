@@ -122,6 +122,7 @@ def build_tools(state: AgentState) -> list:
         p_asymp: float | None = None,
         init_prev: float | None = None,
         vaccine_coverage: float | None = None,
+        vaccine_start_day: int | None = None,
         treatment_capacity: int | None = None,
         seasonality_scale: float | None = None,
     ) -> str:
@@ -148,6 +149,9 @@ def build_tools(state: AgentState) -> list:
             init_prev: Initial prevalence as a fraction of 1.
             vaccine_coverage: Vaccine coverage fraction; adds/updates the
                 vaccine intervention.
+            vaccine_start_day: Day the vaccination campaign begins. 0 (the
+                default) means pre-existing immunity at the start rather than
+                a campaign. Requires vaccine_coverage.
             treatment_capacity: Daily treatment capacity; adds/updates the
                 treatment intervention.
             seasonality_scale: Seasonal forcing amplitude 0-1; adds/updates
@@ -167,10 +171,19 @@ def build_tools(state: AgentState) -> list:
             applied["country"] = country_iso3
 
         interventions = list(base.get("interventions") or [])
-        if vaccine_coverage is not None:
+        if vaccine_coverage is not None or vaccine_start_day is not None:
+            current = next((i for i in interventions if i.get("type") == "vaccine"), {})
+            coverage = (vaccine_coverage if vaccine_coverage is not None
+                        else current.get("coverage"))
+            start_day = (vaccine_start_day if vaccine_start_day is not None
+                         else current.get("start_day", 0))
+            if coverage is None:
+                return ("CONFIG ERROR: a vaccination campaign needs a coverage "
+                        "level — pass vaccine_coverage alongside vaccine_start_day.")
             interventions = _upsert_intervention(
-                interventions, "vaccine", coverage=vaccine_coverage, start_day=0)
-            applied["vaccine_coverage"] = vaccine_coverage
+                interventions, "vaccine", coverage=coverage, start_day=start_day)
+            applied["vaccine_coverage"] = coverage
+            applied["vaccine_start_day"] = start_day
         if treatment_capacity is not None:
             interventions = _upsert_intervention(
                 interventions, "treatment", coverage=1.0, capacity=treatment_capacity)
