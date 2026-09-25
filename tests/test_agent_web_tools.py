@@ -178,6 +178,20 @@ def test_endless_pausing_stops_rather_than_looping():
     assert agent.client.beta.messages.tool_runner.call_count <= 6
 
 
+def test_sandbox_internals_are_not_shown_to_the_user():
+    """The _20260209 web tools run via an internal code sandbox; that is
+    implementation detail, and it reaches exported reports."""
+    agent = _agent(_FakeRunner([
+        (_message([_server_tool_use("code_execution", {"code": "import json"}),
+                   _server_tool_use("web_search", {"query": "measles Texas"}),
+                   _search_result(["https://who.int/a"]),
+                   _text("Here is what I found.")]), None),
+    ]))
+    events = _run(agent)
+    names = [p["name"] for k, p in events if k == "tool_use"]
+    assert names == ["web_search"], f"code_execution leaked into the UI: {names}"
+
+
 def test_local_tool_calls_still_work_alongside_web_tools():
     tool_response = {"role": "user", "content": [
         {"type": "tool_result", "tool_use_id": "toolu_1",

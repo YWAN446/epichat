@@ -34,6 +34,12 @@ _WEB_TOOLS: list[dict] = [
      "citations": {"enabled": True}, "max_content_tokens": 20000},
 ]
 
+# Server-tool names the UI surfaces. The _20260209 web tools run inside an
+# internal code sandbox, so code_execution blocks also arrive as
+# server_tool_use; those are implementation detail and would otherwise show
+# up as chat lines and in PDF/DOCX exports.
+_VISIBLE_SERVER_TOOLS = {"web_search", "web_fetch"}
+
 _SYSTEM = """You are EpiChat, an epidemiological simulation assistant built on \
 Starsim agent-based models. You help researchers and students configure, run, \
 and understand epidemic simulations grounded in real data.
@@ -531,7 +537,8 @@ class EpiChatAgent:
         if kind == "text":
             if block.text.strip():
                 on_event("text", {"text": block.text})
-        elif kind in ("tool_use", "server_tool_use"):
+        elif kind == "tool_use" or (kind == "server_tool_use"
+                                    and block.name in _VISIBLE_SERVER_TOOLS):
             on_event("tool_use", {"name": block.name, "input": block.input or {}})
         elif kind in ("web_search_tool_result", "web_fetch_tool_result"):
             self._emit_web_result(block, on_event)
