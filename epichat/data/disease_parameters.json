@@ -3498,6 +3498,18 @@
           },
           "estimates": [
             {
+              "special_value": "lifelong",
+              "range": null,
+              "population": "General, post-natural-infection",
+              "source_type": "government_report",
+              "title": "Hepatitis A",
+              "url": "https://www.ecdc.europa.eu/en/hepatitis-A/facts",
+              "doi": "N/A",
+              "country": "European Union",
+              "year": 2024,
+              "notes": "ECDC states chronic infection with hepatitis A is not known to occur and that infection gives lifelong immunity to the disease."
+            },
+            {
               "value": 7300,
               "range": null,
               "population": "General, vaccine-induced",
@@ -3855,6 +3867,21 @@
             "special_value": "lifelong; natural infection: likely lifelong or multi-decade; vaccine: at least 2-4 years, durability beyond that not established"
           },
           "estimates": [
+            {
+              "special_value": "lifelong",
+              "range": [
+                14600,
+                "lifelong"
+              ],
+              "population": "Survivors of natural infection, Yambuku 1976 cohort",
+              "source_type": "review_article",
+              "title": "Ebola Virus Neutralizing Antibodies Detectable in Survivors of the Yambuku, Zaire Outbreak 40 Years after Infection",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6009669/",
+              "doi": "10.1093/infdis/jix584",
+              "country": "Democratic Republic of the Congo",
+              "year": 2018,
+              "notes": "Rimoin et al., Journal of Infectious Diseases. Traced survivors of the 1976 Yambuku outbreak and found IgG against Ebola glycoprotein in all 14 tested, with neutralizing activity in a subset, 40 years after infection. Strongest available evidence for durable natural immunity, though the sample is tiny and serology is a correlate rather than a demonstration of protection."
+            },
             {
               "value": 730,
               "range": [

@@ -86,10 +86,12 @@ def _clean(block: dict, disease: str, param: str) -> dict:
     if isinstance(cons, dict) and isinstance(cons.get("estimates"), list):
         block.setdefault("estimates", []).extend(cons.pop("estimates"))
 
-    # Drop in-progress placeholders: no title, or no numeric value.
+    # Drop in-progress placeholders only. An estimate with a citation and a
+    # qualitative value ("lifelong") is real data - the schema supports it via
+    # special_value, and a later task quotes these back to the student.
     block["estimates"] = [
         est for est in (block.get("estimates") or [])
-        if est.get("title") and is_num(est.get("value"))
+        if est.get("title") and (is_num(est.get("value")) or est.get("special_value"))
     ]
     if not block["estimates"]:
         block.pop("estimates")
