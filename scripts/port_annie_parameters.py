@@ -67,11 +67,16 @@ def repair(text: str) -> str:
     """Apply the five mechanical repairs that make Annie's file parseable."""
     text = re.sub(r'("(?:min|max|typical)"\s*:\s*),', r"\1null,", text)
     text = re.sub(r'("(?:min|max|typical)"\s*:\s*)(\n\s*[}\]])', r"\1null\2", text)
-    text = text.replace('"concensus"', '"consensus"')
+    text = re.sub(r'"concensus"(\s*:)', r'"consensus"\1', text)
     text = re.sub(r"(?m)^\s*#+.*$", "", text)
     lines = text.split("\n")
+    diseases_at = next(
+        (i for i, line in enumerate(lines) if line.startswith('  "diseases"')), None)
+    if diseases_at is None:
+        raise SystemExit('no top-level "diseases" key found in the source')
     cuts = [i for i, line in enumerate(lines)
-            if (m := _TOP_LEVEL_KEY.match(line)) and m.group(1) != "diseases"]
+            if i > diseases_at
+            and (m := _TOP_LEVEL_KEY.match(line)) and m.group(1) != "diseases"]
     if not cuts:
         raise SystemExit("expected legacy flat entries after the diseases block; found none")
     return "\n".join(lines[:cuts[0]]).rstrip().rstrip(",") + "}}"
