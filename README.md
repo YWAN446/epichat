@@ -55,6 +55,23 @@ EpiChat now ships a literature-backed database of 16 infectious diseases (`epich
 
 The database is **student-extensible**: adding a new disease requires only editing the JSON file — no Python changes needed. Covered diseases: measles, mumps, rubella, varicella, pertussis, influenza (seasonal), meningococcal, hepatitis A.
 
+#### Adding or editing a disease
+
+The database lives in `epichat/data/disease_parameters.json`. Every
+parameter carries a `unit`, a `consensus` (`min` / `max` / `typical`, each a
+number or `null`), and a list of `estimates` with full citations.
+
+    # see what is filled in, held back, or missing
+    py -3.10 scripts/param_coverage.py
+
+    # validate your edit before pushing
+    py -3.10 -m pytest tests/test_disease_parameters.py -q
+
+Branch from `main`. A value that is disputed or not yet checked goes in with
+`null` consensus numbers plus `"status": "under_review"` and a
+`"review_note"` — the agent then tells the user there is no source for it
+instead of simulating a number nobody stands behind.
+
 ### Age-Structured Network β Calibration
 
 When real-world demographic data (e.g. Kenya's young age distribution from UN WPP) triggers an age-structured contact network, EpiChat now back-solves β so that `approx_R₀()` matches the literature typical — not the random-network approximation. The same calibration applies when a user modifies R₀ or `dur_inf` mid-conversation.
