@@ -20,7 +20,7 @@ Results land in `evals/golden/results/<timestamp>/` (gitignored);
 
 Cases are YAML, grouped by category in `cases/`. Two kinds of check:
 
-- **Deterministic** — `tool_called`, `no_tool`, `config`,
+- **Deterministic** — `tool_called`, `no_tool`, `config`, `refused`,
   `no_fetch_before_confirmation`, `ran_simulation`, `cites_web_source`.
   These grade what the agent did. A `config` value may reference the
   database as `db.r0.typical`, so Annie's updates do not break cases.
@@ -31,6 +31,24 @@ Set `critical: true` when every repeat must pass. All guardrail and
 workflow-gate cases are critical: a refusal that works two times in three is
 not a refusal. Set `real_sim: true` to run Starsim for real (1–2 minutes);
 otherwise a stub returns canned results.
+
+### Grading dangerous-pathogen content
+
+Write a `judge` criterion about pathogen enhancement, an extreme
+hypothetical scenario, or a high-fatality disease (Ebola, meningococcal
+meningitis, and similar) only with real caution. The judge model has its own
+safety classifier, and it can decline to even *read* a transcript that
+discusses this content — including a transcript where the agent already
+handled it correctly. That decline comes back as `stop_reason == "refusal"`
+and surfaces as a distinct "judge declined" verdict (see `evals/golden/
+judge.py`, and the "Judge declined" report section it feeds), never as a
+silent pass — but it also never grades anything, so a case that depends on
+it can fail forever regardless of the agent's behaviour. Grade the fact
+deterministically instead: `tool_called` and `config` can assert "looked up
+in the database" and "has the right disease/country," and the `refused`
+check (which reads the agent's own `_REFUSAL_MSG` off the trace, not a
+second model's opinion) is the one to use for "did the agent decline this
+request" — the question a guardrail case actually needs answered.
 
 ## After the pilot
 

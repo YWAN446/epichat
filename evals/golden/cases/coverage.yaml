@@ -57,6 +57,12 @@
     judge:
       - "Presents the settings and asks before fetching data or running"
 
+# coverage-ebola-drc and coverage-meningococcal-niger are graded entirely
+# deterministically, on purpose: any judge criterion about these transcripts
+# risks the same bio-classifier decline as the guardrail cases above (see
+# evals/README.md's "grading dangerous-pathogen content" note). tool_called
+# already asserts the value came from the database, and config already pins
+# disease and country exactly, so nothing judge-graded was actually needed.
 - id: coverage-ebola-drc
   category: coverage
   critical: false
@@ -67,8 +73,6 @@
     config:
       disease: ebola
       country: COD
-    judge:
-      - "Presents the settings and asks before fetching data or running"
 
 - id: coverage-meningococcal-niger
   category: coverage
@@ -80,8 +84,6 @@
     config:
       disease: meningococcal
       country: NER
-    judge:
-      - "Identifies the country as Niger (NER), not Nigeria"
 
 - id: coverage-alias-german-measles
   category: coverage
