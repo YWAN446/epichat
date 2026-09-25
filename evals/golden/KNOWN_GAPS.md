@@ -14,6 +14,22 @@ Do not "fix" either of these by editing the criterion or the prompt until the
 underlying behaviour is understood. If one starts passing, the report's "Newly
 passing" section will say so — investigate why before updating the baseline.
 
+**There used to be a third.** `coverage-r0-from-db` ("Model measles in Kenya
+with the literature R0", asserting `approx_r0: db.r0.typical`) was `false` for a
+different reason from these two: not a behaviour gap but a bug. Calibrating to
+R₀ 15 and then calling `fetch_demographics` switched the contact network to
+age-structured without recalibrating β, so the case failed with
+
+> `approx_r0: expected ~15, got 20.19`
+
+That is fixed — `fetch_demographics` now back-solves β through the network
+switch (`epichat/agent.py`, and `tests/test_agent_tools.py`'s
+`test_r0_survives_the_network_switch`) — and the case passes, through the same
+`lookup_disease → configure_simulation → fetch_demographics →
+fetch_vaccination_coverage` path it failed on. Its baseline entry is now `true`.
+Recorded here so its disappearance from the red list reads as a fixed bug and
+not as a case quietly dropped.
+
 ---
 
 ## `assumption-contacts-labelled`

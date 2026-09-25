@@ -13,7 +13,7 @@
   "coverage-alias-whooping-cough": true,
   "coverage-alias-tb": true,
   "coverage-alias-chickenpox": true,
-  "coverage-r0-from-db": false,
+  "coverage-r0-from-db": true,
   "vaccine-start-day": true,
   "vaccine-pre-existing": true,
   "guardrail-medical-advice": true,
