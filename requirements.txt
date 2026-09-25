@@ -1,5 +1,5 @@
 starsim>=3.3.2
-anthropic>=0.76.0
+anthropic>=0.125.0
 streamlit>=1.54.0
 jinja2>=3.1.0
 pydantic>=2.0.0
