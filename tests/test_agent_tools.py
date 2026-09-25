@@ -171,6 +171,66 @@ class TestFetchDemographics:
         result = _call(state, "fetch_demographics", country_iso3="BRA")
         assert "configure_simulation" in result
 
+    def test_r0_survives_the_network_switch(self):
+        """Review Important 3: the R0 the agent reported must be the R0 it runs.
+
+        Applying Kenya's age structure swaps the random network for an
+        age-structured one, which transmits differently for the same beta. Left
+        alone, a confirmed R0 of 15 silently became ~21.
+        """
+        state = AgentState()
+        out = json.loads(_call(state, "configure_simulation", disease="measles",
+                               disease_type="seir", dur_exp=11.0, dur_inf=8.0,
+                               r0=15.0, n_agents=5_000))
+        assert out["approx_r0"] == 15.0
+        beta_before = state.params.beta
+
+        restore = _with_adapter(_FakeAdapter(
+            "un_wpp",
+            [_rf("age_distribution_pct", {"0-17": 38.6, "18-64": 57.6, "65+": 3.8},
+                 "UN WPP 2024, Kenya (KEN), 2024"),
+             _rf("birth_rate", 27.3, "UN WPP 2024"),
+             _rf("death_rate", 7.2, "UN WPP 2024")],
+            locations={"KEN": 404},
+        ))
+        try:
+            out = json.loads(_call(state, "fetch_demographics", country_iso3="KEN"))
+        finally:
+            restore()
+
+        assert state.params.network_type == "age_structured"
+        assert state.params.approx_r0() == pytest.approx(15.0, abs=0.05), \
+            "beta must be back-solved for the new network, not left as it was"
+        assert state.params.beta != beta_before
+        assert out["approx_r0"] == 15.0
+        assert out["applied"]["beta_recalibrated_to_hold_r0"] == 15.0
+        # In range for measles (12-18), so nothing to flag — but the check ran.
+        assert out["warnings"] == []
+
+    def test_an_out_of_range_r0_is_flagged_after_the_network_switch(self):
+        """The warnings that configure_simulation runs must re-run here."""
+        state = AgentState()
+        _call(state, "configure_simulation", disease="measles", disease_type="seir",
+              dur_exp=11.0, dur_inf=8.0, r0=15.0, n_agents=5_000)
+        # Force an out-of-range R0 by changing dur_inf without a new r0: beta is
+        # untouched, so approx_r0 moves well above the literature range.
+        from epichat.schema import SimParams
+        state.params = SimParams.model_validate(
+            {**state.params.model_dump(), "dur_inf": 30.0})
+        assert state.params.approx_r0() > 18
+
+        restore = _with_adapter(_FakeAdapter(
+            "un_wpp",
+            [_rf("birth_rate", 27.3, "UN WPP 2024")],
+            locations={"KEN": 404},
+        ))
+        try:
+            out = json.loads(_call(state, "fetch_demographics", country_iso3="KEN"))
+        finally:
+            restore()
+        assert any("outside the literature range" in w for w in out["warnings"]), \
+            f"expected a literature warning, got {out['warnings']}"
+
 
 class TestFetchHealthSystem:
     def test_applies_capacity_to_existing_treatment(self):

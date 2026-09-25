@@ -365,7 +365,10 @@ def build_tools(state: AgentState) -> list:
         fallback). Automatically applies age structure (switching to an
         age-structured contact network), birth/death rates, and records the
         total population for result scaling — you never copy these numbers
-        yourself. Call after configure_simulation, before running.
+        yourself. Switching the network changes the R0 a given beta implies, so
+        beta is back-solved to hold the configured R0; the result reports
+        approx_r0 and any literature warnings it now triggers. Call after
+        configure_simulation, before running.
 
         Args:
             country_iso3: ISO3 country code (e.g. "BRA", "KEN").
@@ -396,7 +399,9 @@ def build_tools(state: AgentState) -> list:
                 ]
 
             applied: dict = {}
-            base = state.params.model_dump()
+            before = state.params
+            r0_before = before.approx_r0()
+            base = before.model_dump()
             for rf in fields:
                 if rf.field == "age_distribution_pct" and isinstance(rf.value, dict):
                     base.update({
@@ -414,8 +419,27 @@ def build_tools(state: AgentState) -> list:
                     base["use_demographics"] = True
                     applied[rf.field] = rf.value
             base["country"] = iso3
-            state.params = SimParams.model_validate(base)
-            return json.dumps({"applied": applied, "citations": _record(fields)})
+            params = SimParams.model_validate(base)
+            if params.network_type != before.network_type:
+                # An age-structured network transmits at a different rate for
+                # the same beta, so leaving beta alone silently moves R0 (15 →
+                # ~19-21 for measles in Kenya). Back-solve beta to hold the R0
+                # the user confirmed, which is what README's calibration
+                # section promises.
+                from .parser import recalibrate_beta
+                params = recalibrate_beta(params, r0_before, before)
+                applied["network_type"] = params.network_type
+                applied["beta_recalibrated_to_hold_r0"] = round(r0_before, 2)
+            state.params = params
+            # Re-check the literature ranges: the network switch (and the
+            # recalibration that follows it) can move a value out of range, and
+            # _param_warnings otherwise only ever runs in configure_simulation.
+            return json.dumps({
+                "applied": applied,
+                "approx_r0": round(params.approx_r0(), 2),
+                "warnings": _param_warnings(state, params),
+                "citations": _record(fields),
+            })
         except Exception as e:
             logger.exception("fetch_demographics failed for %s", iso3)
             return f"FETCH ERROR: {e}"

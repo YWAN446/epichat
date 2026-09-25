@@ -81,7 +81,7 @@ reported as "nothing published".
 
 ### Age-Structured Network β Calibration
 
-When real-world demographic data (e.g. Kenya's young age distribution from UN WPP) triggers an age-structured contact network, EpiChat now back-solves β so that `approx_R₀()` matches the literature typical — not the random-network approximation. The same calibration applies when a user modifies R₀ or `dur_inf` mid-conversation.
+When real-world demographic data (e.g. Kenya's young age distribution from UN WPP) triggers an age-structured contact network, EpiChat back-solves β so that `approx_R₀()` still equals the intended R₀ — not the random-network approximation. This holds on both paths: the staged pipeline calibrates to the literature typical, and the agent's `fetch_demographics` re-solves β to hold whatever R₀ the user confirmed, then re-runs the literature range checks and reports `approx_r0` with them. The same calibration applies when a user modifies R₀ or `dur_inf` mid-conversation.
 
 ### Multilingual Support
 
