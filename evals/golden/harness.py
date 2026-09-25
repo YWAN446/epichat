@@ -9,12 +9,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-# Credential loading is not this module's job: importing a module should
-# never have the side effect of loading secrets (python-dotenv only skips
-# variables that are already *present*, so an implicit load_dotenv() here
-# would quietly populate ANTHROPIC_API_KEY from .env even when a test meant
-# to run with no key set). The entry point that drives run_case — evals/golden/run.py
-# or an explicit caller — is responsible for calling load_dotenv() itself.
+# No load_dotenv() here: importing this module must not pull in credentials.
+# Callers that need them load them explicitly (evals/golden/run.py does).
+# Note this does NOT make "no key means no network" true on its own - several
+# epichat modules still call load_dotenv() at import, so importing the agent
+# can repopulate the key. CI is safe because it has no .env; locally the real
+# guarantee is that every test building an agent patches anthropic.Anthropic.
 
 _STUB_STATS = {"n_agents": 10_000, "total_infected": 4_200, "peak_infected": 850,
                "peak_day": 96, "deaths": 63, "total_vaccinated": 0}
