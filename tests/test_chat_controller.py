@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from unittest.mock import MagicMock
 from epichat.chat_controller import (
@@ -23,33 +25,56 @@ def _make_rf(field, value, citation, description="", alternatives=None):
 
 # ── detect_run_intent ─────────────────────────────────────────────────────────
 
+_LIVE = os.environ.get("EPICHAT_TEST_LIVE", "0") == "1"
+_live = pytest.mark.skipif(not _LIVE, reason="Set EPICHAT_TEST_LIVE=1 to run live API tests")
+
+@_live
+@pytest.mark.live
 def test_detect_run_intent_yes():
     assert detect_run_intent("yes") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_run_it():
     assert detect_run_intent("run it") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_looks_good():
     assert detect_run_intent("looks good") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_go_ahead():
     assert detect_run_intent("go ahead") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_you_can_run():
     assert detect_run_intent("you can run") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_sounds_good():
     assert detect_run_intent("sounds good") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_go_for_it():
     assert detect_run_intent("go for it") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_please_run():
     assert detect_run_intent("please run") is True
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_modification_not_run():
     assert detect_run_intent("change duration to 5 years") is False
 
+@_live
+@pytest.mark.live
 def test_detect_run_intent_question_not_run():
     assert detect_run_intent("what is R0?") is False
 
