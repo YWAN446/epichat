@@ -51,14 +51,17 @@ def run_once(case: dict, judge_model: str) -> dict:
     failures = run_checks(trace, case["checks"])
     criteria = case["checks"].get("judge") or []
     verdicts = judge_case(trace.transcript(case["turns"]), criteria, model=judge_model)
+    declined = []
     for verdict in verdicts:
         if not verdict["passed"]:
             failures.append(f"judge: {verdict['criterion']} — {verdict['evidence']}")
+        if verdict.get("declined"):
+            declined.append(verdict["criterion"])
     usage = next((v["_usage"] for v in verdicts if "_usage" in v), None)
     return {"passed": not failures, "failures": failures,
             "transcript": trace.transcript(case["turns"]),
             "tool_calls": [c["name"] for c in trace.tool_calls],
-            "judge_usage": usage}
+            "judge_usage": usage, "judge_declined": declined}
 
 
 def score_case(case: dict, repeats: list[dict]) -> dict:
@@ -81,7 +84,7 @@ def _cost(usage: dict) -> float:
 
 
 def write_report(out_dir: Path, scored: list[dict], baseline: dict,
-                 usage: dict) -> Path:
+                 usage: dict, declined: dict | None = None) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     lines = [f"# Golden set — {_dt.datetime.now():%Y-%m-%d %H:%M}", ""]
     total, passing = len(scored), sum(1 for s in scored if s["passed"])
@@ -93,6 +96,14 @@ def write_report(out_dir: Path, scored: list[dict], baseline: dict,
     for category in sorted({s["category"] for s in scored}):
         rows = [s for s in scored if s["category"] == category]
         lines.append(f"| {category} | {sum(1 for r in rows if r['passed'])} | {len(rows)} |")
+
+    if declined:
+        lines += ["", "## Judge declined", "",
+                  "The judge's own safety classifier refused to grade these transcripts. "
+                  "This is not a verdict on the agent — it counts toward the case's "
+                  "failures below, but it means the criterion was never actually checked."]
+        lines += [f"- **{case_id}** — {', '.join(criteria)}"
+                  for case_id, criteria in sorted(declined.items())]
 
     regressions = [s for s in scored if not s["passed"] and baseline.get(s["id"]) is True]
     if regressions:
@@ -142,6 +153,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     usage: dict = {}
     scored: list[dict] = []
+    declined_by_case: dict[str, list[str]] = {}
 
     with (out_dir / "traces.jsonl").open("w", encoding="utf-8") as handle:
         for index, case in enumerate(cases, 1):
@@ -158,17 +170,22 @@ def main() -> None:
                     bucket["output_tokens"] += counts["output_tokens"]
             outcome = score_case(case, repeats)
             scored.append(outcome)
+            declined = sorted({c for r in repeats for c in r.get("judge_declined") or []})
+            if declined:
+                declined_by_case[case["id"]] = declined
             handle.write(json.dumps({"case": case, "repeats": repeats,
                                      "score": outcome}, ensure_ascii=False) + "\n")
             print(f"    {'PASS' if outcome['passed'] else 'FAIL'} "
                   f"({outcome['pass_rate']:.0%})", flush=True)
 
-    report = write_report(out_dir, scored, baseline, usage)
+    report = write_report(out_dir, scored, baseline, usage, declined_by_case)
     print(f"\n{report}")
     if args.update_baseline:
-        BASELINE.write_text(
-            json.dumps({s["id"]: s["passed"] for s in scored}, indent=2) + "\n",
-            encoding="utf-8")
+        # Merge into the existing baseline rather than overwriting it: a
+        # --category or --case run only scores a subset of cases, and
+        # overwriting would silently drop every other case's entry.
+        merged = {**baseline, **{s["id"]: s["passed"] for s in scored}}
+        BASELINE.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
         print(f"baseline updated: {BASELINE}")
 
 

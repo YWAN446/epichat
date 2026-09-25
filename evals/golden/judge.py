@@ -69,6 +69,26 @@ def judge_case(transcript: str, criteria: list[str],
             messages=[{"role": "user", "content": prompt}],
             output_config={"format": {"type": "json_schema", "schema": _SCHEMA}},
         )
+        if getattr(response, "stop_reason", None) == "refusal":
+            # The judge's own safety classifier declined to read the
+            # transcript (seen on pathogen-enhancement / high-fatality
+            # content) — never a verdict, and must never look like an agent
+            # failure or a silent pass. See evals/golden/checks.py's
+            # `refused` check, which is why guardrail cases whose
+            # transcripts trip this no longer route through the judge.
+            stop_details = getattr(response, "stop_details", None) or {}
+            category = stop_details.get("category") if isinstance(stop_details, dict) else None
+            evidence = "judge declined to grade this transcript"
+            if category:
+                evidence += f" (category: {category})"
+            results = [{"criterion": c, "passed": False, "evidence": evidence,
+                       "declined": True} for c in criteria]
+            usage = getattr(response, "usage", None)
+            if usage is not None and results:
+                results[0]["_usage"] = {"input_tokens": usage.input_tokens,
+                                        "output_tokens": usage.output_tokens,
+                                        "model": model}
+            return results
         text = next(b.text for b in response.content if b.type == "text")
         returned = json.loads(text)["results"]
         usage = getattr(response, "usage", None)

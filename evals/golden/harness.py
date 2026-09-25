@@ -100,6 +100,10 @@ def run_case(case: dict, executor: Any | None = None) -> Trace:
     if agent.state.params is not None:
         trace.final_config = agent.state.params.model_dump()
         trace.final_config["disease"] = agent.state.disease
+        # SimParams has no r0 field — only beta, which configure_simulation
+        # calibrates from a requested r0. Expose the derived value so cases
+        # can assert on R0 without duplicating that calibration math.
+        trace.final_config["approx_r0"] = round(agent.state.params.approx_r0(), 2)
     trace.data_sources = [getattr(f, "citation", str(f)) for f in agent.state.data_sources]
     return trace
 
