@@ -94,10 +94,27 @@ def test_confirmation_gate_allows_a_fetch_after_the_first_turn():
 
 
 def test_an_agent_error_is_recorded_not_raised():
+    """handle() catches its own exceptions, so the trace carries the agent's
+    message and no harness error — the harness only records what it failed at
+    itself (see the next test)."""
+    from epichat.agent import _ERROR_MSG
+
     case = {"id": "boom", "turns": ["hello"]}
     client = MagicMock()
     client.beta.messages.tool_runner.side_effect = RuntimeError("api down")
     with patch("anthropic.Anthropic", return_value=client):
         trace = run_case(case)
-    assert trace.error is None or "api down" in trace.error
-    assert trace.replies, "the agent's own error message should still be captured"
+    assert trace.error is None
+    assert trace.replies == [_ERROR_MSG]
+
+
+def test_a_harness_level_failure_is_recorded_on_the_trace_and_stops_the_case():
+    case = {"id": "boom2", "turns": ["hello", "and again"]}
+    client = MagicMock()
+    with patch("anthropic.Anthropic", return_value=client), \
+            patch("epichat.agent.EpiChatAgent.handle",
+                  side_effect=RuntimeError("harness broke")):
+        trace = run_case(case)
+    assert trace.error == "RuntimeError: harness broke"
+    assert trace.replies == [""], "the second turn must not run after a harness failure"
+    assert run_checks(trace, {}) == [f"harness error: {trace.error}"]

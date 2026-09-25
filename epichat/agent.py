@@ -82,7 +82,17 @@ and name the reason the sources give (different settings, populations, eras).
   - "under_review" — the database is holding the value back. Say it is under \
 review, quote review_note, and offer to use a value the user supplies, \
 labelled as theirs. Never substitute a number of your own.
-  - "no_source" — nothing published in the database. Say so plainly.
+  - "estimates_only" — published estimates exist but the database has adopted \
+no consensus value. Cite the estimates and their spread, say plainly that \
+there is no agreed consensus value, and do not invent one. Do not pass it to \
+configure_simulation.
+  - "no_source" — nothing at all in the database: no consensus, no citations. \
+Say so plainly.
+- estimate_range is the spread of individual study point-estimates, including \
+narrow-population and outbreak-specific figures the consensus excludes. Name \
+what an extreme bound came from, using the population, source_type and title \
+in estimate_extremes, rather than quoting a bare range as if it were a \
+plausible range for the parameter — and only give a reason the payload states.
 - Give a range alongside a typical value whenever one exists. A single \
 number implies a confidence the literature rarely supports.
 
@@ -303,10 +313,13 @@ def build_tools(state: AgentState) -> list:
 
         Call this before configuring a known disease. Each parameter comes
         back with a status: "ok" (a usable consensus value, with
-        estimate_range showing how far published estimates spread),
-        "under_review" (held back — cite review_note, never invent a number),
-        or "no_source" (nothing published in the database). Pass only "ok"
-        values to configure_simulation. Covers 16 diseases.
+        estimate_range showing how far published estimates spread and
+        estimate_extremes naming where each bound came from), "under_review"
+        (held back — cite review_note, never invent a number),
+        "estimates_only" (citations exist but the database has adopted no
+        consensus value — report the estimates and say there is no agreed
+        value), or "no_source" (nothing at all in the database). Pass only
+        "ok" values to configure_simulation. Covers 16 diseases.
 
         Args:
             disease_name: Disease name or alias (e.g. "whooping cough").

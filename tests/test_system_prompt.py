@@ -8,7 +8,9 @@ from epichat.agent import AgentState
 @pytest.mark.parametrize("phrase", [
     "under_review",
     "no_source",
+    "estimates_only",
     "estimate_range",
+    "estimate_extremes",
     "illustrative assumption",
     "not a forecast",
     "web_search",

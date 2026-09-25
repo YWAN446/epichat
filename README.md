@@ -69,8 +69,15 @@ number or `null`), and a list of `estimates` with full citations.
 
 Branch from `main`. A value that is disputed or not yet checked goes in with
 `null` consensus numbers plus `"status": "under_review"` and a
-`"review_note"` — the agent then tells the user there is no source for it
-instead of simulating a number nobody stands behind.
+`"review_note"` — the agent then quotes the review note instead of simulating
+a number nobody stands behind.
+
+The agent sees one of four states per parameter, the same four
+`scripts/param_coverage.py` prints: `ok` (a consensus number it may use),
+`under_review` (held back), `estimates_only` (citations exist but no consensus
+number has been adopted — it reports the estimates and says there is no agreed
+value), and `no_source` (nothing at all). A parameter with citations is never
+reported as "nothing published".
 
 ### Age-Structured Network β Calibration
 

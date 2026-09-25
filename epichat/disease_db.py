@@ -182,14 +182,22 @@ def parameter_summary(entry: dict, param: str) -> dict | None:
     """Uncertainty-aware view of one parameter, for the agent's lookup tool.
 
     Returns None when the disease has no such parameter at all. Otherwise the
-    result always carries a "status" so the agent can tell three situations
-    apart:
+    result always carries a "status" so the agent can tell four situations
+    apart — the same four states scripts/param_coverage.py prints:
 
-      "ok"            a usable consensus number, with the spread of the
-                      underlying estimates alongside it
-      "under_review"  held back pending review — cite the note, never the
-                      number
-      "no_source"     nothing usable; say so rather than improvising
+      "ok"              a usable consensus number, with the spread of the
+                        underlying estimates alongside it
+      "under_review"    held back pending review — cite the note, never the
+                        number
+      "estimates_only"  cited estimates exist but the database has adopted no
+                        consensus value; report the estimates and their
+                        spread, and say there is no agreed value
+      "no_source"       nothing at all: no consensus, no citations
+
+    estimate_range is the span of individual study point-estimates, which
+    includes narrow-population and outbreak-specific figures the consensus
+    deliberately excludes. estimate_extremes carries the provenance of the two
+    bounds so a caller can attribute them instead of asserting the range.
 
     Never raises: a malformed block degrades to "no_source".
     """
@@ -206,10 +214,17 @@ def parameter_summary(entry: dict, param: str) -> dict | None:
 
     if rich.get("status") == "under_review":
         status = "under_review"
-    elif flat is None:
-        status = "no_source"
-    else:
+    elif flat is not None:
         status = "ok"
+    elif (estimates or rich.get("url") or rich.get("special_value")
+          or consensus.get("special_value")):
+        # Citations (or a qualitative value such as "lifelong") exist but no
+        # number the simulation can use. Saying "nothing published" here would
+        # deny evidence the database holds. Same predicate as
+        # scripts/param_coverage.py's "cites" state, so the two agree.
+        status = "estimates_only"
+    else:
+        status = "no_source"
 
     summary: dict = {"status": status, "n_estimates": len(estimates)}
     if rich.get("unit"):
@@ -217,11 +232,28 @@ def parameter_summary(entry: dict, param: str) -> dict | None:
     if status == "ok":
         summary.update({k: flat[k] for k in ("min", "max", "typical", "source")
                         if k in flat})
+    elif status == "estimates_only" and rich.get("url"):
+        # The only citation a block with no estimates carries.
+        summary["source"] = rich["url"]
     if values:
         summary["estimate_range"] = [min(values), max(values)]
+        # The bounds with their provenance: an extreme is often a
+        # narrow-population or outbreak-specific figure, and the agent is told
+        # to name what a bound came from rather than quote a bare range.
+        numeric = [e for e in estimates if _num(e.get("value")) is not None]
+        lo = min(numeric, key=lambda e: e["value"])
+        hi = max(numeric, key=lambda e: e["value"])
+        summary["estimate_extremes"] = [
+            {k: e[k] for k in ("value", "population", "source_type", "title")
+             if e.get(k) is not None}
+            for e in {id(lo): lo, id(hi): hi}.values()
+        ]
     for key in ("notes", "special_value"):
-        if consensus.get(key):
-            summary[key] = consensus[key]
+        # special_value sits on the consensus for most blocks and on the block
+        # itself for a few (measles.immunity_duration); take either.
+        value = consensus.get(key) or (rich.get(key) if key != "notes" else None)
+        if value:
+            summary[key] = value
     if rich.get("review_note"):
         summary["review_note"] = rich["review_note"]
     return summary
