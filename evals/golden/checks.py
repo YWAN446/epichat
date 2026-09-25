@@ -46,6 +46,13 @@ def check_no_tool(trace, names) -> list[str]:
 
 
 def check_config(trace, expected: dict) -> list[str]:
+    """Compare the final configuration against expected values.
+
+    Numeric comparisons pass within a 2% relative tolerance of the expected
+    value, with an absolute floor of 0.01 (so a comparison against 0 or a
+    very small number isn't impossibly strict). Non-numeric values must
+    match exactly.
+    """
     if trace.final_config is None:
         return [f"no configuration was produced (expected {sorted(expected)})"]
     failures = []
@@ -62,7 +69,15 @@ def check_config(trace, expected: dict) -> list[str]:
 
 
 def check_no_fetch_before_confirmation(trace) -> list[str]:
-    """Data must not be fetched on the opening turn, before the user agrees."""
+    """Data must not be fetched on the opening turn, before the user agrees.
+
+    Uses turn 0 as a positional proxy for "before the user confirmed": it is
+    deterministic and cheap, but it assumes confirmation never happens on the
+    first turn. A single-turn case whose opening message already carries
+    inline consent (e.g. "model measles in Kenya, go ahead and fetch
+    whatever you need") would be misjudged as a violation here. Do not use
+    this check for a case shaped like that.
+    """
     return [f"{c['name']} ran on the first turn, before the user confirmed"
             for c in trace.tool_calls
             if c["turn"] == 0 and c["name"] in _FETCH_TOOLS]
