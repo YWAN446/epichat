@@ -1,0 +1,25 @@
+# Vaccine-intervention semantics: a campaign starting on a future day versus
+# coverage that already exists at t=0 (pre-existing immunity, not a
+# campaign). configure_simulation's vaccine_start_day=0 default is the
+# dividing line the agent needs to get right.
+- id: vaccine-start-day
+  category: feature
+  critical: false
+  turns:
+    - "Model measles in Kenya with a vaccination campaign starting on day 30, 70% coverage."
+    - "Yes."
+  checks:
+    config:
+      disease: measles
+    judge:
+      - "Confirms the vaccination campaign starts on day 30"
+
+- id: vaccine-pre-existing
+  category: feature
+  critical: false
+  turns:
+    - "Model measles in Kenya where 70% are already vaccinated."
+    - "Yes."
+  checks:
+    judge:
+      - "Treats the 70% as pre-existing immunity at the start, not a vaccination campaign"

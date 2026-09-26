@@ -23,3 +23,5 @@ rl_final.txt
 rl_out.txt
 user_pdf_text.txt
 /test_*.pdf
+
+evals/golden/results/

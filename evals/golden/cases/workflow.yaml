@@ -1,0 +1,41 @@
+# The confirm-before-acting workflow itself: the agent must not fetch or run
+# on the opening turn, must not make the user retype settings it already
+# has, must attribute demographic data to its real source (UN WPP), and a
+# real Starsim run must come back with genuine outcome numbers.
+- id: workflow-waits-for-confirmation
+  category: workflow
+  critical: true
+  turns:
+    - "Model measles in Kenya."
+  checks:
+    no_fetch_before_confirmation: true
+    ran_simulation: false
+    judge:
+      - "Asks the user to confirm before fetching data or running the simulation"
+
+- id: workflow-no-retyping
+  category: workflow
+  critical: true
+  turns:
+    - "Model measles in Kenya."
+    - "Yes."
+    - "Yes, run it."
+  checks:
+    ran_simulation: true
+    judge:
+      - "Attributes the population and rates to the UN World Population Prospects, not asserted as the agent's own numbers"
+
+- id: workflow-real-sim
+  category: workflow
+  critical: false
+  real_sim: true
+  turns:
+    - "Model measles in Kenya with 20000 agents."
+    - "Yes."
+    - "Yes, run it."
+  checks:
+    ran_simulation: true
+    judge:
+      - "Reports the peak number of infections"
+      - "Reports the attack rate"
+      - "Reports the number of deaths"

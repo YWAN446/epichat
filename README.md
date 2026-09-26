@@ -55,9 +55,33 @@ EpiChat now ships a literature-backed database of 16 infectious diseases (`epich
 
 The database is **student-extensible**: adding a new disease requires only editing the JSON file — no Python changes needed. Covered diseases: measles, mumps, rubella, varicella, pertussis, influenza (seasonal), meningococcal, hepatitis A.
 
+#### Adding or editing a disease
+
+The database lives in `epichat/data/disease_parameters.json`. Every
+parameter carries a `unit`, a `consensus` (`min` / `max` / `typical`, each a
+number or `null`), and a list of `estimates` with full citations.
+
+    # see what is filled in, held back, or missing
+    py -3.10 scripts/param_coverage.py
+
+    # validate your edit before pushing
+    py -3.10 -m pytest tests/test_disease_parameters.py -q
+
+Branch from `main`. A value that is disputed or not yet checked goes in with
+`null` consensus numbers plus `"status": "under_review"` and a
+`"review_note"` — the agent then quotes the review note instead of simulating
+a number nobody stands behind.
+
+The agent sees one of four states per parameter, the same four
+`scripts/param_coverage.py` prints: `ok` (a consensus number it may use),
+`under_review` (held back), `estimates_only` (citations exist but no consensus
+number has been adopted — it reports the estimates and says there is no agreed
+value), and `no_source` (nothing at all). A parameter with citations is never
+reported as "nothing published".
+
 ### Age-Structured Network β Calibration
 
-When real-world demographic data (e.g. Kenya's young age distribution from UN WPP) triggers an age-structured contact network, EpiChat now back-solves β so that `approx_R₀()` matches the literature typical — not the random-network approximation. The same calibration applies when a user modifies R₀ or `dur_inf` mid-conversation.
+When real-world demographic data (e.g. Kenya's young age distribution from UN WPP) triggers an age-structured contact network, EpiChat back-solves β so that `approx_R₀()` still equals the intended R₀ — not the random-network approximation. This holds on both paths: the staged pipeline calibrates to the literature typical, and the agent's `fetch_demographics` re-solves β to hold whatever R₀ the user confirmed, then re-runs the literature range checks and reports `approx_r0` with them. The same calibration applies when a user modifies R₀ or `dur_inf` mid-conversation.
 
 ### Multilingual Support
 

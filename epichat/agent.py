@@ -23,6 +23,25 @@ logger = logging.getLogger(__name__)
 _MODEL = "claude-opus-5"
 _MAX_TOKENS = 16000
 
+# Runners per user turn: the first attempt plus up to four resumes after a
+# pause_turn. Bounds a turn that keeps coming back paused.
+_MAX_RUNNERS = 5
+
+# Anthropic-hosted tools. The _20260209 variants run code execution
+# internally for dynamic filtering — declaring code_execution alongside them
+# gives the model two execution environments and confuses it.
+_WEB_TOOLS: list[dict] = [
+    {"type": "web_search_20260209", "name": "web_search", "max_uses": 5},
+    {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 3,
+     "citations": {"enabled": True}, "max_content_tokens": 20000},
+]
+
+# Server-tool names the UI surfaces. The _20260209 web tools run inside an
+# internal code sandbox, so code_execution blocks also arrive as
+# server_tool_use; those are implementation detail and would otherwise show
+# up as chat lines and in PDF/DOCX exports.
+_VISIBLE_SERVER_TOOLS = {"web_search", "web_fetch"}
+
 _SYSTEM = """You are EpiChat, an epidemiological simulation assistant built on \
 Starsim agent-based models. You help researchers and students configure, run, \
 and understand epidemic simulations grounded in real data.
@@ -54,10 +73,68 @@ the interventions did, and caveats. Cite the data sources that were used.
 - Respond in the language the user writes in.
 - Never state an epidemiological value that did not come from a tool result \
 or the user. If a tool errors, say what failed and continue with what you have.
-- Keep responses focused and brief; a simple question gets a direct answer in \
-prose. Do not narrate routine tool calls — the interface shows them.
+
+## Uncertainty
+
+- lookup_disease returns a status for every parameter. Use it:
+  - "ok" — usable. When estimate_range is much wider than min-max, say so \
+and name the reason the sources give (different settings, populations, eras).
+  - "under_review" — the database is holding the value back. Say it is under \
+review, quote review_note, and offer to use a value the user supplies, \
+labelled as theirs. Never substitute a number of your own.
+  - "estimates_only" — published estimates exist but the database has adopted \
+no consensus value. Cite the estimates and their spread, say plainly that \
+there is no agreed consensus value, and do not invent one. Do not pass it to \
+configure_simulation.
+  - "no_source" — nothing at all in the database: no consensus, no citations. \
+Say so plainly.
+- estimate_range is the spread of individual study point-estimates, including \
+narrow-population and outbreak-specific figures the consensus excludes. Name \
+what an extreme bound came from, using the population, source_type and title \
+in estimate_extremes, rather than quoting a bare range as if it were a \
+plausible range for the parameter — and only give a reason the payload states.
+- Give a range alongside a typical value whenever one exists. A single \
+number implies a confidence the literature rarely supports.
+
+## Assumptions and limits
+
+- Any setting that came from neither a tool nor the user is an illustrative \
+assumption. Say so where you introduce it and again in the report. \
+Seasonality amplitude has no citation-backed source in the database: if you \
+use it, label it an illustrative assumption, never a published value.
+- Close every report with the model's limitations: homogeneous mixing within \
+a contact structure, one pathogen, no behaviour change in response to the \
+epidemic, and whatever else the configuration implies. When the user asks \
+what will happen, say this is an illustrative scenario, not a forecast.
+
+## Web sources
+
+- web_search and web_fetch provide context — current case counts, outbreak \
+news, a report the user linked. They do not provide simulation parameters. \
+Those still come from lookup_disease and the fetch tools.
+- You may quote a web figure with its link. Only pass it to \
+configure_simulation if the user explicitly asks you to, and then say it is \
+web-sourced and flag any literature-range warning that comes back.
+- Prefer WHO, CDC, ECDC, ProMED, ministries of health, and peer-reviewed \
+literature. When you rely on anything weaker, name what kind of source it is.
+
+## Scope
+
+- Individual medical advice — whether someone should be vaccinated, treated, \
+or tested — is outside your remit. Say so and point to a clinician or public \
+health authority. Population-level questions are fine.
+- Decline requests to make a pathogen more transmissible, more lethal, or \
+harder to detect, and anything else that reads as engineering a more \
+dangerous organism. Modelling a hypothetical high-R0 or high-fatality \
+scenario is ordinary epidemiology and entirely fine — the line is laboratory \
+enhancement, not extreme parameter values.
 - For questions unrelated to epidemic simulation, answer briefly and steer \
-back to what you can help with."""
+back to what you can help with.
+
+## Style
+
+- Keep responses focused and brief; a simple question gets a direct answer in \
+prose. Do not narrate routine tool calls — the interface shows them."""
 
 _REFUSAL_MSG = ("I'm unable to help with that request. Let's get back to "
                 "epidemic simulations — what would you like to model?")
@@ -65,6 +142,9 @@ _REFUSAL_MSG = ("I'm unable to help with that request. Let's get back to "
 _ERROR_MSG = ("Something went wrong while processing that (a technical error, "
               "not a problem with your request). Please try again — the "
               "conversation is intact.")
+
+_PAUSED_MSG = ("That search ran longer than I can continue in one turn. Ask me "
+               "again and I'll pick it up.")
 
 _DEFAULT_BETA = 22.8125  # matches the schema's default SIR configuration
 
@@ -122,6 +202,7 @@ def build_tools(state: AgentState) -> list:
         p_asymp: float | None = None,
         init_prev: float | None = None,
         vaccine_coverage: float | None = None,
+        vaccine_start_day: int | None = None,
         treatment_capacity: int | None = None,
         seasonality_scale: float | None = None,
     ) -> str:
@@ -148,6 +229,9 @@ def build_tools(state: AgentState) -> list:
             init_prev: Initial prevalence as a fraction of 1.
             vaccine_coverage: Vaccine coverage fraction; adds/updates the
                 vaccine intervention.
+            vaccine_start_day: Day the vaccination campaign begins. 0 (the
+                default) means pre-existing immunity at the start rather than
+                a campaign. Requires vaccine_coverage.
             treatment_capacity: Daily treatment capacity; adds/updates the
                 treatment intervention.
             seasonality_scale: Seasonal forcing amplitude 0-1; adds/updates
@@ -167,10 +251,19 @@ def build_tools(state: AgentState) -> list:
             applied["country"] = country_iso3
 
         interventions = list(base.get("interventions") or [])
-        if vaccine_coverage is not None:
+        if vaccine_coverage is not None or vaccine_start_day is not None:
+            current = next((i for i in interventions if i.get("type") == "vaccine"), {})
+            coverage = (vaccine_coverage if vaccine_coverage is not None
+                        else current.get("coverage"))
+            start_day = (vaccine_start_day if vaccine_start_day is not None
+                         else current.get("start_day", 0))
+            if coverage is None:
+                return ("CONFIG ERROR: a vaccination campaign needs a coverage "
+                        "level — pass vaccine_coverage alongside vaccine_start_day.")
             interventions = _upsert_intervention(
-                interventions, "vaccine", coverage=vaccine_coverage, start_day=0)
-            applied["vaccine_coverage"] = vaccine_coverage
+                interventions, "vaccine", coverage=coverage, start_day=start_day)
+            applied["vaccine_coverage"] = coverage
+            applied["vaccine_start_day"] = start_day
         if treatment_capacity is not None:
             interventions = _upsert_intervention(
                 interventions, "treatment", coverage=1.0, capacity=treatment_capacity)
@@ -218,9 +311,15 @@ def build_tools(state: AgentState) -> list:
     def lookup_disease(disease_name: str) -> str:
         """Look up a disease in the curated, citation-backed parameter database.
 
-        Call this before configuring a known disease to get its literature
-        R0, incubation and infectious periods, and fatality rate — then pass
-        the chosen values to configure_simulation. Covers 16 diseases.
+        Call this before configuring a known disease. Each parameter comes
+        back with a status: "ok" (a usable consensus value, with
+        estimate_range showing how far published estimates spread and
+        estimate_extremes naming where each bound came from), "under_review"
+        (held back — cite review_note, never invent a number),
+        "estimates_only" (citations exist but the database has adopted no
+        consensus value — report the estimates and say there is no agreed
+        value), or "no_source" (nothing at all in the database). Pass only
+        "ok" values to configure_simulation. Covers 16 diseases.
 
         Args:
             disease_name: Disease name or alias (e.g. "whooping cough").
@@ -232,11 +331,19 @@ def build_tools(state: AgentState) -> list:
         if entry is None:
             names = ", ".join(load_db()["diseases"].keys())
             return f"UNKNOWN DISEASE: '{disease_name}'. Known diseases: {names}"
+
+        from .disease_db import parameter_summary
+
         out: dict = {"canonical_name": canonical or disease_name.lower(),
                      "display_name": entry.get("display_name")}
-        for p in ("r0", "incubation_days", "infectious_days", "fatality_rate"):
-            if isinstance(entry.get(p), dict):
-                out[p] = entry[p]
+        parameters: dict = {}
+        for p in ("r0", "incubation_days", "infectious_days", "fatality_rate",
+                  "average_contacts_daily", "immunity_duration",
+                  "asymptomatic_fraction"):
+            summary = parameter_summary(entry, p)
+            if summary is not None:
+                parameters[p] = summary
+        out["parameters"] = parameters
         return json.dumps(out)
 
     def _record(fields) -> list[str]:
@@ -258,7 +365,10 @@ def build_tools(state: AgentState) -> list:
         fallback). Automatically applies age structure (switching to an
         age-structured contact network), birth/death rates, and records the
         total population for result scaling — you never copy these numbers
-        yourself. Call after configure_simulation, before running.
+        yourself. Switching the network changes the R0 a given beta implies, so
+        beta is back-solved to hold the configured R0; the result reports
+        approx_r0 and any literature warnings it now triggers. Call after
+        configure_simulation, before running.
 
         Args:
             country_iso3: ISO3 country code (e.g. "BRA", "KEN").
@@ -289,7 +399,9 @@ def build_tools(state: AgentState) -> list:
                 ]
 
             applied: dict = {}
-            base = state.params.model_dump()
+            before = state.params
+            r0_before = before.approx_r0()
+            base = before.model_dump()
             for rf in fields:
                 if rf.field == "age_distribution_pct" and isinstance(rf.value, dict):
                     base.update({
@@ -307,8 +419,27 @@ def build_tools(state: AgentState) -> list:
                     base["use_demographics"] = True
                     applied[rf.field] = rf.value
             base["country"] = iso3
-            state.params = SimParams.model_validate(base)
-            return json.dumps({"applied": applied, "citations": _record(fields)})
+            params = SimParams.model_validate(base)
+            if params.network_type != before.network_type:
+                # An age-structured network transmits at a different rate for
+                # the same beta, so leaving beta alone silently moves R0 (15 →
+                # ~19-21 for measles in Kenya). Back-solve beta to hold the R0
+                # the user confirmed, which is what README's calibration
+                # section promises.
+                from .parser import recalibrate_beta
+                params = recalibrate_beta(params, r0_before, before)
+                applied["network_type"] = params.network_type
+                applied["beta_recalibrated_to_hold_r0"] = round(r0_before, 2)
+            state.params = params
+            # Re-check the literature ranges: the network switch (and the
+            # recalibration that follows it) can move a value out of range, and
+            # _param_warnings otherwise only ever runs in configure_simulation.
+            return json.dumps({
+                "applied": applied,
+                "approx_r0": round(params.approx_r0(), 2),
+                "warnings": _param_warnings(state, params),
+                "citations": _record(fields),
+            })
         except Exception as e:
             logger.exception("fetch_demographics failed for %s", iso3)
             return f"FETCH ERROR: {e}"
@@ -454,8 +585,135 @@ class EpiChatAgent:
     def __init__(self, executor: object | None = None) -> None:
         self.state = AgentState(executor=executor)
         self.history: list = []
-        self.tools = build_tools(self.state)
+        self.tools = [*build_tools(self.state), *_WEB_TOOLS]
         self.client = anthropic.Anthropic()
+
+    def _consume(self, runner, on_event) -> str:
+        """Drive one runner to completion.
+
+        Returns the outcome: "done" when the turn finished, "refused" when the
+        model declined, or "paused" when the API's server-tool loop hit its
+        per-turn iteration limit — the SDK runner does not resume by itself, so
+        handle() starts a fresh runner over the accumulated history.
+
+        Every message is appended to self.history the moment it is emitted, and
+        each tool_use is followed by its tool_result before anything else can
+        fail. handle() therefore measures self.history directly rather than
+        trusting a count this may never live to return.
+        """
+        for message in runner:
+            if message.stop_reason == "refusal":
+                on_event("text", {"text": _REFUSAL_MSG})
+                return "refused"
+            self._emit_message(message, on_event)
+            self.history.append({"role": "assistant", "content": message.content})
+            # Ask for the tool response even on a paused message: a pause can
+            # land on a message that also called one of our own tools, and
+            # leaving that tool_use unanswered would 400 every later turn. With
+            # no client tool_use the runner returns None and nothing changes.
+            tool_response = runner.generate_tool_call_response()
+            if tool_response is not None:
+                for tr in tool_response["content"]:
+                    on_event("tool_result", {
+                        "tool_use_id": tr.get("tool_use_id"),
+                        "content": tr.get("content"),
+                        "is_error": tr.get("is_error", False),
+                    })
+                self.history.append(tool_response)
+            if message.stop_reason == "pause_turn":
+                return "paused"
+        return "done"
+
+    def _emit_message(self, message, on_event) -> None:
+        """Emit one message's blocks, coalescing consecutive text.
+
+        With web-fetch citations enabled the model's prose arrives split at
+        citation boundaries: one answer can be five text blocks, some starting
+        mid-clause. Joining them keeps a reply one chat bubble, one paragraph
+        in exported reports, and one block in evaluation transcripts.
+        """
+        buffer: list[str] = []
+
+        def flush() -> None:
+            text = "".join(buffer).strip()
+            buffer.clear()
+            if text:
+                on_event("text", {"text": text})
+
+        def emit(kind: str, payload: dict) -> None:
+            """Flush buffered prose only when a block really emits something.
+
+            Blocks _emit_block drops — the internal code sandbox — must not
+            split the prose around them back into separate events, and this
+            keeps that decision inside _emit_block where it belongs.
+            """
+            flush()
+            on_event(kind, payload)
+
+        for block in message.content:
+            if getattr(block, "type", None) == "text":
+                buffer.append(block.text)
+                continue
+            self._emit_block(block, emit)
+        flush()
+
+    def _emit_block(self, block, on_event) -> None:
+        """Turn one non-text response content block into a UI event.
+
+        Text is handled by _emit_message, which coalesces it.
+        """
+        kind = getattr(block, "type", None)
+        if kind == "tool_use" or (kind == "server_tool_use"
+                                  and block.name in _VISIBLE_SERVER_TOOLS):
+            on_event("tool_use", {"name": block.name, "input": block.input or {}})
+        elif kind in ("web_search_tool_result", "web_fetch_tool_result"):
+            self._emit_web_result(block, on_event)
+
+    def _emit_web_result(self, block, on_event) -> None:
+        """Report a server-tool result and cite the pages actually read.
+
+        Server tools report failure as data: the result content is a list
+        (search hits) or a result object (a fetched page) on success, and an
+        object carrying error_code on failure. Branch before indexing.
+
+        Only fetched pages become citations. Search hits are things the model
+        looked at, not sources it relied on, and five searches of ten hits
+        would swamp the sources block under the plot.
+        """
+        tool_use_id = getattr(block, "tool_use_id", None)
+        content = getattr(block, "content", None)
+        error_code = getattr(content, "error_code", None)
+        if error_code:
+            on_event("tool_result", {"tool_use_id": tool_use_id, "is_error": True,
+                                     "content": f"WEB ERROR: {error_code}"})
+            return
+
+        pages: list[tuple[str, str]] = []
+        if block.type == "web_fetch_tool_result" and content is not None:
+            url = getattr(content, "url", None)
+            if url:
+                # BetaWebFetchBlock carries the url, but the page title lives on
+                # the nested BetaDocumentBlock — so the obvious one-level
+                # getattr(content, "title") silently always yields None and
+                # every citation falls back to showing its own URL.
+                document = getattr(content, "content", None)
+                title = getattr(document, "title", None) or url
+                pages.append((title, url))
+
+        if pages:
+            from .resolver import ResolvedField
+            cited = {getattr(f, "citation", None) for f in self.state.data_sources}
+            for title, url in pages:
+                if url not in cited:
+                    cited.add(url)
+                    self.state.data_sources.append(ResolvedField(
+                        field="web_source", value=title, citation=url,
+                        description="Page the agent read during this conversation"))
+
+        on_event("tool_result", {
+            "tool_use_id": tool_use_id, "is_error": False,
+            "content": json.dumps({"pages": [u for _, u in pages]}),
+        })
 
     def handle(self, user_text: str, on_event: Callable[[str, dict], None]) -> None:
         """Run one conversational turn, emitting UI events as they happen.
@@ -464,40 +722,31 @@ class EpiChatAgent:
         "tool_result" {tool_use_id, content, is_error}, "plot" {path, sources}.
         """
         self.state.context_text = (self.state.context_text + " " + user_text).strip()
+        base_len = len(self.history)
         self.history.append({"role": "user", "content": user_text})
-        appended_since_user = 0
         try:
-            runner = self.client.beta.messages.tool_runner(
-                model=_MODEL,
-                max_tokens=_MAX_TOKENS,
-                system=_system_blocks(),
-                tools=self.tools,
-                messages=self.history,
-            )
-            for message in runner:
-                if message.stop_reason == "refusal":
-                    on_event("text", {"text": _REFUSAL_MSG})
+            for _ in range(_MAX_RUNNERS):
+                runner = self.client.beta.messages.tool_runner(
+                    model=_MODEL,
+                    max_tokens=_MAX_TOKENS,
+                    system=_system_blocks(),
+                    tools=self.tools,
+                    messages=self.history,
+                )
+                if self._consume(runner, on_event) != "paused":
                     break
-                for block in message.content:
-                    if block.type == "text" and block.text.strip():
-                        on_event("text", {"text": block.text})
-                    elif block.type == "tool_use":
-                        on_event("tool_use", {"name": block.name, "input": block.input})
-                self.history.append({"role": "assistant", "content": message.content})
-                appended_since_user += 1
-                tool_response = runner.generate_tool_call_response()
-                if tool_response is not None:
-                    for tr in tool_response["content"]:
-                        on_event("tool_result", {
-                            "tool_use_id": tr.get("tool_use_id"),
-                            "content": tr.get("content"),
-                            "is_error": tr.get("is_error", False),
-                        })
-                    self.history.append(tool_response)
-                    appended_since_user += 1
+            else:
+                # Out of resumes with the turn still paused. Drop the dangling
+                # exchange so the next turn starts from a clean boundary, and
+                # say so — otherwise the status panel just closes on nothing.
+                del self.history[base_len + 1:]
+                on_event("text", {"text": _PAUSED_MSG})
         except Exception:
             logger.exception("agent turn failed")
-            if appended_since_user == 0:
+            # Measure history rather than counting: an exception can escape
+            # _consume after it has already appended, and popping then would
+            # orphan a tool_use and 400 every later turn.
+            if len(self.history) == base_len + 1:
                 self.history.pop()  # roll back the unanswered user message
             on_event("text", {"text": _ERROR_MSG})
             return

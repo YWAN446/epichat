@@ -148,6 +148,8 @@ _AGENT_TOOL_LABELS: dict[str, str] = {
     "fetch_health_system": "🔧 World Bank health system",
     "fetch_vaccination_coverage": "🔧 WHO vaccination coverage",
     "run_simulation": "▶️ Simulation",
+    "web_search": "🔎 Web search",
+    "web_fetch": "📄 Read page",
 }
 
 
@@ -158,6 +160,8 @@ _AGENT_STATUS_LABELS: dict[str, str] = {
     "fetch_health_system": "Fetching World Bank health-system data…",
     "fetch_vaccination_coverage": "Fetching WHO vaccination coverage…",
     "run_simulation": "Running the simulation — this usually takes 1–2 minutes…",
+    "web_search": "Searching the web…",
+    "web_fetch": "Reading the page…",
 }
 
 
