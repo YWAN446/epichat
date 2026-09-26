@@ -3486,10 +3486,10 @@
             "incubation_days": {
               "unit": "days",
               "consensus": {
-                "min": ,
-                "max": ,
-                "typical": ,
-                "notes": ""
+                "min": 2,
+                "max": 21,
+                "typical": 9,
+                "notes": "Based on CDC guidelines for the general population."
                  },
 
               "estimates": [
@@ -3518,19 +3518,44 @@
                   "year": 2014,
                   "notes": "WHO Ebola Response Team. Mean incubation of 11.4 days fitted to patients with a single reported exposure date, notably longer than the CDC's 8-10 day general figure. The gap is most likely recall and ascertainment bias — patients reporting a single identifiable exposure skew toward discrete events like funerals rather than continuous household exposure, and the earliest exposure in a continuous window tends to get reported, lengthening the apparent incubation."
                 },
-
-###DOUBLE CHECK FOLLOWING ESTIMATES - UNDER REVIEW               
+             
                 {
                   "value": 12.7,
-                  "range": [2, 26],
+                  "range": "N/A",
                   "population": "General, Kikwit outbreak 1995",
                   "source_type": "modeling_study",
                   "title": "Incubation period of Ebola hemorrhagic virus subtype Zaire",
-                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3766904/",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/24159443/",
                   "doi": "10.1016/j.phrp.2011.04.001",
                   "country": "Democratic Republic of the Congo",
                   "year": 2011,
-                  "notes": "Eichner, Dowell & Firese, Osong Public Health Research and Perspectives. Fitted a distribution to 196 cases from the 1995 Kikwit outbreak, estimating mean 12.7 days (SD 4.3). The paper is the main source for the claim that a 21-day quarantine misses a small but non-zero fraction of cases; the exact fraction is sensitive to the fitted distribution and later reanalyses (notably Haas 2014) produced a wide spread of answers. Range shown is approximate observed spread, not a confidence interval."
+                  "notes": "Eichner, Dowell & Firese, Osong Public Health Research and Perspectives. Fitted a distribution to 196 cases from the 1995 Kikwit outbreak, estimating mean 12.7 days (SD 4.3). The paper is the main source for the claim that a 21-day quarantine misses a small but non-zero fraction of cases; the exact fraction is sensitive to the fitted distribution and later reanalyses (notably Haas 2014) produced a wide spread of answers."
+                },
+
+                {
+                  "value": 6.3,
+                  "range": [1, 21],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/",
+                  "doi": "10.1093/cid/civ531",
+                  "country": "N/A",
+                  "year": 2015,
+                  "notes": "Standard time periods from article."
+                },
+
+                {
+                  "value": 6.22,
+                  "range": [1, 15],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/",
+                  "doi": "10.1093/cid/civ531",
+                  "country": "N/A",
+                  "year": 2015,
+                  "notes": "Proposed time periods from article."
                 }
               ]
             },
@@ -3538,29 +3563,29 @@
             "infectious_days": {
               "unit": "days",
               "consensus": {
-                "min": 4,
-                "max": 10,
-                "typical": 7,
-                "notes": "Patients are not infectious during incubation — infectiousness begins with symptom onset and rises with viral load as illness progresses, so the effective infectious window runs from onset until isolation, recovery, or death. Untreated, mean time from onset to death is roughly 7-8 days and onset to recovery roughly 11-12 days, but isolation typically truncates community exposure well before either endpoint. Two features break the simple SEIR framing: corpses are highly infectious and traditional burial washing has driven a large share of transmission, effectively extending the infectious period past death; and viral RNA persists in immune-privileged sites in survivors, with semen positive for many months (documented sexual transmission more than a year after recovery) and rare relapse with CNS or ocular involvement. Models that ignore the post-death and post-recovery channels will understate tail transmission."
+                "min": 3.5,
+                "max": 10.7,
+                "typical": 5.61,
+                "notes": "Chowell et al. bounds community exposure and is the right quantity for transmission modeling."
               },
 
               "estimates": [
                 {
-                  "value": 7.5,
-                  "range": [6.0, 9.0],
-                  "population": "Fatal cases, West Africa 2014",
+                  "value": 5.0,
+                  "range": [0.3, 9.7],
+                  "population": "Fatal cases",
                   "source_type": "government_report",
                   "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
                   "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
                   "doi": "10.1056/NEJMoa1411100",
                   "country": "Guinea, Liberia, Sierra Leone",
                   "year": 2014,
-                  "notes": "WHO Ebola Response Team reported mean time from symptom onset to death of approximately 7.5 days, versus roughly 11.8 days from onset to hospital discharge among survivors. Used here as the upper bound on community infectious duration for fatal cases in the absence of isolation."
+                  "notes": "WHO Ebola Response Team reported mean time from the onset of symptoms to hospitalization, a measure of the period of infectiousness in the community."
                 },
 
                 {
                   "value": 5.61,
-                  "range": [3.5, 7.0],
+                  "range": [3.5, 10.7],
                   "population": "General, model parameter",
                   "source_type": "modeling_study",
                   "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
@@ -3568,20 +3593,20 @@
                   "doi": "10.1016/j.jtbi.2004.03.006",
                   "country": "Democratic Republic of the Congo / Uganda",
                   "year": 2004,
-                  "notes": "Chowell et al. used a mean infectious period of 5.61 days for the 1976 Congo outbreak and 3.5 days for the 2000 Uganda outbreak. These are model-calibrated compartment residence times, not directly observed clinical durations, and they absorb the effect of isolation — which is why they are shorter than onset-to-death. Do not interpret as a biological shedding duration."
+                  "notes": "Chowell et al. used a mean infectious period of 5.61 days for the 1976 Congo outbreak."
                 },
 
                 {
-                  "value": 115,
-                  "range": [30, 565],
-                  "population": "Male survivors, viral RNA persistence in semen",
-                  "source_type": "review_article",
-                  "title": "Ebola RNA Persistence in Semen of Ebola Virus Disease Survivors — Final Report",
-                  "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1511410",
-                  "doi": "10.1056/NEJMoa1511410",
-                  "country": "Sierra Leone",
-                  "year": 2017,
-                  "notes": "Deen et al., New England Journal of Medicine. Cohort of male survivors tested by RT-PCR; RNA detected in semen in the large majority of men tested within 3 months of onset, declining over time but with individual cases positive beyond 500 days. Critical caveat: RNA detection is not the same as infectious virus, and the documented sexual transmission events are rare relative to the number of RNA-positive survivors. Included as a separate entry because it is a genuinely different transmission channel, not a continuation of the acute infectious period — do not sum it with the acute estimates above."
+                  "value": 9.4,
+                  "range": [3.9, 14.9],
+                  "population": "EVD survivors",
+                  "source_type": "systematic_review",
+                  "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/",
+                  "doi": "10.1093/cid/civ531",
+                  "country": "N/A",
+                  "year": 2015,
+                  "notes": "Infectious period refers to after onset of wet symptoms to recovery."
                 }
               ]
             },
@@ -3592,7 +3617,7 @@
                 "min": 25,
                 "max": 90,
                 "typical": 50,
-                "notes": "Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others."
+                "notes": "WHO estimate. Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others."
               },
 
               "estimates": [
@@ -3600,9 +3625,9 @@
                   "value": 50,
                   "range": [25, 90],
                   "metric": "CFR",
-                  "population": "General, all outbreaks and species",
-                  "source_type": "organization_report",
-                  "title": "Ebola disease caused by Zaire ebolavirus",
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Ebola disease",
                   "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
                   "doi": "N/A",
                   "country": "N/A",
@@ -3612,10 +3637,10 @@
 
                 {
                   "value": 70.8,
-                  "range": [68.6, 72.8],
+                  "range": [69, 73],
                   "metric": "CFR",
                   "population": "Cases with definitive outcome, West Africa 2014",
-                  "source_type": "government_report",
+                  "source_type": "modeling_study",
                   "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
                   "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
                   "doi": "10.1056/NEJMoa1411100",
@@ -3628,28 +3653,28 @@
                   "value": 88,
                   "range": "N/A",
                   "metric": "CFR",
-                  "population": "General, Yambuku outbreak 1976",
+                  "population": "General",
                   "source_type": "government_report",
-                  "title": "Ebola disease distribution by species and outbreak",
+                  "title": "Ebola haemorrhagic fever in Zaire, 1976",
                   "url": "https://www.cdc.gov/ebola/outbreaks/index.html",
                   "doi": "N/A",
                   "country": "Democratic Republic of the Congo",
-                  "year": 2024,
-                  "notes": "280 deaths among 318 cases in the index outbreak for Zaire ebolavirus. Upper anchor of the WHO range. Occurred with essentially no supportive care, in a setting with active nosocomial amplification, and with case finding biased toward severe presentations — so this should be read as a near-worst-case rather than an intrinsic species lethality."
+                  "year": 1978,
+                  "notes": "280 deaths among 318 cases in the index outbreak for Zaire ebolavirus."
                 },
 
                 {
-                  "value": 33.5,
-                  "range": [29.5, 37.5],
+                  "value": 73.13,
+                  "range": [57.58, 79.49],
                   "metric": "CFR",
-                  "population": "Patients receiving monoclonal antibody therapy, DRC 2018-2019",
-                  "source_type": "modeling_study",
-                  "title": "A Randomized, Controlled Trial of Ebola Virus Disease Therapeutics (PALM trial)",
-                  "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1910993",
-                  "doi": "10.1056/NEJMoa1910993",
-                  "country": "Democratic Republic of the Congo",
-                  "year": 2019,
-                  "notes": "Mulangu et al., New England Journal of Medicine. Mortality at 28 days was roughly 33.5% with REGN-EB3 and 35.1% with mAb114, versus roughly 50-53% in the ZMapp and remdesivir comparison groups. Mortality among patients presenting early with low viral load fell into the roughly 10% range. Range shown is approximate. This entry breaks the historical consensus band deliberately: any forward-looking model of an outbreak with therapeutic access should not use the 50% headline figure."
+                  "population": "Confirmed hospitalized cases with known outcome, Jui Government Hospital, Freetown",
+                  "source_type": "review_article",
+                  "title": "Age and Ebola viral load correlate with mortality and survival time in 288 Ebola virus disease patients",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7110900/",
+                  "doi": "10.1016/j.ijid.2015.10.021",
+                  "country": "Sierra Leone",
+                  "year": 2015,
+                  "notes": "Li et al., International Journal of Infectious Diseases 42:34-39. Retrospective series at Jui Government Hospital, Freetown, Oct 2014-Mar 2015: 288 RT-PCR-confirmed cases, 98 deaths, 36 recoveries. The 73.13% is computed on only the 134 patients with a recorded outcome; the other 154 were transferred out and lost to follow-up, so over half the cohort is missing from the denominator and the figure is likely inflated if transfers skewed toward survivors. Range shown is the age-stratified span, NOT a confidence interval: 57.58% at age <=18, 77.42% at 18-40, 79.49% at >=40. Mortality correlated with age, log viral load (OR 3.095 above 10^6 copies/ml, p = 0.004) and diarrhoea; no sex difference. Median stay was 2 days for deaths vs 14 for survivors, so much of the cohort died too quickly for supportive care to affect outcome."
                 }
               ]
             },
@@ -3660,10 +3685,25 @@
                 "min": "N/A",
                 "max": "N/A",
                 "typical": "N/A",
-                "notes": "Not meaningfully captured by a general daily-contacts metric. Transmission requires direct contact with blood, vomit, stool, or other body fluids from a symptomatic patient or a corpse, so conversational-contact surveys such as POLYMOD are a poor proxy — the relevant exposure set is caregivers, burial participants, and unprotected health workers, not the general contact network. The usual substitutes in the literature are household secondary attack rate (pooled at roughly 12-17%, rising sharply with the intimacy of care provided) and funeral attendance, and transmission is strongly overdispersed at the individual level. If a contact-network model is required, parameterize on household and care-contact structure plus discrete funeral events rather than on a mean daily contact count."
-              },
+                "notes": "No defensible value exists for this field and none should be imputed."
+                },
 
-              "estimates": []
+
+              "estimates": [
+                {
+                  "value": 10.6,
+                  "range": "N/A",
+                  "unit_override": "contacts/case",
+                  "population": "Confirmed Bundibugyo virus cases, DRC 2026 outbreak",
+                  "source_type": "government_report",
+                  "title": "Notes from the Field: Characteristics and Monitoring of the 2026 Outbreak of Ebola Disease Caused by Bundibugyo Virus — Democratic Republic of the Congo, August 2026",
+                  "url": "https://www.cdc.gov/mmwr/volumes/75/wr/mm7535a4.htm",
+                  "doi": "N/A",
+                  "country": "Democratic Republic of the Congo",
+                  "year": 2026,
+                  "notes": "CDC MMWR 75(35):554-556, 3-week average for July 31-August 21, 2026. UNIT MISMATCH: this is contacts identified per confirmed case across an entire case investigation, not contacts per day, so it cannot be used in this field without conversion and there is no exposure duration given to convert with. NOT A BEHAVIORAL ESTIMATE: the operational target is >=20 contacts per case and CDC reads 10.6 as evidence of underreporting and underascertainment, so this is a lower bound on tracing performance, not a measurement of the contact network. Corroborating evidence that ascertainment was poor: only 15-20% of new confirmed cases had been previously identified as contacts (target >90%), 72% of validated alerts received laboratory testing, and 59% of confirmed deaths occurred outside an Ebola treatment unit. Context: second-largest Ebola outbreak recorded, 5,458 confirmed cases and 2,606 confirmed deaths (48%) as of August 21, 2026, roughly 5,000 cases in 100 days, 84% in Ituri province, response constrained by armed conflict and population displacement in eastern DRC. Caution for the consensus block: contacts identified per case during an uncontrolled outbreak in a conflict zone reflects response capacity, not transmission-relevant contact structure, and should not be pooled with survey-based contact data. Post-dates my training data; supplied by the user and not independently verified."
+                }
+              ]
             },
 
             "immunity_duration": {
@@ -3671,35 +3711,48 @@
               "consensus": {
                 "min": 3650,
                 "max": "lifelong",
-                "typical": "natural infection: likely lifelong or multi-decade; vaccine: at least 2-4 years, durability beyond that not established",
-                "notes": "Survivors of natural infection carry detectable IgG for decades, and no well-documented case of reinfection with the same species has been reported, so natural immunity is generally treated as long-lasting to lifelong. Antibody persistence is not the same as demonstrated protection — the decades-long evidence is serological, since challenge studies are impossible and reinfection exposure is rare. Cross-protection between species (Zaire, Sudan, Bundibugyo) is limited and should not be assumed; the licensed rVSV-ZEBOV vaccine (Ervebo) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine available."
+                "typical": "natural infection: at least 10 years, plausibly lifelong; vaccine: memory demonstrated to 5 years, protection duration unknown",
+                "notes": "This field pools two quantities that should not be averaged: immunity after natural infection and immunity after vaccination. The estimates below are also all immunological markers, not protection — no correlate of protection has been established for EVD, challenge studies are impossible, and reinfection exposure is too rare to measure protection directly, so every value here is a floor on detectable immune memory rather than a duration of immunity. Natural infection: IgG and some neutralizing activity persisted in all 14 Yambuku survivors tested 40 years on, and no well-documented same-species reinfection has been reported, but tertiary sources split between 'lifelong' (ECDC) and '10 years or more' (Penn Medicine); the conservative reading is a 10-year floor with lifelong as an upper assumption, not two compatible claims. Vaccine: PREVAC found EBOV-specific memory T-cell responses at 60 months with no decline, but only after 8-day in-vitro expansion — ex-vivo responses were undetectable by month 12 and antibody titres had fallen to near pre-boost levels by then, so recall capacity persists while circulating effector immunity does not. No booster schedule is defined and no immunological criterion for revaccination exists. Cross-protection between species should not be assumed: Ervebo (rVSV-ZEBOV) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine. For modeling, prefer the 3650-day floor for recovered individuals, treat vaccine-derived immunity as a separate compartment with a waning rate the data cannot currently pin down, and run sensitivity analysis rather than committing to a point value."
               },
 
               "estimates": [
                 {
                   "special_value": "lifelong",
                   "range": [14600, "lifelong"],
-                  "population": "Survivors of natural infection, Yambuku 1976 cohort",
+                  "population": "Survivors of natural infection",
                   "source_type": "review_article",
                   "title": "Ebola Virus Neutralizing Antibodies Detectable in Survivors of the Yambuku, Zaire Outbreak 40 Years after Infection",
-                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6009669/",
+                  "url": "https://academic.oup.com/jid/article/217/2/223/4716835",
                   "doi": "10.1093/infdis/jix584",
                   "country": "Democratic Republic of the Congo",
-                  "year": 2018,
+                  "year": 2017,
                   "notes": "Rimoin et al., Journal of Infectious Diseases. Traced survivors of the 1976 Yambuku outbreak and found IgG against Ebola glycoprotein in all 14 tested, with neutralizing activity in a subset, 40 years after infection. Strongest available evidence for durable natural immunity, though the sample is tiny and serology is a correlate rather than a demonstration of protection."
                 },
 
                 {
-                  "value": 730,
-                  "range": [365, 1460],
-                  "population": "General, vaccine-induced (rVSV-ZEBOV / Ervebo)",
-                  "source_type": "organization_report",
-                  "title": "Ebola disease caused by Zaire ebolavirus",
-                  "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
+                  "value": 3650,
+                  "range": "N/A",
+                  "population": "Survivors of natural infection",
+                  "source_type": "health_organization_summary",
+                  "title": "Ebola virus disease",
+                  "url": "https://www.pennmedicine.org/for-patients-and-visitors/patient-information/conditions-treated-a-to-z/ebola-virus-disease",
                   "doi": "N/A",
-                  "country": "N/A",
-                  "year": 2025,
-                  "notes": "Ervebo is a single-dose live attenuated vesicular stomatitis virus vector vaccine, shown highly effective in the Guinea ring-vaccination trial with protection evident from roughly 10 days post-vaccination. Immunogenicity studies show antibody responses persisting at least 2 years and in follow-up cohorts beyond that, but duration of clinical protection is not established and no booster schedule is defined for the general population. Value shown is a conservative planning figure, not a measured waning half-life — flag as low-confidence if the model is sensitive to it. Protects against Zaire ebolavirus only."
+                  "country": "United States",
+                  "year": 2023,
+                  "notes": "Penn Medicine patient-information page (A.D.A.M. content, last reviewed 31 December 2023), sourced to CDC, WHO, Goldman-Cecil Medicine 27th ed. and Mandell 10th ed. States survivors are immune 'for 10 years or more' and can no longer spread the virus, and that cross-protection against a different Ebola species is not known. CONFLICTS with the ECDC entry in this parameter, which states infection confers lifelong immunity: this is the more conservative framing and closer to what the evidence supports, since the 40-year antibody persistence in the Yambuku cohort is serological rather than a demonstration of protection. Treat 10 years as a defensible floor and 'lifelong' as an upper assumption, not as two compatible readings. LOW EVIDENTIARY WEIGHT: general-audience tertiary summary, no primary data, and the 10-year figure is asserted without a cited source; use for the direction of the caveat, not as an independent estimate. The page also states men can carry virus in semen 'for as long as 3 months', which is contradicted by the Deen et al. cohort in infectious_days showing RNA positivity beyond 500 days — treat the 3-month figure as outdated."
+                },
+
+                {
+                  "value": 1825,
+                  "range": "N/A",
+                  "population": "Vaccinated adults, PREVAC trial (rVSV-ZEBOV and Ad26.ZEBOV/MVA-BN-Filo)",
+                  "source_type": "modeling_study",
+                  "title": "Long-term cellular immunity of vaccines for Zaire Ebola Virus Diseases",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11372064/",
+                  "doi": "10.1038/s41467-024-51453-z",
+                  "country": "Guinea",
+                  "year": 2024,
+                  "notes": "Wiedemann, Lhomme, Huchon et al., Nature Communications 15:7666. Immunology ancillary study of the PREVAC randomized trial (NCT02876328), 191 adults per-protocol at the Landreah site, Guinea, with a 31-participant subset followed to 60 months. Both licensed regimens induced EBOV-specific memory T-cell responses detectable at 24, 36, 48 and 60 months post-prime with NO decline over that window, which is the basis for the 1825-day floor here. Two caveats against reading this as duration of protection. (1) DURABILITY IS ASSAY-DEPENDENT: ex-vivo responses were undetectable in every arm by month 12; the persistent signal appears only after 8-day in-vitro expansion with EBOV peptide pools, so this demonstrates memory T cells can be recalled, not that circulating effector immunity persists. Antibody GMCs had already fallen by M12 to roughly pre-boost levels (433 EU/mL Ad26-MVA, 828 rVSV, 663 rVSV-booster, vs 92 placebo). (2) NO CORRELATE OF PROTECTION EXISTS for EVD, and the authors state this plainly — antibodies are thought primary for rVSV protection, CD8+ T cells for the adenovirus/MVA platforms, but the level required for lasting protection is unknown, so T-cell persistence cannot be converted into a protection duration. Platform differences: Ad26 prime induced polyfunctional CD4+ responses further boosted by MVA; rVSV induced minimal ex-vivo T-cell responses despite strong antibody titers and a D7 pro-inflammatory signature (IL-18, IP-10, TRAIL). CD4+ T-cell responses correlated with anti-EBOV IgG, which the authors offer as a rationale for eventual boosting. LOW PRECISION: the 60-month subset is 31 people (9-12 per arm), and the rVSV-booster arm had only 7-9, too few to interpret its absent CD8+ signal. Use 1825 days as a lower bound on immune memory, not as an immunity duration, and keep the vaccine and natural-infection entries in this parameter separate — they are different quantities with different evidence."
                 }
               ]
             },
@@ -3714,51 +3767,382 @@
               },
 
               "estimates": [
+
                 {
-                  "value": 0.46,
-                  "range": "N/A",
-                  "population": "Close contacts of symptomatic cases, Gabon",
-                  "source_type": "review_article",
-                  "title": "Human asymptomatic Ebola infection and strong inflammatory response",
-                  "url": "https://pubmed.ncbi.nlm.nih.gov/10881895/",
-                  "doi": "10.1016/S0140-6736(00)02405-3",
-                  "country": "Gabon",
-                  "year": 2000,
-                  "notes": "Leroy et al., The Lancet. Found that 11 of 24 close contacts of symptomatic patients during the 1996 Gabon outbreaks were IgG-positive and PCR-positive without ever developing symptoms. The origin of the widely repeated claim that a large share of Ebola infections are asymptomatic. Small sample, early-generation assays, and subsequent work has not reproduced a fraction this high — treat as the upper bound of plausibility rather than a central estimate."
+                  "value": 0.50,
+                  "range": [0.46, 0.71],
+                  "population": "General, modeling assumption",
+                  "source_type": "modeling_study",
+                  "title": "Impact of asymptomatic infection and acquired immunity on the spread and control of Ebola",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/",
+                  "doi": "10.1016/S0140-6736(14)61839-0",
+                  "pmid": "25390569",
+                  "country": "Liberia (modeled)",
+                  "year": 2014,
+                  "notes": "Bellan, Pulliam, Dushoff & Meyers, Lancet 384(9953):1499-1500. CORRESPONDENCE, NOT A PRIMARY ESTIMATE: the 50% figure is an illustrative modeling assumption chosen to demonstrate a structural point, not a measurement, and the range shown is the span of the two prior serological findings the letter cites (a post-outbreak serosurvey in which 71% of seropositive individuals reported no disease, and Leroy et al.'s 46% seropositivity among asymptomatic close contacts, already entered separately in this parameter). Do not count as independent evidence and do not double-count with Leroy. The substantive contribution is the modeling consequence: comparing two Liberia models with identical R0, the one ignoring asymptomatic infection projected roughly 50% more cumulative symptomatic cases by January 2015, because asymptomatic infections are unlikely to be infectious but do contribute to herd immunity. This confirms the direction flagged in the consensus block — raising this parameter makes modeled outbreaks easier to control, the opposite of the respiratory-pathogen intuition. SUPERSEDED ON MAGNITUDE: written October 2014, before Glynn et al. 2017 found roughly 3% using a validated oral-fluid assay, so the premise that a 'substantial proportion' of infections are asymptomatic is now contested. Retain for the structural argument, not the value."
                 },
 
                 {
-                  "value": 0.27,
-                  "range": [0.14, 0.40],
-                  "population": "Household contacts, pooled",
+                  "value": 0.271,
+                  "range": [0.145, 0.396],
+                  "population": "Household contacts, pooled across outbreaks 1976-2014",
                   "source_type": "systematic_review",
                   "title": "Transmissibility and Pathogenicity of Ebola Virus: A Systematic Review and Meta-analysis of Household Secondary Attack Rate and Asymptomatic Infection",
-                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4826455/",
+                  "url": "https://academic.oup.com/cid/article/62/10/1277/2462818",
                   "doi": "10.1093/cid/ciw114",
                   "country": "Multiple",
                   "year": 2016,
-                  "notes": "Dean, Halloran, Yang & Longini, Clinical Infectious Diseases. Meta-analysis across household studies estimating both secondary attack rate (roughly 12.5%) and the proportion of infections that are asymptomatic among seropositive contacts. The authors are explicit that the asymptomatic estimate rests on a small number of serosurveys with heterogeneous assays and that the pooled interval is wide."
-                },
-
-                {
-                  "value": 0.03,
-                  "range": [0.01, 0.06],
-                  "population": "Household contacts, Sierra Leone 2014-2016",
-                  "source_type": "review_article",
-                  "title": "Asymptomatic infection and unrecognised Ebola virus disease in Ebola-affected households in Sierra Leone: a cross-sectional study using a new non-invasive assay for antibodies to Ebola virus",
-                  "url": "https://pubmed.ncbi.nlm.nih.gov/28347469/",
-                  "doi": "10.1016/S1473-3099(17)30111-1",
-                  "country": "Sierra Leone",
-                  "year": 2017,
-                  "notes": "Glynn et al., The Lancet Infectious Diseases. Used a validated oral-fluid antibody assay in households from the West African epidemic and found only a small fraction of contacts with asymptomatic or unrecognised infection — roughly an order of magnitude below Leroy et al. The largest and best-controlled study of the question, and the main reason the consensus 'typical' here is set well below the meta-analytic pooled value. If the model is sensitive to this parameter, run it at both 0.03 and 0.27 rather than picking one."
+                  "notes": "Dean, Halloran, Yang & Longini, Clinical Infectious Diseases 62(10):1277-1286. Pooled estimate that 27.1% (95% CI 14.5-39.6) of Ebola infections are asymptomatic — the central meta-analytic value, sitting between the Leroy 46% and the Glynn 3%, and roughly an order of magnitude above the latter. The interval is wide because the underlying serosurveys are few and use heterogeneous, mostly unvalidated assays; the assay problem is the substantive reason to weight Glynn more heavily despite this being the formal meta-analysis. The same paper is the source for the household secondary attack rate figures cited in average_contacts_daily: overall SAR 12.5% (95% CI 8.6-16.3), but almost all of it driven by direct contact — SAR was 0.8% (95% CI 0-2.3) without direct contact and 47.9% (95% CI 23.3-72.6) where nursing care was provided. That gradient is the most useful quantity in this study for parameterizing contact structure, and is a stronger basis for a contact model than any daily contact rate. Also found a statistically significant decline in direct-contact household SAR between 1976 and 2014 (P = .018), likely reflecting changed care and burial behaviour rather than viral change. Authors conclude surveillance and containment should suffice for control."
                 }
               ]
             }
+          }
+        },
+        "dengue": {
+          "display_name": "Dengue",
+          "aliases": ["dengue fever", "denv", "dengue virus", "breakbone fever", "break-bone fever", "dengue haemorrhagic fever", "dengue hemorrhagic fever", "dhf", "severe dengue", "dengue shock syndrome", "dss"],
+          "parameters": {
+
+            "r0": {
+              "unit": "dimensionless",
+              "consensus": {
+                "min": 2.0293,
+                "max": 10.29,
+                "typical": 6.16,
+                "notes": "Band spans across all considered estimate ranges, excluding the Chile 2002 outbreak. Typical is the mean of the considered range."
+              },
+
+              "estimates": [
+                {
+                  "value": 3.44,
+                  "range": [2.03, 10.29],
+                  "population": "General",
+                  "source_type": "systematic_review",
+                  "title": "Reviewing estimates of the basic reproduction number for dengue, Zika and chikungunya across global climate zones",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/31927301/",
+                  "doi": "10.1016/j.envres.2020.109065",
+                  "country": "Multiple",
+                  "year": 2020,
+                  "notes": "65 studies included; mean R0 by climate zone was 3.44 tropical, 10.29 sub-tropical, 2.03 temperate. Value is the tropical mean and range is the span of the three zone means, NOT a confidence interval."
+                },
+
+                {
+                  "value": 5.44,
+                  "range": "N/A",
+                  "population": "General",
+                  "source_type": "modeling_study",
+                  "title": "A comparative analysis of three different methods for the estimation of the basic reproduction number of dengue",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/29928723/",
+                  "doi": "10.1016/j.idm.2016.08.002",
+                  "country": "Brazil",
+                  "year": 2016,
+                  "notes": "Sanches & Massad, Ribeirao Preto 2009-2010, fitted from the initial growth phase without assuming exponential growth. Three standard methods on the same data gave numerically different answers, so read any single dengue R0 as method-plus-data."
+                },
+
+                {
+                  "value": 27.2,
+                  "range": [14.8, 49.3],
+                  "population": "Fully susceptible island population, 2002 outbreak",
+                  "source_type": "modeling_study",
+                  "title": "The basic reproduction number R0 and effectiveness of reactive interventions during dengue epidemics: the 2002 dengue outbreak in Easter Island, Chile",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/24245625/",
+                  "doi": "10.3934/mbe.2013.10.1455",
+                  "country": "Chile",
+                  "year": 2013,
+                  "notes": "DO NOT USE AS A GENERAL VALUE: no prior dengue on Easter Island meant a genuinely naive population, a condition endemic settings never meet. Retained as the upper anchor on what a naive-population epidemic can do."
+                },
+
+                {
+                  "value": 2.99,
+                  "range": [2.0293, 6.5310],
+                  "population": "General, 2011 epidemic, pre-control",
+                  "source_type": "modeling_study",
+                  "title": "Estimating the basic reproduction number for single-strain dengue fever epidemics",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/24708869/",
+                  "doi": "10.1186/2049-9957-3-12",
+                  "country": "Pakistan",
+                  "year": 2014,
+                  "notes": "Khan, Hassan & Imran fitted the 2011 epidemic five ways (OLS and GLS on a vector-host ODE model; OLS, GLS and MCMC on a direct-transmission model) and every pre-control estimate fell between 2.95 and 3.08; value shown is the vector-host OLS figure of 2.9871. ROBUST POINT, WIDE INTERVAL: the range is the 95% CI from uncertainty analysis, so the cross-method agreement reflects a well-constrained fit rather than precision, and R0 was above unity with probability >99.9%."
+                }
+              ]
+            },
+
+            "incubation_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 3,
+                "max": 10,
+                "typical": 5.9,
+                "notes": "INTRINSIC incubation only. Treating the ~6-day IIP as the whole latent period runs the epidemic two to three times too fast at 25C."
+              },
+
+              "estimates": [
+                {
+                  "value": 5.9,
+                  "range": [3, 10],
+                  "population": "General, pooled human observations",
+                  "source_type": "systematic_review",
+                  "title": "The Incubation Periods of Dengue Viruses",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/23226436/",
+                  "doi": "10.1371/journal.pone.0050972",
+                  "country": "N/A",
+                  "year": 2012,
+                  "notes": "Chan & Johansson: 204 IIP observations from 35 studies fitted with censored Bayesian time-to-event models, mean 5.9 days with 95% between 3 and 10. No serotype differences detected; this is the reference estimate for the field."
+                },
+
+                {
+                  "value": 6.0,
+                  "range": [4.6, 7.4],
+                  "population": "DENV-4, experimentally infected volunteers",
+                  "source_type": "review_article",
+                  "title": "Natural History of Dengue Virus (DENV)-1 and DENV-4 Infections: Reanalysis of Classic Studies",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/17330791/",
+                  "doi": "10.1086/511825",
+                  "country": "Philippines",
+                  "year": 2007,
+                  "notes": "Nishiura & Halstead reanalysis of 1920s human challenge data: 6.0 days (SD 1.4) for DENV-4, corroborating the pooled mean from a different evidence type. Incubation correlated negatively with fever duration and severity, consistent with a dose-response mechanism."
+                },
+
+                {
+                  "value": 6,
+                  "range": [5, 7],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Clinical Features of Dengue",
+                  "url": "https://www.cdc.gov/dengue/hcp/clinical-signs/index.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2026,
+                  "notes": "CDC clinical guidance for health care providers. States dengue begins abruptly after a typical incubation period of 5-7 days, followed by three phases: febrile, critical, and recovery. Value shown is the midpoint of the stated typical range; the source gives no wider observed range, and standard references generally cite 3-14 days as the full span, so treat 5-7 as the modal window rather than the bounds. The same page supports other parameters in a dengue entry: roughly 1 in 4 infections are symptomatic (asymptomatic_fraction ~0.75), about 1 in 20 symptomatic patients progress to severe dengue, mortality in severe dengue can be reduced below 0.5% with prompt intravenous fluid support, and infection confers lifelong homotypic immunity but only months-to-years of heterotypic protection across the four DENV types — which means immunity_duration for dengue cannot be a single value and interacts with antibody-dependent enhancement on reinfection."
+                }
+              ]
+            },
 
 
-}
+            "infectious_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 1,
+                "max": 7,
+                "typical": 4.5,
+                "notes": "Duration over which a human can infect a feeding mosquito, running roughly 2 days before symptom onset to 5 days after, and applying to inapparent infections as well as symptomatic ones. Presymptomatic transmission is routine here, unlike the ebola entry, and PCR-positivity durations run longer than infectiousness and must not be substituted in."
+              },
 
+              "estimates": [
+                {
+                  "value": 4.5,
+                  "range": [1, 7],
+                  "population": "General, symptomatic infections",
+                  "source_type": "review_article",
+                  "title": "Dengue viremia kinetics in asymptomatic and symptomatic infection",
+                  "url": "https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+                  "doi": "10.1016/j.ijid.2020.09.1443",
+                  "country": "Thailand",
+                  "year": 2020,
+                  "notes": "Infectiousness estimated by mosquito transmission or viral isolation ranges 1-7 days with a mean of 4-5; value is the midpoint of that stated mean. Primary infections run longer than secondary, so endemic populations sit at the low end of the band."
+                },
+
+                {
+                  "value": 2.5,
+                  "range": [1, 5],
+                  "population": "Asymptomatic and presymptomatic DENV-infected individuals",
+                  "source_type": "modeling_study",
+                  "title": "Asymptomatic humans transmit dengue virus to mosquitoes",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/26553981/",
+                  "doi": "10.1073/pnas.1508114112",
+                  "country": "Cambodia",
+                  "year": 2015,
+                  "notes": "Dengue patients were infectious up to 5 d after the onset of symptoms."
+                }
+              ]
+            },
+
+##DOUBLE CHECK FOLLOWING
+            
+            "fatality_rate": {
+              "unit": "percentage",
+              "consensus": {
+                "min": 0.05,
+                "max": 20,
+                "typical": 0.07,
+                "notes": "Credible figures span three orders of magnitude purely by denominator: ~0.003% per infection, ~0.07% per reported case, under 1% per severe case with competent care, 10-20% per severe case without it. Typical is the crude reported CFR, and severe disease concentrates in secondary heterotypic infections, so a flat per-infection rate misplaces deaths in any population with mixed serotype history."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.07,
+                  "range": "N/A",
+                  "metric": "CFR",
+                  "population": "Reported cases, global surveillance 2024",
+                  "source_type": "review_article",
+                  "title": "Global dengue epidemic worsens with record 14 million cases and 9000 deaths reported in 2024",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/40449873/",
+                  "doi": "10.1016/j.tmaid.2025.102864",
+                  "country": "Multiple",
+                  "year": 2025,
+                  "notes": "WHO surveillance data for 2024: 14.1 million reported cases and 9,508 deaths, crude CFR 0.07%; WHO's own fact sheet gives over 14.6 million and more than 12,000 for the same year, which bounds how tight any dengue surveillance figure can be. A ratio of two undercounts, so use only as a crude-surveillance comparator."
+                },
+
+                {
+                  "value": 0.5,
+                  "range": [0.1, 1.0],
+                  "metric": "CFR",
+                  "population": "Severe dengue, with experienced clinical management",
+                  "source_type": "government_report",
+                  "title": "Dengue and severe dengue",
+                  "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2025,
+                  "notes": "WHO reports experienced case management cutting severe-dengue mortality from over 20% to under 1%, with CDC putting the well-managed figure at 0.1%; roughly 5% of dengue cases progress to severe. Value is a midpoint planning figure, and since care is purely supportive this is a clean natural experiment on fluid management alone."
+                },
+
+                {
+                  "value": 20,
+                  "range": [10, 20],
+                  "metric": "CFR",
+                  "population": "Severe dengue, untreated",
+                  "source_type": "government_report",
+                  "title": "Dengue and severe dengue",
+                  "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2025,
+                  "notes": "The untreated-severe anchor behind WHO's '20% to under 1%' framing; CDC gives up to 10%. LOW EVIDENTIARY QUALITY: no contemporary cohort goes untreated, so untreated status is confounded with late presentation and distance from care."
+                },
+
+                {
+                  "value": 25.0,
+                  "range": "N/A",
+                  "metric": "CFR",
+                  "population": "Dengue patients admitted to a medical ICU",
+                  "source_type": "review_article",
+                  "title": "Nine fatal cases of dengue: a case series from an intensive care unit in Sri Lanka",
+                  "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11605893/",
+                  "doi": "10.1186/s41182-024-00661-w",
+                  "country": "Sri Lanka",
+                  "year": 2024,
+                  "notes": "Of 1,722 ICU admissions over 30 months, 44 were dengue and 11 (25.0%) died, mainly from acute liver failure and shock. SEVERE SELECTION BIAS: an ICU denominator is compatible with the sub-1% severe-dengue figure rather than contradicting it, and neither transfers to the other's population."
+                }
+              ]
+            },
+
+            "average_contacts_daily": {
+              "unit": "contacts/day",
+              "consensus": {
+                "min": "N/A",
+                "max": "N/A",
+                "typical": "N/A",
+                "notes": "STRUCTURALLY INAPPLICABLE, not merely unmeasured: dengue has no human-to-human contact route, so any value here would be actively misleading rather than uncertain, and no default should be imputed. The transmission-relevant analogues are vector-to-human ratio, per-mosquito daily biting rate and per-bite transmission probabilities, which combine into vectorial capacity and belong in their own parameter block."
+                },
+
+              "estimates": []
+            },
+
+            "immunity_duration": {
+              "unit": "days",
+              "consensus": {
+                "min": 365,
+                "max": "lifelong",
+                "typical": "homotypic (same serotype): lifelong; heterotypic cross-protection: roughly 1-3 years, then reversion to susceptibility WITH ENHANCED SEVERITY RISK",
+                "notes": "DO NOT COLLAPSE TO A SINGLE WANING RATE: homotypic immunity is effectively lifelong while heterotypic cross-protection lasts roughly 1-3 years, and waning does not return people to baseline susceptibility but to an antibody-dependent-enhancement state with higher severe-disease risk. Vaccine-derived immunity is a further separate compartment that must be stratified by baseline serostatus and serotype, never pooled with natural infection."
+              },
+
+              "estimates": [
+                {
+                  "special_value": "lifelong",
+                  "range": [3650, "lifelong"],
+                  "population": "Homotypic — reinfection with the same serotype",
+                  "source_type": "review_article",
+                  "title": "Interactions between serotypes of dengue highlight epidemiological impact of cross-immunity",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/23825116/",
+                  "doi": "10.1098/rsif.2013.0414",
+                  "country": "Thailand",
+                  "year": 2013,
+                  "notes": "The standing and largely uncontested assumption: infection confers protective immunity to that serotype but not long-term protection against the other three. Evidence is the near-absence of documented same-serotype reinfection rather than a measured endpoint, so 'lifelong' is inference from non-observation."
+                },
+
+                {
+                  "value": 730,
+                  "range": [365, 1095],
+                  "population": "Heterotypic cross-protection against other serotypes",
+                  "source_type": "modeling_study",
+                  "title": "Interactions between serotypes of dengue highlight epidemiological impact of cross-immunity",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/23825116/",
+                  "doi": "10.1098/rsif.2013.0414",
+                  "country": "Thailand",
+                  "year": 2013,
+                  "notes": "Reich et al. fitted mechanistic models to 12,197 serotyped infections over 38 years in Bangkok and found strong evidence for cross-protection of approximately 1-3 years; 730 is the midpoint of that band, NOT a published point estimate. INFERRED FROM POPULATION DYNAMICS, so it is confounded with anything else producing multi-year serotype cycling — directionally solid, numerically soft."
+                },
+
+                {
+                  "value": 1642,
+                  "range": "N/A",
+                  "population": "Vaccinated individuals — TAK-003 (Qdenga), serostatus- and serotype-dependent",
+                  "source_type": "review_article",
+                  "title": "Dengue and severe dengue",
+                  "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2025,
+                  "notes": "PLACEHOLDER: 1642 days is the ~4.5-year trial follow-up horizon over which efficacy declined, not a fitted protection duration, and protection varies by serotype and baseline serostatus. The CYD-TDV precedent, where vaccinating seronegatives raised severe-disease risk enough to require pre-vaccination screening, is why the seronegative arm must be modeled separately rather than averaged in."
+                }
+              ]
+            },
+
+            "asymptomatic_fraction": {
+              "unit": "fraction",
+              "consensus": {
+                "min": 0.50,
+                "max": 0.87,
+                "typical": 0.75,
+                "notes": "Well-agreed at roughly three-quarters inapparent, with the residual spread reflecting where the line falls between asymptomatic and mild undifferentiated fever. OPPOSITE CONSEQUENCE TO THE EBOLA ENTRY: inapparent dengue infections do transmit, so raising this parameter enlarges an invisible transmitting compartment and makes case-detection-based control less effective, not more."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.754,
+                  "range": [0.65, 0.83],
+                  "population": "General, global infection burden 2010",
+                  "source_type": "modeling_study",
+                  "title": "The global distribution and burden of dengue",
+                  "url": "https://www.nature.com/articles/nature12060",
+                  "doi": "10.1038/nature12060",
+                  "country": "Multiple",
+                  "year": 2013,
+                  "notes": "Bhatt et al. estimated 390 million infections per year (95% CrI 284-528), of which 96 million (67-136) manifest apparently, giving an inapparent fraction of 0.754; range shown is approximate since numerator and denominator are not independent. Cartographic inference anchored on a modest set of cohort studies, never superseded despite a decade of much higher reported incidence."
+                },
+
+                {
+                  "value": 0.75,
+                  "range": "N/A",
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Severe Dengue 2015 Case Definition",
+                  "url": "https://ndc.services.cdc.gov/case-definitions/severe-dengue-2015/",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2015,
+                  "notes": "CDC gives ~75% of infections asymptomatic and ~5% of dengue cases progressing to severe. NOT INDEPENDENT of Bhatt — it restates the same burden estimate, so do not double-count; retained because the paired figures parameterize a severity cascade."
+                },
+
+                {
+                  "value": 0.75,
+                  "range": "N/A",
+                  "population": "Inapparent infections demonstrated infectious to mosquitoes",
+                  "source_type": "modeling_study",
+                  "title": "Asymptomatic humans transmit dengue virus to mosquitoes",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/26553981/",
+                  "doi": "10.1073/pnas.1508114112",
+                  "country": "Cambodia",
+                  "year": 2015,
+                  "notes": "NOT AN INDEPENDENT ESTIMATE: the 75% is quoted from Bhatt as the paper's premise, and this entry exists to attach the transmission finding to the parameter it modifies. Duong et al. overturned the dead-end-host assumption, which is why this fraction multiplies the transmitting population rather than subtracting from it."
+                }
+              ]
+            }
+          }
         }
+      }
 
 
 
@@ -3767,33 +4151,6 @@
 
 
 
-
-
-  "ebola": {
-    "aliases":["ebola virus disease", "evd"],
-    "r0":{
-      "min": 1.30,
-      "max": 2.70,
-      "typical": 1.88,
-      "note": "High IFR (25–90%).",
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4169395/"
-    },
-
-    "incubation_days":{
-      "min": 1,
-      "max": 21,
-      "typical": 6.2,
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/#s4"
-    },
-
-    "infectious_days":{
-      "min": 6.5,
-      "max": 21,
-      "typical": 9.4,
-      "note": "Typical is until resolution of wet symptoms",
-      "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/#s4"
-    }
-  },
 
   "dengue": {
     "aliases": ["dengue fever","breakbone fever"],
