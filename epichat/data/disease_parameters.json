@@ -3957,15 +3957,14 @@
               ]
             },
 
-##DOUBLE CHECK FOLLOWING
-            
+
             "fatality_rate": {
               "unit": "percentage",
               "consensus": {
                 "min": 0.05,
-                "max": 20,
+                "max": 25,
                 "typical": 0.07,
-                "notes": "Credible figures span three orders of magnitude purely by denominator: ~0.003% per infection, ~0.07% per reported case, under 1% per severe case with competent care, 10-20% per severe case without it. Typical is the crude reported CFR, and severe disease concentrates in secondary heterotypic infections, so a flat per-infection rate misplaces deaths in any population with mixed serotype history."
+                "notes": "Typical reported pertains to global surveillance data from WHO."
               },
 
               "estimates": [
@@ -3983,36 +3982,9 @@
                   "notes": "WHO surveillance data for 2024: 14.1 million reported cases and 9,508 deaths, crude CFR 0.07%; WHO's own fact sheet gives over 14.6 million and more than 12,000 for the same year, which bounds how tight any dengue surveillance figure can be. A ratio of two undercounts, so use only as a crude-surveillance comparator."
                 },
 
-                {
-                  "value": 0.5,
-                  "range": [0.1, 1.0],
-                  "metric": "CFR",
-                  "population": "Severe dengue, with experienced clinical management",
-                  "source_type": "government_report",
-                  "title": "Dengue and severe dengue",
-                  "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue",
-                  "doi": "N/A",
-                  "country": "N/A",
-                  "year": 2025,
-                  "notes": "WHO reports experienced case management cutting severe-dengue mortality from over 20% to under 1%, with CDC putting the well-managed figure at 0.1%; roughly 5% of dengue cases progress to severe. Value is a midpoint planning figure, and since care is purely supportive this is a clean natural experiment on fluid management alone."
-                },
 
                 {
-                  "value": 20,
-                  "range": [10, 20],
-                  "metric": "CFR",
-                  "population": "Severe dengue, untreated",
-                  "source_type": "government_report",
-                  "title": "Dengue and severe dengue",
-                  "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue",
-                  "doi": "N/A",
-                  "country": "N/A",
-                  "year": 2025,
-                  "notes": "The untreated-severe anchor behind WHO's '20% to under 1%' framing; CDC gives up to 10%. LOW EVIDENTIARY QUALITY: no contemporary cohort goes untreated, so untreated status is confounded with late presentation and distance from care."
-                },
-
-                {
-                  "value": 25.0,
+                  "value": 25,
                   "range": "N/A",
                   "metric": "CFR",
                   "population": "Dengue patients admitted to a medical ICU",
@@ -4023,6 +3995,20 @@
                   "country": "Sri Lanka",
                   "year": 2024,
                   "notes": "Of 1,722 ICU admissions over 30 months, 44 were dengue and 11 (25.0%) died, mainly from acute liver failure and shock. SEVERE SELECTION BIAS: an ICU denominator is compatible with the sub-1% severe-dengue figure rather than contradicting it, and neither transfers to the other's population."
+                },
+
+                {
+                  "value": 0.05,
+                  "range": [0.022, 0.072],
+                  "metric": "CFR",
+                  "population": "Reported dengue cases, Region of the Americas, 2023",
+                  "source_type": "health_organization_summary",
+                  "title": "Case fatality rate due to dengue (Impact Indicator 23), End of Biennium Report 2022-2023",
+                  "url": "https://pbdigital.paho.org/en/eob-2022-2023/impact-results/23-case-fatality-rate-due-dengue",
+                  "doi": "N/A",
+                  "country": "Multiple (Region of the Americas)",
+                  "year": 2023,
+                  "notes": "PAHO reported a regional CFR of 0.050% for 2023 against a 2012-2018 baseline of 0.056%, during the Region's most severe epidemic on record with over 4.4 million cases; range shown is the span of the reported trend line, NOT a confidence interval. UPWARD-BIASED DENOMINATOR: 14 countries report only laboratory-confirmed cases to PASB, so true case counts are higher and the real CFR lower, and this is a programme target indicator rather than an independent measurement."
                 }
               ]
             },
@@ -4051,7 +4037,7 @@
               "estimates": [
                 {
                   "special_value": "lifelong",
-                  "range": [3650, "lifelong"],
+                  "range": "N/A",
                   "population": "Homotypic — reinfection with the same serotype",
                   "source_type": "review_article",
                   "title": "Interactions between serotypes of dengue highlight epidemiological impact of cross-immunity",
@@ -4059,7 +4045,7 @@
                   "doi": "10.1098/rsif.2013.0414",
                   "country": "Thailand",
                   "year": 2013,
-                  "notes": "The standing and largely uncontested assumption: infection confers protective immunity to that serotype but not long-term protection against the other three. Evidence is the near-absence of documented same-serotype reinfection rather than a measured endpoint, so 'lifelong' is inference from non-observation."
+                  "notes": "Exposure to one virus induces lifelong immunity to all other members of that virus's serotype, but the interaction between serotypes is less clear."
                 },
 
                 {
@@ -4073,19 +4059,6 @@
                   "country": "Thailand",
                   "year": 2013,
                   "notes": "Reich et al. fitted mechanistic models to 12,197 serotyped infections over 38 years in Bangkok and found strong evidence for cross-protection of approximately 1-3 years; 730 is the midpoint of that band, NOT a published point estimate. INFERRED FROM POPULATION DYNAMICS, so it is confounded with anything else producing multi-year serotype cycling — directionally solid, numerically soft."
-                },
-
-                {
-                  "value": 1642,
-                  "range": "N/A",
-                  "population": "Vaccinated individuals — TAK-003 (Qdenga), serostatus- and serotype-dependent",
-                  "source_type": "review_article",
-                  "title": "Dengue and severe dengue",
-                  "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue",
-                  "doi": "N/A",
-                  "country": "N/A",
-                  "year": 2025,
-                  "notes": "PLACEHOLDER: 1642 days is the ~4.5-year trial follow-up horizon over which efficacy declined, not a fitted protection duration, and protection varies by serotype and baseline serostatus. The CYD-TDV precedent, where vaccinating seronegatives raised severe-disease risk enough to require pre-vaccination screening, is why the seronegative arm must be modeled separately rather than averaged in."
                 }
               ]
             },
@@ -4093,50 +4066,50 @@
             "asymptomatic_fraction": {
               "unit": "fraction",
               "consensus": {
-                "min": 0.50,
-                "max": 0.87,
-                "typical": 0.75,
-                "notes": "Well-agreed at roughly three-quarters inapparent, with the residual spread reflecting where the line falls between asymptomatic and mild undifferentiated fever. OPPOSITE CONSEQUENCE TO THE EBOLA ENTRY: inapparent dengue infections do transmit, so raising this parameter enlarges an invisible transmitting compartment and makes case-detection-based control less effective, not more."
+                "min": 0.08,
+                "max": 0.80,
+                "typical": 0.60,
+                "notes": "Typical value takem as the midpoint of the CDC's 40-80% range, which is itself a summary of the literature. The parameter is highly contested, with credible published estimates spanning more than an order of magnitude. The disagreement is largely methodological: seroprevalence studies in contacts pick up antibody-positive people who never reported illness, but recall of mild illness months after an epidemic is poor and dengue serological assays have known specificity problems in populations with high background reactivity. Studies using stricter case definitions and better-validated assays tend to land far lower than the early Gabon work."
               },
 
               "estimates": [
                 {
-                  "value": 0.754,
-                  "range": [0.65, 0.83],
-                  "population": "General, global infection burden 2010",
-                  "source_type": "modeling_study",
-                  "title": "The global distribution and burden of dengue",
-                  "url": "https://www.nature.com/articles/nature12060",
-                  "doi": "10.1038/nature12060",
+                  "value": 0.54,
+                  "range": "N/A",
+                  "population": "Dengue-infected persons, pooled across definitions and designs",
+                  "source_type": "systematic_review",
+                  "title": "Asymptomatic dengue infection rate: A systematic literature review",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/37809992/",
+                  "doi": "10.1016/j.heliyon.2023.e20069",
                   "country": "Multiple",
-                  "year": 2013,
-                  "notes": "Bhatt et al. estimated 390 million infections per year (95% CrI 284-528), of which 96 million (67-136) manifest apparently, giving an inapparent fraction of 0.754; range shown is approximate since numerator and denominator are not independent. Cartographic inference anchored on a modest set of cohort studies, never superseded despite a decade of much higher reported incidence."
+                  "year": 2023,
+                  "notes": "De Santis, Bouscaren & Flahault, 74 studies screened, mean asymptomatic proportion 54% across the 50 reporting it — well below the canonical 75% and the only formal systematic review of this parameter. UNWEIGHTED MEAN ACROSS INCOMPATIBLE DEFINITIONS: the review's central finding is that 'asymptomatic' has been used for clinically undetectable, undiagnosed and merely mild infection, so 54% pools three different quantities and should not be read as a corrected version of Bhatt."
                 },
 
                 {
-                  "value": 0.75,
+                  "value": 0.08,
                   "range": "N/A",
-                  "population": "General",
+                  "population": "Clinically undetectable laboratory-confirmed dengue infections (strict definition)",
+                  "source_type": "systematic_review",
+                  "title": "Asymptomatic dengue infection rate: A systematic literature review",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/37809992/",
+                  "doi": "10.1016/j.heliyon.2023.e20069",
+                  "country": "Multiple",
+                  "year": 2023,
+                  "notes": "Only 8% of infections were asymptomatic under the strict definition of clinically undetectable AND laboratory-confirmed, roughly an order of magnitude below the headline figure and the single strongest challenge to the 75% in this parameter. LOWER BOUND, NOT A REPLACEMENT: requiring laboratory confirmation in a person with no symptoms selects for active cohort surveillance designs, so this is the floor on truly silent infection rather than a corrected central estimate."
+                },
+
+                {
+                  "value": 0.60,
+                  "range": [0.40, 0.80],
+                  "population": "General, DENV infections",
                   "source_type": "government_report",
-                  "title": "Severe Dengue 2015 Case Definition",
-                  "url": "https://ndc.services.cdc.gov/case-definitions/severe-dengue-2015/",
+                  "title": "Dengue, CDC Yellow Book 2026: Health Information for International Travel",
+                  "url": "https://www.cdc.gov/yellow-book/hcp/travel-associated-infections-diseases/dengue.html",
                   "doi": "N/A",
                   "country": "United States",
-                  "year": 2015,
-                  "notes": "CDC gives ~75% of infections asymptomatic and ~5% of dengue cases progressing to severe. NOT INDEPENDENT of Bhatt — it restates the same burden estimate, so do not double-count; retained because the paired figures parameterize a severity cascade."
-                },
-
-                {
-                  "value": 0.75,
-                  "range": "N/A",
-                  "population": "Inapparent infections demonstrated infectious to mosquitoes",
-                  "source_type": "modeling_study",
-                  "title": "Asymptomatic humans transmit dengue virus to mosquitoes",
-                  "url": "https://pubmed.ncbi.nlm.nih.gov/26553981/",
-                  "doi": "10.1073/pnas.1508114112",
-                  "country": "Cambodia",
-                  "year": 2015,
-                  "notes": "NOT AN INDEPENDENT ESTIMATE: the 75% is quoted from Bhatt as the paper's premise, and this entry exists to attach the transmission finding to the parameter it modifies. Duong et al. overturned the dead-end-host assumption, which is why this fraction multiplies the transmitting population rather than subtracting from it."
+                  "year": 2025,
+                  "notes": "Sanchez-Gonzalez, Adams & Paz-Bailey state 40-80% of DENV infections are asymptomatic; value shown is the midpoint of that band, NOT a published point estimate. "
                 }
               ]
             }
@@ -4151,31 +4124,6 @@
 
 
 
-
-  "dengue": {
-    "aliases": ["dengue fever","breakbone fever"],
-    "r0":{
-      "min": 1.0,
-      "max": 103.0,
-      "typical": 4.74,
-      "note": "Vector-borne; note model limitations.",
-      "source": "https://www.sciencedirect.com/science/article/pii/S0013935120300050"
-    },
-
-    "incubation_days":{
-      "min": 3,
-      "max": 14,
-      "typical": 6,
-      "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
-    },
-
-    "infectious_days": {
-      "min": 2,
-      "max": 5,
-      "typical": 4,
-      "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
-    }
-  },
 
   "rsv": {
     "aliases": ["respiratory syncytial virus", "respiratory syncytial virus infection"],
