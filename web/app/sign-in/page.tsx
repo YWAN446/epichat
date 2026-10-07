@@ -1,12 +1,13 @@
 import { Brand } from "@/components/Brand";
+import { ForbiddenNotice } from "@/components/ForbiddenNotice";
 import { SignInForm } from "@/components/SignInForm";
 import { loadSettings } from "@/lib/config";
 
-type Props = { searchParams: Promise<{ declined?: string }> };
+type Props = { searchParams: Promise<{ declined?: string; forbidden?: string }> };
 
 export default async function SignInPage({ searchParams }: Props) {
   const settings = loadSettings();
-  const { declined } = await searchParams;
+  const { declined, forbidden } = await searchParams;
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
       <Brand size="large" />
@@ -14,6 +15,8 @@ export default async function SignInPage({ searchParams }: Props) {
         Ask an epidemiological question in plain language and get a validated Starsim simulation,
         grounded in real data. A research prototype from Emory University.
       </p>
+
+      {forbidden && <ForbiddenNotice contactEmail={settings.contactEmail} />}
 
       {declined && (
         <p className="mt-6 rounded-r-lg border-l-[3px] border-warn bg-warn-wash px-3.5 py-2.5 text-sm text-warn-ink">

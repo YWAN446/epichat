@@ -21,6 +21,8 @@ export type Settings = {
   simInternalUrl: string;
   simSharedSecret: string;
   evalBearerToken: string;
+  /** The bearer Vercel sends to cron routes when this is set. */
+  cronSecret: string;
 };
 
 type Env = Record<string, string | undefined>;
@@ -75,6 +77,7 @@ export function loadSettings(env: Env = process.env): Settings {
     simInternalUrl: env.SIM_INTERNAL_URL ?? "",
     simSharedSecret: env.SIM_SHARED_SECRET ?? "",
     evalBearerToken: env.EVAL_BEARER_TOKEN ?? "",
+    cronSecret: env.CRON_SECRET ?? "",
   };
 }
 

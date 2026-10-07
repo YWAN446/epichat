@@ -10,6 +10,7 @@ describe("deployment files", () => {
       "MAX_TOOL_ROUNDS=8", "MAX_PAUSE_CONTINUATIONS=5", "MONTHLY_BUDGET_USD=50", "DAILY_TURNS_PER_USER=40",
       "MAX_MESSAGE_CHARS=6000", "ALLOWED_EMAIL_DOMAINS=emory.edu", "RESEARCHER_EMAILS=", "UNLIMITED_EMAILS=",
       "REFUSAL_FALLBACK=1", "CONTACT_EMAIL=", "WEBSITE_URL=", "SIM_INTERNAL_URL=", "SIM_SHARED_SECRET=", "EVAL_BEARER_TOKEN=",
+      "CRON_SECRET=",
     ]) {
       expect(example).toContain(line);
     }
@@ -17,7 +18,7 @@ describe("deployment files", () => {
 
   it("the deploy document covers the Supabase auth settings the code depends on", () => {
     const doc = readFileSync("docs/DEPLOY.md", "utf8");
-    for (const phrase of ["Email OTP Length", "{{ .Token }}", "0001_init.sql", "smtp.resend.com", "Site URL", "RESEARCHER_EMAILS", "delete from"]) {
+    for (const phrase of ["Email OTP Length", "{{ .Token }}", "0001_init.sql", "smtp.resend.com", "Site URL", "RESEARCHER_EMAILS", "CRON_SECRET", "delete from"]) {
       expect(doc).toContain(phrase);
     }
   });

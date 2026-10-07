@@ -25,4 +25,12 @@ describe("sign-in by emailed code only", () => {
     expect(page).toContain("settings.contactEmail");
     expect(page).toContain("usability study");
   });
+
+  it("signs out an account that is not eligible and says so, instead of bouncing it between pages", () => {
+    expect(page).toContain("forbidden");
+    expect(page).toContain("<ForbiddenNotice");
+    const notice = readFileSync("components/ForbiddenNotice.tsx", "utf8");
+    expect(notice).toContain("auth.signOut()");
+    expect(notice).toContain("not eligible");
+  });
 });

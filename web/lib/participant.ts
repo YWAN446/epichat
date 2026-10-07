@@ -21,3 +21,16 @@ export function participantStatus(
   if (!profile || !profile.consented_at || profile.consent_version !== currentVersion) return "consent";
   return "ok";
 }
+
+/**
+ * Where to send a visitor who is not an enrolled participant, or null when
+ * they may stay. An ineligible account (unconfirmed, or a domain that is no
+ * longer allowed) is told why on the sign-in page and signed out there;
+ * otherwise it would bounce between the home page and the chat forever.
+ */
+export function redirectFor(status: ParticipantStatus): string | null {
+  if (status === "sign_in") return "/sign-in";
+  if (status === "forbidden") return "/sign-in?forbidden=1";
+  if (status === "consent") return "/consent";
+  return null;
+}

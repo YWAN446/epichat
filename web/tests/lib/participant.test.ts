@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadSettings } from "@/lib/config";
-import { participantStatus } from "@/lib/participant";
+import { participantStatus, redirectFor } from "@/lib/participant";
 
 const settings = loadSettings({});
 const user = { id: "u1", email: "student@emory.edu", email_confirmed_at: "2026-10-01T00:00:00Z" };
@@ -24,5 +24,14 @@ describe("participantStatus", () => {
 
   it("admits a confirmed, allowed, currently consented user", () => {
     expect(participantStatus(user, enrolled, settings, "2026-10-07")).toBe("ok");
+  });
+});
+
+describe("redirectFor", () => {
+  it("sends each status where it belongs, and tells the sign-in page why an ineligible account arrived", () => {
+    expect(redirectFor("sign_in")).toBe("/sign-in");
+    expect(redirectFor("forbidden")).toBe("/sign-in?forbidden=1");
+    expect(redirectFor("consent")).toBe("/consent");
+    expect(redirectFor("ok")).toBeNull();
   });
 });

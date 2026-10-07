@@ -1,6 +1,8 @@
 import { loadConsent, type ConsentText } from "./consent";
 import { loadSettings, type Settings } from "./config";
-import { participantStatus, type ParticipantStatus } from "./participant";
+import { participantStatus, redirectFor, type ParticipantStatus } from "./participant";
+
+export { redirectFor };
 import { supabaseProfileStore, type Profile } from "./profiles";
 import { adminClient } from "./supabase/admin";
 import { createClient } from "./supabase/server";
@@ -30,11 +32,4 @@ export async function loadParticipant(): Promise<Participant> {
     consent.version,
   );
   return { status, user: user ? { id: user.id, email: user.email ?? "" } : null, profile, settings, consent };
-}
-
-/** Where to send a visitor who is not an enrolled participant, or null when they may stay. */
-export function redirectFor(status: ParticipantStatus): string | null {
-  if (status === "sign_in" || status === "forbidden") return "/sign-in";
-  if (status === "consent") return "/consent";
-  return null;
 }

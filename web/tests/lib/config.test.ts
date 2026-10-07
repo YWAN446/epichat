@@ -22,6 +22,7 @@ describe("loadSettings", () => {
       simInternalUrl: "",
       simSharedSecret: "",
       evalBearerToken: "",
+      cronSecret: "",
     });
   });
 

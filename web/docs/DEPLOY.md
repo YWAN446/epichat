@@ -43,8 +43,10 @@ spend limit a little above `MONTHLY_BUDGET_USD` as the backstop.
 
 `web/.env.local` for local runs; the same variables go into Vercel for
 Production and Preview. Copy `web/.env.example` and fill in the Supabase keys,
-`CONTACT_EMAIL`, and `RESEARCHER_EMAILS` (the addresses that may open `/admin`).
-Every other setting has a default.
+`CONTACT_EMAIL`, `RESEARCHER_EMAILS` (the addresses that may open `/admin`),
+and `CRON_SECRET` (any long random string; Vercel sends it as a bearer token
+with every cron request, and `/api/health` reports the enrollment count only
+to that bearer). Every other setting has a default.
 
 ## 4. Vercel
 
@@ -72,7 +74,9 @@ Every other setting has a default.
   agreeing with a participant type opens `/chat`.
 - Table Editor: `profiles` has the row; `step_events` has `consent_given`,
   `session_start`; `sessions` has a row with the browser's user agent.
-- `/api/health` returns `{"ok":true,"participants":N}`.
+- `/api/health` returns `{"ok":true}` from a browser and
+  `{"ok":true,"participants":N}` when called with
+  `Authorization: Bearer <CRON_SECRET>` (as the Vercel cron does).
 - `/admin` opens for an address in `RESEARCHER_EMAILS` and is a 404 for
   anyone else.
 
