@@ -1,0 +1,25 @@
+# Nothing here is needed to build or run the web service.
+/.claude
+/.superpowers
+/.pytest_cache
+/.streamlit
+/__pycache__
+/docs
+/evals
+/results
+/tests
+/templates
+/epichat
+/scripts
+/assets
+/EpiChat website
+/web/tests
+*.pdf
+*.mp4
+*.txt
+*.py
+*.log
+
+.env
+.env.*
+!.env.example

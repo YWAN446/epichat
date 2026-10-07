@@ -25,3 +25,10 @@ user_pdf_text.txt
 /test_*.pdf
 
 evals/golden/results/
+
+# web app (Next.js)
+node_modules/
+.next/
+.vercel
+*.tsbuildinfo
+web/next-env.d.ts
