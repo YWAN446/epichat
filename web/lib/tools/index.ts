@@ -6,6 +6,7 @@ import { FetchHealthSystemInput, fetchHealthSystem } from "./fetchHealthSystem";
 import { FetchVaccinationCoverageInput, fetchVaccinationCoverage } from "./fetchVaccinationCoverage";
 import { LookupDiseaseInput, lookupDisease } from "./lookupDisease";
 import { RunSimulationInput, runSimulation } from "./runSimulation";
+import { errorMessage } from "./shared";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 const num = (description: string) => ({ type: ["number", "null"], description });
@@ -134,8 +135,10 @@ export async function executeTool(name: string, input: unknown, deps: ToolDeps, 
   let outcome: ToolOutcome;
   try {
     outcome = await entry.run(parsed.data as never, deps);
-  } catch {
-    outcome = { content: FAILED, isError: true, payload: { kind: "tool_error", message: FAILED } };
+  } catch (error) {
+    // The model gets the generic line; the stored payload and the function log keep the cause.
+    console.error(`tool ${name} threw`, error);
+    outcome = { content: FAILED, isError: true, payload: { kind: "tool_error", message: errorMessage(error) } };
   }
   const duration_ms = Math.max(0, now() - started);
   return outcome.payload ? { ...outcome, payload: { ...outcome.payload, duration_ms } } : outcome;

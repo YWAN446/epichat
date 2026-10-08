@@ -7,7 +7,8 @@ const MAX_SUGGESTIONS = 3;
 const MAX_CHARS = 80;
 const COMPLETE_BLOCK = /```next[ \t]*\n([\s\S]*?)\n?```/g;
 // A block that has started and not yet closed, or the first backticks of one.
-const ARRIVING_BLOCK = /\n*```(?:n(?:e(?:x(?:t[\s\S]*)?)?)?)?$|\n*`{1,2}$/;
+// Anchored to a line start so a backtick closing inline code is never taken for a fence.
+const ARRIVING_BLOCK = /(?:^|\n)[ \t]*```(?:n(?:e(?:x(?:t[\s\S]*)?)?)?)?$|(?:^|\n)[ \t]*`{1,2}$/;
 
 export function parseNext(text: string): string[] | null {
   const blocks = [...text.matchAll(COMPLETE_BLOCK)];

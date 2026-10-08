@@ -21,4 +21,10 @@ describe("next block", () => {
     expect(withoutNext("Here is code:\n```python\nprint(1)\n```")).toBe("Here is code:\n```python\nprint(1)\n```");
     expect(withoutNext("Open block:\n```python\nprint(1)\n```")).toContain("print(1)");
   });
+
+  it("leaves inline code at the end of a reply alone", () => {
+    expect(withoutNext("The parameter is `beta`")).toBe("The parameter is `beta`");
+    expect(withoutNext("Try setting `beta")).toBe("Try setting `beta");
+    expect(withoutNext("Use `beta`.\n\n```next\nRun it\n```")).toBe("Use `beta`.");
+  });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { TOOLS, executeTool } from "@/lib/tools";
 import { makeDeps } from "./helpers";
@@ -19,7 +19,7 @@ describe("tool registry", () => {
     expect((TOOLS[4].input_schema as { required: string[] }).required).toEqual(["country_iso3", "disease"]);
   });
 
-  it("refuses unknown tools and invalid input, and reports a thrown error as data", async () => {
+  it("refuses unknown tools and invalid input, and gates fetches on configuration", async () => {
     const deps = makeDeps();
     expect(await executeTool("nope", {}, deps)).toMatchObject({ isError: true, content: 'Unknown tool "nope".' });
     const invalid = await executeTool("lookup_disease", { disease_name: 5 }, deps);
@@ -30,6 +30,23 @@ describe("tool registry", () => {
     const broken = makeDeps({ unWpp: new Error("kaboom"), scenario: { ...deps.scenario, params: null } });
     const thrown = await executeTool("fetch_demographics", { country_iso3: "KEN" }, broken);
     expect(thrown.content).toMatch(/^Call configure_simulation first/);
+  });
+
+  it("reports a thrown tool error as data and logs it", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const deps = makeDeps({ simulate: new Error("simulate exploded") });
+      await executeTool("configure_simulation", { disease: "measles" }, deps);
+      const out = await executeTool("run_simulation", {}, deps);
+      expect(out).toMatchObject({
+        content: "This tool failed. Tell the user this part is temporarily unavailable.",
+        isError: true,
+        payload: { kind: "tool_error", message: "simulate exploded" },
+      });
+      expect(logged).toHaveBeenCalledTimes(1);
+    } finally {
+      logged.mockRestore();
+    }
   });
 
   it("treats null fields as not passed", async () => {
