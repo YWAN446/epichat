@@ -23,7 +23,8 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 os.environ.setdefault("EPICHAT_CACHE_DIR", str(Path(tempfile.gettempdir()) / "epichat-cache"))
 
-import starsim  # noqa: E402
+from importlib.metadata import version as _package_version  # noqa: E402
+
 from fastapi import Depends, FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.exceptions import RequestValidationError  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
@@ -32,8 +33,12 @@ from pydantic import BaseModel, Field  # noqa: E402
 from epichat.data_loaders.demographics import get_demographics_for_sim  # noqa: E402
 from epichat.schema import SimParams  # noqa: E402
 from series import scaled_outcome, thin  # noqa: E402
-from service import simulate  # noqa: E402
+from service import agent_years, exceeds_cap, simulate  # noqa: E402
 from settings import Settings, load_settings  # noqa: E402
+
+# Read from package metadata: importing starsim itself costs over a second
+# in the parent, which only ever runs it in a child process.
+STARSIM_VERSION = _package_version("starsim")
 
 app = FastAPI(title="EpiChat simulation service", docs_url=None, redoc_url=None)
 _state = {"served": False}
@@ -41,12 +46,18 @@ _state = {"served": False}
 
 class SimulateRequest(BaseModel):
     params: SimParams
-    pop_scale: float = Field(default=1.0, ge=1.0)
+    pop_scale: float = Field(default=1.0, ge=1.0, le=1e9)
     context_text: str = Field(default="", max_length=6000)
 
 
 def _error(status: int, kind: str, **extra) -> JSONResponse:
     return JSONResponse(status_code=status, content={"ok": False, "error": {"kind": kind, **extra}})
+
+
+@app.exception_handler(Exception)
+async def _unexpected_error(_: Request, exc: Exception) -> JSONResponse:
+    # Anything the loop did not classify still answers in the contract shape.
+    return _error(500, "execution_failed", detail=f"{type(exc).__name__}: {exc}")
 
 
 @app.exception_handler(HTTPException)
@@ -76,19 +87,19 @@ def require_bearer(request: Request) -> Settings:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "starsim_version": starsim.__version__,
+    return {"ok": True, "starsim_version": STARSIM_VERSION,
             "python_version": platform.python_version(), "cold_start": not _state["served"]}
 
 
 @app.post("/simulate")
 def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_bearer)):
-    agent_years = body.params.n_agents * body.params.sim_dur_years
-    if agent_years > settings.max_agent_years:
+    if exceeds_cap(body.params, settings):
+        requested = agent_years(body.params)
         return _error(
             422, "too_large",
-            detail=(f"n_agents × sim_dur_years = {agent_years:,.0f} exceeds the cap of "
+            detail=(f"n_agents × sim_dur_years = {requested:,.0f} exceeds the cap of "
                     f"{settings.max_agent_years:,.0f} agent-years; reduce n_agents or sim_dur_years"),
-            agent_years=agent_years, cap=settings.max_agent_years,
+            agent_years=requested, cap=settings.max_agent_years,
         )
     cold_start = not _state["served"]
     started = time.perf_counter()
@@ -116,7 +127,7 @@ def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_b
         "attempts": outcome.attempts,
         "duration_ms": duration_ms,
         "cold_start": cold_start,
-        "starsim_version": starsim.__version__,
+        "starsim_version": STARSIM_VERSION,
     }
 
 

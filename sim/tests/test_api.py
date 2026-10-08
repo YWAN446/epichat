@@ -129,6 +129,27 @@ def test_context_text_is_capped(client):
     assert r.status_code == 422 and r.json()["error"]["kind"] == "invalid_params"
 
 
+def test_unexpected_exception_keeps_the_json_error_contract(client, main, monkeypatch):
+    def exploding(params, context_text, settings, run=None, repair=None):
+        raise KeyError("n_infected")
+
+    monkeypatch.setattr(main, "simulate", exploding)
+    # Starlette re-raises unhandled exceptions into the test client after the handler answers;
+    # the client here must behave like a real client and only see the response.
+    r = TestClient(main.app, raise_server_exceptions=False).post("/simulate", json={"params": PARAMS}, headers=AUTH)
+    assert r.status_code == 500
+    assert r.headers["content-type"].startswith("application/json")
+    body = r.json()
+    assert body["ok"] is False and body["error"]["kind"] == "execution_failed"
+    assert "KeyError" in body["error"]["detail"]
+
+
+def test_absurd_pop_scale_is_rejected(client):
+    r = client.post("/simulate", content='{"params": %s, "pop_scale": 1e999}' % __import__("json").dumps(PARAMS),
+                    headers={**AUTH, "content-type": "application/json"})
+    assert r.status_code == 422 and r.json()["error"]["kind"] == "invalid_params"
+
+
 def test_demographics_from_the_csv_with_cache_redirected(client, monkeypatch, tmp_path):
     monkeypatch.setenv("EPICHAT_CACHE_DIR", str(tmp_path / "cache"))
     r = client.get("/demographics/ken", headers=AUTH)

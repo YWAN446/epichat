@@ -10,17 +10,32 @@ import tempfile
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from epichat.generator import CodeGenerator, resolve_demographics
-from epichat.parser import RepairResult, repair_params
 from epichat.schema import SimParams
 from runner import RunResult, run_script
 from series import stats_from
 from settings import Settings
 
+if TYPE_CHECKING:  # the Anthropic SDK is imported only when a repair actually happens
+    from epichat.parser import RepairResult
+
 Runner = Callable[[str, Path, float], RunResult]
-Repairer = Callable[[str, SimParams, str, str], RepairResult]
+Repairer = Callable[[str, SimParams, str, str], "RepairResult"]
+
+
+def agent_years(params: SimParams) -> float:
+    return params.n_agents * params.sim_dur_years
+
+
+def exceeds_cap(params: SimParams, settings: Settings) -> bool:
+    return agent_years(params) > settings.max_agent_years
+
+
+def _default_repairer() -> Repairer:
+    from epichat.parser import repair_params
+    return repair_params
 
 
 @dataclass
@@ -46,7 +61,7 @@ def _output_path() -> Path:
 
 
 def simulate(params: SimParams, context_text: str, settings: Settings,
-             run: Runner = run_script, repair: Repairer = repair_params) -> Outcome:
+             run: Runner = run_script, repair: Repairer | None = None) -> Outcome:
     params = resolve_demographics(params)
     repairs: list[dict] = []
     attempts = 0
@@ -71,17 +86,23 @@ def simulate(params: SimParams, context_text: str, settings: Settings,
         if attempts > settings.max_repairs:
             break
         try:
-            repaired = repair(context_text, params, last_error, settings.repair_model)
+            repaired = (repair or _default_repairer())(context_text, params, last_error, settings.repair_model)
         except Exception as e:
             repairs.append({"attempt": attempts, "error": last_error,
                             "repair_error": f"{type(e).__name__}: {e}"})
             return Outcome(False, 500, params, repairs=repairs, attempts=attempts, error=last_error)
+        if exceeds_cap(repaired.params, settings):
+            repairs.append({"attempt": attempts, "error": last_error,
+                            "repair_error": (f"repaired params exceed the cap of {settings.max_agent_years:,.0f} "
+                                             f"agent-years ({agent_years(repaired.params):,.0f})")})
+            return Outcome(False, 500, params, repairs=repairs, attempts=attempts, error=last_error)
+        after = resolve_demographics(repaired.params)   # diff what will actually run, not the model's raw echo
         repairs.append({
             "attempt": attempts, "error": last_error,
-            "changes": diff_params(params, repaired.params),
+            "changes": diff_params(params, after),
             "usage": {"model": repaired.model, "input_tokens": repaired.input_tokens,
                       "output_tokens": repaired.output_tokens},
         })
-        params = resolve_demographics(repaired.params)
+        params = after
 
     return Outcome(False, 500, params, repairs=repairs, attempts=attempts, error=last_error)

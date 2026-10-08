@@ -17,7 +17,10 @@ export type SimProbeRun = {
   error?: string;
 };
 
-const HEALTH_TIMEOUT_MS = 5_000;
+// The daily cron hits a cold Python instance; 5 s was not enough once the
+// platform's start-up is added, and a false "dead binding" is worse than a
+// slow check.
+export const HEALTH_TIMEOUT_MS = 15_000;
 const PROBE_TIMEOUT_MS = 280_000;
 
 export function parseProbeRun(raw: string | null): number | null {

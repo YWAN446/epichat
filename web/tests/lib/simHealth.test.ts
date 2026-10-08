@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { parseProbeRun, simHealth, simProbeRun } from "@/lib/sim/health";
+import { HEALTH_TIMEOUT_MS, parseProbeRun, simHealth, simProbeRun } from "@/lib/sim/health";
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
@@ -22,6 +22,10 @@ describe("parseProbeRun", () => {
 });
 
 describe("simHealth", () => {
+  it("waits long enough for a cold Python instance before calling the binding dead", () => {
+    expect(HEALTH_TIMEOUT_MS).toBeGreaterThanOrEqual(15_000);
+  });
+
   it("returns the service's health fields", async () => {
     const fetchImpl = fetchReturning(200, { ok: true, starsim_version: "3.3.2", python_version: "3.12.1", cold_start: true });
     expect(await simHealth("http://sim.internal", fetchImpl as unknown as typeof fetch)).toEqual({

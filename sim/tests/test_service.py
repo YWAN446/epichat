@@ -155,3 +155,25 @@ def test_effective_params_are_the_resolved_ones():
     out = simulate(_params(n_contacts=4), "x", SETTINGS, run=run, repair=FakeRepairer([]))
     assert out.effective_params.n_contacts == 4   # no country: resolve_demographics leaves them alone
     assert isinstance(out, Outcome)
+
+
+def test_repair_above_cap_is_not_run():
+    settings = load_settings({"SIM_SHARED_SECRET": "t", "SIM_MAX_AGENT_YEARS": "1000"})
+    run = FakeRunner([_fail("boom"), _ok()])
+    too_big = _params(n_agents=2000, sim_dur_years=1.0)   # 2,000 agent-years > cap 1,000
+    out = simulate(_params(n_agents=100, sim_dur_years=1.0), "x", settings, run=run, repair=FakeRepairer([_repair_to(too_big)]))
+    assert not out.ok and out.status == 500 and out.attempts == 1
+    assert len(run.calls) == 1
+    assert out.repairs[0]["attempt"] == 1 and "cap" in out.repairs[0]["repair_error"]
+    assert out.error == "boom"
+
+
+def test_repair_diff_ignores_what_demographics_resolution_fills_in(monkeypatch, tmp_path):
+    monkeypatch.setenv("EPICHAT_CACHE_DIR", str(tmp_path / "cache"))
+    before = _params(country="KEN", dur_inf=10.0)
+    repaired = _params(country="KEN", dur_inf=11.0)   # the model changed one field and echoed nothing else
+    run = FakeRunner([_fail("err"), _ok()])
+    out = simulate(before, "x", SETTINGS, run=run, repair=FakeRepairer([_repair_to(repaired)]))
+    assert out.ok
+    assert out.repairs[0]["changes"] == [{"field": "dur_inf", "from": 10.0, "to": 11.0}]
+    assert out.effective_params.use_demographics is True and out.effective_params.country == "KEN"

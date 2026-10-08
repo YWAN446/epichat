@@ -12,3 +12,16 @@ for path in (str(SIM), str(ROOT)):
 
 os.environ.setdefault("SIM_SHARED_SECRET", "test")
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key-never-used")
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _fresh_demographics_cache():
+    """The package memoizes country lookups in-process; without this, a test
+    that looked up a country decides what a later test sees and whether its
+    cache file gets written."""
+    from epichat.data_loaders import demographics
+    demographics.get_country_demographics.cache_clear()
+    yield
+    demographics.get_country_demographics.cache_clear()
