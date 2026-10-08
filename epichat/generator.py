@@ -75,14 +75,24 @@ class CodeGenerator:
             "sis":   "sis.py.j2",
         }.get(params.disease_type, "sir.py.j2")
 
-    def generate(self, params: SimParams, output_path: str, pop_scale: float = 1.0) -> str:
-        """Render the appropriate Jinja2 template and return executable Python code."""
+    def generate(self, params: SimParams, output_path: str, pop_scale: float = 1.0,
+                 output_mode: str = "plot") -> str:
+        """Render the appropriate Jinja2 template and return executable Python code.
+
+        output_mode "plot" (default) writes a PNG to output_path and prints the
+        stats line, as the CLI and the Streamlit app expect. output_mode "json"
+        writes {"stats", "series"} as JSON to output_path instead and never
+        imports matplotlib; the simulation service uses it.
+        """
+        if output_mode not in ("plot", "json"):
+            raise ValueError(f"output_mode must be 'plot' or 'json', got {output_mode!r}")
         params = resolve_demographics(params)          # auto-fill country demographics
         template_name = self._select_template(params)
         template = self._env.get_template(template_name)
         context = params.to_template_dict()
         context["output_path"] = output_path.replace("\\", "/")
         context["pop_scale"] = pop_scale
+        context["output_mode"] = output_mode
         return template.render(**context)
 
 

@@ -1,8 +1,6 @@
 import starsim as ss
-{% if output_mode == 'plot' -%}
 import matplotlib
 matplotlib.use('Agg')
-{% endif -%}
 import json
 import numpy as np
 
@@ -64,66 +62,40 @@ class SIRS(ss.SIR):
 interventions_list = []
 connectors_list = []
 
-{% if seasonality_int %}
+
 connectors_list.append(ss.seasonality(
     diseases='sirs',
-    scale={{ seasonality_int.scale }},
-    shift={{ seasonality_int.shift }},
+    scale=0.2,
+    shift=0.1,
 ))
-{% endif %}
 
-{% if vaccine and vaccine.start_day > 0 %}
-_product = ss.simple_vx(efficacy=1.0)
-_vax_start_year = 2000 + {{ vaccine.start_day }} / 365
-interventions_list.append(ss.routine_vx(
-    product=_product,
-    prob={{ vaccine.coverage }},
-    start_year=_vax_start_year,
-))
-{% endif %}
+
+
 
 # ── Network ───────────────────────────────────────────────────────────────────
-{% if network_type == 'age_structured' %}
-_age_groups = {
-    'children': ss.AgeGroup(0, 18),
-    'adults':   ss.AgeGroup(18, 65),
-    'elderly':  ss.AgeGroup(65, None),
-}
-_contact_matrix = np.array([
-    [7.0, 2.5, 0.5],
-    [2.5, 9.0, 1.5],
-    [0.5, 1.5, 3.5],
-]) * {{ network_beta }}
-_network = ss.MixingPools(diseases='sirs', src=_age_groups, dst=_age_groups,
-                          n_contacts=_contact_matrix, beta=1.0)
-{% else %}
-_network = dict(type='random', n_contacts={{ n_contacts }}, beta={{ network_beta }})
-{% endif %}
+
+_network = dict(type='random', n_contacts=6, beta=1.0)
+
 
 # ── Simulation parameters ─────────────────────────────────────────────────────
 disease = SIRS(
-    init_prev={{ init_prev }},
-    beta={{ beta }},
-    dur_inf=ss.constant({{ dur_inf }}),
-    dur_immune=ss.constant({{ dur_immune }}),
-    p_death={{ p_death }},
+    init_prev=0.01,
+    beta=0.05,
+    dur_inf=ss.constant(10.0),
+    dur_immune=ss.constant(90.0),
+    p_death=0.0,
 )
 
 pars = dict(
-    n_agents={{ n_agents }},
+    n_agents=2000,
     networks=_network,
     diseases=[disease],
-{% if use_demographics %}
-    demographics=[
-        ss.Births(birth_rate={{ birth_rate }}),
-        ss.Deaths(death_rate={{ death_rate }}),
-    ],
-{% endif %}
-    dur={{ sim_dur_years }},
+
+    dur=0.5,
     dt=1/365,
-{% if rand_seed is not none %}
-    rand_seed={{ rand_seed }},
-{% endif %}
+
+    rand_seed=7,
+
 )
 
 if interventions_list:
@@ -132,38 +104,19 @@ if interventions_list:
 sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
 sim.init()
 
-{% if vaccine and vaccine.start_day <= 0 %}
+
 _d = list(sim.diseases.values())[0]
 _sus = _d.susceptible.uids
-_n_vax = int({{ vaccine.coverage }} * len(_sus))
-{% if rand_seed is not none %}
-_rng = np.random.default_rng({{ rand_seed }})
-{% else %}
-_rng = np.random.default_rng()
-{% endif %}
+_n_vax = int(0.3 * len(_sus))
+
+_rng = np.random.default_rng(7)
+
 _vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
 _d.susceptible[ss.uids(_vax_uids)] = False
 _d.recovered[ss.uids(_vax_uids)]   = True
-{% endif %}
 
-{% if age_pct_under18 is not none and network_type == 'age_structured' %}
-_n = len(sim.people)
-_n_c = round({{ age_pct_under18 }} / 100 * _n)
-_n_e = round({{ age_pct_over65  }} / 100 * _n)
-_n_a = max(0, _n - _n_c - _n_e)
-{% if rand_seed is not none %}
-_rng_age = np.random.default_rng({{ rand_seed }} + 1)
-{% else %}
-_rng_age = np.random.default_rng()
-{% endif %}
-_ages = np.concatenate([
-    _rng_age.uniform(0, 18, _n_c),
-    _rng_age.uniform(18, 65, _n_a),
-    _rng_age.uniform(65, 95, _n_e),
-])
-_rng_age.shuffle(_ages)
-sim.people.age[:] = _ages[:_n]
-{% endif %}
+
+
 
 sim.run()
 
@@ -174,4 +127,88 @@ n_infected     = dr['n_infected'].values
 cum_infections = dr['cum_infections'].values
 cum_deaths = res['cum_deaths'].values if 'cum_deaths' in res else np.zeros(len(res['timevec']))
 
-{% include "_output.py.j2" %}
+import matplotlib.pyplot as plt
+
+_dis_key = list(sim.diseases.keys())[0]
+_dr = sim.results[_dis_key]
+_rs = sim.results
+_days = np.arange(len(_rs['timevec']))
+
+fig, axes = plt.subplots(3, 3, figsize=(15, 10))
+_ax = axes.flatten()
+
+# (0,0) All compartments overview
+for _k, _c, _l in [
+    ('n_susceptible',  'steelblue',  'Susceptible'),
+    ('n_exposed',      'gold',       'Exposed'),
+    ('n_infected',     'firebrick',  'Infectious'),
+    ('n_asymptomatic', 'darkorange', 'Asymptomatic'),
+    ('n_recovered',    'seagreen',   'Recovered'),
+]:
+    if _k in _dr:
+        _ax[0].plot(_days, _dr[_k].values, color=_c, label=_l)
+_ax[0].set_title('All compartments')
+_ax[0].set_xlabel('Day')
+_ax[0].legend(fontsize=7)
+
+# (0,1) Susceptible
+_ax[1].set_title('Susceptible')
+_ax[1].set_xlabel('Day')
+if 'n_susceptible' in _dr:
+    _ax[1].plot(_days, _dr['n_susceptible'].values, color='steelblue')
+
+# (0,2) Infectious
+_ax[2].set_title('Infectious')
+_ax[2].set_xlabel('Day')
+if 'n_infected' in _dr:
+    _ax[2].plot(_days, _dr['n_infected'].values, color='firebrick')
+
+# (1,0) Recovered
+_ax[3].set_title('Recovered')
+_ax[3].set_xlabel('Day')
+if 'n_recovered' in _dr:
+    _ax[3].plot(_days, _dr['n_recovered'].values, color='seagreen')
+
+# (1,1) Prevalence
+_ax[4].set_title('Prevalence (%)')
+_ax[4].set_xlabel('Day')
+if 'prevalence' in _dr:
+    _ax[4].plot(_days, _dr['prevalence'].values * 100, color='firebrick')
+
+# (1,2) New infections per day
+_ax[5].set_title('New infections / day')
+_ax[5].set_xlabel('Day')
+if 'new_infections' in _dr:
+    _ax[5].plot(_days, _dr['new_infections'].values, color='steelblue')
+
+# (2,0) Cumulative infections
+_ax[6].set_title('Cumulative infections')
+_ax[6].set_xlabel('Day')
+if 'cum_infections' in _dr:
+    _ax[6].plot(_days, _dr['cum_infections'].values, color='steelblue')
+
+# (2,1) New deaths per day
+_ax[7].set_title('New deaths / day')
+_ax[7].set_xlabel('Day')
+if 'new_deaths' in _rs:
+    _ax[7].plot(_days, _rs['new_deaths'].values, color='darkred')
+
+# (2,2) Cumulative deaths
+_ax[8].set_title('Cumulative deaths')
+_ax[8].set_xlabel('Day')
+if 'cum_deaths' in _rs:
+    _ax[8].plot(_days, _rs['cum_deaths'].values, color='darkred')
+
+fig.suptitle(_dis_key.upper() + ' Simulation', fontsize=13, y=1.01)
+fig.tight_layout()
+fig.savefig(r'results/sim_fixture.png', dpi=150, bbox_inches='tight')
+plt.close(fig)
+
+print(json.dumps({
+    'peak_infections': int(n_infected.max()),
+    'peak_day':        int(n_infected.argmax()),
+    'total_infected':  int(cum_infections[-1]),
+    'total_deaths':    int(cum_deaths[-1]),
+    'n_agents':        2000,
+    'sim_days':        len(res['timevec']),
+}))
