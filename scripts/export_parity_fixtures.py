@@ -130,6 +130,12 @@ def params_cases(rng: random.Random) -> list[dict]:
         for target in (1.5, 3.0, 15.0):
             beta = max(0.001, min(1000.0, _calibrate_beta(p, target)))
             calibrate.append({"target_r0": target, "beta": round(beta, 6)})
+        # approx_r0 comes from numpy's eigvals, whose last bits differ between
+        # BLAS builds (Windows vs Linux CI). Nine decimals is far below the
+        # TypeScript test's 1e-6 tolerance and stable across platforms; the
+        # recalibration takes the same rounded value so both sides compute
+        # from identical inputs.
+        r0 = round(p.approx_r0(), 9)
         recalibrate = []
         switched = dict(p.model_dump())
         if p.network_type == "random":
@@ -138,9 +144,9 @@ def params_cases(rng: random.Random) -> list[dict]:
             switched.update({"network_type": "random"})
         for after_input in (switched, {**p.model_dump(), "beta": round(p.beta * 1.7, 4)}):
             after = SimParams.model_validate(after_input)
-            rec = recalibrate_beta(after, p.approx_r0(), p)
-            recalibrate.append({"r0_before": p.approx_r0(), "before": p.model_dump(), "after_input": after.model_dump(), "beta": rec.beta})
-        cases.append({"input": p.model_dump(), "approx_r0": p.approx_r0(), "calibrate": calibrate, "recalibrate": recalibrate})
+            rec = recalibrate_beta(after, r0, p)
+            recalibrate.append({"r0_before": r0, "before": p.model_dump(), "after_input": after.model_dump(), "beta": rec.beta})
+        cases.append({"input": p.model_dump(), "approx_r0": r0, "calibrate": calibrate, "recalibrate": recalibrate})
     return cases
 
 

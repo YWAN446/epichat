@@ -30,7 +30,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 6.47895250410959,
+   "approx_r0": 6.478952504,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -47,7 +47,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 6.47895250410959,
+     "r0_before": 6.478952504,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -107,7 +107,7 @@
      "beta": 118.611269
     },
     {
-     "r0_before": 6.47895250410959,
+     "r0_before": 6.478952504,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -197,7 +197,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 8.89256074520548,
+   "approx_r0": 8.892560745,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -214,7 +214,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 8.89256074520548,
+     "r0_before": 8.892560745,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -274,7 +274,7 @@
      "beta": 158.300428
     },
     {
-     "r0_before": 8.89256074520548,
+     "r0_before": 8.892560745,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -364,7 +364,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 40.479376849315074,
+   "approx_r0": 40.479376849,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -381,7 +381,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 40.479376849315074,
+     "r0_before": 40.479376849,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -441,7 +441,7 @@
      "beta": 153.173272
     },
     {
-     "r0_before": 40.479376849315074,
+     "r0_before": 40.479376849,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -531,7 +531,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 0.8584321873305678,
+   "approx_r0": 0.858432187,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -548,7 +548,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 0.8584321873305678,
+     "r0_before": 0.858432187,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -608,7 +608,7 @@
      "beta": 1.860064
     },
     {
-     "r0_before": 0.8584321873305678,
+     "r0_before": 0.858432187,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -698,7 +698,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.777137671232876,
+   "approx_r0": 5.777137671,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -715,7 +715,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.777137671232876,
+     "r0_before": 5.777137671,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -775,7 +775,7 @@
      "beta": 220.287489
     },
     {
-     "r0_before": 5.777137671232876,
+     "r0_before": 5.777137671,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -865,7 +865,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.85040906849315,
+   "approx_r0": 5.850409068,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -882,7 +882,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.85040906849315,
+     "r0_before": 5.850409068,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -942,7 +942,7 @@
      "beta": 91.953062
     },
     {
-     "r0_before": 5.85040906849315,
+     "r0_before": 5.850409068,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -1032,7 +1032,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 6.632035315068493,
+   "approx_r0": 6.632035315,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -1049,7 +1049,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 6.632035315068493,
+     "r0_before": 6.632035315,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -1109,7 +1109,7 @@
      "beta": 31.587325
     },
     {
-     "r0_before": 6.632035315068493,
+     "r0_before": 6.632035315,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -1199,7 +1199,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 11.112652599170346,
+   "approx_r0": 11.112652599,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -1216,7 +1216,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 11.112652599170346,
+     "r0_before": 11.112652599,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -1276,7 +1276,7 @@
      "beta": 44.861958
     },
     {
-     "r0_before": 11.112652599170346,
+     "r0_before": 11.112652599,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -1366,7 +1366,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 49.83483956164384,
+   "approx_r0": 49.834839562,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -1383,7 +1383,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 49.83483956164384,
+     "r0_before": 49.834839562,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -1443,7 +1443,7 @@
      "beta": 388.00241
     },
     {
-     "r0_before": 49.83483956164384,
+     "r0_before": 49.834839562,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -1533,7 +1533,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 67.49375016929207,
+   "approx_r0": 67.493750169,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -1550,7 +1550,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 67.49375016929207,
+     "r0_before": 67.493750169,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -1610,7 +1610,7 @@
      "beta": 149.940468
     },
     {
-     "r0_before": 67.49375016929207,
+     "r0_before": 67.493750169,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -1700,7 +1700,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 0.3610275945205479,
+   "approx_r0": 0.361027595,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -1717,7 +1717,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 0.3610275945205479,
+     "r0_before": 0.361027595,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -1777,7 +1777,7 @@
      "beta": 8.134637
     },
     {
-     "r0_before": 0.3610275945205479,
+     "r0_before": 0.361027595,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -1867,7 +1867,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 18.56988371209683,
+   "approx_r0": 18.569883712,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -1884,7 +1884,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 18.56988371209683,
+     "r0_before": 18.569883712,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -1944,7 +1944,7 @@
      "beta": 31.171852
     },
     {
-     "r0_before": 18.56988371209683,
+     "r0_before": 18.569883712,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -2034,7 +2034,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 344.0235423945205,
+   "approx_r0": 344.023542395,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -2051,7 +2051,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 344.0235423945205,
+     "r0_before": 344.023542395,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -2111,7 +2111,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 344.0235423945205,
+     "r0_before": 344.023542395,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -2201,7 +2201,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 103.99781182191781,
+   "approx_r0": 103.997811822,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -2218,7 +2218,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 103.99781182191781,
+     "r0_before": 103.997811822,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -2278,7 +2278,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 103.99781182191781,
+     "r0_before": 103.997811822,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -2368,7 +2368,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 98.38865477132686,
+   "approx_r0": 98.388654771,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -2385,7 +2385,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 98.38865477132686,
+     "r0_before": 98.388654771,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -2445,7 +2445,7 @@
      "beta": 68.131017
     },
     {
-     "r0_before": 98.38865477132686,
+     "r0_before": 98.388654771,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -2535,7 +2535,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.550630728022728,
+   "approx_r0": 10.550630728,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -2552,7 +2552,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.550630728022728,
+     "r0_before": 10.550630728,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -2612,7 +2612,7 @@
      "beta": 159.460878
     },
     {
-     "r0_before": 10.550630728022728,
+     "r0_before": 10.550630728,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -2702,7 +2702,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 69.72417139783578,
+   "approx_r0": 69.724171398,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -2719,7 +2719,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 69.72417139783578,
+     "r0_before": 69.724171398,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -2779,7 +2779,7 @@
      "beta": 284.032618
     },
     {
-     "r0_before": 69.72417139783578,
+     "r0_before": 69.724171398,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -2869,7 +2869,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 167.53844691703668,
+   "approx_r0": 167.538446917,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -2886,7 +2886,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 167.53844691703668,
+     "r0_before": 167.538446917,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -2946,7 +2946,7 @@
      "beta": 906.299054
     },
     {
-     "r0_before": 167.53844691703668,
+     "r0_before": 167.538446917,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -3036,7 +3036,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.729133282674187,
+   "approx_r0": 9.729133283,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -3053,7 +3053,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.729133282674187,
+     "r0_before": 9.729133283,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -3113,7 +3113,7 @@
      "beta": 11.149556
     },
     {
-     "r0_before": 9.729133282674187,
+     "r0_before": 9.729133283,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -3203,7 +3203,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 22.305839054794514,
+   "approx_r0": 22.305839055,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -3220,7 +3220,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 22.305839054794514,
+     "r0_before": 22.305839055,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -3280,7 +3280,7 @@
      "beta": 222.166259
     },
     {
-     "r0_before": 22.305839054794514,
+     "r0_before": 22.305839055,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -3370,7 +3370,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 18.730726175342465,
+   "approx_r0": 18.730726175,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -3387,7 +3387,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 18.730726175342465,
+     "r0_before": 18.730726175,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -3447,7 +3447,7 @@
      "beta": 132.567933
     },
     {
-     "r0_before": 18.730726175342465,
+     "r0_before": 18.730726175,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -3537,7 +3537,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.250491712529062,
+   "approx_r0": 9.250491713,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -3554,7 +3554,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.250491712529062,
+     "r0_before": 9.250491713,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -3614,7 +3614,7 @@
      "beta": 19.034782
     },
     {
-     "r0_before": 9.250491712529062,
+     "r0_before": 9.250491713,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -3704,7 +3704,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 4.33718507929576,
+   "approx_r0": 4.337185079,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -3721,7 +3721,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 4.33718507929576,
+     "r0_before": 4.337185079,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -3781,7 +3781,7 @@
      "beta": 8.233591
     },
     {
-     "r0_before": 4.33718507929576,
+     "r0_before": 4.337185079,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -3871,7 +3871,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 63.601316812639034,
+   "approx_r0": 63.601316813,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -3888,7 +3888,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 63.601316812639034,
+     "r0_before": 63.601316813,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -3948,7 +3948,7 @@
      "beta": 210.753342
     },
     {
-     "r0_before": 63.601316812639034,
+     "r0_before": 63.601316813,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -4038,7 +4038,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 11.609349698630137,
+   "approx_r0": 11.609349699,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -4055,7 +4055,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 11.609349698630137,
+     "r0_before": 11.609349699,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -4115,7 +4115,7 @@
      "beta": 173.981575
     },
     {
-     "r0_before": 11.609349698630137,
+     "r0_before": 11.609349699,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -4205,7 +4205,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 191.53111758904114,
+   "approx_r0": 191.531117589,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -4222,7 +4222,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 191.53111758904114,
+     "r0_before": 191.531117589,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -4282,7 +4282,7 @@
      "beta": 412.516736
     },
     {
-     "r0_before": 191.53111758904114,
+     "r0_before": 191.531117589,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -4372,7 +4372,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 19.28473498356164,
+   "approx_r0": 19.284734984,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -4389,7 +4389,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 19.28473498356164,
+     "r0_before": 19.284734984,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -4449,7 +4449,7 @@
      "beta": 91.444594
     },
     {
-     "r0_before": 19.28473498356164,
+     "r0_before": 19.284734984,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -4539,7 +4539,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 272.4053811781027,
+   "approx_r0": 272.405381178,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -4556,7 +4556,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 272.4053811781027,
+     "r0_before": 272.405381178,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -4616,7 +4616,7 @@
      "beta": 909.845938
     },
     {
-     "r0_before": 272.4053811781027,
+     "r0_before": 272.405381178,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -4706,7 +4706,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 305.4736470157151,
+   "approx_r0": 305.473647016,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -4723,7 +4723,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 305.4736470157151,
+     "r0_before": 305.473647016,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -4783,7 +4783,7 @@
      "beta": 521.573383
     },
     {
-     "r0_before": 305.4736470157151,
+     "r0_before": 305.473647016,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -4873,7 +4873,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 53.95185841312539,
+   "approx_r0": 53.951858413,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -4890,7 +4890,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 53.95185841312539,
+     "r0_before": 53.951858413,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -4950,7 +4950,7 @@
      "beta": 81.724885
     },
     {
-     "r0_before": 53.95185841312539,
+     "r0_before": 53.951858413,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -5040,7 +5040,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 357.77673452054796,
+   "approx_r0": 357.776734521,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -5057,7 +5057,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 357.77673452054796,
+     "r0_before": 357.776734521,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -5117,7 +5117,7 @@
      "beta": 620.440601
     },
     {
-     "r0_before": 357.77673452054796,
+     "r0_before": 357.776734521,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -5207,7 +5207,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 42.06207020482741,
+   "approx_r0": 42.062070205,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -5224,7 +5224,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 42.06207020482741,
+     "r0_before": 42.062070205,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -5284,7 +5284,7 @@
      "beta": 95.795436
     },
     {
-     "r0_before": 42.06207020482741,
+     "r0_before": 42.062070205,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -5374,7 +5374,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 12.236718258147945,
+   "approx_r0": 12.236718258,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -5391,7 +5391,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 12.236718258147945,
+     "r0_before": 12.236718258,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -5451,7 +5451,7 @@
      "beta": 143.383396
     },
     {
-     "r0_before": 12.236718258147945,
+     "r0_before": 12.236718258,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -5541,7 +5541,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 124.66576050410957,
+   "approx_r0": 124.665760504,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -5558,7 +5558,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 124.66576050410957,
+     "r0_before": 124.665760504,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -5618,7 +5618,7 @@
      "beta": 286.097397
     },
     {
-     "r0_before": 124.66576050410957,
+     "r0_before": 124.665760504,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -5708,7 +5708,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 11.493236301369866,
+   "approx_r0": 11.493236301,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -5725,7 +5725,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 11.493236301369866,
+     "r0_before": 11.493236301,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -5785,7 +5785,7 @@
      "beta": 51.078502
     },
     {
-     "r0_before": 11.493236301369866,
+     "r0_before": 11.493236301,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -5875,7 +5875,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.655700602739725,
+   "approx_r0": 5.655700603,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -5892,7 +5892,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.655700602739725,
+     "r0_before": 5.655700603,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -5952,7 +5952,7 @@
      "beta": 93.933067
     },
     {
-     "r0_before": 5.655700602739725,
+     "r0_before": 5.655700603,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -6042,7 +6042,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 115.22814948657282,
+   "approx_r0": 115.228149487,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -6059,7 +6059,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 115.22814948657282,
+     "r0_before": 115.228149487,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -6119,7 +6119,7 @@
      "beta": 78.672418
     },
     {
-     "r0_before": 115.22814948657282,
+     "r0_before": 115.228149487,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -6209,7 +6209,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 115.86400232054794,
+   "approx_r0": 115.864002321,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -6226,7 +6226,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 115.86400232054794,
+     "r0_before": 115.864002321,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -6286,7 +6286,7 @@
      "beta": 727.366662
     },
     {
-     "r0_before": 115.86400232054794,
+     "r0_before": 115.864002321,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -6376,7 +6376,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 48.322381781497,
+   "approx_r0": 48.322381781,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -6393,7 +6393,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 48.322381781497,
+     "r0_before": 48.322381781,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -6453,7 +6453,7 @@
      "beta": 206.278601
     },
     {
-     "r0_before": 48.322381781497,
+     "r0_before": 48.322381781,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -6543,7 +6543,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 30.554921293150684,
+   "approx_r0": 30.554921293,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -6560,7 +6560,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 30.554921293150684,
+     "r0_before": 30.554921293,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -6620,7 +6620,7 @@
      "beta": 208.580159
     },
     {
-     "r0_before": 30.554921293150684,
+     "r0_before": 30.554921293,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -6710,7 +6710,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 37.16572043835617,
+   "approx_r0": 37.165720438,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -6727,7 +6727,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 37.16572043835617,
+     "r0_before": 37.165720438,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -6787,7 +6787,7 @@
      "beta": 343.616173
     },
     {
-     "r0_before": 37.16572043835617,
+     "r0_before": 37.165720438,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -6877,7 +6877,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 221.38262219178083,
+   "approx_r0": 221.382622192,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -6894,7 +6894,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 221.38262219178083,
+     "r0_before": 221.382622192,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -6954,7 +6954,7 @@
      "beta": 627.360088
     },
     {
-     "r0_before": 221.38262219178083,
+     "r0_before": 221.382622192,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -7044,7 +7044,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 11.765157904109591,
+   "approx_r0": 11.765157904,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -7061,7 +7061,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 11.765157904109591,
+     "r0_before": 11.765157904,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -7121,7 +7121,7 @@
      "beta": 304.482427
     },
     {
-     "r0_before": 11.765157904109591,
+     "r0_before": 11.765157904,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -7211,7 +7211,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 59.19310468516534,
+   "approx_r0": 59.193104685,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -7228,7 +7228,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 59.19310468516534,
+     "r0_before": 59.193104685,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -7288,7 +7288,7 @@
      "beta": 80.228308
     },
     {
-     "r0_before": 59.19310468516534,
+     "r0_before": 59.193104685,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -7378,7 +7378,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 23.134176389990312,
+   "approx_r0": 23.13417639,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -7395,7 +7395,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 23.134176389990312,
+     "r0_before": 23.13417639,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -7455,7 +7455,7 @@
      "beta": 28.749234
     },
     {
-     "r0_before": 23.134176389990312,
+     "r0_before": 23.13417639,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -7545,7 +7545,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 75.97553316164384,
+   "approx_r0": 75.975533162,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -7562,7 +7562,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 75.97553316164384,
+     "r0_before": 75.975533162,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -7622,7 +7622,7 @@
      "beta": 265.507418
     },
     {
-     "r0_before": 75.97553316164384,
+     "r0_before": 75.975533162,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -7712,7 +7712,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 54.782571287671225,
+   "approx_r0": 54.782571288,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -7729,7 +7729,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 54.782571287671225,
+     "r0_before": 54.782571288,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -7789,7 +7789,7 @@
      "beta": 136.408665
     },
     {
-     "r0_before": 54.782571287671225,
+     "r0_before": 54.782571288,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -7879,7 +7879,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 8.601323989041095,
+   "approx_r0": 8.601323989,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -7896,7 +7896,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 8.601323989041095,
+     "r0_before": 8.601323989,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -7956,7 +7956,7 @@
      "beta": 655.952539
     },
     {
-     "r0_before": 8.601323989041095,
+     "r0_before": 8.601323989,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -8046,7 +8046,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 222.72742829589043,
+   "approx_r0": 222.727428296,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -8063,7 +8063,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 222.72742829589043,
+     "r0_before": 222.727428296,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -8123,7 +8123,7 @@
      "beta": 831.566012
     },
     {
-     "r0_before": 222.72742829589043,
+     "r0_before": 222.727428296,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -8213,7 +8213,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 87.04550684931506,
+   "approx_r0": 87.045506849,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -8230,7 +8230,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 87.04550684931506,
+     "r0_before": 87.045506849,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -8290,7 +8290,7 @@
      "beta": 112.18639
     },
     {
-     "r0_before": 87.04550684931506,
+     "r0_before": 87.045506849,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -8380,7 +8380,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 322.25938310136985,
+   "approx_r0": 322.259383101,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -8397,7 +8397,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 322.25938310136985,
+     "r0_before": 322.259383101,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -8457,7 +8457,7 @@
      "beta": 372.699048
     },
     {
-     "r0_before": 322.25938310136985,
+     "r0_before": 322.259383101,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -8547,7 +8547,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 22.82661889130959,
+   "approx_r0": 22.826618891,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -8564,7 +8564,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 22.82661889130959,
+     "r0_before": 22.826618891,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -8624,7 +8624,7 @@
      "beta": 897.939278
     },
     {
-     "r0_before": 22.82661889130959,
+     "r0_before": 22.826618891,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -8714,7 +8714,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 4.928867960796321,
+   "approx_r0": 4.928867961,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -8731,7 +8731,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 4.928867960796321,
+     "r0_before": 4.928867961,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -8791,7 +8791,7 @@
      "beta": 12.347542
     },
     {
-     "r0_before": 4.928867960796321,
+     "r0_before": 4.928867961,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -8881,7 +8881,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 8.60770635400838,
+   "approx_r0": 8.607706354,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -8898,7 +8898,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 8.60770635400838,
+     "r0_before": 8.607706354,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -8958,7 +8958,7 @@
      "beta": 24.622358
     },
     {
-     "r0_before": 8.60770635400838,
+     "r0_before": 8.607706354,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -9048,7 +9048,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 1.6628384033202563,
+   "approx_r0": 1.662838403,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -9065,7 +9065,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 1.6628384033202563,
+     "r0_before": 1.662838403,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -9125,7 +9125,7 @@
      "beta": 2.993519
     },
     {
-     "r0_before": 1.6628384033202563,
+     "r0_before": 1.662838403,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -9215,7 +9215,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 78.76169961643835,
+   "approx_r0": 78.761699616,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -9232,7 +9232,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 78.76169961643835,
+     "r0_before": 78.761699616,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -9292,7 +9292,7 @@
      "beta": 578.075259
     },
     {
-     "r0_before": 78.76169961643835,
+     "r0_before": 78.761699616,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -9382,7 +9382,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.504229413589555,
+   "approx_r0": 5.504229414,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -9399,7 +9399,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.504229413589555,
+     "r0_before": 5.504229414,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -9459,7 +9459,7 @@
      "beta": 174.547675
     },
     {
-     "r0_before": 5.504229413589555,
+     "r0_before": 5.504229414,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -9549,7 +9549,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 26.305441117808222,
+   "approx_r0": 26.305441118,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -9566,7 +9566,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 26.305441117808222,
+     "r0_before": 26.305441118,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -9626,7 +9626,7 @@
      "beta": 70.749373
     },
     {
-     "r0_before": 26.305441117808222,
+     "r0_before": 26.305441118,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -9716,7 +9716,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 180.77788696130148,
+   "approx_r0": 180.777886961,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -9733,7 +9733,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 180.77788696130148,
+     "r0_before": 180.777886961,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -9793,7 +9793,7 @@
      "beta": 213.498766
     },
     {
-     "r0_before": 180.77788696130148,
+     "r0_before": 180.777886961,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -9883,7 +9883,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 44.74864986618361,
+   "approx_r0": 44.748649866,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -9900,7 +9900,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 44.74864986618361,
+     "r0_before": 44.748649866,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -9960,7 +9960,7 @@
      "beta": 66.704473
     },
     {
-     "r0_before": 44.74864986618361,
+     "r0_before": 44.748649866,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -10050,7 +10050,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 41.03513733594349,
+   "approx_r0": 41.035137336,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -10067,7 +10067,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 41.03513733594349,
+     "r0_before": 41.035137336,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -10127,7 +10127,7 @@
      "beta": 172.834354
     },
     {
-     "r0_before": 41.03513733594349,
+     "r0_before": 41.035137336,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -10217,7 +10217,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 120.10222306849317,
+   "approx_r0": 120.102223068,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -10234,7 +10234,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 120.10222306849317,
+     "r0_before": 120.102223068,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -10294,7 +10294,7 @@
      "beta": 235.674024
     },
     {
-     "r0_before": 120.10222306849317,
+     "r0_before": 120.102223068,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -10384,7 +10384,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 106.56189062739728,
+   "approx_r0": 106.561890627,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -10401,7 +10401,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 106.56189062739728,
+     "r0_before": 106.561890627,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -10461,7 +10461,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 106.56189062739728,
+     "r0_before": 106.561890627,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -10551,7 +10551,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 7.410143868493152,
+   "approx_r0": 7.410143868,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -10568,7 +10568,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 7.410143868493152,
+     "r0_before": 7.410143868,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -10628,7 +10628,7 @@
      "beta": 139.015657
     },
     {
-     "r0_before": 7.410143868493152,
+     "r0_before": 7.410143868,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -10718,7 +10718,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 41.81598833424657,
+   "approx_r0": 41.815988334,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -10735,7 +10735,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 41.81598833424657,
+     "r0_before": 41.815988334,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -10795,7 +10795,7 @@
      "beta": 230.51101
     },
     {
-     "r0_before": 41.81598833424657,
+     "r0_before": 41.815988334,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -10885,7 +10885,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 61.887581556164385,
+   "approx_r0": 61.887581556,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -10902,7 +10902,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 61.887581556164385,
+     "r0_before": 61.887581556,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -10962,7 +10962,7 @@
      "beta": 448.606508
     },
     {
-     "r0_before": 61.887581556164385,
+     "r0_before": 61.887581556,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -11052,7 +11052,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 1.930660506849315,
+   "approx_r0": 1.930660507,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -11069,7 +11069,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 1.930660506849315,
+     "r0_before": 1.930660507,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -11129,7 +11129,7 @@
      "beta": 19.214539
     },
     {
-     "r0_before": 1.930660506849315,
+     "r0_before": 1.930660507,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -11219,7 +11219,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 29.724497074093804,
+   "approx_r0": 29.724497074,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -11236,7 +11236,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 29.724497074093804,
+     "r0_before": 29.724497074,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -11296,7 +11296,7 @@
      "beta": 593.839159
     },
     {
-     "r0_before": 29.724497074093804,
+     "r0_before": 29.724497074,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -11386,7 +11386,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.512928222052023,
+   "approx_r0": 10.512928222,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -11403,7 +11403,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.512928222052023,
+     "r0_before": 10.512928222,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -11463,7 +11463,7 @@
      "beta": 31.875804
     },
     {
-     "r0_before": 10.512928222052023,
+     "r0_before": 10.512928222,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -11553,7 +11553,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 161.11353599999998,
+   "approx_r0": 161.113536,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -11570,7 +11570,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 161.11353599999998,
+     "r0_before": 161.113536,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -11630,7 +11630,7 @@
      "beta": 720.996832
     },
     {
-     "r0_before": 161.11353599999998,
+     "r0_before": 161.113536,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -11720,7 +11720,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 1.2722627182779132,
+   "approx_r0": 1.272262718,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -11737,7 +11737,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 1.2722627182779132,
+     "r0_before": 1.272262718,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -11797,7 +11797,7 @@
      "beta": 7.000993
     },
     {
-     "r0_before": 1.2722627182779132,
+     "r0_before": 1.272262718,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -11887,7 +11887,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 65.42288423013699,
+   "approx_r0": 65.42288423,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -11904,7 +11904,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 65.42288423013699,
+     "r0_before": 65.42288423,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -11964,7 +11964,7 @@
      "beta": 339.446949
     },
     {
-     "r0_before": 65.42288423013699,
+     "r0_before": 65.42288423,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -12054,7 +12054,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 27.73387622465753,
+   "approx_r0": 27.733876225,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -12071,7 +12071,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 27.73387622465753,
+     "r0_before": 27.733876225,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -12131,7 +12131,7 @@
      "beta": 138.382121
     },
     {
-     "r0_before": 27.73387622465753,
+     "r0_before": 27.733876225,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -12221,7 +12221,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 321.0918901424933,
+   "approx_r0": 321.091890142,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -12238,7 +12238,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 321.0918901424933,
+     "r0_before": 321.091890142,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -12298,7 +12298,7 @@
      "beta": 433.586903
     },
     {
-     "r0_before": 321.0918901424933,
+     "r0_before": 321.091890142,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -12388,7 +12388,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 67.19032426506001,
+   "approx_r0": 67.190324265,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -12405,7 +12405,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 67.19032426506001,
+     "r0_before": 67.190324265,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -12465,7 +12465,7 @@
      "beta": 238.009204
     },
     {
-     "r0_before": 67.19032426506001,
+     "r0_before": 67.190324265,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -12555,7 +12555,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 17.687412475201256,
+   "approx_r0": 17.687412475,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -12572,7 +12572,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 17.687412475201256,
+     "r0_before": 17.687412475,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -12632,7 +12632,7 @@
      "beta": 105.886593
     },
     {
-     "r0_before": 17.687412475201256,
+     "r0_before": 17.687412475,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -12722,7 +12722,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 71.50967592328769,
+   "approx_r0": 71.509675923,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -12739,7 +12739,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 71.50967592328769,
+     "r0_before": 71.509675923,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -12799,7 +12799,7 @@
      "beta": 325.435837
     },
     {
-     "r0_before": 71.50967592328769,
+     "r0_before": 71.509675923,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -12889,7 +12889,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 53.05935834324381,
+   "approx_r0": 53.059358343,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -12906,7 +12906,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 53.05935834324381,
+     "r0_before": 53.059358343,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -12966,7 +12966,7 @@
      "beta": 125.399286
     },
     {
-     "r0_before": 53.05935834324381,
+     "r0_before": 53.059358343,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -13056,7 +13056,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 0.5026457808949403,
+   "approx_r0": 0.502645781,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -13073,7 +13073,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 0.5026457808949403,
+     "r0_before": 0.502645781,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -13133,7 +13133,7 @@
      "beta": 3.8226
     },
     {
-     "r0_before": 0.5026457808949403,
+     "r0_before": 0.502645781,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -13223,7 +13223,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 69.92370859593323,
+   "approx_r0": 69.923708596,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -13240,7 +13240,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 69.92370859593323,
+     "r0_before": 69.923708596,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -13300,7 +13300,7 @@
      "beta": 785.780592
     },
     {
-     "r0_before": 69.92370859593323,
+     "r0_before": 69.923708596,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -13390,7 +13390,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 2.8467103733552768,
+   "approx_r0": 2.846710373,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -13407,7 +13407,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 2.8467103733552768,
+     "r0_before": 2.846710373,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -13467,7 +13467,7 @@
      "beta": 12.013519
     },
     {
-     "r0_before": 2.8467103733552768,
+     "r0_before": 2.846710373,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -13557,7 +13557,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 53.14002183354076,
+   "approx_r0": 53.140021834,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -13574,7 +13574,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 53.14002183354076,
+     "r0_before": 53.140021834,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -13634,7 +13634,7 @@
      "beta": 80.495136
     },
     {
-     "r0_before": 53.14002183354076,
+     "r0_before": 53.140021834,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -13724,7 +13724,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 35.7947954682367,
+   "approx_r0": 35.794795468,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -13741,7 +13741,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 35.7947954682367,
+     "r0_before": 35.794795468,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -13801,7 +13801,7 @@
      "beta": 38.121791
     },
     {
-     "r0_before": 35.7947954682367,
+     "r0_before": 35.794795468,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -13891,7 +13891,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 4.005543260273973,
+   "approx_r0": 4.00554326,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -13908,7 +13908,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 4.005543260273973,
+     "r0_before": 4.00554326,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -13968,7 +13968,7 @@
      "beta": 58.398673
     },
     {
-     "r0_before": 4.005543260273973,
+     "r0_before": 4.00554326,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -14058,7 +14058,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 51.523420856339726,
+   "approx_r0": 51.523420856,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -14075,7 +14075,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 51.523420856339726,
+     "r0_before": 51.523420856,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -14135,7 +14135,7 @@
      "beta": 251.520253
     },
     {
-     "r0_before": 51.523420856339726,
+     "r0_before": 51.523420856,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -14225,7 +14225,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 4.460110610638339,
+   "approx_r0": 4.460110611,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -14242,7 +14242,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 4.460110610638339,
+     "r0_before": 4.460110611,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -14302,7 +14302,7 @@
      "beta": 31.845469
     },
     {
-     "r0_before": 4.460110610638339,
+     "r0_before": 4.460110611,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -14392,7 +14392,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 25.752959993212798,
+   "approx_r0": 25.752959993,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -14409,7 +14409,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 25.752959993212798,
+     "r0_before": 25.752959993,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -14469,7 +14469,7 @@
      "beta": 19.711102
     },
     {
-     "r0_before": 25.752959993212798,
+     "r0_before": 25.752959993,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -14559,7 +14559,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 515.9760733150686,
+   "approx_r0": 515.976073315,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -14576,7 +14576,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 515.9760733150686,
+     "r0_before": 515.976073315,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -14636,7 +14636,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 515.9760733150686,
+     "r0_before": 515.976073315,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -14726,7 +14726,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 6.639539572602741,
+   "approx_r0": 6.639539573,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -14743,7 +14743,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 6.639539572602741,
+     "r0_before": 6.639539573,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -14803,7 +14803,7 @@
      "beta": 115.016155
     },
     {
-     "r0_before": 6.639539572602741,
+     "r0_before": 6.639539573,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -14893,7 +14893,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 3.4372920547945207,
+   "approx_r0": 3.437292055,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -14910,7 +14910,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 3.4372920547945207,
+     "r0_before": 3.437292055,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -14970,7 +14970,7 @@
      "beta": 201.366661
     },
     {
-     "r0_before": 3.4372920547945207,
+     "r0_before": 3.437292055,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -15060,7 +15060,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 4.963493148686515,
+   "approx_r0": 4.963493149,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -15077,7 +15077,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 4.963493148686515,
+     "r0_before": 4.963493149,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -15137,7 +15137,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 4.963493148686515,
+     "r0_before": 4.963493149,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -15227,7 +15227,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 91.45242525735438,
+   "approx_r0": 91.452425257,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -15244,7 +15244,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 91.45242525735438,
+     "r0_before": 91.452425257,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -15304,7 +15304,7 @@
      "beta": 193.687683
     },
     {
-     "r0_before": 91.45242525735438,
+     "r0_before": 91.452425257,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -15394,7 +15394,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 3.096262134246575,
+   "approx_r0": 3.096262134,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -15411,7 +15411,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 3.096262134246575,
+     "r0_before": 3.096262134,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -15471,7 +15471,7 @@
      "beta": 59.649309
     },
     {
-     "r0_before": 3.096262134246575,
+     "r0_before": 3.096262134,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -15561,7 +15561,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 43.746951452054795,
+   "approx_r0": 43.746951452,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -15578,7 +15578,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 43.746951452054795,
+     "r0_before": 43.746951452,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -15638,7 +15638,7 @@
      "beta": 341.296289
     },
     {
-     "r0_before": 43.746951452054795,
+     "r0_before": 43.746951452,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -15728,7 +15728,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 11.954755049285701,
+   "approx_r0": 11.954755049,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -15745,7 +15745,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 11.954755049285701,
+     "r0_before": 11.954755049,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -15805,7 +15805,7 @@
      "beta": 53.083766
     },
     {
-     "r0_before": 11.954755049285701,
+     "r0_before": 11.954755049,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -15895,7 +15895,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 45.79733777511712,
+   "approx_r0": 45.797337775,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -15912,7 +15912,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 45.79733777511712,
+     "r0_before": 45.797337775,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -15972,7 +15972,7 @@
      "beta": 590.88117
     },
     {
-     "r0_before": 45.79733777511712,
+     "r0_before": 45.797337775,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -16062,7 +16062,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 27.317374337426834,
+   "approx_r0": 27.317374337,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -16079,7 +16079,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 27.317374337426834,
+     "r0_before": 27.317374337,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -16139,7 +16139,7 @@
      "beta": 50.370647
     },
     {
-     "r0_before": 27.317374337426834,
+     "r0_before": 27.317374337,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -16229,7 +16229,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.131230202739726,
+   "approx_r0": 9.131230203,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -16246,7 +16246,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.131230202739726,
+     "r0_before": 9.131230203,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -16306,7 +16306,7 @@
      "beta": 122.334242
     },
     {
-     "r0_before": 9.131230202739726,
+     "r0_before": 9.131230203,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -16396,7 +16396,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 1.0500141138164385,
+   "approx_r0": 1.050014114,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -16413,7 +16413,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 1.0500141138164385,
+     "r0_before": 1.050014114,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -16473,7 +16473,7 @@
      "beta": 82.096573
     },
     {
-     "r0_before": 1.0500141138164385,
+     "r0_before": 1.050014114,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -16563,7 +16563,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.645933129104195,
+   "approx_r0": 10.645933129,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -16580,7 +16580,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.645933129104195,
+     "r0_before": 10.645933129,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -16640,7 +16640,7 @@
      "beta": 49.817508
     },
     {
-     "r0_before": 10.645933129104195,
+     "r0_before": 10.645933129,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -16730,7 +16730,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 28.206039351452805,
+   "approx_r0": 28.206039351,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -16747,7 +16747,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 28.206039351452805,
+     "r0_before": 28.206039351,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -16807,7 +16807,7 @@
      "beta": 96.936492
     },
     {
-     "r0_before": 28.206039351452805,
+     "r0_before": 28.206039351,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -16897,7 +16897,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 18.65866939745628,
+   "approx_r0": 18.658669397,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -16914,7 +16914,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 18.65866939745628,
+     "r0_before": 18.658669397,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -16974,7 +16974,7 @@
      "beta": 21.694287
     },
     {
-     "r0_before": 18.65866939745628,
+     "r0_before": 18.658669397,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -17064,7 +17064,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 119.64743065479453,
+   "approx_r0": 119.647430655,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -17081,7 +17081,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 119.64743065479453,
+     "r0_before": 119.647430655,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -17141,7 +17141,7 @@
      "beta": 320.858409
     },
     {
-     "r0_before": 119.64743065479453,
+     "r0_before": 119.647430655,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -17231,7 +17231,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.324005071215108,
+   "approx_r0": 10.324005071,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -17248,7 +17248,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.324005071215108,
+     "r0_before": 10.324005071,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -17308,7 +17308,7 @@
      "beta": 4.548185
     },
     {
-     "r0_before": 10.324005071215108,
+     "r0_before": 10.324005071,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -17398,7 +17398,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 27.93487627751313,
+   "approx_r0": 27.934876278,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -17415,7 +17415,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 27.93487627751313,
+     "r0_before": 27.934876278,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -17475,7 +17475,7 @@
      "beta": 27.54249
     },
     {
-     "r0_before": 27.93487627751313,
+     "r0_before": 27.934876278,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -17565,7 +17565,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 91.6648082191781,
+   "approx_r0": 91.664808219,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -17582,7 +17582,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 91.6648082191781,
+     "r0_before": 91.664808219,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -17642,7 +17642,7 @@
      "beta": 624.417861
     },
     {
-     "r0_before": 91.6648082191781,
+     "r0_before": 91.664808219,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -17732,7 +17732,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 86.24984531506848,
+   "approx_r0": 86.249845315,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -17749,7 +17749,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 86.24984531506848,
+     "r0_before": 86.249845315,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -17809,7 +17809,7 @@
      "beta": 105.948267
     },
     {
-     "r0_before": 86.24984531506848,
+     "r0_before": 86.249845315,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -17899,7 +17899,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 108.10647526575343,
+   "approx_r0": 108.106475266,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -17916,7 +17916,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 108.10647526575343,
+     "r0_before": 108.106475266,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -17976,7 +17976,7 @@
      "beta": 327.373788
     },
     {
-     "r0_before": 108.10647526575343,
+     "r0_before": 108.106475266,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -18066,7 +18066,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 58.515094980821914,
+   "approx_r0": 58.515094981,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -18083,7 +18083,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 58.515094980821914,
+     "r0_before": 58.515094981,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -18143,7 +18143,7 @@
      "beta": 215.719947
     },
     {
-     "r0_before": 58.515094980821914,
+     "r0_before": 58.515094981,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -18233,7 +18233,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 132.80943834311557,
+   "approx_r0": 132.809438343,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -18250,7 +18250,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 132.80943834311557,
+     "r0_before": 132.809438343,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -18310,7 +18310,7 @@
      "beta": 85.074491
     },
     {
-     "r0_before": 132.80943834311557,
+     "r0_before": 132.809438343,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -18400,7 +18400,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.326511520390411,
+   "approx_r0": 5.32651152,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -18417,7 +18417,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.326511520390411,
+     "r0_before": 5.32651152,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -18477,7 +18477,7 @@
      "beta": 66.5632
     },
     {
-     "r0_before": 5.326511520390411,
+     "r0_before": 5.32651152,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -18567,7 +18567,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.879141689969651,
+   "approx_r0": 5.87914169,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -18584,7 +18584,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.879141689969651,
+     "r0_before": 5.87914169,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -18644,7 +18644,7 @@
      "beta": 2.56458
     },
     {
-     "r0_before": 5.879141689969651,
+     "r0_before": 5.87914169,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -18734,7 +18734,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 267.3631396562628,
+   "approx_r0": 267.363139656,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -18751,7 +18751,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 267.3631396562628,
+     "r0_before": 267.363139656,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -18811,7 +18811,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 267.3631396562628,
+     "r0_before": 267.363139656,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -18901,7 +18901,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 845.4609475068493,
+   "approx_r0": 845.460947507,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -18918,7 +18918,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 845.4609475068493,
+     "r0_before": 845.460947507,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -18978,7 +18978,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 845.4609475068493,
+     "r0_before": 845.460947507,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -19068,7 +19068,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 144.03025171342105,
+   "approx_r0": 144.030251713,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -19085,7 +19085,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 144.03025171342105,
+     "r0_before": 144.030251713,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -19145,7 +19145,7 @@
      "beta": 101.19767
     },
     {
-     "r0_before": 144.03025171342105,
+     "r0_before": 144.030251713,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -19235,7 +19235,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 242.22694635616438,
+   "approx_r0": 242.226946356,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -19252,7 +19252,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 242.22694635616438,
+     "r0_before": 242.226946356,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -19312,7 +19312,7 @@
      "beta": 889.424632
     },
     {
-     "r0_before": 242.22694635616438,
+     "r0_before": 242.226946356,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -19402,7 +19402,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 34.5927017980279,
+   "approx_r0": 34.592701798,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -19419,7 +19419,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 34.5927017980279,
+     "r0_before": 34.592701798,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -19479,7 +19479,7 @@
      "beta": 30.092798
     },
     {
-     "r0_before": 34.5927017980279,
+     "r0_before": 34.592701798,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -19569,7 +19569,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.152184339726027,
+   "approx_r0": 10.15218434,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -19586,7 +19586,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.152184339726027,
+     "r0_before": 10.15218434,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -19646,7 +19646,7 @@
      "beta": 394.107978
     },
     {
-     "r0_before": 10.152184339726027,
+     "r0_before": 10.15218434,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -19736,7 +19736,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.164189976918491,
+   "approx_r0": 9.164189977,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -19753,7 +19753,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.164189976918491,
+     "r0_before": 9.164189977,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -19813,7 +19813,7 @@
      "beta": 17.064225
     },
     {
-     "r0_before": 9.164189976918491,
+     "r0_before": 9.164189977,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -19903,7 +19903,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 283.8421727342465,
+   "approx_r0": 283.842172734,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -19920,7 +19920,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 283.8421727342465,
+     "r0_before": 283.842172734,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -19980,7 +19980,7 @@
      "beta": 777.023732
     },
     {
-     "r0_before": 283.8421727342465,
+     "r0_before": 283.842172734,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -20237,7 +20237,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 136.8594855452055,
+   "approx_r0": 136.859485545,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -20254,7 +20254,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 136.8594855452055,
+     "r0_before": 136.859485545,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -20314,7 +20314,7 @@
      "beta": 511.862655
     },
     {
-     "r0_before": 136.8594855452055,
+     "r0_before": 136.859485545,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -20404,7 +20404,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 34.80950497778024,
+   "approx_r0": 34.809504978,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -20421,7 +20421,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 34.80950497778024,
+     "r0_before": 34.809504978,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -20481,7 +20481,7 @@
      "beta": 27.661138
     },
     {
-     "r0_before": 34.80950497778024,
+     "r0_before": 34.809504978,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -20571,7 +20571,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 397.5811523561644,
+   "approx_r0": 397.581152356,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -20588,7 +20588,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 397.5811523561644,
+     "r0_before": 397.581152356,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -20648,7 +20648,7 @@
      "beta": 475.336148
     },
     {
-     "r0_before": 397.5811523561644,
+     "r0_before": 397.581152356,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -20738,7 +20738,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 6.776412579551524,
+   "approx_r0": 6.77641258,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -20755,7 +20755,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 6.776412579551524,
+     "r0_before": 6.77641258,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -20815,7 +20815,7 @@
      "beta": 31.669534
     },
     {
-     "r0_before": 6.776412579551524,
+     "r0_before": 6.77641258,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -20905,7 +20905,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.161898818800186,
+   "approx_r0": 9.161898819,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -20922,7 +20922,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.161898818800186,
+     "r0_before": 9.161898819,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -20982,7 +20982,7 @@
      "beta": 133.07175
     },
     {
-     "r0_before": 9.161898818800186,
+     "r0_before": 9.161898819,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -21072,7 +21072,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 70.53227161643835,
+   "approx_r0": 70.532271616,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -21089,7 +21089,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 70.53227161643835,
+     "r0_before": 70.532271616,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -21149,7 +21149,7 @@
      "beta": 254.489715
     },
     {
-     "r0_before": 70.53227161643835,
+     "r0_before": 70.532271616,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -21239,7 +21239,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 20.176601424657534,
+   "approx_r0": 20.176601425,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -21256,7 +21256,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 20.176601424657534,
+     "r0_before": 20.176601425,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -21316,7 +21316,7 @@
      "beta": 259.521958
     },
     {
-     "r0_before": 20.176601424657534,
+     "r0_before": 20.176601425,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -21406,7 +21406,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 197.0955855780822,
+   "approx_r0": 197.095585578,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -21423,7 +21423,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 197.0955855780822,
+     "r0_before": 197.095585578,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -21483,7 +21483,7 @@
      "beta": 313.452169
     },
     {
-     "r0_before": 197.0955855780822,
+     "r0_before": 197.095585578,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -21573,7 +21573,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 299.0612121473937,
+   "approx_r0": 299.061212147,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -21590,7 +21590,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 299.0612121473937,
+     "r0_before": 299.061212147,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -21650,7 +21650,7 @@
      "beta": 377.759352
     },
     {
-     "r0_before": 299.0612121473937,
+     "r0_before": 299.061212147,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -21740,7 +21740,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 12.871330126027395,
+   "approx_r0": 12.871330126,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -21757,7 +21757,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 12.871330126027395,
+     "r0_before": 12.871330126,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -21817,7 +21817,7 @@
      "beta": 51.074159
     },
     {
-     "r0_before": 12.871330126027395,
+     "r0_before": 12.871330126,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -21907,7 +21907,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 515.855372909589,
+   "approx_r0": 515.85537291,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -21924,7 +21924,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 515.855372909589,
+     "r0_before": 515.85537291,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -21984,7 +21984,7 @@
      "beta": 648.757896
     },
     {
-     "r0_before": 515.855372909589,
+     "r0_before": 515.85537291,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -22074,7 +22074,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 63.63335785466407,
+   "approx_r0": 63.633357855,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -22091,7 +22091,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 63.63335785466407,
+     "r0_before": 63.633357855,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -22151,7 +22151,7 @@
      "beta": 45.291971
     },
     {
-     "r0_before": 63.63335785466407,
+     "r0_before": 63.633357855,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -22241,7 +22241,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 75.53546531734443,
+   "approx_r0": 75.535465317,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -22258,7 +22258,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 75.53546531734443,
+     "r0_before": 75.535465317,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -22318,7 +22318,7 @@
      "beta": 213.789477
     },
     {
-     "r0_before": 75.53546531734443,
+     "r0_before": 75.535465317,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -22408,7 +22408,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 17.67400474723641,
+   "approx_r0": 17.674004747,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -22425,7 +22425,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 17.67400474723641,
+     "r0_before": 17.674004747,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -22485,7 +22485,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 17.67400474723641,
+     "r0_before": 17.674004747,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -22575,7 +22575,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.175313184661384,
+   "approx_r0": 10.175313185,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -22592,7 +22592,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.175313184661384,
+     "r0_before": 10.175313185,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -22652,7 +22652,7 @@
      "beta": 48.233627
     },
     {
-     "r0_before": 10.175313184661384,
+     "r0_before": 10.175313185,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -22742,7 +22742,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 3.820092788309667,
+   "approx_r0": 3.820092788,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -22759,7 +22759,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 3.820092788309667,
+     "r0_before": 3.820092788,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -22819,7 +22819,7 @@
      "beta": 39.719847
     },
     {
-     "r0_before": 3.820092788309667,
+     "r0_before": 3.820092788,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -22909,7 +22909,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 212.15521600244355,
+   "approx_r0": 212.155216002,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -22926,7 +22926,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 212.15521600244355,
+     "r0_before": 212.155216002,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -22986,7 +22986,7 @@
      "beta": 126.607451
     },
     {
-     "r0_before": 212.15521600244355,
+     "r0_before": 212.155216002,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -23076,7 +23076,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 122.43723344657535,
+   "approx_r0": 122.437233447,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -23093,7 +23093,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 122.43723344657535,
+     "r0_before": 122.437233447,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -23153,7 +23153,7 @@
      "beta": 725.184365
     },
     {
-     "r0_before": 122.43723344657535,
+     "r0_before": 122.437233447,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -23243,7 +23243,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 8.651911370242193,
+   "approx_r0": 8.65191137,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -23260,7 +23260,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 8.651911370242193,
+     "r0_before": 8.65191137,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -23320,7 +23320,7 @@
      "beta": 47.296561
     },
     {
-     "r0_before": 8.651911370242193,
+     "r0_before": 8.65191137,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -23410,7 +23410,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.720835956378075,
+   "approx_r0": 10.720835956,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -23427,7 +23427,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.720835956378075,
+     "r0_before": 10.720835956,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -23487,7 +23487,7 @@
      "beta": 149.355157
     },
     {
-     "r0_before": 10.720835956378075,
+     "r0_before": 10.720835956,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -23577,7 +23577,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 4.876847481698006,
+   "approx_r0": 4.876847482,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -23594,7 +23594,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 4.876847481698006,
+     "r0_before": 4.876847482,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -23654,7 +23654,7 @@
      "beta": 68.42133
     },
     {
-     "r0_before": 4.876847481698006,
+     "r0_before": 4.876847482,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -23744,7 +23744,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 50.52402116986301,
+   "approx_r0": 50.52402117,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -23761,7 +23761,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 50.52402116986301,
+     "r0_before": 50.52402117,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -23821,7 +23821,7 @@
      "beta": 888.35745
     },
     {
-     "r0_before": 50.52402116986301,
+     "r0_before": 50.52402117,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -23911,7 +23911,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 529.822321709589,
+   "approx_r0": 529.82232171,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -23928,7 +23928,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 529.822321709589,
+     "r0_before": 529.82232171,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -23988,7 +23988,7 @@
      "beta": 832.335493
     },
     {
-     "r0_before": 529.822321709589,
+     "r0_before": 529.82232171,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -24078,7 +24078,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 134.53007473972602,
+   "approx_r0": 134.53007474,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -24095,7 +24095,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 134.53007473972602,
+     "r0_before": 134.53007474,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -24155,7 +24155,7 @@
      "beta": 404.162399
     },
     {
-     "r0_before": 134.53007473972602,
+     "r0_before": 134.53007474,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -24245,7 +24245,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 58.645647816382926,
+   "approx_r0": 58.645647816,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -24262,7 +24262,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 58.645647816382926,
+     "r0_before": 58.645647816,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -24322,7 +24322,7 @@
      "beta": 45.738593
     },
     {
-     "r0_before": 58.645647816382926,
+     "r0_before": 58.645647816,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -24412,7 +24412,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.429672959013699,
+   "approx_r0": 9.429672959,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -24429,7 +24429,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.429672959013699,
+     "r0_before": 9.429672959,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -24489,7 +24489,7 @@
      "beta": 184.971682
     },
     {
-     "r0_before": 9.429672959013699,
+     "r0_before": 9.429672959,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -24579,7 +24579,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 37.105219917829274,
+   "approx_r0": 37.105219918,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -24596,7 +24596,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 37.105219917829274,
+     "r0_before": 37.105219918,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -24656,7 +24656,7 @@
      "beta": 653.32394
     },
     {
-     "r0_before": 37.105219917829274,
+     "r0_before": 37.105219918,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -24746,7 +24746,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 35.70589308493151,
+   "approx_r0": 35.705893085,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -24763,7 +24763,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 35.70589308493151,
+     "r0_before": 35.705893085,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -24823,7 +24823,7 @@
      "beta": 90.516588
     },
     {
-     "r0_before": 35.70589308493151,
+     "r0_before": 35.705893085,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -24913,7 +24913,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 60.225958559292806,
+   "approx_r0": 60.225958559,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -24930,7 +24930,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 60.225958559292806,
+     "r0_before": 60.225958559,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -24990,7 +24990,7 @@
      "beta": 18.371087
     },
     {
-     "r0_before": 60.225958559292806,
+     "r0_before": 60.225958559,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -25080,7 +25080,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 17.948079660273976,
+   "approx_r0": 17.94807966,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -25097,7 +25097,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 17.948079660273976,
+     "r0_before": 17.94807966,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -25157,7 +25157,7 @@
      "beta": 309.250354
     },
     {
-     "r0_before": 17.948079660273976,
+     "r0_before": 17.94807966,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -25247,7 +25247,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 70.81455964931506,
+   "approx_r0": 70.814559649,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -25264,7 +25264,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 70.81455964931506,
+     "r0_before": 70.814559649,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -25324,7 +25324,7 @@
      "beta": 221.415687
     },
     {
-     "r0_before": 70.81455964931506,
+     "r0_before": 70.814559649,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -25414,7 +25414,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 84.86371456776851,
+   "approx_r0": 84.863714568,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -25431,7 +25431,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 84.86371456776851,
+     "r0_before": 84.863714568,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -25491,7 +25491,7 @@
      "beta": 397.22618
     },
     {
-     "r0_before": 84.86371456776851,
+     "r0_before": 84.863714568,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -25581,7 +25581,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 29.554198040320628,
+   "approx_r0": 29.55419804,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -25598,7 +25598,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 29.554198040320628,
+     "r0_before": 29.55419804,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -25658,7 +25658,7 @@
      "beta": 140.623201
     },
     {
-     "r0_before": 29.554198040320628,
+     "r0_before": 29.55419804,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -25748,7 +25748,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 6.685018797819856,
+   "approx_r0": 6.685018798,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -25765,7 +25765,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 6.685018797819856,
+     "r0_before": 6.685018798,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -25825,7 +25825,7 @@
      "beta": 2.934741
     },
     {
-     "r0_before": 6.685018797819856,
+     "r0_before": 6.685018798,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -25915,7 +25915,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 29.44447693150684,
+   "approx_r0": 29.444476932,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -25932,7 +25932,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 29.44447693150684,
+     "r0_before": 29.444476932,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -25992,7 +25992,7 @@
      "beta": 112.741432
     },
     {
-     "r0_before": 29.44447693150684,
+     "r0_before": 29.444476932,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -26082,7 +26082,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 13.144422575342467,
+   "approx_r0": 13.144422575,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -26099,7 +26099,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 13.144422575342467,
+     "r0_before": 13.144422575,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -26159,7 +26159,7 @@
      "beta": 357.402006
     },
     {
-     "r0_before": 13.144422575342467,
+     "r0_before": 13.144422575,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -26249,7 +26249,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 15.058478751543566,
+   "approx_r0": 15.058478752,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -26266,7 +26266,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 15.058478751543566,
+     "r0_before": 15.058478752,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -26326,7 +26326,7 @@
      "beta": 85.346968
     },
     {
-     "r0_before": 15.058478751543566,
+     "r0_before": 15.058478752,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -26416,7 +26416,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 42.27462936986302,
+   "approx_r0": 42.27462937,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -26433,7 +26433,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 42.27462936986302,
+     "r0_before": 42.27462937,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -26493,7 +26493,7 @@
      "beta": 360.109597
     },
     {
-     "r0_before": 42.27462936986302,
+     "r0_before": 42.27462937,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -26583,7 +26583,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 65.10225251660465,
+   "approx_r0": 65.102252517,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -26600,7 +26600,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 65.10225251660465,
+     "r0_before": 65.102252517,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -26660,7 +26660,7 @@
      "beta": 48.303293
     },
     {
-     "r0_before": 65.10225251660465,
+     "r0_before": 65.102252517,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -26750,7 +26750,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 23.747822815817997,
+   "approx_r0": 23.747822816,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -26767,7 +26767,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 23.747822815817997,
+     "r0_before": 23.747822816,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -26827,7 +26827,7 @@
      "beta": 60.424924
     },
     {
-     "r0_before": 23.747822815817997,
+     "r0_before": 23.747822816,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -26917,7 +26917,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 381.74732975342465,
+   "approx_r0": 381.747329753,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -26934,7 +26934,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 381.74732975342465,
+     "r0_before": 381.747329753,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -26994,7 +26994,7 @@
      "beta": 503.484801
     },
     {
-     "r0_before": 381.74732975342465,
+     "r0_before": 381.747329753,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -27084,7 +27084,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 2.448883690747947,
+   "approx_r0": 2.448883691,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -27101,7 +27101,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 2.448883690747947,
+     "r0_before": 2.448883691,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -27161,7 +27161,7 @@
      "beta": 15.80903
     },
     {
-     "r0_before": 2.448883690747947,
+     "r0_before": 2.448883691,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -27251,7 +27251,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 52.21233383974314,
+   "approx_r0": 52.21233384,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -27268,7 +27268,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 52.21233383974314,
+     "r0_before": 52.21233384,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -27328,7 +27328,7 @@
      "beta": 202.258299
     },
     {
-     "r0_before": 52.21233383974314,
+     "r0_before": 52.21233384,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -27418,7 +27418,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 353.59781286575344,
+   "approx_r0": 353.597812866,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -27435,7 +27435,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 353.59781286575344,
+     "r0_before": 353.597812866,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -27495,7 +27495,7 @@
      "beta": 846.758747
     },
     {
-     "r0_before": 353.59781286575344,
+     "r0_before": 353.597812866,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -27585,7 +27585,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 32.64155870136986,
+   "approx_r0": 32.641558701,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -27602,7 +27602,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 32.64155870136986,
+     "r0_before": 32.641558701,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -27662,7 +27662,7 @@
      "beta": 233.199799
     },
     {
-     "r0_before": 32.64155870136986,
+     "r0_before": 32.641558701,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -27752,7 +27752,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 18.280580589187977,
+   "approx_r0": 18.280580589,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -27769,7 +27769,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 18.280580589187977,
+     "r0_before": 18.280580589,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -27829,7 +27829,7 @@
      "beta": 52.343419
     },
     {
-     "r0_before": 18.280580589187977,
+     "r0_before": 18.280580589,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -27919,7 +27919,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 69.4691825313124,
+   "approx_r0": 69.469182531,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -27936,7 +27936,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 69.4691825313124,
+     "r0_before": 69.469182531,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -27996,7 +27996,7 @@
      "beta": 180.754574
     },
     {
-     "r0_before": 69.4691825313124,
+     "r0_before": 69.469182531,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -28086,7 +28086,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 355.40529380821914,
+   "approx_r0": 355.405293808,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -28103,7 +28103,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 355.40529380821914,
+     "r0_before": 355.405293808,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -28163,7 +28163,7 @@
      "beta": 929.117817
     },
     {
-     "r0_before": 355.40529380821914,
+     "r0_before": 355.405293808,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -28253,7 +28253,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 17.643420039452057,
+   "approx_r0": 17.643420039,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -28270,7 +28270,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 17.643420039452057,
+     "r0_before": 17.643420039,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -28330,7 +28330,7 @@
      "beta": 60.521861
     },
     {
-     "r0_before": 17.643420039452057,
+     "r0_before": 17.643420039,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -28420,7 +28420,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 155.77940119039891,
+   "approx_r0": 155.77940119,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -28437,7 +28437,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 155.77940119039891,
+     "r0_before": 155.77940119,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -28497,7 +28497,7 @@
      "beta": 462.104686
     },
     {
-     "r0_before": 155.77940119039891,
+     "r0_before": 155.77940119,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -28587,7 +28587,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 62.90484901228568,
+   "approx_r0": 62.904849012,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -28604,7 +28604,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 62.90484901228568,
+     "r0_before": 62.904849012,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -28664,7 +28664,7 @@
      "beta": 49.808966
     },
     {
-     "r0_before": 62.90484901228568,
+     "r0_before": 62.904849012,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -28754,7 +28754,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 27.435005610958903,
+   "approx_r0": 27.435005611,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -28771,7 +28771,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 27.435005610958903,
+     "r0_before": 27.435005611,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -28831,7 +28831,7 @@
      "beta": 391.138385
     },
     {
-     "r0_before": 27.435005610958903,
+     "r0_before": 27.435005611,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -28921,7 +28921,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 27.57623865844615,
+   "approx_r0": 27.576238658,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -28938,7 +28938,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 27.57623865844615,
+     "r0_before": 27.576238658,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -28998,7 +28998,7 @@
      "beta": 744.653107
     },
     {
-     "r0_before": 27.57623865844615,
+     "r0_before": 27.576238658,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -29088,7 +29088,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 82.88126946107894,
+   "approx_r0": 82.881269461,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -29105,7 +29105,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 82.88126946107894,
+     "r0_before": 82.881269461,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -29165,7 +29165,7 @@
      "beta": 23.940854
     },
     {
-     "r0_before": 82.88126946107894,
+     "r0_before": 82.881269461,
      "before": {
       "disease_type": "seirs",
       "n_agents": 50000,
@@ -29255,7 +29255,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 270.84188385205476,
+   "approx_r0": 270.841883852,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -29272,7 +29272,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 270.84188385205476,
+     "r0_before": 270.841883852,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -29332,7 +29332,7 @@
      "beta": 618.256608
     },
     {
-     "r0_before": 270.84188385205476,
+     "r0_before": 270.841883852,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -29422,7 +29422,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 21.029530935335984,
+   "approx_r0": 21.029530935,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -29439,7 +29439,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 21.029530935335984,
+     "r0_before": 21.029530935,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -29499,7 +29499,7 @@
      "beta": 218.807833
     },
     {
-     "r0_before": 21.029530935335984,
+     "r0_before": 21.029530935,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -29589,7 +29589,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 32.732790330430014,
+   "approx_r0": 32.73279033,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -29606,7 +29606,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 32.732790330430014,
+     "r0_before": 32.73279033,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -29666,7 +29666,7 @@
      "beta": 55.871065
     },
     {
-     "r0_before": 32.732790330430014,
+     "r0_before": 32.73279033,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -29756,7 +29756,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.788240815900156,
+   "approx_r0": 9.788240816,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -29773,7 +29773,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.788240815900156,
+     "r0_before": 9.788240816,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -29833,7 +29833,7 @@
      "beta": 33.452321
     },
     {
-     "r0_before": 9.788240815900156,
+     "r0_before": 9.788240816,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -29923,7 +29923,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 429.1463666392831,
+   "approx_r0": 429.146366639,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -29940,7 +29940,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 429.1463666392831,
+     "r0_before": 429.146366639,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -30000,7 +30000,7 @@
      "beta": 381.52383
     },
     {
-     "r0_before": 429.1463666392831,
+     "r0_before": 429.146366639,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -30090,7 +30090,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 0.1427002877138452,
+   "approx_r0": 0.142700288,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -30107,7 +30107,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 0.1427002877138452,
+     "r0_before": 0.142700288,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -30167,7 +30167,7 @@
      "beta": 0.215163
     },
     {
-     "r0_before": 0.1427002877138452,
+     "r0_before": 0.142700288,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -30257,7 +30257,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 53.28774641424113,
+   "approx_r0": 53.287746414,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -30274,7 +30274,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 53.28774641424113,
+     "r0_before": 53.287746414,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -30334,7 +30334,7 @@
      "beta": 64.833425
     },
     {
-     "r0_before": 53.28774641424113,
+     "r0_before": 53.287746414,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -30424,7 +30424,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 39.53929280821918,
+   "approx_r0": 39.539292808,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -30441,7 +30441,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 39.53929280821918,
+     "r0_before": 39.539292808,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -30501,7 +30501,7 @@
      "beta": 70.23432
     },
     {
-     "r0_before": 39.53929280821918,
+     "r0_before": 39.539292808,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -30591,7 +30591,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 17.14772769265972,
+   "approx_r0": 17.147727693,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -30608,7 +30608,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 17.14772769265972,
+     "r0_before": 17.147727693,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -30668,7 +30668,7 @@
      "beta": 628.90177
     },
     {
-     "r0_before": 17.14772769265972,
+     "r0_before": 17.147727693,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -30758,7 +30758,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 295.5400367117918,
+   "approx_r0": 295.540036712,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -30775,7 +30775,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 295.5400367117918,
+     "r0_before": 295.540036712,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -30835,7 +30835,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 295.5400367117918,
+     "r0_before": 295.540036712,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -30925,7 +30925,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.924212600279864,
+   "approx_r0": 9.9242126,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -30942,7 +30942,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.924212600279864,
+     "r0_before": 9.9242126,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -31002,7 +31002,7 @@
      "beta": 41.313157
     },
     {
-     "r0_before": 9.924212600279864,
+     "r0_before": 9.9242126,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -31092,7 +31092,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 157.83897016693555,
+   "approx_r0": 157.838970167,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -31109,7 +31109,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 157.83897016693555,
+     "r0_before": 157.838970167,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -31169,7 +31169,7 @@
      "beta": 92.210417
     },
     {
-     "r0_before": 157.83897016693555,
+     "r0_before": 157.838970167,
      "before": {
       "disease_type": "seir",
       "n_agents": 1000,
@@ -31259,7 +31259,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.601414435129939,
+   "approx_r0": 5.601414435,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -31276,7 +31276,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.601414435129939,
+     "r0_before": 5.601414435,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -31336,7 +31336,7 @@
      "beta": 19.683415
     },
     {
-     "r0_before": 5.601414435129939,
+     "r0_before": 5.601414435,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -31426,7 +31426,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 78.52546377937645,
+   "approx_r0": 78.525463779,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -31443,7 +31443,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 78.52546377937645,
+     "r0_before": 78.525463779,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -31503,7 +31503,7 @@
      "beta": 24.733177
     },
     {
-     "r0_before": 78.52546377937645,
+     "r0_before": 78.525463779,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -31593,7 +31593,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 1.6113182465753426,
+   "approx_r0": 1.611318247,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -31610,7 +31610,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 1.6113182465753426,
+     "r0_before": 1.611318247,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -31670,7 +31670,7 @@
      "beta": 60.194394
     },
     {
-     "r0_before": 1.6113182465753426,
+     "r0_before": 1.611318247,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -31760,7 +31760,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 19.856572243885907,
+   "approx_r0": 19.856572244,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -31777,7 +31777,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 19.856572243885907,
+     "r0_before": 19.856572244,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -31837,7 +31837,7 @@
      "beta": 506.120731
     },
     {
-     "r0_before": 19.856572243885907,
+     "r0_before": 19.856572244,
      "before": {
       "disease_type": "seir",
       "n_agents": 10000,
@@ -31927,7 +31927,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 182.87865609041097,
+   "approx_r0": 182.87865609,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -31944,7 +31944,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 182.87865609041097,
+     "r0_before": 182.87865609,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -32004,7 +32004,7 @@
      "beta": 505.573809
     },
     {
-     "r0_before": 182.87865609041097,
+     "r0_before": 182.87865609,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -32094,7 +32094,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 49.23265826481983,
+   "approx_r0": 49.232658265,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -32111,7 +32111,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 49.23265826481983,
+     "r0_before": 49.232658265,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -32171,7 +32171,7 @@
      "beta": 200.333559
     },
     {
-     "r0_before": 49.23265826481983,
+     "r0_before": 49.232658265,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -32261,7 +32261,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 128.01602910684932,
+   "approx_r0": 128.016029107,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -32278,7 +32278,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 128.01602910684932,
+     "r0_before": 128.016029107,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -32338,7 +32338,7 @@
      "beta": 175.074498
     },
     {
-     "r0_before": 128.01602910684932,
+     "r0_before": 128.016029107,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -32428,7 +32428,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.43958547596172,
+   "approx_r0": 10.439585476,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -32445,7 +32445,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.43958547596172,
+     "r0_before": 10.439585476,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -32505,7 +32505,7 @@
      "beta": 60.908707
     },
     {
-     "r0_before": 10.43958547596172,
+     "r0_before": 10.439585476,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -32595,7 +32595,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 5.890065854622513,
+   "approx_r0": 5.890065855,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -32612,7 +32612,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 5.890065854622513,
+     "r0_before": 5.890065855,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -32672,7 +32672,7 @@
      "beta": 10.121579
     },
     {
-     "r0_before": 5.890065854622513,
+     "r0_before": 5.890065855,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -32762,7 +32762,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 59.464347452054795,
+   "approx_r0": 59.464347452,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -32779,7 +32779,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 59.464347452054795,
+     "r0_before": 59.464347452,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -32839,7 +32839,7 @@
      "beta": 648.385055
     },
     {
-     "r0_before": 59.464347452054795,
+     "r0_before": 59.464347452,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -32929,7 +32929,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 16.551190583031232,
+   "approx_r0": 16.551190583,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -32946,7 +32946,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 16.551190583031232,
+     "r0_before": 16.551190583,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -33006,7 +33006,7 @@
      "beta": 142.008626
     },
     {
-     "r0_before": 16.551190583031232,
+     "r0_before": 16.551190583,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -33096,7 +33096,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 82.66888985180807,
+   "approx_r0": 82.668889852,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33113,7 +33113,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 82.66888985180807,
+     "r0_before": 82.668889852,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -33173,7 +33173,7 @@
      "beta": 28.471009
     },
     {
-     "r0_before": 82.66888985180807,
+     "r0_before": 82.668889852,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -33263,7 +33263,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 27.771864794520546,
+   "approx_r0": 27.771864795,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33280,7 +33280,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 27.771864794520546,
+     "r0_before": 27.771864795,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -33340,7 +33340,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 27.771864794520546,
+     "r0_before": 27.771864795,
      "before": {
       "disease_type": "sirs",
       "n_agents": 50000,
@@ -33430,7 +33430,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 32.14984885479452,
+   "approx_r0": 32.149848855,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33447,7 +33447,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 32.14984885479452,
+     "r0_before": 32.149848855,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -33507,7 +33507,7 @@
      "beta": 138.952099
     },
     {
-     "r0_before": 32.14984885479452,
+     "r0_before": 32.149848855,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -33597,7 +33597,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 0.29035292054794515,
+   "approx_r0": 0.290352921,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33614,7 +33614,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 0.29035292054794515,
+     "r0_before": 0.290352921,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -33674,7 +33674,7 @@
      "beta": 1.606758
     },
     {
-     "r0_before": 0.29035292054794515,
+     "r0_before": 0.290352921,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -33764,7 +33764,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 45.553927713121496,
+   "approx_r0": 45.553927713,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33781,7 +33781,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 45.553927713121496,
+     "r0_before": 45.553927713,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -33841,7 +33841,7 @@
      "beta": 118.115959
     },
     {
-     "r0_before": 45.553927713121496,
+     "r0_before": 45.553927713,
      "before": {
       "disease_type": "seirs",
       "n_agents": 10000,
@@ -33931,7 +33931,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 10.580244802794441,
+   "approx_r0": 10.580244803,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33948,7 +33948,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 10.580244802794441,
+     "r0_before": 10.580244803,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -34008,7 +34008,7 @@
      "beta": 182.589615
     },
     {
-     "r0_before": 10.580244802794441,
+     "r0_before": 10.580244803,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -34098,7 +34098,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 396.1610280720488,
+   "approx_r0": 396.161028072,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -34115,7 +34115,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 396.1610280720488,
+     "r0_before": 396.161028072,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -34175,7 +34175,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 396.1610280720488,
+     "r0_before": 396.161028072,
      "before": {
       "disease_type": "seir",
       "n_agents": 50000,
@@ -34265,7 +34265,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 67.86623105068053,
+   "approx_r0": 67.866231051,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -34282,7 +34282,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 67.86623105068053,
+     "r0_before": 67.866231051,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -34342,7 +34342,7 @@
      "beta": 60.141727
     },
     {
-     "r0_before": 67.86623105068053,
+     "r0_before": 67.866231051,
      "before": {
       "disease_type": "sis",
       "n_agents": 5000,
@@ -34432,7 +34432,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 53.32180375890411,
+   "approx_r0": 53.321803759,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -34449,7 +34449,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 53.32180375890411,
+     "r0_before": 53.321803759,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -34509,7 +34509,7 @@
      "beta": 229.227659
     },
     {
-     "r0_before": 53.32180375890411,
+     "r0_before": 53.321803759,
      "before": {
       "disease_type": "sis",
       "n_agents": 10000,
@@ -34599,7 +34599,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 44.65821965634491,
+   "approx_r0": 44.658219656,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -34616,7 +34616,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 44.65821965634491,
+     "r0_before": 44.658219656,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -34676,7 +34676,7 @@
      "beta": 23.436062
     },
     {
-     "r0_before": 44.65821965634491,
+     "r0_before": 44.658219656,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -34766,7 +34766,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 18.211591966461654,
+   "approx_r0": 18.211591966,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -34783,7 +34783,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 18.211591966461654,
+     "r0_before": 18.211591966,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -34843,7 +34843,7 @@
      "beta": 120.137919
     },
     {
-     "r0_before": 18.211591966461654,
+     "r0_before": 18.211591966,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -34933,7 +34933,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 2.558107637654805,
+   "approx_r0": 2.558107638,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -34950,7 +34950,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 2.558107637654805,
+     "r0_before": 2.558107638,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -35010,7 +35010,7 @@
      "beta": 17.832492
     },
     {
-     "r0_before": 2.558107637654805,
+     "r0_before": 2.558107638,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -35100,7 +35100,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 31.957459598595,
+   "approx_r0": 31.957459599,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -35117,7 +35117,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 31.957459598595,
+     "r0_before": 31.957459599,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -35177,7 +35177,7 @@
      "beta": 61.038581
     },
     {
-     "r0_before": 31.957459598595,
+     "r0_before": 31.957459599,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -35267,7 +35267,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 33.65556561043697,
+   "approx_r0": 33.65556561,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -35284,7 +35284,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 33.65556561043697,
+     "r0_before": 33.65556561,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -35344,7 +35344,7 @@
      "beta": 43.579826
     },
     {
-     "r0_before": 33.65556561043697,
+     "r0_before": 33.65556561,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -35434,7 +35434,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 879.3414796273972,
+   "approx_r0": 879.341479627,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -35451,7 +35451,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 879.3414796273972,
+     "r0_before": 879.341479627,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -35511,7 +35511,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 879.3414796273972,
+     "r0_before": 879.341479627,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -35601,7 +35601,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 152.51017500693746,
+   "approx_r0": 152.510175007,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -35618,7 +35618,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 152.51017500693746,
+     "r0_before": 152.510175007,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -35678,7 +35678,7 @@
      "beta": 41.020924
     },
     {
-     "r0_before": 152.51017500693746,
+     "r0_before": 152.510175007,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -35768,7 +35768,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 127.08004155993844,
+   "approx_r0": 127.08004156,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -35785,7 +35785,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 127.08004155993844,
+     "r0_before": 127.08004156,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -35845,7 +35845,7 @@
      "beta": 44.150214
     },
     {
-     "r0_before": 127.08004155993844,
+     "r0_before": 127.08004156,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -35935,7 +35935,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 56.92031906858903,
+   "approx_r0": 56.920319069,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -35952,7 +35952,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 56.92031906858903,
+     "r0_before": 56.920319069,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -36012,7 +36012,7 @@
      "beta": 1000.0
     },
     {
-     "r0_before": 56.92031906858903,
+     "r0_before": 56.920319069,
      "before": {
       "disease_type": "seiar",
       "n_agents": 50000,
@@ -36102,7 +36102,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 49.2554065851172,
+   "approx_r0": 49.255406585,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -36119,7 +36119,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 49.2554065851172,
+     "r0_before": 49.255406585,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -36179,7 +36179,7 @@
      "beta": 246.953618
     },
     {
-     "r0_before": 49.2554065851172,
+     "r0_before": 49.255406585,
      "before": {
       "disease_type": "sir",
       "n_agents": 10000,
@@ -36269,7 +36269,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 28.594483035616435,
+   "approx_r0": 28.594483036,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -36286,7 +36286,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 28.594483035616435,
+     "r0_before": 28.594483036,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -36346,7 +36346,7 @@
      "beta": 157.627344
     },
     {
-     "r0_before": 28.594483035616435,
+     "r0_before": 28.594483036,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -36436,7 +36436,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 394.84861185753425,
+   "approx_r0": 394.848611858,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -36453,7 +36453,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 394.84861185753425,
+     "r0_before": 394.848611858,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -36513,7 +36513,7 @@
      "beta": 428.936785
     },
     {
-     "r0_before": 394.84861185753425,
+     "r0_before": 394.848611858,
      "before": {
       "disease_type": "sirs",
       "n_agents": 5000,
@@ -36603,7 +36603,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 45.83155082162328,
+   "approx_r0": 45.831550822,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -36620,7 +36620,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 45.83155082162328,
+     "r0_before": 45.831550822,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -36680,7 +36680,7 @@
      "beta": 381.283926
     },
     {
-     "r0_before": 45.83155082162328,
+     "r0_before": 45.831550822,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -36770,7 +36770,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 19.838863076268375,
+   "approx_r0": 19.838863076,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -36787,7 +36787,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 19.838863076268375,
+     "r0_before": 19.838863076,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -36847,7 +36847,7 @@
      "beta": 73.031037
     },
     {
-     "r0_before": 19.838863076268375,
+     "r0_before": 19.838863076,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -36937,7 +36937,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 67.394166413064,
+   "approx_r0": 67.394166413,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -36954,7 +36954,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 67.394166413064,
+     "r0_before": 67.394166413,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -37014,7 +37014,7 @@
      "beta": 45.311801
     },
     {
-     "r0_before": 67.394166413064,
+     "r0_before": 67.394166413,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -37104,7 +37104,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 8.343723945205479,
+   "approx_r0": 8.343723945,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -37121,7 +37121,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 8.343723945205479,
+     "r0_before": 8.343723945,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -37181,7 +37181,7 @@
      "beta": 59.21584
     },
     {
-     "r0_before": 8.343723945205479,
+     "r0_before": 8.343723945,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -37271,7 +37271,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 9.52719655068493,
+   "approx_r0": 9.527196551,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -37288,7 +37288,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 9.52719655068493,
+     "r0_before": 9.527196551,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -37348,7 +37348,7 @@
      "beta": 405.083308
     },
     {
-     "r0_before": 9.52719655068493,
+     "r0_before": 9.527196551,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -37438,7 +37438,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 0.2774921178082192,
+   "approx_r0": 0.277492118,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -37455,7 +37455,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 0.2774921178082192,
+     "r0_before": 0.277492118,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -37515,7 +37515,7 @@
      "beta": 1.642051
     },
     {
-     "r0_before": 0.2774921178082192,
+     "r0_before": 0.277492118,
      "before": {
       "disease_type": "seir",
       "n_agents": 5000,
@@ -37605,7 +37605,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 40.39062198436132,
+   "approx_r0": 40.390621984,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -37622,7 +37622,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 40.39062198436132,
+     "r0_before": 40.390621984,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -37682,7 +37682,7 @@
      "beta": 56.484969
     },
     {
-     "r0_before": 40.39062198436132,
+     "r0_before": 40.390621984,
      "before": {
       "disease_type": "sirs",
       "n_agents": 1000,
@@ -37772,7 +37772,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 26.43506506314991,
+   "approx_r0": 26.435065063,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -37789,7 +37789,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 26.43506506314991,
+     "r0_before": 26.435065063,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -37849,7 +37849,7 @@
      "beta": 71.925447
     },
     {
-     "r0_before": 26.43506506314991,
+     "r0_before": 26.435065063,
      "before": {
       "disease_type": "sis",
       "n_agents": 50000,
@@ -37939,7 +37939,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 65.7240860923174,
+   "approx_r0": 65.724086092,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -37956,7 +37956,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 65.7240860923174,
+     "r0_before": 65.724086092,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -38016,7 +38016,7 @@
      "beta": 14.397606
     },
     {
-     "r0_before": 65.7240860923174,
+     "r0_before": 65.724086092,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -38106,7 +38106,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 141.1107568619106,
+   "approx_r0": 141.110756862,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -38123,7 +38123,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 141.1107568619106,
+     "r0_before": 141.110756862,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -38183,7 +38183,7 @@
      "beta": 803.015688
     },
     {
-     "r0_before": 141.1107568619106,
+     "r0_before": 141.110756862,
      "before": {
       "disease_type": "sir",
       "n_agents": 1000,
@@ -38273,7 +38273,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 650.1830873424657,
+   "approx_r0": 650.183087342,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -38290,7 +38290,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 650.1830873424657,
+     "r0_before": 650.183087342,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -38350,7 +38350,7 @@
      "beta": 727.40621
     },
     {
-     "r0_before": 650.1830873424657,
+     "r0_before": 650.183087342,
      "before": {
       "disease_type": "sir",
       "n_agents": 5000,
@@ -38440,7 +38440,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 2.5282500832696484,
+   "approx_r0": 2.528250083,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -38457,7 +38457,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 2.5282500832696484,
+     "r0_before": 2.528250083,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -38517,7 +38517,7 @@
      "beta": 17.624356
     },
     {
-     "r0_before": 2.5282500832696484,
+     "r0_before": 2.528250083,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -38607,7 +38607,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 65.19456604931507,
+   "approx_r0": 65.194566049,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -38624,7 +38624,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 65.19456604931507,
+     "r0_before": 65.194566049,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -38684,7 +38684,7 @@
      "beta": 769.453847
     },
     {
-     "r0_before": 65.19456604931507,
+     "r0_before": 65.194566049,
      "before": {
       "disease_type": "sirs",
       "n_agents": 10000,
@@ -38774,7 +38774,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 323.90776504109584,
+   "approx_r0": 323.907765041,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -38791,7 +38791,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 323.90776504109584,
+     "r0_before": 323.907765041,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -38851,7 +38851,7 @@
      "beta": 411.209903
     },
     {
-     "r0_before": 323.90776504109584,
+     "r0_before": 323.907765041,
      "before": {
       "disease_type": "sir",
       "n_agents": 50000,
@@ -38941,7 +38941,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 22.0323085777526,
+   "approx_r0": 22.032308578,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -38958,7 +38958,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 22.0323085777526,
+     "r0_before": 22.032308578,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -39018,7 +39018,7 @@
      "beta": 47.27205
     },
     {
-     "r0_before": 22.0323085777526,
+     "r0_before": 22.032308578,
      "before": {
       "disease_type": "seiar",
       "n_agents": 10000,
@@ -39108,7 +39108,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 15.48128487240597,
+   "approx_r0": 15.481284872,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -39125,7 +39125,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 15.48128487240597,
+     "r0_before": 15.481284872,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -39185,7 +39185,7 @@
      "beta": 153.453378
     },
     {
-     "r0_before": 15.48128487240597,
+     "r0_before": 15.481284872,
      "before": {
       "disease_type": "seiar",
       "n_agents": 5000,
@@ -39275,7 +39275,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 37.08434311141571,
+   "approx_r0": 37.084343111,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -39292,7 +39292,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 37.08434311141571,
+     "r0_before": 37.084343111,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -39352,7 +39352,7 @@
      "beta": 238.138375
     },
     {
-     "r0_before": 37.08434311141571,
+     "r0_before": 37.084343111,
      "before": {
       "disease_type": "sis",
       "n_agents": 1000,
@@ -39442,7 +39442,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 429.6281209643835,
+   "approx_r0": 429.628120964,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -39459,7 +39459,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 429.6281209643835,
+     "r0_before": 429.628120964,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -39519,7 +39519,7 @@
      "beta": 639.985308
     },
     {
-     "r0_before": 429.6281209643835,
+     "r0_before": 429.628120964,
      "before": {
       "disease_type": "seirs",
       "n_agents": 1000,
@@ -39609,7 +39609,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 12.454035714685329,
+   "approx_r0": 12.454035715,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -39626,7 +39626,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 12.454035714685329,
+     "r0_before": 12.454035715,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -39686,7 +39686,7 @@
      "beta": 21.305414
     },
     {
-     "r0_before": 12.454035714685329,
+     "r0_before": 12.454035715,
      "before": {
       "disease_type": "seirs",
       "n_agents": 5000,
@@ -39943,7 +39943,7 @@
     "demographics_year": 2022,
     "demographics_source": null
    },
-   "approx_r0": 27.631477521421637,
+   "approx_r0": 27.631477521,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -39960,7 +39960,7 @@
    ],
    "recalibrate": [
     {
-     "r0_before": 27.631477521421637,
+     "r0_before": 27.631477521,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
@@ -40020,7 +40020,7 @@
      "beta": 29.073021
     },
     {
-     "r0_before": 27.631477521421637,
+     "r0_before": 27.631477521,
      "before": {
       "disease_type": "seiar",
       "n_agents": 1000,
