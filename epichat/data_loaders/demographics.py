@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import requests
 import pandas as pd
 from pathlib import Path
@@ -12,7 +13,14 @@ logger = logging.getLogger(__name__)
 
 #file paths
 DATA_PATH = Path(__file__).parent.parent / 'data' / 'demographics'
-CACHE_DIR  = DATA_PATH / 'cache'
+
+
+def cache_dir() -> Path:
+    """Where lookups are cached. EPICHAT_CACHE_DIR overrides the default so a
+    read-only deployment can point it at a temp directory."""
+    override = os.environ.get("EPICHAT_CACHE_DIR")
+    return Path(override) if override else DATA_PATH / 'cache'
+
 
 WPP_FILE = DATA_PATH / 'WPP2024_Demographic_Indicators_Medium.csv'
 WHO_FILE = DATA_PATH / 'WHO_Mortality_Database.csv'
@@ -294,7 +302,7 @@ def get_country_demographics(country_iso3: str, year: int = 2022) -> dict:
     iso3 = country_iso3.upper()
 
     # ── Check disk cache ──────────────────────────────────────
-    cache_file = CACHE_DIR / f'{iso3}_{year}.json'
+    cache_file = cache_dir() / f'{iso3}_{year}.json'
     if cache_file.exists():
         with open(cache_file) as f:
             data = json.load(f)
@@ -349,9 +357,12 @@ def get_country_demographics(country_iso3: str, year: int = 2022) -> dict:
     result['source'] = ' + '.join(sources)
 
     # ── Save to disk cache ────────────────────────────────────
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    with open(cache_file, 'w') as f:
-        json.dump(result, f, indent=2)
+    try:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, 'w') as f:
+            json.dump(result, f, indent=2)
+    except OSError as e:
+        logger.debug("Demographics cache not written (%s): %s", cache_file, e)
 
     logger.info("%s: birth=%s/1000, death=%s/1000, LE=%syr [%s]",
                 iso3, result.get('birth_rate', '?'), result.get('death_rate', '?'),
@@ -372,11 +383,11 @@ def get_demographics_for_sim(iso3: str, year: int = 2022) -> dict:
 def clear_cache(iso3: Optional[str] = None):
     """Clear disk cache. Pass iso3 to clear one country, None to clear all."""
     if iso3:
-        for f in CACHE_DIR.glob(f'{iso3.upper()}_*.json'):
+        for f in cache_dir().glob(f'{iso3.upper()}_*.json'):
             f.unlink()
         logger.info("Cleared cache for %s", iso3)
     else:
-        for f in CACHE_DIR.glob('*.json'):
+        for f in cache_dir().glob('*.json'):
             f.unlink()
         # Also clear lru_cache
         get_country_demographics.cache_clear()
