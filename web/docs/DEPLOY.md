@@ -50,17 +50,25 @@ to that bearer). Every other setting has a default.
 
 ## 4. Vercel
 
-1. From the repository root, `npx vercel link` and create the project `epichat`
-   in the owner's team. The project root is the repository root; `vercel.json`
-   there defines the `web` service. Leave the Root Directory setting empty.
-   If the dashboard refuses a services config with a single service, set the
-   Root Directory to `web` instead and remove the `services` and `rewrites`
-   keys from `vercel.json` until sub-project 2 restores them.
-2. Settings > Environment Variables: add the variables from section 3 for
-   Production and Preview.
-3. `npx vercel deploy` prints a preview address. `npx vercel deploy --prod`
-   puts the current code live. Pushing to GitHub does the same once the
-   repository is connected.
+Done on 2026-10-08: project `epichat` in the owner's personal account, live at
+`https://epichat-ai.vercel.app` (`epichat-psi.vercel.app` is the
+auto-assigned alias and also works). The single-service config was accepted on
+the Hobby plan as written.
+
+1. From the repository root, `npx vercel link --yes --project epichat`. The
+   project root is the repository root; `vercel.json` there defines the `web`
+   service. Leave the Root Directory setting empty. Linking also connected
+   the GitHub repository, so every push to `main` is a production deploy and
+   a push to any other branch is a preview.
+2. Environment variables: either Settings > Environment Variables in the
+   dashboard, or from the repository root,
+   `printf '%s' "<value>" | npx vercel env add NAME production,preview --yes`
+   (add `--sensitive` for keys). The variables are the set ones in section 3.
+3. `npx vercel deploy` prints a preview address; `npx vercel deploy --prod`
+   puts the current code live. A project's very first deployment goes to
+   production regardless. Preview addresses sit behind Vercel Authentication:
+   open them in a browser signed in to Vercel. The production address is
+   public.
 4. After the first live deploy, Settings > Cron Jobs: confirm `/api/health`
    runs daily. Then set the Supabase Site URL (section 1.4) to the live address.
 5. Keep the Hobby plan for the pilot. Do not turn on Password Protection; it
@@ -74,9 +82,10 @@ to that bearer). Every other setting has a default.
   agreeing with a participant type opens `/chat`.
 - Table Editor: `profiles` has the row; `step_events` has `consent_given`,
   `session_start`; `sessions` has a row with the browser's user agent.
-- `/api/health` returns `{"ok":true}` from a browser and
+- `/api/health` answers 401 to a browser once `CRON_SECRET` is set, and
   `{"ok":true,"participants":N}` when called with
-  `Authorization: Bearer <CRON_SECRET>` (as the Vercel cron does).
+  `Authorization: Bearer <CRON_SECRET>` (as the Vercel cron does). Without
+  `CRON_SECRET` it answers `{"ok":true}` to anyone and reports no count.
 - `/admin` opens for an address in `RESEARCHER_EMAILS` and is a 404 for
   anyone else.
 
