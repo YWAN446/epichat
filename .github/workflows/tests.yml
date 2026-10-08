@@ -23,6 +23,8 @@ jobs:
           pip install pytest
       - name: Run tests
         run: pytest tests/ -q
+        env:
+          ANTHROPIC_API_KEY: test-key-never-used
 
   web:
     runs-on: ubuntu-latest
