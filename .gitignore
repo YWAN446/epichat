@@ -35,3 +35,6 @@ web/next-env.d.ts
 .env*
 !.env.example
 sim/.venv/
+# sim service: build-time copies and the local virtualenv
+sim/epichat/
+sim/templates/

@@ -71,6 +71,8 @@ the Hobby plan as written.
    public.
 4. After the first live deploy, Settings > Cron Jobs: confirm `/api/health`
    runs daily. Then set the Supabase Site URL (section 1.4) to the live address.
+   The daily cron response also reports the simulation service's health
+   (section 7).
 5. Keep the Hobby plan for the pilot. Do not turn on Password Protection; it
    adds a monthly charge.
 
@@ -107,3 +109,73 @@ the Hobby plan as written.
   then delete the user under Authentication > Users.
 - **Monthly:** check Supabase database size and Vercel usage against the free
   allowances (500 MB; 4 active-CPU hours, 360 GB-hours, 1M invocations).
+
+## 7. Simulation service (`sim/`)
+
+The second Vercel service. Private: no rewrite reaches it; the web app calls
+it through the binding (`SIM_INTERNAL_URL`) with `SIM_SHARED_SECRET`.
+
+**Environment.** Add `SIM_SHARED_SECRET` (any long random string) to the
+Vercel project for Production and Preview; the same project variables reach
+both services. `ANTHROPIC_API_KEY` is already set and is used only when a
+run fails and the parameters are repaired. Locally, export both in the
+shell that runs the service and put `SIM_INTERNAL_URL=http://localhost:8000`
+plus the secret in `web/.env.local`.
+
+**Local run.** Two processes, from the repository root:
+
+    SIM_SHARED_SECRET=<secret> sim/.venv/Scripts/python.exe -m uvicorn main:app --app-dir sim --port 8000
+    npm --prefix web run dev
+
+`sim/.venv` is a Python 3.12 virtualenv: `py -3.12 -m venv sim/.venv` then
+`sim/.venv/Scripts/python.exe -m pip install -r sim/requirements.txt pytest`.
+`npx vercel dev` from the root runs both with the binding injected.
+
+**Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 20 s;
+three real Starsim runs). CI runs them on Python 3.12 as the `sim` job.
+
+**Settings** (all optional except the secret): `SIM_TIMEOUT_SECONDS` 120,
+`SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
+`SIM_MAX_AGENT_YEARS` 500000, `SIM_SERIES_MAX_POINTS` 2000.
+
+**First two-service deploy, verification.**
+
+1. `npx vercel deploy` from the root. Both services build. If the sim build
+   fails because `../epichat` is not visible, change the sim service in
+   `vercel.json` to `"root": "."` with `"entrypoint": "sim/main:app"`, drop
+   the `buildCommand`, and add `web/**` and the Streamlit folders to its
+   `excludeFiles`; record the switch here.
+2. Public probe: `curl -s -o /dev/null -w "%{http_code}\n" https://epichat-ai.vercel.app/health`
+   and the same for `/simulate` print `404` (the web app answers, never the
+   sim).
+3. `curl -s -H "Authorization: Bearer $CRON_SECRET" https://epichat-ai.vercel.app/api/health`
+   returns `"sim":{"ok":true,"starsim_version":"3.3.2",...}`.
+4. Timing through the binding, bearer only:
+   `.../api/health?run=10000` twice (the first is the cold start), then
+   `.../api/health?run=100000` once. Each answer carries `sim_run.duration_ms`
+   and `sim_run.cold_start`.
+5. Fill in the table below from step 4 and from the Usage page's Active CPU
+   reading before and after.
+
+| Measured on Vercel | Value |
+|---|---|
+| Cold start, 10k agents, 1 year | (fill in) |
+| Warm, 10k agents, 1 year | (fill in) |
+| Warm, 100k agents, 1 year | (fill in) |
+| Active CPU used by the three runs | (fill in) |
+
+Local baseline (Python 3.12, one core, 2026-10-08): import 2 s; 10k agents
+1.5 s CPU; 100k agents 11 s; 100k agents for 5 years 60 s; peak memory 332 MB.
+
+**Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
+Active CPU hours a month and pauses the whole project for the rest of the
+30-day window when exceeded. During the study check Usage > Active CPU
+weekly. If it passes 2 hours before mid-month, or a participant reports the
+app paused, upgrade the team to Pro ($20 a month; usage at this scale is a
+dollar or two and covered by the plan's credit). Nothing in the code changes.
+
+**Moving the service elsewhere.** `sim/Dockerfile` builds the same service as
+a container (`docker build -f sim/Dockerfile -t epichat-sim .`). Run it on
+Render, Cloud Run, or a VM, set `SIM_INTERNAL_URL` to its address and
+`SIM_SHARED_SECRET` to the same secret on both sides, and remove the `sim`
+service and the binding from `vercel.json`. The web app does not change.

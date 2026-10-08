@@ -1,7 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
-    "web": { "root": "web" }
+    "web": {
+      "root": "web",
+      "bindings": [
+        { "type": "service", "service": "sim", "format": "url", "env": "SIM_INTERNAL_URL" }
+      ]
+    },
+    "sim": {
+      "root": "sim",
+      "entrypoint": "main:app",
+      "buildCommand": "rm -rf epichat templates && cp -r ../epichat ../templates . && find epichat -name __pycache__ -type d -prune -exec rm -rf {} +",
+      "functions": {
+        "main.py": {
+          "maxDuration": 300,
+          "excludeFiles": "{tests/**,epichat/data/demographics/cache/**,**/__pycache__/**,.venv/**}"
+        }
+      }
+    }
   },
   "rewrites": [{ "source": "/(.*)", "destination": { "service": "web" } }],
   "crons": [{ "path": "/api/health", "schedule": "0 9 * * *" }]
