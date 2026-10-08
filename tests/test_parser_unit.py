@@ -751,3 +751,49 @@ def test_finalize_params_updates_last_resolved():
     assert isinstance(params, SimParams)
     assert get_last_resolved() == resolved
     assert get_last_location_queried() is True
+
+
+# ── repair_params ─────────────────────────────────────────────────────────────
+from epichat.parser import RepairResult, fix_params, repair_params  # noqa: E402
+
+
+def _mock_llm_with_usage(response_text: str, input_tokens: int, output_tokens: int):
+    client = _mock_llm(response_text)
+    msg = client.messages.create.return_value
+    msg.usage = MagicMock(input_tokens=input_tokens, output_tokens=output_tokens)
+    return client
+
+
+_REPAIRED = json.dumps({"disease_type": "seir", "beta": 0.05, "dur_exp": 5.0, "n_agents": 1000})
+
+
+def test_repair_params_returns_params_model_and_usage():
+    client = _mock_llm_with_usage(_REPAIRED, 1200, 300)
+    before = SimParams(disease_type="sir", beta=0.05, n_agents=1000)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = repair_params("measles", before, "KeyError: dur_exp", "claude-opus-5-5")
+    assert isinstance(result, RepairResult)
+    assert result.params.disease_type == "seir" and result.params.dur_exp == 5.0
+    assert result.model == "claude-opus-5-5"
+    assert (result.input_tokens, result.output_tokens) == (1200, 300)
+    assert client.messages.create.call_args.kwargs["model"] == "claude-opus-5-5"
+
+
+def test_repair_params_tolerates_missing_usage():
+    client = _mock_llm(_REPAIRED)
+    client.messages.create.return_value.usage = None
+    before = SimParams(disease_type="sir", beta=0.05, n_agents=1000)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = repair_params("measles", before, "err", "claude-opus-5-5")
+    assert (result.input_tokens, result.output_tokens) == (0, 0)
+
+
+def test_fix_params_still_returns_sim_params_with_the_parser_model():
+    client = _mock_llm_with_usage(_REPAIRED, 1, 1)
+    before = SimParams(disease_type="sir", beta=0.05, n_agents=1000)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        repaired = fix_params("measles", before, "err")
+    assert isinstance(repaired, SimParams)
+    assert repaired.dur_exp == 5.0
+    from epichat.parser import _MODEL
+    assert client.messages.create.call_args.kwargs["model"] == _MODEL

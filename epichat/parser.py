@@ -425,10 +425,25 @@ def parse_query(user_input: str, context: OutbreakContext | None = None) -> SimP
     return finalize_params(user_input, intent, resolved)
 
 
-def fix_params(user_input: str, params: SimParams, error_message: str) -> SimParams:
+@dataclass
+class RepairResult:
+    """A repaired parameter set and what the call cost. The web app prices
+    the tokens; this module only reports them."""
+    params: SimParams
+    model: str
+    input_tokens: int
+    output_tokens: int
+
+
+def _token_count(usage, name: str) -> int:
+    value = getattr(usage, name, None) if usage is not None else None
+    return value if isinstance(value, int) else 0
+
+
+def repair_params(user_input: str, params: SimParams, error_message: str, model: str) -> RepairResult:
     """
-    Ask the LLM to fix parameters given a Starsim execution error.
-    Used by the error recovery loop in the orchestrator.
+    Ask the LLM to fix parameters given a Starsim execution error, with the
+    model chosen by the caller. Used by the simulation service's repair loop.
     """
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
@@ -441,7 +456,7 @@ def fix_params(user_input: str, params: SimParams, error_message: str) -> SimPar
     )
 
     message = client.messages.create(
-        model=_MODEL,
+        model=model,
         max_tokens=1024,
         system="You are an epidemiological parameter assistant. Return only valid JSON matching the SimParams schema.",
         messages=[{"role": "user", "content": recovery_prompt}],
@@ -456,4 +471,18 @@ def fix_params(user_input: str, params: SimParams, error_message: str) -> SimPar
 
     data = json.loads(raw)
     data = {k: v for k, v in data.items() if v is not None or k in ("dur_exp", "dur_immune", "rand_seed", "capacity")}
-    return SimParams(**data)
+    usage = getattr(message, "usage", None)
+    return RepairResult(
+        params=SimParams(**data),
+        model=model,
+        input_tokens=_token_count(usage, "input_tokens"),
+        output_tokens=_token_count(usage, "output_tokens"),
+    )
+
+
+def fix_params(user_input: str, params: SimParams, error_message: str) -> SimParams:
+    """
+    Ask the LLM to fix parameters given a Starsim execution error.
+    Used by the error recovery loop in the orchestrator.
+    """
+    return repair_params(user_input, params, error_message, _MODEL).params
