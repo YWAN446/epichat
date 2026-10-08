@@ -122,6 +122,14 @@ run fails and the parameters are repaired. Locally, export both in the
 shell that runs the service and put `SIM_INTERNAL_URL=http://localhost:8000`
 plus the secret in `web/.env.local`.
 
+**Bundle size.** The sim's Python bundle is about 590 MB (scipy, llvmlite,
+pandas, matplotlib, and sciris's dependencies), above Vercel's 500 MB
+default for Python functions. The project therefore sets
+`VERCEL_SUPPORT_LARGE_FUNCTIONS=1` (Production and Preview), which turns on
+Vercel's large-functions beta (up to 5 GB). Without it the sim build fails
+with "Total bundle size exceeds the maximum function size". Set it first on
+any new project that hosts this service.
+
 **Local run.** Two processes, from the repository root:
 
     SIM_SHARED_SECRET=<secret> sim/.venv/Scripts/python.exe -m uvicorn main:app --app-dir sim --port 8000
@@ -138,7 +146,9 @@ three real Starsim runs). CI runs them on Python 3.12 as the `sim` job.
 `SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
 `SIM_MAX_AGENT_YEARS` 500000, `SIM_SERIES_MAX_POINTS` 2000.
 
-**First two-service deploy, verification.**
+**First two-service deploy, verification.** Done on 2026-10-08: the
+build-time copy of the package was bundled and ran, so the fallback in step 1
+was not needed; the only surprise was the bundle size (see above).
 
 1. `npx vercel deploy` from the root. Both services build. If the sim build
    fails because `../epichat` is not visible, change the sim service in
@@ -154,15 +164,20 @@ three real Starsim runs). CI runs them on Python 3.12 as the `sim` job.
    `.../api/health?run=10000` twice (the first is the cold start), then
    `.../api/health?run=100000` once. Each answer carries `sim_run.duration_ms`
    and `sim_run.cold_start`.
-5. Fill in the table below from step 4 and from the Usage page's Active CPU
-   reading before and after.
+5. Record the numbers below from step 4; the Usage page's Active CPU
+   reading is the owner's to note alongside them.
 
-| Measured on Vercel | Value |
+| Measured on Vercel, 2026-10-08 (iad1, Hobby, 2 GB) | Value |
 |---|---|
-| Cold start, 10k agents, 1 year | (fill in) |
-| Warm, 10k agents, 1 year | (fill in) |
-| Warm, 100k agents, 1 year | (fill in) |
-| Active CPU used by the three runs | (fill in) |
+| Cold health check through the binding (no run) | 4.9 s wall |
+| Cold start, 10k agents, 1 year | 12.3 s (`duration_ms` 12257) |
+| Warm, 10k agents, 1 year | 6.8 s (`duration_ms` 6755) |
+| Warm, 100k agents, 1 year | 18.2 s (`duration_ms` 18224) |
+
+The warm 10k run is about 4.5× the local CPU time (the child process
+re-imports Starsim, about 3 s on Vercel, plus a slower vCPU); 100k agents is
+about 1.7× local. Both are within the per-attempt timeout with room to spare,
+and 100k agents for 5 years (60 s locally) should still fit.
 
 Local baseline (Python 3.12, one core, 2026-10-08): import 2 s; 10k agents
 1.5 s CPU; 100k agents 11 s; 100k agents for 5 years 60 s; peak memory 332 MB.

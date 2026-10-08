@@ -11,9 +11,9 @@ Success, from the parent's verification points, plus one measured on 2026-10-08:
 | Point | Status |
 |---|---|
 | Starsim installs and runs under Python 3.12 | Verified locally: Starsim 3.3.2 with numba 0.68, numpy 2.5, pandas 3.0 runs all six templates on 3.12.1 |
-| The package is importable from `sim/` on Vercel | Verified on the first deploy (section 7) |
-| Cold-start and run times for 10k and 100k agents recorded | Local baseline in section 9; Vercel figures recorded in `web/docs/DEPLOY.md` on the first deploy |
-| `/simulate` reachable only through the binding | Verified on the first deploy: the public address has no route to the service; the web health route reaches it through the binding |
+| The package is importable from `sim/` on Vercel | Verified 2026-10-08: the build-time copy is bundled and runs. One surprise: the Python bundle is 591 MB (scipy, llvmlite, pandas, and sciris's dependencies; the parent spec's 220 MB estimate was wrong), above the 500 MB default, so the project sets `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` and the sim function uses Vercel's large-functions beta (up to 5 GB) |
+| Cold-start and run times for 10k and 100k agents recorded | Vercel, 2026-10-08: 10k agents cold 12.3 s, warm 6.8 s; 100k agents warm 18.2 s; cold health check through the binding 4.9 s. Local baseline in section 9 |
+| `/simulate` reachable only through the binding | Verified 2026-10-08: `/health` and `/simulate` on the public address answer 404 from the web app; the web health route reaches the service through the binding |
 
 ## 2. Decisions made on 2026-10-08
 
