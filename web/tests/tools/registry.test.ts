@@ -29,8 +29,7 @@ describe("tool registry", () => {
     expect(extra.isError).toBe(true);
     const broken = makeDeps({ unWpp: new Error("kaboom"), scenario: { ...deps.scenario, params: null } });
     const thrown = await executeTool("fetch_demographics", { country_iso3: "KEN" }, broken);
-    // Task 8 stub; Task 9 restores /^Call configure_simulation first/.
-    expect(thrown.content).toMatch(/^FETCH ERROR: not implemented/);
+    expect(thrown.content).toMatch(/^Call configure_simulation first/);
   });
 
   it("treats null fields as not passed", async () => {
