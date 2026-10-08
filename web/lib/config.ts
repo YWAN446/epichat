@@ -20,6 +20,8 @@ export type Settings = {
   websiteUrl: string;
   simInternalUrl: string;
   simSharedSecret: string;
+  /** UN Population Data Portal bearer for the live demographics call; empty sends none. */
+  unApiKey: string;
   evalBearerToken: string;
   /** The bearer Vercel sends to cron routes when this is set. */
   cronSecret: string;
@@ -76,6 +78,7 @@ export function loadSettings(env: Env = process.env): Settings {
     websiteUrl: env.WEBSITE_URL || "https://ywan446.github.io/epichat/",
     simInternalUrl: env.SIM_INTERNAL_URL ?? "",
     simSharedSecret: env.SIM_SHARED_SECRET ?? "",
+    unApiKey: env.UN_API_KEY ?? "",
     evalBearerToken: env.EVAL_BEARER_TOKEN ?? "",
     cronSecret: env.CRON_SECRET ?? "",
   };

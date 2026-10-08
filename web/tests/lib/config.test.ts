@@ -21,6 +21,7 @@ describe("loadSettings", () => {
       websiteUrl: "https://ywan446.github.io/epichat/",
       simInternalUrl: "",
       simSharedSecret: "",
+      unApiKey: "",
       evalBearerToken: "",
       cronSecret: "",
     });
@@ -74,5 +75,12 @@ describe("settingsFor and isResearcher", () => {
     expect(isResearcher(settings, "PI@emory.edu")).toBe(true);
     expect(isResearcher(settings, "student@emory.edu")).toBe(false);
     expect(isResearcher(settings, null)).toBe(false);
+  });
+});
+
+describe("UN_API_KEY", () => {
+  it("defaults to empty and reads the variable", () => {
+    expect(loadSettings({}).unApiKey).toBe("");
+    expect(loadSettings({ UN_API_KEY: "tok" }).unApiKey).toBe("tok");
   });
 });
