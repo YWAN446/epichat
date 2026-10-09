@@ -15,6 +15,10 @@ creates projects or changes dashboard settings.
    Sub-project 4a adds `web/supabase/migrations/0003_recap.sql` (one more
    turn event kind, `recap`); run it after 0002, before the workspace code
    deploys, or every turn is rejected by `finish_turn`.
+   Sub-project 4c adds `web/supabase/migrations/0004_reports.sql` (the
+   `reports` table, two scenario columns, the sixth stage, and `finish_turn`
+   linking reports); run it after 0003, twice, before the report code
+   deploys, or `finish_turn` rejects the scenario's report fields.
 3. Sign-in is by an emailed code only. The app has no page for a sign-in link
    to land on, so the emails must carry the code and no link.
    - Authentication > Sign In / Providers > Email: set "Email OTP Length" to
@@ -242,6 +246,42 @@ nothing from the UN API.
    and End. Reload: the widths and the collapsed state are as left. On the
    phone the two buttons still open the drawer and the sheet.
 
+## 6e. Report verification
+
+Done on a preview or production deployment after the report branch is
+pushed, with migration 0004 applied first (section 1.2). The sim service
+builds with two more libraries (`python-docx`, `reportlab`) and serves
+`POST /export` behind the shared secret.
+
+1. A measles conversation through a run ("Model a measles outbreak in
+   Kenya" → confirm → "Fetch the data" → "Run it"). After the interpretation,
+   the chips include "Create a report" and the stage strip reads Interpret.
+2. Press "Create a report": the activity line says "Wrote the report,
+   version 1"; the reply says the report is ready and names the four formats;
+   the stage strip's sixth step, Report, is current; the Details panel's
+   Report section opens with the title, "Version 1 · 8 sections", the eight
+   headings, and Markdown, HTML, Word, PDF, Open; the same line sits under
+   the tool call in the conversation.
+3. Open each download: HTML in the browser (the figure drawn, the tables
+   present, a clean print preview), Word in Word (headings, tables, the
+   figure as a picture), PDF in a viewer (the figure, tables that repeat
+   their header across pages), Markdown in an editor (every table, the
+   figure note). The network tab shows `/api/reports/<id>?format=…` for
+   each.
+4. "Compare with 90% vaccine coverage" → "Run it": the strip drops back to
+   Interpret. "Update the report": version 2, the results table with two
+   rows ("Run 1", "Run 2, vaccine coverage 90%"), two curves in the figure.
+5. Ask for a report in a fresh conversation before any run: the assistant
+   says what has to happen first; no report row is written.
+6. Table Editor: `select version, title, jsonb_array_length(document->'sections')
+   from reports where conversation_id = '<id>' order by version` shows two
+   rows with 8 sections; `select kind, tool, meta from step_events where
+   conversation_id = '<id>' and (tool = 'write_report' or kind = 'export')
+   order by at` shows two `tool_called` rows and one `export` row per
+   download with its `format`; `select has_report, report_current, stage
+   from scenarios where conversation_id = '<id>'` reads true, true, report
+   after step 4.
+
 ## 7. Simulation service (`sim/`)
 
 The second Vercel service. Private: no rewrite reaches it; the web app calls
@@ -250,7 +290,9 @@ it through the binding (`SIM_INTERNAL_URL`) with `SIM_SHARED_SECRET`.
 **Environment.** Add `SIM_SHARED_SECRET` (any long random string) to the
 Vercel project for Production and Preview; the same project variables reach
 both services. `ANTHROPIC_API_KEY` is already set and is used only when a
-run fails and the parameters are repaired. Locally, export both in the
+run fails and the parameters are repaired. The report export (`POST
+/export`, sub-project 4c) needs `python-docx` and `reportlab`, listed in
+`sim/requirements.txt` and installed by the build. Locally, export both in the
 shell that runs the service and put `SIM_INTERNAL_URL=http://localhost:8000`
 plus the secret in `web/.env.local`.
 

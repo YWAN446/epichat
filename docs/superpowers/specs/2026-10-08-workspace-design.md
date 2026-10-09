@@ -398,3 +398,6 @@ sub-project 4c and the share link a new spec.
   estimates gets a "source" button; a study's metric (CFR, IFR) prefixes
   its value; a drag keeps its width in the shell and commits to the store
   on release, so the conversation does not re-render per frame.
+- **Report (2026-10-09).** Sub-project 4c is specified in
+  `2026-10-09-report-design.md`: a sixth stage, a `write_report` tool, the
+  `reports` table (migration 0004), and four exports.

@@ -22,6 +22,7 @@ describe("deployment files", () => {
       "Email OTP Length", "{{ .Token }}", "0001_init.sql", "smtp.resend.com", "Site URL", "RESEARCHER_EMAILS", "CRON_SECRET", "delete from",
       "0002_turns.sql", "UN_API_KEY", "ANTHROPIC_API_KEY", "Agent core verification", "0003_recap.sql", "Workspace verification", "/api/runs/",
       "Polish verification", "/api/diseases/", "country_names.json", "disease_refs.json", "Disease deaths",
+      "0004_reports.sql", "/api/reports/", "/export", "python-docx", "reportlab", "Report verification",
     ]) {
       expect(doc).toContain(phrase);
     }
