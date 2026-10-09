@@ -63,9 +63,10 @@ describe("the bottom stack, the sidebar, and the header", () => {
     for (const piece of ["groupsFor(", "New conversation", "A conversation appears here after your first message.", "Delete?", "onRemoved(", "aria-current"]) expect(list).toContain(piece);
   });
 
-  it("gives the header the two narrow-screen toggles and keeps New's reset", () => {
+  it("gives the header the two toggles at every width and keeps New's reset", () => {
     const header = read("components/ChatHeader.tsx");
-    for (const piece of ['aria-label="Conversations"', 'aria-label="Details"', "xl:hidden", "onClick={onNew}", "aria-expanded"]) expect(header).toContain(piece);
+    for (const piece of ['aria-label="Conversations"', 'aria-label="Details"', "onClick={onNew}", "aria-expanded"]) expect(header).toContain(piece);
+    expect(header).not.toContain("xl:hidden");
   });
 });
 
@@ -176,5 +177,21 @@ describe("the welcome", () => {
     const first = /if \(!startedWith\) \{[\s\S]*?\n        \}/.exec(chat)?.[0] ?? "";
     expect(first).toContain('kind: "suggestion_used"');
     expect(first).toContain("conversationId: id");
+  });
+});
+
+describe("collapsible, resizable columns", () => {
+  it("lets each side column collapse and be dragged or keyed to a width on wide screens", () => {
+    const shell = read("components/WorkspaceShell.tsx");
+    for (const piece of ['role="separator"', 'aria-orientation="vertical"', "aria-valuenow", "aria-valuemin", "aria-valuemax", "onPointerDown", "onKeyDown", "dragWidth(", "nudgeWidth(", "layout.left.open", "layout.right.open", "xl:w-(--column)", "setPointerCapture"]) {
+      expect(shell).toContain(piece);
+    }
+    expect(shell).toContain('"Escape"');
+  });
+
+  it("remembers the layout per browser and routes the header toggles by screen width", () => {
+    const chat = read("components/Chat.tsx");
+    for (const piece of ["useLayout(", "useWide(", "layoutStore.toggle(", "layoutStore.resize(", "wide ?"]) expect(chat).toContain(piece);
+    expect(chat).toContain("panelVisible");
   });
 });

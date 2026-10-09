@@ -7,6 +7,7 @@ import { deriveArtifacts } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
 import { summaryFor } from "@/lib/client/conversations";
 import { chipsFor, type ChipSource } from "@/lib/client/drafts";
+import { layoutStore, useLayout, useWide, type Side } from "@/lib/client/layout";
 import { keepFollowing } from "@/lib/client/scroll";
 import { readEvents } from "@/lib/client/sse";
 import { track } from "@/lib/client/track";
@@ -48,6 +49,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const [error, setError] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const layout = useLayout();
+  const wide = useWide();
   const [unseen, setUnseen] = useState(false);
   const inputBox = useRef<HTMLTextAreaElement>(null);
   const column = useRef<HTMLElement>(null);
@@ -84,10 +87,12 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const artifacts = useMemo(() => deriveArtifacts(live ? [...turns, { id: "live", blocks: live.progress.blocks }] : turns), [turns, live]);
   const artifactCount = artifacts.runs.length + artifacts.data.length + (artifacts.config ? 1 : 0);
   const seen = useRef(artifactCount);
+  // On a wide screen the panel is a column that may be collapsed; below that it is the sheet.
+  const panelVisible = wide ? layout.right.open : sheet;
   useEffect(() => {
-    if (artifactCount > seen.current && !sheet) setUnseen(true);
+    if (artifactCount > seen.current && !panelVisible) setUnseen(true);
     seen.current = artifactCount;
-  }, [artifactCount, sheet]);
+  }, [artifactCount, panelVisible]);
 
   const stage = live?.progress.stage ?? lastStage(turns);
   const empty = turns.length === 0 && !live;
@@ -96,10 +101,25 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const feedback = conversationId ? { conversationId, sessionId } : null;
   const session = sessionId ?? undefined;
 
-  function openSheet() {
-    setSheet(true);
+  function panelOpened() {
     setUnseen(false);
     if (conversationId) track({ kind: "scenario_panel_opened", sessionId: session, conversationId });
+  }
+  function onMenu() {
+    if (wide) layoutStore.toggle("left");
+    else setDrawer((open) => !open);
+  }
+  function onDetails() {
+    if (wide) {
+      const opening = !layout.right.open;
+      layoutStore.toggle("right");
+      if (opening) panelOpened();
+    } else if (sheet) {
+      setSheet(false);
+    } else {
+      setSheet(true);
+      panelOpened();
+    }
   }
   function onSectionOpen(section: PanelSection) {
     if (conversationId) track({ kind: "scenario_panel_opened", sessionId: session, conversationId, section });
@@ -244,10 +264,10 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
           email={email}
           busy={live !== null}
           onNew={startNew}
-          onMenu={() => setDrawer((open) => !open)}
-          onDetails={() => (sheet ? setSheet(false) : openSheet())}
-          menuOpen={drawer}
-          detailsOpen={sheet}
+          onMenu={onMenu}
+          onDetails={onDetails}
+          menuOpen={wide ? layout.left.open : drawer}
+          detailsOpen={panelVisible}
           unseen={unseen}
         />
       }
@@ -260,6 +280,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
         setSheet(false);
       }}
       columnRef={column}
+      layout={layout}
+      onResize={(side: Side, width: number) => layoutStore.resize(side, width)}
     >
       {empty ? (
         <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">

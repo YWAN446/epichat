@@ -6,7 +6,7 @@ import { Brand } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
 
 const QUIET = "rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-ink-soft hover:bg-paper-2 hover:text-ink";
-const ICON = "relative rounded-full px-2.5 py-1.5 text-sm text-ink-soft hover:bg-paper-2 hover:text-ink xl:hidden";
+const ICON = "relative rounded-full px-2.5 py-1.5 text-sm text-ink-soft hover:bg-paper-2 hover:text-ink";
 
 type Props = {
   email: string;
@@ -20,7 +20,7 @@ type Props = {
   unseen: boolean;
 };
 
-/** The full-width bar: the menu toggle (narrow), the brand, New, the Details toggle (narrow), the address, Sign out. */
+/** The full-width bar: the conversations toggle, the brand, New, the Details toggle, the address, Sign out. The toggles open overlays on narrow screens and collapse columns on wide ones. */
 export function ChatHeader({ email, busy, onNew, onMenu, onDetails, menuOpen, detailsOpen, unseen }: Props) {
   const router = useRouter();
 
