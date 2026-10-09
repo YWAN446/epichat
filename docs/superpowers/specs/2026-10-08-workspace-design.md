@@ -355,3 +355,41 @@ checks above.
   first user message of a conversation, capped in count and length, with a
   page where the participant sees, edits, deletes, or switches it off.
   Default on for everyone, visible and editable (decision of 2026-10-08).
+
+## 16. Revision 2026-10-09: polish after the first review
+
+The owner's review of the deployed workspace asked for nine changes. Six
+were bounded and are built on the `polish` branch; the report phase is
+sub-project 4c and the share link a new spec.
+
+- **Welcome.** An empty conversation centers a typewriter line cycling the
+  question through ten languages (`lib/client/welcome.ts`; static under
+  reduced motion), the composer (`components/Composer.tsx`, shared with
+  the footer), four introduction questions recorded as the `intro` chip
+  source, and the three stage drafts. The system prompt gains an About
+  EpiChat section with the disease and estimate counts computed from the
+  data files. A chip pressed on the welcome is recorded once the first
+  turn has created the conversation.
+- **References.** The literature table's estimate count is a button that
+  opens the references under the row (`components/panel/ReferenceList.tsx`):
+  the consensus source, then every estimate with value, year, country,
+  population, study type, and a link. `scripts/export_web_data.py` writes
+  `web/data/disease_refs.json`; `GET /api/diseases/[key]/references`
+  serves one disease to a participant, fetched once per disease
+  (`lib/client/references.ts`); opening a list is a `card_expanded` with
+  card `references`.
+- **Readable values.** `lib/client/format.ts`: country names from
+  `web/data/country_names.json` (`scripts/export_country_names.py`, UN
+  locations), parameter labels, units in words (no unit for
+  dimensionless, percent for fractions), and a label and unit for every
+  field the data tools apply.
+- **Columns.** From xl each side column collapses from the header's
+  toggle and resizes by a focusable splitter (drag, arrow keys, Home,
+  End) within bounds; `lib/client/layout.ts` keeps both in localStorage
+  through a store read with `useSyncExternalStore`. Below xl nothing
+  changed.
+- **Disease deaths.** The templates report deaths the disease caused
+  (every death less the `ss.Deaths` module's count) instead of the
+  population's `cum_deaths`, which counted background mortality once
+  demographics were applied. The series keys and stats are unchanged;
+  the labels read "Disease deaths".
