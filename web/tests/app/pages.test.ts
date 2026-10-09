@@ -53,7 +53,7 @@ describe("protected pages", () => {
     expect(source).toContain('kind: "suggestion_used"');
     expect(source).toContain('kind: "conversation_resumed"');
     expect(source).toContain("useSessionId()");
-    expect(source).toContain("<FeedbackControl");
+    expect(readFileSync("components/Turn.tsx", "utf8")).toContain("<FeedbackControl");
     expect(source).toContain("<Suggestions");
     expect(readFileSync("components/FeedbackControl.tsx", "utf8")).toContain('fetch("/api/feedback"');
     expect(readFileSync("components/ConversationList.tsx", "utf8")).toContain('method: "DELETE"');

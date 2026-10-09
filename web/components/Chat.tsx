@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import type { Block, ChatStreamEvent } from "@/lib/chat/events";
+import type { ChatStreamEvent } from "@/lib/chat/events";
 import { keepFollowing } from "@/lib/client/scroll";
 import { readEvents } from "@/lib/client/sse";
 import { track } from "@/lib/client/track";
@@ -10,13 +10,11 @@ import { INTERRUPTED, applyEvent, lastStage, lastSuggestions, startTurn, type Tu
 import type { ConversationSummary } from "@/lib/db/conversations";
 import { ChatHeader } from "./ChatHeader";
 import { ConversationList } from "./ConversationList";
-import { FeedbackControl } from "./FeedbackControl";
 import { useSessionId } from "./SessionProvider";
 import { Suggestions } from "./Suggestions";
-import { TurnBlocks } from "./TurnBlocks";
+import { Turn, type DisplayTurn } from "./Turn";
 
-/** A finished turn as the page shows it: the participant's text and the assistant's blocks. */
-export type DisplayTurn = { id: string; userText: string; blocks: Block[]; notice: string | null };
+export type { DisplayTurn };
 
 type Props = {
   email: string;
@@ -28,28 +26,6 @@ type Props = {
 };
 
 const EXAMPLES = ["Model a measles outbreak in Kenya", "What is the R0 of dengue?", "Simulate influenza in Brazil with 60% vaccine coverage"];
-
-function TurnView({ turn, status, feedback }: { turn: DisplayTurn; status: string | null; feedback: { conversationId: string; sessionId: string | null } | null }) {
-  return (
-    <article className="py-4">
-      <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-accent-wash px-4 py-2.5 whitespace-pre-wrap">{turn.userText}</p>
-      <div className="mt-4">
-        <TurnBlocks blocks={turn.blocks} />
-        {status && (
-          <p role="status" className="my-2 text-sm text-ink-faint">
-            {status}
-          </p>
-        )}
-        {turn.notice && (
-          <p role="status" className="my-2 rounded-r-lg border-l-[3px] border-warn bg-warn-wash px-3.5 py-2 text-sm text-warn-ink">
-            {turn.notice}
-          </p>
-        )}
-        {feedback && <FeedbackControl conversationId={feedback.conversationId} turnId={turn.id} sessionId={feedback.sessionId} />}
-      </div>
-    </article>
-  );
-}
 
 /** The chat: every turn's blocks, the live turn with its status line, suggestion chips, the composer, and the list. */
 export function Chat({ email, conversations, initial, maxMessageChars, contactEmail }: Props) {
@@ -211,9 +187,9 @@ export function Chat({ email, conversations, initial, maxMessageChars, contactEm
         )}
 
         {turns.map((turn) => (
-          <TurnView key={turn.id} turn={turn} status={null} feedback={feedback} />
+          <Turn key={turn.id} turn={turn} status={null} feedback={feedback} />
         ))}
-        {live && <TurnView turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} />}
+        {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} />}
 
         {showList && <ConversationList items={conversations} currentId={conversationId} />}
       </main>
