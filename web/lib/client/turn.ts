@@ -11,6 +11,8 @@ export type TurnProgress = {
   status: string | null;
   stage: Stage | null;
   suggestions: string[];
+  /** The decisions so far, from the reply's recap block. */
+  recap: string[];
   /** Set once the turn has ended, one way or the other. */
   result: TurnOutcome | null;
 };
@@ -18,7 +20,7 @@ export type TurnProgress = {
 export const INTERRUPTED = "The reply was interrupted. Please try again.";
 
 export function startTurn(): TurnProgress {
-  return { blocks: [], status: THINKING, stage: null, suggestions: [], result: null };
+  return { blocks: [], status: THINKING, stage: null, suggestions: [], recap: [], result: null };
 }
 
 function withBlock(progress: TurnProgress, block: Block, status: string | null): TurnProgress {
@@ -50,6 +52,8 @@ export function applyEvent(progress: TurnProgress, event: ChatStreamEvent): Turn
       return { ...withBlock(progress, { kind: "stage", stage: event.stage }, progress.status), stage: event.stage };
     case "suggestions":
       return { ...withBlock(progress, { kind: "suggestions", items: event.items }, progress.status), suggestions: event.items };
+    case "recap":
+      return { ...withBlock(progress, { kind: "recap", items: event.items }, progress.status), recap: event.items };
     case "done":
       return { ...progress, status: null, result: { ok: true, turnId: event.turnId, conversationId: event.conversationId, notice: event.notice } };
     case "discard":
@@ -75,4 +79,15 @@ export function lastSuggestions(turns: { blocks: Block[] }[]): string[] {
   if (!last) return [];
   const block = last.blocks.find((b): b is Extract<Block, { kind: "suggestions" }> => b.kind === "suggestions");
   return block?.items ?? [];
+}
+
+/** The decisions so far: the newest turn's recap block, or none. */
+export function lastRecap(turns: { blocks: Block[] }[]): string[] {
+  for (let i = turns.length - 1; i >= 0; i--) {
+    for (let j = turns[i].blocks.length - 1; j >= 0; j--) {
+      const block = turns[i].blocks[j];
+      if (block.kind === "recap") return block.items;
+    }
+  }
+  return [];
 }

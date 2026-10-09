@@ -398,4 +398,19 @@ describe("handleChat", () => {
     await run(HELLO, controller.signal);
     expect(requestOptions).toEqual([{ signal: controller.signal }]);
   });
+
+  it("emits and stores the recap before the suggestions, and neither when the reply has none", async () => {
+    const text = "Sure.\n\n```recap\nMeasles in Kenya\n- Population 2 million\n```\n\n```next\nRun it\n```";
+    const { run, emitted, finished } = setup([{ message: message([textBlock(text)]), text: [text] }]);
+    await run(HELLO);
+    expect(emitted.map((e) => e.type)).toEqual(["text", "recap", "suggestions", "done"]);
+    expect(emitted[1]).toEqual({ type: "recap", items: ["Measles in Kenya", "Population 2 million"] });
+    expect(finished[0].events.map((e) => e.kind)).toEqual(["text", "recap", "suggestions"]);
+    expect(finished[0].events[0]).toMatchObject({ text: "Sure." });
+    expect(finished[0].events[1]).toMatchObject({ kind: "recap", items: ["Measles in Kenya", "Population 2 million"] });
+
+    const plain = setup([{ message: message([textBlock("Plain.")]), text: ["Plain."] }]);
+    await plain.run(HELLO);
+    expect(plain.emitted.map((e) => e.type)).toEqual(["text", "done"]);
+  });
 });

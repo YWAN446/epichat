@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ChatStreamEvent } from "@/lib/chat/events";
-import { INTERRUPTED, applyEvent, lastStage, lastSuggestions, startTurn, type TurnProgress } from "@/lib/client/turn";
+import { INTERRUPTED, applyEvent, lastRecap, lastStage, lastSuggestions, startTurn, type TurnProgress } from "@/lib/client/turn";
 
 function play(events: ChatStreamEvent[]): TurnProgress {
   return events.reduce((progress, event) => applyEvent(progress, event), startTurn());
@@ -11,7 +11,7 @@ const CONFIG = { kind: "config" as const, applied: {}, approx_r0: 12, config: { 
 
 describe("applyEvent", () => {
   it("starts with a status and no result", () => {
-    expect(startTurn()).toEqual({ blocks: [], status: "Thinking…", stage: null, suggestions: [], result: null });
+    expect(startTurn()).toEqual({ blocks: [], status: "Thinking…", stage: null, suggestions: [], recap: [], result: null });
     expect(INTERRUPTED).toBe("The reply was interrupted. Please try again.");
   });
 
@@ -55,6 +55,18 @@ describe("applyEvent", () => {
     expect(done.status).toBeNull();
     expect(play([{ type: "discard", message: "Dropped." }]).result).toEqual({ ok: false, message: "Dropped." });
     expect(play([{ type: "error", code: "daily_turns", message: "Limit." }]).result).toEqual({ ok: false, message: "Limit." });
+  });
+
+  it("keeps the recap items and lastRecap finds the newest turn that has one", () => {
+    const progress = play([{ type: "text", delta: "Done." }, { type: "recap", items: ["A", "B"] }]);
+    expect(progress.recap).toEqual(["A", "B"]);
+    expect(progress.blocks.at(-1)).toEqual({ kind: "recap", items: ["A", "B"] });
+    const turns = [
+      { blocks: [{ kind: "recap" as const, items: ["old"] }] },
+      { blocks: [{ kind: "text" as const, text: "no recap this time" }] },
+    ];
+    expect(lastRecap(turns)).toEqual(["old"]);
+    expect(lastRecap([])).toEqual([]);
   });
 });
 

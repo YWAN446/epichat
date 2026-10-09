@@ -1,5 +1,5 @@
 import type { Block } from "@/lib/chat/events";
-import { withoutNext } from "@/lib/chat/next";
+import { withoutHidden } from "@/lib/chat/next";
 import { Markdown } from "./Markdown";
 import { ToolLine } from "./ToolLine";
 
@@ -12,7 +12,7 @@ export function TurnBlocks({ blocks }: { blocks: Block[] }) {
       {blocks.map((block, index) => {
         switch (block.kind) {
           case "text": {
-            const text = withoutNext(block.text);
+            const text = withoutHidden(block.text);
             return text ? <Markdown key={index} text={text} /> : null;
           }
           case "tool_result":

@@ -89,4 +89,16 @@ describe("event sink", () => {
     expect(blockOf({ type: "thinking", summary: "s" })).toEqual({ kind: "thinking", summary: "s" });
     expect(blockOf({ type: "tool_result", id: "tu_1", name: "lookup_disease", ok: false, payload: { kind: "tool_error", message: "x" } })).toEqual({ kind: "tool_result", id: "tu_1", name: "lookup_disease", ok: false, payload: { kind: "tool_error", message: "x" } });
   });
+
+  it("stores text without the recap block and keeps a recap block in order", () => {
+    const emitted: ChatStreamEvent[] = [];
+    const s = createEventSink((e) => emitted.push(e), clock());
+    s.text("Done.\n\n```recap\nMeasles in Kenya\n```\n\n```next\nRun it\n```");
+    s.block({ kind: "recap", items: ["Measles in Kenya"] });
+    s.block({ kind: "suggestions", items: ["Run it"] });
+    const stored = s.finish();
+    expect(stored.map((e) => e.kind)).toEqual(["text", "recap", "suggestions"]);
+    expect(stored[0]).toMatchObject({ text: "Done." });
+    expect(emitted.filter((e) => e.type === "recap")).toEqual([{ type: "recap", items: ["Measles in Kenya"] }]);
+  });
 });

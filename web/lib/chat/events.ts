@@ -3,9 +3,9 @@
  * The browser folds stream events into Blocks; the server stores the same
  * Blocks as turn_events rows, plus the thinking summaries only the researcher
  * sees. Text is stored in segments: one event per run of prose between other
- * blocks, each stored after withoutNext, so the stored order is the shown order.
+ * blocks, each stored after withoutHidden, so the stored order is the shown order.
  */
-import { withoutNext } from "@/lib/chat/next";
+import { withoutHidden } from "@/lib/chat/next";
 import type { Stage } from "@/lib/enums";
 import type { CardPayload } from "@/lib/tools/types";
 
@@ -17,7 +17,8 @@ export type Block =
   | { kind: "web_fetch"; url: string; title: string }
   | { kind: "notice"; message: string }
   | { kind: "stage"; stage: Stage }
-  | { kind: "suggestions"; items: string[] };
+  | { kind: "suggestions"; items: string[] }
+  | { kind: "recap"; items: string[] };
 
 export type ThinkingBlock = { kind: "thinking"; summary: string };
 export type SinkBlock = Block | ThinkingBlock;
@@ -40,6 +41,7 @@ export type ChatStreamEvent =
   | Exclude<TurnEvent, { type: "thinking" }>
   | { type: "stage"; stage: Stage }
   | { type: "suggestions"; items: string[] }
+  | { type: "recap"; items: string[] }
   | { type: "done"; turnId: string; conversationId: string; notice: string | null }
   | { type: "discard"; message: string }
   | { type: "error"; code: string; message: string };
@@ -104,7 +106,7 @@ export function createEventSink(emit: (event: ChatStreamEvent) => void, now: () 
     stored.push({ ...block, seq: stored.length + 1, at });
   };
   const closeText = () => {
-    const text = withoutNext(buffer);
+    const text = withoutHidden(buffer);
     if (text) store({ kind: "text", text }, segmentStartedAt ?? now().toISOString());
     buffer = "";
     segmentStartedAt = null;

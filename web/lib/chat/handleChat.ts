@@ -21,7 +21,7 @@ import { TOOLS, executeTool } from "@/lib/tools";
 import { emptyScenario, type Scenario, type ToolDeps } from "@/lib/tools/types";
 import { capMessage, type TurnReservation, type UsageStore } from "@/lib/usage";
 import { blockOf, createEventSink, type ChatStreamEvent, type TurnEvent } from "./events";
-import { parseNext } from "./next";
+import { parseNext, parseRecap } from "./next";
 import { firstUserMessage, systemBlocks } from "./prompt";
 import { parseChatRequest } from "./request";
 import { WEB_TOOLS, runTurn, type TurnStop } from "./runTurn";
@@ -236,7 +236,11 @@ export async function handleChat(
     if (result.stop === "refusal") step("refusal", { meta: { category: result.refusalCategory ?? "unknown" } });
     if (result.appended.length > 0) {
       messages = [userMessage, ...result.appended];
-      const items = parseNext(sink.lastText());
+      // Read the final text once: storing a block clears the sink's buffer.
+      const finalText = sink.lastText();
+      const recap = parseRecap(finalText);
+      if (recap && recap.length > 0) sink.block({ kind: "recap", items: recap });
+      const items = parseNext(finalText);
       if (items && items.length > 0) sink.block({ kind: "suggestions", items });
       outcome = { type: "done", turnId, conversationId, notice: result.stop === "max_tokens" ? CUT_OFF_NOTICE : null };
     } else {
