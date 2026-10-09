@@ -25,7 +25,8 @@ export const DRAFTS: Record<Stage, string[]> = {
   interpret: ["What does the peak mean for hospitals?", "Compare with 90% vaccine coverage", "Start a new scenario"],
 };
 
-export type ChipSource = "model" | "draft";
+/** model: the assistant suggested it; draft: a stage draft; intro: one of the welcome's introduction questions. */
+export type ChipSource = "model" | "draft" | "intro";
 
 /** The chips above the composer: the model's suggestions when it made any, otherwise the stage's drafts. */
 export function chipsFor(stage: Stage, suggestions: string[]): { items: string[]; source: ChipSource } {

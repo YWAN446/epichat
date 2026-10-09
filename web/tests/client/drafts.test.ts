@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DRAFTS, STAGE_HINTS, STAGE_LABELS, chipsFor } from "@/lib/client/drafts";
+import { DRAFTS, STAGE_HINTS, STAGE_LABELS, chipsFor, type ChipSource } from "@/lib/client/drafts";
 import { STAGES } from "@/lib/enums";
 
 describe("stage drafts", () => {
@@ -21,5 +21,7 @@ describe("stage drafts", () => {
     expect(chipsFor("configure", ["Fetch the data"])).toEqual({ items: ["Fetch the data"], source: "model" });
     expect(chipsFor("configure", [])).toEqual({ items: DRAFTS.configure, source: "draft" });
     expect(chipsFor("run", [])).toEqual({ items: [], source: "draft" });
+    const intro: ChipSource = "intro";
+    expect(intro).toBe("intro");
   });
 });

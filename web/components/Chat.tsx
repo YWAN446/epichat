@@ -6,7 +6,7 @@ import type { ChatStreamEvent } from "@/lib/chat/events";
 import { deriveArtifacts } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
 import { summaryFor } from "@/lib/client/conversations";
-import { DRAFTS, chipsFor, type ChipSource } from "@/lib/client/drafts";
+import { chipsFor, type ChipSource } from "@/lib/client/drafts";
 import { keepFollowing } from "@/lib/client/scroll";
 import { readEvents } from "@/lib/client/sse";
 import { track } from "@/lib/client/track";
@@ -14,6 +14,7 @@ import { INTERRUPTED, applyEvent, lastRecap, lastStage, lastSuggestions, startTu
 import type { ConversationSummary } from "@/lib/db/conversations";
 import type { PanelSection } from "@/lib/enums";
 import { ChatHeader } from "./ChatHeader";
+import { Composer } from "./Composer";
 import { ConversationList } from "./ConversationList";
 import { DetailsPanel } from "./panel/DetailsPanel";
 import { RecapBar } from "./RecapBar";
@@ -21,6 +22,7 @@ import { useSessionId } from "./SessionProvider";
 import { StageStrip } from "./StageStrip";
 import { Suggestions } from "./Suggestions";
 import { Turn, type DisplayTurn } from "./Turn";
+import { Welcome } from "./Welcome";
 import { WorkspaceShell } from "./WorkspaceShell";
 
 export type { DisplayTurn };
@@ -33,8 +35,6 @@ type Props = {
   maxMessageChars: number;
   contactEmail: string;
 };
-
-const CHIP = "rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-accent hover:border-accent hover:bg-accent-wash";
 
 /** The workspace: the list on the left, the conversation and its bottom stack in the middle, the details on the right. Owns the conversation state. */
 export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail }: Props) {
@@ -173,6 +173,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
           setConversationId(id);
           setConversations((list) => [summaryFor(id, userText, new Date()), ...list]);
           window.history.replaceState(null, "", `/chat/${id}`);
+          // A chip pressed on the welcome had no conversation to attach to; record it now that one exists.
+          if (source !== undefined) track({ kind: "suggestion_used", sessionId: session, conversationId: id, turnId, stage, source });
         }
       } else {
         fail(progress.result?.message ?? INTERRUPTED);
@@ -259,60 +261,36 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
       }}
       columnRef={column}
     >
-      <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">
-        {empty && (
-          <section className="rounded-2xl border border-line bg-surface p-6">
-            <h2 className="text-xl font-semibold">What would you like to model?</h2>
-            <p className="mt-2 text-ink-soft">
-              EpiChat sets up and runs agent-based epidemic simulations from a conversation: a disease, a country, real demographic data, interventions, and the
-              results, with every step shown. Try one of these, or type your own.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {DRAFTS.understand.map((draft) => (
-                <button key={draft} type="button" onClick={() => void send(draft, "draft")} className={CHIP}>
-                  {draft}
-                </button>
-              ))}
-            </div>
-            {contactEmail && <p className="mt-4 text-sm text-ink-faint">Questions about the study: {contactEmail}.</p>}
-          </section>
-        )}
-
-        {turns.map((turn) => (
-          <Turn key={turn.id} turn={turn} status={null} feedback={feedback} onActivityExpand={() => onActivityExpand(turn.id)} />
-        ))}
-        {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} />}
-      </div>
-
-      <footer className="sticky bottom-0 border-t border-line bg-paper/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-[46rem] px-4 pt-2.5">
-          {error && (
-            <p role="alert" className="mb-2.5 rounded-r-lg border-l-[3px] border-warn bg-warn-wash px-3.5 py-2.5 text-sm text-warn-ink">
-              {error}
-            </p>
-          )}
-          <RecapBar items={recap} onExpand={onRecapExpand} />
-          <StageStrip stage={stage} />
-          <Suggestions items={chips.items} disabled={live !== null} onPick={(reply) => void send(reply, chips.source)} />
+      {empty ? (
+        <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">
+          <Welcome disabled={live !== null} contactEmail={contactEmail} error={error} onPick={(text, source) => void send(text, source)}>
+            <Composer value={input} onChange={setInput} onSubmit={submit} onKeyDown={onKeyDown} disabled={live !== null} maxLength={maxMessageChars} inputRef={inputBox} large />
+          </Welcome>
         </div>
-        <form className="mx-auto flex max-w-[46rem] items-end gap-2 px-4 pb-3" onSubmit={submit}>
-          <textarea
-            ref={inputBox}
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={onKeyDown}
-            disabled={live !== null}
-            rows={1}
-            maxLength={maxMessageChars}
-            placeholder={live ? "Working…" : "Message EpiChat"}
-            aria-label="Message"
-            className="min-h-11 flex-1 resize-none rounded-xl border border-line bg-surface px-3.5 py-2.5 disabled:text-ink-faint"
-          />
-          <button type="submit" disabled={live !== null || !input.trim()} className="rounded-full bg-accent px-5 py-2.5 font-semibold text-white hover:bg-accent-deep disabled:bg-line disabled:text-ink-faint">
-            Send
-          </button>
-        </form>
-      </footer>
+      ) : (
+        <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">
+          {turns.map((turn) => (
+            <Turn key={turn.id} turn={turn} status={null} feedback={feedback} onActivityExpand={() => onActivityExpand(turn.id)} />
+          ))}
+          {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} />}
+        </div>
+      )}
+
+      {!empty && (
+        <footer className="sticky bottom-0 border-t border-line bg-paper/95 backdrop-blur-sm">
+          <div className="mx-auto max-w-[46rem] px-4 pt-2.5">
+            {error && (
+              <p role="alert" className="mb-2.5 rounded-r-lg border-l-[3px] border-warn bg-warn-wash px-3.5 py-2.5 text-sm text-warn-ink">
+                {error}
+              </p>
+            )}
+            <RecapBar items={recap} onExpand={onRecapExpand} />
+            <StageStrip stage={stage} />
+            <Suggestions items={chips.items} disabled={live !== null} onPick={(reply) => void send(reply, chips.source)} />
+          </div>
+          <Composer value={input} onChange={setInput} onSubmit={submit} onKeyDown={onKeyDown} disabled={live !== null} maxLength={maxMessageChars} inputRef={inputBox} />
+        </footer>
+      )}
     </WorkspaceShell>
   );
 }

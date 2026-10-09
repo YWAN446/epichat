@@ -80,7 +80,7 @@ describe("the shell", () => {
     for (const piece of ["<WorkspaceShell", "<DetailsPanel", "<StageStrip", "<RecapBar", "<Suggestions", "deriveArtifacts(", "chipsFor(", "lastRecap(", "summaryFor(", 'kind: "scenario_panel_opened"', 'kind: "chart_view_changed"', 'card: "activity"', 'card: "recap"', "source"]) expect(chat).toContain(piece);
     expect(chat).not.toContain("window.scrollTo");
     expect(chat).not.toContain("EXAMPLES");
-    expect(chat).toContain("DRAFTS.understand");
+    expect(chat).not.toContain("DRAFTS.understand");
   });
 });
 
@@ -150,5 +150,31 @@ describe("references behind a parameter", () => {
   it("reports an opened reference list as a card expansion", () => {
     expect(read("components/panel/DetailsPanel.tsx")).toContain("onReferencesOpen");
     expect(read("components/Chat.tsx")).toContain('card: "references"');
+  });
+});
+
+describe("the welcome", () => {
+  it("centers the typewriter line, the composer, the four introduction questions, and the examples while the conversation is empty", () => {
+    const welcome = read("components/Welcome.tsx");
+    for (const piece of ["WELCOME_PHRASES", "INTRO_QUESTIONS", "DRAFTS.understand", "typewriterStep(", "typewriterText(", "prefers-reduced-motion", "aria-hidden", "sr-only", "Or try an example", "justify-center"]) {
+      expect(welcome).toContain(piece);
+    }
+    expect(welcome).toContain('"intro"');
+    const chat = read("components/Chat.tsx");
+    for (const piece of ["<Welcome", "<Composer", "empty ? (", "<footer"]) expect(chat).toContain(piece);
+    expect(chat).not.toContain("<textarea");
+    expect(chat).not.toContain("What would you like to model?");
+  });
+
+  it("shares one composer between the welcome and the footer", () => {
+    const composer = read("components/Composer.tsx");
+    for (const piece of ["<textarea", 'aria-label="Message"', "Message EpiChat", "Working…", "maxLength", "onKeyDown", "Send"]) expect(composer).toContain(piece);
+  });
+
+  it("records a pressed chip on the first turn too, once the conversation exists", () => {
+    const chat = read("components/Chat.tsx");
+    const first = /if \(!startedWith\) \{[\s\S]*?\n        \}/.exec(chat)?.[0] ?? "";
+    expect(first).toContain('kind: "suggestion_used"');
+    expect(first).toContain("conversationId: id");
   });
 });

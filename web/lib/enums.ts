@@ -65,7 +65,7 @@ export const CARD_KINDS = ["disease", "config", "data", "run", "tool_error", "ac
 export const PANEL_SECTIONS = ["scenario", "data", "runs", "activity"] as const;
 export type PanelSection = (typeof PANEL_SECTIONS)[number];
 /** Where a pressed chip came from. */
-export const SUGGESTION_SOURCES = ["model", "draft"] as const;
+export const SUGGESTION_SOURCES = ["model", "draft", "intro"] as const;
 export const CHART_VIEWS = ["compartments", "incidence", "cumulative", "deaths"] as const;
 export const EXPORT_FORMATS = ["pdf", "docx"] as const;
 export const RATINGS = ["up", "down"] as const;
