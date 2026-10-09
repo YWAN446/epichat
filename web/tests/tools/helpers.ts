@@ -1,5 +1,6 @@
 import type { Adapters, ResolvedField } from "@/lib/data/types";
 import type { ReportRun } from "@/lib/db/runs";
+import type { Memory } from "@/lib/profile/about";
 import type { ReportDocument, ReportNarrative } from "@/lib/report/document";
 import type { SimClient, SimResult } from "@/lib/sim/client";
 import { validateParams, type SimParams } from "@/lib/sim/params";
@@ -16,12 +17,14 @@ export function rf(field: string, value: unknown, citation = "test source"): Res
 }
 
 export type WrittenReport = { version: number; title: string; language: string; narrative: ReportNarrative; document: ReportDocument };
-export type FakeDeps = ToolDeps & { runs: RunRecord[]; starts: number; queries: unknown[]; reportsWritten: WrittenReport[] };
+export type Remembered = { kind: string; text: string; replaces?: string };
+export type FakeDeps = ToolDeps & { runs: RunRecord[]; starts: number; queries: unknown[]; reportsWritten: WrittenReport[]; remembered: Remembered[] };
 
 export function makeDeps(over: Partial<{
   scenario: Scenario; unWpp: ResolvedField[] | Error; whoGho: ResolvedField[] | Error; wbData360: ResolvedField[] | Error;
   simulate: SimResult | Error; fallback: { birth_rate: number; death_rate: number; source: string } | null; contextText: string; runId: string | null;
   reportRuns: ReportRun[]; recap: string[]; nextVersion: number; reportId: string | null;
+  memoryEnabled: boolean; memories: Memory[]; memoryAdd: "full" | "not_found" | Error;
 }> = {}): FakeDeps {
   const answer = (v: ResolvedField[] | Error | undefined) => async (q: unknown) => { deps.queries.push(q); if (v instanceof Error) throw v; return v ?? []; };
   const sim: SimClient = {
@@ -39,6 +42,7 @@ export function makeDeps(over: Partial<{
     starts: 0,
     queries: [],
     reportsWritten: [],
+    remembered: [],
     async onRun(run) { deps.runs.push(run); return over.runId === undefined ? "run-1" : over.runId; },
     onScenarioStart() { deps.starts++; },
     reports: {
@@ -47,6 +51,16 @@ export function makeDeps(over: Partial<{
       async nextVersion() { return over.nextVersion ?? 1; },
       async insert(report) { deps.reportsWritten.push(report); return over.reportId === undefined ? "rep-1" : over.reportId; },
       conversationTitle: "Measles in Kenya",
+    },
+    memory: {
+      enabled: over.memoryEnabled ?? true,
+      added: 0,
+      async list() { return over.memories ?? []; },
+      async add(kind, text, replaces) {
+        deps.remembered.push({ kind, text, replaces });
+        if (over.memoryAdd instanceof Error) throw over.memoryAdd;
+        return over.memoryAdd ?? { id: "m-new" };
+      },
     },
   };
   return deps;

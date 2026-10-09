@@ -5,12 +5,14 @@ import { fetchUnWpp } from "@/lib/data/unWpp";
 import { fetchWbData360 } from "@/lib/data/wbData360";
 import { fetchWhoGho } from "@/lib/data/whoGho";
 import { supabaseConversationStore } from "@/lib/db/conversations";
+import { supabaseMemoryStore } from "@/lib/db/memories";
 import { supabaseMessageStore } from "@/lib/db/messages";
 import { supabaseReportStore } from "@/lib/db/reports";
 import { supabaseRunStore } from "@/lib/db/runs";
 import { supabaseScenarioStore } from "@/lib/db/scenarios";
 import { supabaseTurnStore } from "@/lib/db/turns";
 import { requireParticipant } from "@/lib/participant.server";
+import { supabaseProfileStore } from "@/lib/profiles";
 import { createSimClient } from "@/lib/sim/client";
 import { adminClient } from "@/lib/supabase/admin";
 import { supabaseUsageStore } from "@/lib/usage";
@@ -39,6 +41,8 @@ export async function POST(request: Request): Promise<Response> {
     turns: supabaseTurnStore(admin),
     runs: supabaseRunStore(admin),
     reports: supabaseReportStore(admin),
+    profiles: supabaseProfileStore(admin),
+    memories: supabaseMemoryStore(admin),
     sim: createSimClient({ baseUrl: settings.simInternalUrl, secret: settings.simSharedSecret }),
     adapters: {
       unWpp: (query) => fetchUnWpp(query, { apiKey: settings.unApiKey }),

@@ -11,11 +11,15 @@ import type { Adapters } from "@/lib/data/types";
 import { titleFrom, type ConversationStore } from "@/lib/db/conversations";
 import type { MessageStore } from "@/lib/db/messages";
 import type { RunStore } from "@/lib/db/runs";
+import { MEMORY_CAP, type MemoryStore } from "@/lib/db/memories";
 import type { ReportStore } from "@/lib/db/reports";
 import { scenarioToJson, type ScenarioStore } from "@/lib/db/scenarios";
 import type { ApiCall, FinishTurnPayload, StepEventJson, StoredStop, TurnStore } from "@/lib/db/turns";
 import type { StepEventKind } from "@/lib/enums";
 import { costUsd, repairCostUsd } from "@/lib/models";
+import { aboutBlock, type Memory } from "@/lib/profile/about";
+import type { ProfileFields } from "@/lib/profile/schema";
+import type { ProfileStore } from "@/lib/profiles";
 import type { SimClient } from "@/lib/sim/client";
 import { easternDay, easternMonthStart } from "@/lib/time";
 import { TOOLS, executeTool } from "@/lib/tools";
@@ -38,6 +42,8 @@ export type ChatDeps = {
   turns: TurnStore;
   runs: RunStore;
   reports: ReportStore;
+  profiles: ProfileStore;
+  memories: MemoryStore;
   sim: SimClient;
   adapters: Adapters;
   now: () => Date;
@@ -139,10 +145,30 @@ export async function handleChat(
     return;
   }
 
+  // The profile shapes the turn (profile spec, sections 8 and 9): the About block on a
+  // conversation's first message, and whether remember is offered. A failed read must not
+  // fail the turn: no block, and memory off for this turn.
+  let fields: ProfileFields | null = null;
+  try {
+    fields = (await deps.profiles.get(user.id))?.fields ?? null;
+  } catch (error) {
+    console.error("profile read failed", failureText(error));
+  }
+  const memoryOn = fields?.memoryEnabled === true;
+  let memories: Memory[] = [];
+  if (history.length === 0 && memoryOn) {
+    try {
+      memories = await deps.memories.list(user.id);
+    } catch (error) {
+      console.error("memories read failed", failureText(error));
+    }
+  }
+  const about = fields && history.length === 0 ? aboutBlock(fields, memories) : null;
+
   const turnId = deps.newId();
   const stageBefore = scenario.stage;
   const contextText = [...earlierTexts, request.text].join(" ").trim();
-  const userMessage: Message = { role: "user", content: history.length === 0 ? firstUserMessage(day, request.text) : request.text };
+  const userMessage: Message = { role: "user", content: history.length === 0 ? firstUserMessage(day, request.text, about) : request.text };
   const sink = createEventSink(send, deps.now);
   const apiCalls: ApiCall[] = [];
   let repairCost = 0;
@@ -192,11 +218,33 @@ export async function handleChat(
       },
       conversationTitle,
     },
+    memory: {
+      enabled: memoryOn,
+      added: 0,
+      list: () => deps.memories.list(user.id),
+      async add(kind, text, replaces) {
+        const now = deps.now();
+        if (replaces !== undefined) {
+          // The model names the earlier memory by its text, as the About block showed it.
+          const wanted = replaces.trim().toLowerCase();
+          const earlier = (await deps.memories.list(user.id)).find((memory) => memory.text.trim().toLowerCase() === wanted);
+          if (!earlier) return "not_found";
+          await deps.memories.deactivate(user.id, earlier.id, now);
+        } else if ((await deps.memories.countActive(user.id)) >= MEMORY_CAP && !(await deps.memories.evictOldestAgent(user.id, now))) {
+          // Every active memory is the participant's own: nothing gives way.
+          return "full";
+        }
+        return { id: await deps.memories.add(user.id, kind, text, "agent", conversationId) };
+      },
+    },
   };
 
   const runTool = async (name: string, input: unknown) => {
     const outcome = await executeTool(name, input, toolDeps, () => deps.now().getTime());
     step(outcome.isError ? "tool_failed" : "tool_called", { tool: name, meta: { duration_ms: outcome.payload?.duration_ms ?? 0 } });
+    if (outcome.payload?.kind === "memory") {
+      step("memory_added", { tool: name, meta: { memory_id: outcome.payload.memory_id, kind: outcome.payload.memory_kind, replaced: outcome.payload.replaced } });
+    }
     return outcome;
   };
 
@@ -238,7 +286,7 @@ export async function handleChat(
       thinkingDisplay: deps.settings.thinkingDisplay,
       refusalFallback: deps.settings.refusalFallback,
       system: systemBlocks(),
-      tools: [...TOOLS, ...WEB_TOOLS],
+      tools: [...(memoryOn ? TOOLS : TOOLS.filter((tool) => tool.name !== "remember")), ...WEB_TOOLS],
       messages: [...history, userMessage],
       maxOutputTokens: deps.settings.maxOutputTokens,
       maxToolRounds: deps.settings.maxToolRounds,

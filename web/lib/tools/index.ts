@@ -1,10 +1,12 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod";
+import { MEMORY_KINDS } from "@/lib/enums";
 import { ConfigureSimulationInput, configureSimulation } from "./configureSimulation";
 import { FetchDemographicsInput, fetchDemographics } from "./fetchDemographics";
 import { FetchHealthSystemInput, fetchHealthSystem } from "./fetchHealthSystem";
 import { FetchVaccinationCoverageInput, fetchVaccinationCoverage } from "./fetchVaccinationCoverage";
 import { LookupDiseaseInput, lookupDisease } from "./lookupDisease";
+import { RememberInput, remember } from "./remember";
 import { RunSimulationInput, runSimulation } from "./runSimulation";
 import { WriteReportInput, writeReport } from "./writeReport";
 import { errorMessage } from "./shared";
@@ -126,6 +128,22 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: "remember",
+    description:
+      "Remember something about this participant for future conversations: a role, their situation, a preference about how they like results, a decision they can make, a solution they already use. One short line, in the third person, without their name. Use it when they state such a thing, not for facts about the disease or the scenario. Pass replaces with the exact text of an earlier memory from the About block to update it.",
+    eager_input_streaming: true,
+    input_schema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: [...MEMORY_KINDS], description: "What kind of thing this is." },
+        text: { type: "string", description: "One line, 3 to 200 characters, in the third person." },
+        replaces: { type: ["string", "null"], description: "The exact text of the memory this one supersedes, as the About block shows it." },
+      },
+      required: ["kind", "text"],
+      additionalProperties: false,
+    },
+  },
 ];
 
 type Entry = { schema: z.ZodType; run: (input: never, deps: ToolDeps) => Promise<ToolOutcome> };
@@ -138,6 +156,7 @@ const REGISTRY: Record<string, Entry> = {
   fetch_vaccination_coverage: { schema: FetchVaccinationCoverageInput, run: fetchVaccinationCoverage },
   run_simulation: { schema: RunSimulationInput, run: runSimulation },
   write_report: { schema: WriteReportInput, run: writeReport },
+  remember: { schema: RememberInput, run: remember },
 };
 
 const FAILED = "This tool failed. Tell the user this part is temporarily unavailable.";

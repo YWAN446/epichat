@@ -2,7 +2,8 @@ import type { Adapters, ResolvedField } from "@/lib/data/types";
 import type { ReportRun } from "@/lib/db/runs";
 import type { ReportDocument, ReportNarrative, ReportPayload } from "@/lib/report/document";
 import type { ParameterSummary } from "@/lib/disease/db";
-import type { Stage } from "@/lib/enums";
+import type { MemoryKind, Stage } from "@/lib/enums";
+import type { Memory } from "@/lib/profile/about";
 import type { RepairRecord, SimClient, SimResult, SimStats } from "@/lib/sim/client";
 import type { SimParams } from "@/lib/sim/params";
 
@@ -64,7 +65,9 @@ export type RunPayload = {
   series?: Record<string, number[]>;
 };
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
-export type CardPayload = (DiseasePayload | ConfigPayload | DataPayload | RunPayload | ReportPayload | ToolErrorPayload) & { duration_ms?: number };
+/** A remember call (profile spec, section 9). */
+export type MemoryPayload = { kind: "memory"; memory_id: string; memory_kind: MemoryKind; text: string; replaced: boolean };
+export type CardPayload = (DiseasePayload | ConfigPayload | DataPayload | RunPayload | ReportPayload | MemoryPayload | ToolErrorPayload) & { duration_ms?: number };
 
 /** What a tool sends back: `content` for the model, `payload` for the card and the event store. */
 export type ToolOutcome = { content: string; isError?: boolean; payload?: CardPayload };
@@ -95,4 +98,12 @@ export type ToolDeps = {
   /** The scenario was just reset; the handler records new_scenario. */
   onScenarioStart: () => void;
   reports: ReportDeps;
+  /** The participant's memory (profile spec, section 9); `added` counts this turn's remember calls. */
+  memory: {
+    enabled: boolean;
+    added: number;
+    list(): Promise<Memory[]>;
+    /** `replaces` is the earlier memory's text as the About block shows it. */
+    add(kind: MemoryKind, text: string, replaces?: string): Promise<{ id: string } | "full" | "not_found">;
+  };
 };

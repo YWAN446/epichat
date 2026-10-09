@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { MEMORY_KINDS } from "@/lib/enums";
 import { TOOLS, executeTool } from "@/lib/tools";
 import { makeDeps } from "./helpers";
 
 describe("tool registry", () => {
-  it("declares the seven tools in the agent's order with streaming on and no extra properties", () => {
-    expect(TOOLS.map((t) => t.name)).toEqual(["configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report"]);
+  it("declares the eight tools in the agent's order with streaming on and no extra properties", () => {
+    expect(TOOLS.map((t) => t.name)).toEqual(["configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "remember"]);
     expect((TOOLS[6].input_schema as { required: string[] }).required).toEqual(["summary", "meaning", "limitations", "next_steps"]);
+    const remember = TOOLS[7].input_schema as { required: string[]; properties: { kind: { enum: string[] }; replaces: { type: string[] } } };
+    expect(remember.required).toEqual(["kind", "text"]);
+    expect(remember.properties.kind.enum).toEqual([...MEMORY_KINDS]);
+    expect(remember.properties.replaces.type).toEqual(["string", "null"]);
     for (const tool of TOOLS) {
       expect(tool.eager_input_streaming).toBe(true);
       expect(tool.input_schema.additionalProperties).toBe(false);

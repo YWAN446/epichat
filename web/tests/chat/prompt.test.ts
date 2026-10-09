@@ -20,6 +20,14 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT).toContain("panel beside the conversation");
   });
 
+  it("tells the assistant how to use the About block and the remember tool, between About EpiChat and the recap", () => {
+    expect(SYSTEM_PROMPT.indexOf("## About EpiChat")).toBeLessThan(SYSTEM_PROMPT.indexOf("## The participant"));
+    expect(SYSTEM_PROMPT.indexOf("## The participant")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Decisions recap"));
+    for (const phrase of ["About this participant", "never use a name", "one in ten", "sensitivity runs", "quotable", "preferred format first", "replaces", "third person"]) {
+      expect(SYSTEM_PROMPT).toContain(phrase);
+    }
+  });
+
   it("keeps the phrases the Python tests pin", () => {
     for (const phrase of ["under_review", "no_source", "estimates_only", "estimate_range", "estimate_extremes", "illustrative assumption", "not a forecast", "web_search", "web_fetch", "medical advice"]) {
       expect(SYSTEM_PROMPT).toContain(phrase);

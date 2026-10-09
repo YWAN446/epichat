@@ -105,7 +105,7 @@ export const CLIENT_EVENT_KINDS = [
 export const STEP_EVENT_KINDS = [...SERVER_EVENT_KINDS, ...CLIENT_EVENT_KINDS] as const;
 export type StepEventKind = (typeof STEP_EVENT_KINDS)[number];
 
-export const CARD_KINDS = ["disease", "config", "data", "run", "tool_error", "activity", "recap", "references", "report"] as const;
+export const CARD_KINDS = ["disease", "config", "data", "run", "tool_error", "activity", "recap", "references", "report", "memory"] as const;
 /** The details panel's sections, for scenario_panel_opened. */
 export const PANEL_SECTIONS = ["scenario", "data", "runs", "report", "activity", "profile"] as const;
 export type PanelSection = (typeof PANEL_SECTIONS)[number];

@@ -4,10 +4,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ChatStreamEvent } from "@/lib/chat/events";
 import { CONVERSATION_INVALID, CUT_OFF_NOTICE, DISCARD_MESSAGES, UNAVAILABLE, handleChat, type ChatDeps } from "@/lib/chat/handleChat";
 import type { ReportStore } from "@/lib/db/reports";
-import { systemBlocks } from "@/lib/chat/prompt";
+import { firstUserMessage, systemBlocks } from "@/lib/chat/prompt";
 import { loadSettings } from "@/lib/config";
 import type { ConversationRow, ConversationStore } from "@/lib/db/conversations";
+import type { MemoryStore } from "@/lib/db/memories";
 import type { MessageStore } from "@/lib/db/messages";
+import { aboutBlock, type Memory } from "@/lib/profile/about";
+import { EMPTY_PROFILE, type ProfileFields } from "@/lib/profile/schema";
+import type { ProfileStore } from "@/lib/profiles";
 import type { RunInsert, RunStore } from "@/lib/db/runs";
 import type { ScenarioStore } from "@/lib/db/scenarios";
 import type { FinishTurnPayload, TurnStore } from "@/lib/db/turns";
@@ -34,6 +38,9 @@ const HELLO = { text: "Model measles in Kenya" };
 const ANSWER = message([textBlock("Sure.\n\n```next\nConfigure measles\nFetch Kenya data\n```")]);
 const CONFIGURE = message([toolUse("tu_1", "configure_simulation", { disease: "measles", r0: 12 })], "tool_use");
 const RUN = message([toolUse("tu_2", "run_simulation", {})], "tool_use");
+const COMPLETE: ProfileFields = { ...EMPTY_PROFILE, role: "policy_maker", experience: "some", goals: ["deciding"], completedAt: "2026-10-09T10:00:00Z" };
+const REMEMBERED: Memory = { id: "m1", kind: "situation", text: "Works at a county health office", source: "agent", createdAt: "2026-10-08T10:00:00Z" };
+const REMEMBER = (input: Record<string, unknown>) => message([toolUse("tu_m", "remember", input)], "tool_use");
 
 function clock() {
   let t = Date.parse("2026-10-05T16:00:00Z");
@@ -47,6 +54,7 @@ function configured(): Scenario {
 type Over = {
   reservation?: TurnReservation; conversation?: ConversationRow | null; history?: Anthropic.Beta.BetaMessageParam[]; scenario?: Scenario | null;
   texts?: string[]; finishError?: Error; runError?: Error; loadError?: Error; simulate?: SimResult | Error;
+  profile?: ProfileFields; profileError?: Error; memories?: Memory[]; memoryCount?: number; evicted?: boolean;
 };
 
 function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}) {
@@ -54,6 +62,7 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
   const calls = {
     reservations: [] as unknown[][], records: [] as [string, string, UsageDelta][], created: [] as [string, string][],
     gets: [] as [string, string][], finished: [] as FinishTurnPayload[], runs: [] as RunInsert[], simulated: [] as { popScale: number; contextText: string }[],
+    memoriesAdded: [] as [string, string, string, string, string | null][], deactivated: [] as [string, string][],
   };
   const usage: UsageStore = {
     async reserveTurn(userId, day, monthStart, limits) { calls.reservations.push([userId, day, monthStart, limits]); return over.reservation ?? "ok"; },
@@ -87,8 +96,27 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
     async demographicsFallback() { return null; },
     async export() { return { ok: false, status: 0, kind: "unavailable", detail: "no export in tests" }; },
   };
+  const profiles: ProfileStore = {
+    async get() {
+      if (over.profileError) throw over.profileError;
+      return { userId: USER.id, email: "student@emory.edu", participantType: "graduate_student", consentVersion: "2026-10-10", consentedAt: "2026-10-10T00:00:00Z", fields: over.profile ?? EMPTY_PROFILE };
+    },
+    async recordConsent() {},
+    async touch() {},
+    async saveProfile() { return { first: false }; },
+    async patchProfile() {},
+  };
+  const memories: MemoryStore = {
+    async list() { return over.memories ?? []; },
+    async add(userId, kind, text, source, conversationId) { calls.memoriesAdded.push([userId, kind, text, source, conversationId]); return "m-new"; },
+    async update() { return true; },
+    async deactivate(userId, id) { calls.deactivated.push([userId, id]); return true; },
+    async deactivateAll() { return 0; },
+    async countActive() { return over.memoryCount ?? 0; },
+    async evictOldestAgent() { return over.evicted ?? true; },
+  };
   const deps: ChatDeps = {
-    settings: loadSettings(env), client, usage, conversations, messages, scenarios, turns, runs, reports, sim,
+    settings: loadSettings(env), client, usage, conversations, messages, scenarios, turns, runs, reports, sim, profiles, memories,
     adapters: makeDeps().adapters, now: clock(), newId: () => TURN,
   };
   const emitted: ChatStreamEvent[] = [];
@@ -100,6 +128,63 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
 afterEach(() => vi.restoreAllMocks());
 
 describe("handleChat", () => {
+  it("puts the About block on a conversation's first message only, and keeps the typed text as the turn's user_text", async () => {
+    const first = setup([{ message: ANSWER }], { profile: COMPLETE, memories: [REMEMBERED] });
+    await first.run({ ...HELLO, sessionId: SESSION });
+    expect(first.requests[0].messages).toEqual([{ role: "user", content: firstUserMessage("2026-10-05", HELLO.text, aboutBlock(COMPLETE, [REMEMBERED])) }]);
+    expect(String((first.requests[0].messages as { content: string }[])[0].content)).toContain("- Remembered: Works at a county health office (situation)");
+    expect(first.finished[0].turn.user_text).toBe(HELLO.text);
+    const resumed = setup([{ message: ANSWER }], { profile: COMPLETE, memories: [REMEMBERED], history: HISTORY });
+    await resumed.run({ conversationId: CONVERSATION, sessionId: SESSION, text: "Run it" });
+    expect((resumed.requests[0].messages as unknown[]).at(-1)).toEqual({ role: "user", content: "Run it" });
+  });
+
+  it("withholds remember and the Remembered line when memory is off", async () => {
+    const { run, requests } = setup([{ message: ANSWER }], { profile: { ...COMPLETE, memoryEnabled: false }, memories: [REMEMBERED] });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect((requests[0].tools as { name: string }[]).map((t) => t.name)).not.toContain("remember");
+    const content = String((requests[0].messages as { content: string }[])[0].content);
+    expect(content).toContain("About this participant");
+    expect(content).not.toContain("Remembered");
+  });
+
+  it("stores an agent memory from a remember call, deactivating the one it replaces by text, and logs memory_added", async () => {
+    const script = [{ message: REMEMBER({ kind: "preference", text: "Prefers tables", replaces: "works at a county health office" }) }, { message: ANSWER }];
+    const { run, finished, memoriesAdded, deactivated, requests } = setup(script, { profile: COMPLETE, memories: [REMEMBERED] });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect(memoriesAdded).toEqual([[USER.id, "preference", "Prefers tables", "agent", CONVERSATION]]);
+    expect(deactivated).toEqual([[USER.id, "m1"]]);
+    expect((requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("Remembered: Prefers tables");
+    expect(finished[0].step_events.find((e) => e.kind === "memory_added")).toMatchObject({ tool: "remember", meta: { memory_id: "m-new", kind: "preference", replaced: true } });
+    const unknown = setup([{ message: REMEMBER({ kind: "preference", text: "Prefers tables", replaces: "Likes charts" }) }, { message: ANSWER }], { profile: COMPLETE, memories: [REMEMBERED] });
+    await unknown.run({ ...HELLO, sessionId: SESSION });
+    expect(unknown.memoriesAdded).toEqual([]);
+    expect((unknown.requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("MEMORY NOT FOUND: no such memory to replace.");
+  });
+
+  it("answers MEMORY FULL at the cap when every memory is the participant's own, and evicts the oldest agent memory otherwise", async () => {
+    const script = () => [{ message: REMEMBER({ kind: "preference", text: "Prefers tables" }) }, { message: ANSWER }];
+    const full = setup(script(), { profile: COMPLETE, memoryCount: 30, evicted: false });
+    await full.run({ ...HELLO, sessionId: SESSION });
+    expect(full.memoriesAdded).toEqual([]);
+    expect((full.requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("MEMORY FULL: ask the participant to tidy their memory list.");
+    expect(full.finished[0].step_events.some((e) => e.kind === "memory_added")).toBe(false);
+    const evicting = setup(script(), { profile: COMPLETE, memoryCount: 30, evicted: true });
+    await evicting.run({ ...HELLO, sessionId: SESSION });
+    expect(evicting.memoriesAdded).toHaveLength(1);
+  });
+
+  it("answers without a block or the remember tool when the profile cannot be read", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { run, requests, emitted } = setup([{ message: ANSWER }], { profileError: new Error("down") });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect((requests[0].tools as { name: string }[]).map((t) => t.name)).not.toContain("remember");
+    expect(requests[0].messages).toEqual([{ role: "user", content: "Today's date: 2026-10-05.\n\nModel measles in Kenya" }]);
+    expect(emitted.at(-1)).toMatchObject({ type: "done" });
+    expect(logged).toHaveBeenCalledWith("profile read failed", "down");
+    logged.mockRestore();
+  });
+
   it("answers a first message: creates the conversation, dates the first message, streams, stores the turn, and records usage", async () => {
     const { run, emitted, requests, created, finished, records, reservations } = setup([{ message: ANSWER, text: ["Sure.", "\n\n```next\nConfigure measles\nFetch Kenya data\n```"] }]);
     await run({ ...HELLO, sessionId: SESSION });
@@ -110,7 +195,7 @@ describe("handleChat", () => {
     expect(requests[0].messages).toEqual([userMessage]);
     expect(requests[0].system).toEqual(systemBlocks());
     expect((requests[0].tools as { name: string }[]).map((tool) => tool.name)).toEqual([
-      "configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "web_search", "web_fetch",
+      "configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "remember", "web_search", "web_fetch",
     ]);
     expect(emitted).toEqual([
       { type: "text", delta: "Sure." },
