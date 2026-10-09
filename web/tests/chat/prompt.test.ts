@@ -5,10 +5,13 @@ import { TOOLS } from "@/lib/tools";
 import promptFile from "@/data/system_prompt.json";
 
 describe("system prompt", () => {
-  it("starts with the Python agent's prompt verbatim and adds the three sections", () => {
+  it("starts with the Python agent's prompt verbatim and adds the four sections", () => {
     expect(SYSTEM_PROMPT.startsWith((promptFile as { system: string }).system)).toBe(true);
-    for (const heading of ["## Suggested replies", "## Cards", "## Repairs"]) expect(SYSTEM_PROMPT).toContain(heading);
-    expect(SYSTEM_PROMPT).toContain("```next");
+    for (const heading of ["## Decisions recap", "## Suggested replies", "## The interface", "## Repairs"]) expect(SYSTEM_PROMPT).toContain(heading);
+    expect(SYSTEM_PROMPT).not.toContain("## Cards");
+    expect(SYSTEM_PROMPT.indexOf("```recap")).toBeLessThan(SYSTEM_PROMPT.indexOf("```next"));
+    expect(SYSTEM_PROMPT).toContain("three to eight lines");
+    expect(SYSTEM_PROMPT).toContain("panel beside the conversation");
   });
 
   it("keeps the phrases the Python tests pin", () => {

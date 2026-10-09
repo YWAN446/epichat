@@ -1,7 +1,7 @@
 /**
  * The system prompt: the Python agent's text verbatim (exported by
- * scripts/export_web_data.py, so the port cannot drift), followed by the three
- * additions from the agent-core spec, section 10. Sent as one cached block.
+ * scripts/export_web_data.py, so the port cannot drift), followed by the four
+ * additions from the workspace spec, section 7. Sent as one cached block.
  * Keep it free of dates and anything else that differs between requests.
  */
 import type Anthropic from "@anthropic-ai/sdk";
@@ -11,18 +11,29 @@ const PYTHON_SYSTEM = (promptFile as { system: string }).system;
 
 const ADDITIONS = `
 
+## Decisions recap
+
+- End every reply with a fenced block tagged \`recap\`: the decisions made so far in this conversation, one per line, three to eight lines, each under 100 characters, oldest first. Rewrite it in full every time; the interface shows only the latest. Include what is being modelled and where, settings the user chose or confirmed, data applied, runs done and what changed between them, and what the user said they care about. Nothing else goes in the block, and the interface never shows it as text:
+
+\`\`\`recap
+Measles in Kenya, SIR model, one year
+Population 2 million (user's choice)
+UN demographics applied; 72% vaccine coverage from WHO
+Run 1 done; the user asked about hospital capacity
+\`\`\`
+
 ## Suggested replies
 
-- End every reply with a fenced block tagged \`next\` holding one to three short replies the user might send next, one per line. Each is a complete message that fits the moment ("Yes, fetch the data", "Run it", "Set R0 to 12", "Compare with 90% coverage"), never a placeholder the user would have to fill in. The interface turns the block into buttons and never shows it as text, so nothing else goes in it:
+- After the recap, end with a fenced block tagged \`next\` holding one to three short replies the user might send next, one per line. Each is a complete message that fits the moment ("Yes, fetch the data", "Run it", "Set R0 to 12", "Compare with 90% coverage"), never a placeholder the user would have to fill in. The interface turns the block into buttons and never shows it as text, so nothing else goes in it:
 
 \`\`\`next
 Yes, fetch the data
 Run it
 \`\`\`
 
-## Cards
+## The interface
 
-- The interface renders disease parameters, the configuration, fetched data, and simulation results as cards built from your tool results. Do not retype those numbers in tables or lists; interpret them: what the peak means, what the interventions did, what the limitations are.
+- The configuration, the data applied, and every run are shown in a panel beside the conversation, and after a run the key numbers and the epidemic curve appear under your tool call. Do not retype those numbers in a list; interpret them: what the peak means, what the interventions did, what the limitations are. A short Markdown table is welcome when you compare scenarios or lay out choices.
 
 ## Repairs
 
