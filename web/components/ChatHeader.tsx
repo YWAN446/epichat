@@ -12,6 +12,9 @@ type Props = {
   email: string;
   busy: boolean;
   onNew: () => void;
+  onShare: () => void;
+  /** The conversation exists and has a finished turn. */
+  canShare: boolean;
   onMenu: () => void;
   onDetails: () => void;
   menuOpen: boolean;
@@ -21,7 +24,7 @@ type Props = {
 };
 
 /** The full-width bar: the conversations toggle, the brand, New, the Details toggle, the address, Sign out. The toggles open overlays on narrow screens and collapse columns on wide ones. */
-export function ChatHeader({ email, busy, onNew, onMenu, onDetails, menuOpen, detailsOpen, unseen }: Props) {
+export function ChatHeader({ email, busy, onNew, onShare, canShare, onMenu, onDetails, menuOpen, detailsOpen, unseen }: Props) {
   const router = useRouter();
 
   async function signOut() {
@@ -48,6 +51,7 @@ export function ChatHeader({ email, busy, onNew, onMenu, onDetails, menuOpen, de
               New
             </Link>
           )}
+          {canShare && <button type="button" onClick={onShare} disabled={busy} className={QUIET}>Share</button>}
           <button type="button" onClick={onDetails} aria-expanded={detailsOpen} aria-label="Details" className={ICON}>
             Details
             {unseen && <span aria-hidden="true" className="absolute top-1 right-1 h-2 w-2 rounded-full bg-accent" />}

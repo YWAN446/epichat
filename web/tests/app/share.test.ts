@@ -26,3 +26,22 @@ describe("the public share page", () => {
     expect(read("components/panel/ScenarioSection.tsx")).toContain("references = true");
   });
 });
+
+describe("the Share dialog", () => {
+  it("creates, updates, copies, and stops sharing from a native dialog, with the spec's sentence", () => {
+    const dialog = read("components/ShareDialog.tsx");
+    for (const piece of ["<dialog", "showModal()", "Create link", "Update snapshot", "Stop sharing", "Copy", "Copied", "navigator.clipboard", "describeShare(", "requestShare(", "revokeShare(", "Anyone with the link can read this conversation as it is now. Your email is not shown."]) {
+      expect(dialog).toContain(piece);
+    }
+    const header = read("components/ChatHeader.tsx");
+    expect(header).toContain("onShare");
+    expect(header).toContain(">Share<");
+    const chat = read("components/Chat.tsx");
+    for (const piece of ["<ShareDialog", "initialShare", "<ChatHeader"]) expect(chat).toContain(piece);
+    const reset = /function resetConversation\(\) \{[\s\S]*?\n  \}/.exec(chat)?.[0] ?? "";
+    expect(reset).toContain("setShare(null)");
+    const page = read("app/chat/[id]/page.tsx");
+    expect(page).toContain("active(");
+    expect(page).toContain("initialShare=");
+  });
+});

@@ -8,6 +8,7 @@ import type { ChartView } from "@/lib/client/chart";
 import { summaryFor } from "@/lib/client/conversations";
 import { chipsFor, type ChipSource } from "@/lib/client/drafts";
 import { layoutStore, useLayout, useWide, type Side } from "@/lib/client/layout";
+import type { ShareState } from "@/lib/client/share";
 import { keepFollowing } from "@/lib/client/scroll";
 import { readEvents } from "@/lib/client/sse";
 import { track } from "@/lib/client/track";
@@ -20,6 +21,7 @@ import { ConversationList } from "./ConversationList";
 import { DetailsPanel } from "./panel/DetailsPanel";
 import { RecapBar } from "./RecapBar";
 import { useSessionId } from "./SessionProvider";
+import { ShareDialog } from "./ShareDialog";
 import { StageStrip } from "./StageStrip";
 import { Suggestions } from "./Suggestions";
 import { Turn, type DisplayTurn } from "./Turn";
@@ -35,10 +37,12 @@ type Props = {
   initial: { id: string; title: string; turns: DisplayTurn[] } | null;
   maxMessageChars: number;
   contactEmail: string;
+  /** The conversation's active share, read by the server, or null. */
+  initialShare: ShareState | null;
 };
 
 /** The workspace: the list on the left, the conversation and its bottom stack in the middle, the details on the right. Owns the conversation state. */
-export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail }: Props) {
+export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail, initialShare }: Props) {
   const router = useRouter();
   const sessionId = useSessionId();
   const [conversationId, setConversationId] = useState<string | null>(initial?.id ?? null);
@@ -49,6 +53,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const [error, setError] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [share, setShare] = useState<ShareState | null>(initialShare);
+  const [shareOpen, setShareOpen] = useState(false);
   const layout = useLayout();
   const wide = useWide();
   const [unseen, setUnseen] = useState(false);
@@ -233,6 +239,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     setInput("");
     setDrawer(false);
     setUnseen(false);
+    setShare(null);
+    setShareOpen(false);
   }
 
   /**
@@ -267,6 +275,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
           email={email}
           busy={live !== null}
           onNew={startNew}
+          onShare={() => setShareOpen(true)}
+          canShare={conversationId !== null && turns.length > 0}
           onMenu={onMenu}
           onDetails={onDetails}
           menuOpen={wide ? layout.left.open : drawer}
@@ -316,6 +326,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
           <Composer value={input} onChange={setInput} onSubmit={submit} onKeyDown={onKeyDown} disabled={live !== null} maxLength={maxMessageChars} inputRef={inputBox} />
         </footer>
       )}
+      {conversationId && <ShareDialog open={shareOpen} conversationId={conversationId} share={share} onChange={setShare} onClose={() => setShareOpen(false)} />}
     </WorkspaceShell>
   );
 }

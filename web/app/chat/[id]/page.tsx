@@ -4,6 +4,7 @@ import { Chat, type DisplayTurn } from "@/components/Chat";
 import { SessionProvider } from "@/components/SessionProvider";
 import { CUT_OFF_NOTICE } from "@/lib/chat/handleChat";
 import { listConversations, supabaseConversationStore } from "@/lib/db/conversations";
+import { supabaseShareStore } from "@/lib/db/shares";
 import { supabaseTurnStore } from "@/lib/db/turns";
 import { loadParticipant, redirectFor } from "@/lib/participant.server";
 import { adminClient } from "@/lib/supabase/admin";
@@ -22,7 +23,11 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
   const conversation = await supabaseConversationStore(admin).get(id, participant.user.id);
   if (!conversation) notFound();
 
-  const [conversations, replay] = await Promise.all([listConversations(admin, participant.user.id), supabaseTurnStore(admin).listForReplay(id)]);
+  const [conversations, replay, share] = await Promise.all([
+    listConversations(admin, participant.user.id),
+    supabaseTurnStore(admin).listForReplay(id),
+    supabaseShareStore(admin).active(id, participant.user.id),
+  ]);
   const turns: DisplayTurn[] = replay.map((turn) => ({ id: turn.id, userText: turn.userText, blocks: turn.blocks, notice: turn.stop === "max_tokens" ? CUT_OFF_NOTICE : null }));
 
   return (
@@ -33,6 +38,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
         initial={{ id, title: conversation.title, turns }}
         maxMessageChars={participant.settings.maxMessageChars}
         contactEmail={participant.settings.contactEmail}
+        initialShare={share ? { token: share.token, url: `/s/${share.token}`, takenAt: share.taken_at, turnCount: share.turn_count } : null}
       />
     </SessionProvider>
   );

@@ -21,7 +21,7 @@ export default async function ChatPage() {
 
   return (
     <SessionProvider>
-      <Chat email={participant.user.email} conversations={conversations} initial={null} maxMessageChars={participant.settings.maxMessageChars} contactEmail={participant.settings.contactEmail} />
+      <Chat email={participant.user.email} conversations={conversations} initial={null} maxMessageChars={participant.settings.maxMessageChars} contactEmail={participant.settings.contactEmail} initialShare={null} />
     </SessionProvider>
   );
 }
