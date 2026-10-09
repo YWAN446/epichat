@@ -10,7 +10,7 @@ describe("chart math", () => {
     expect(seriesFor("compartments", { ...series, n_exposed: [0, 1, 0] }).map((l) => l.key)).toEqual(["n_susceptible", "n_exposed", "n_infected", "n_recovered"]);
     expect(seriesFor("incidence", series)[0]).toMatchObject({ key: "new_infections", label: "New infections per day", values: [1, 1, 1] });
     expect(seriesFor("cumulative", series)[0].key).toBe("cum_infections");
-    expect(seriesFor("deaths", series)[0].key).toBe("cum_deaths");
+    expect(seriesFor("deaths", series)[0]).toMatchObject({ key: "cum_deaths", label: "Cumulative disease deaths" });
     expect(seriesFor("deaths", { day: [0] })).toEqual([]);
   });
 

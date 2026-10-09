@@ -29,7 +29,7 @@ export function StatTiles({ payload }: { payload: RunPayload }) {
     ["Peak day", `Day ${payload.stats.peak_day}`],
     ["Peak infections", commaInt(payload.stats.peak_infections)],
     ["Attack rate", `${payload.attack_rate_pct.toFixed(1)}%`],
-    ["Deaths", commaInt(payload.stats.total_deaths ?? 0)],
+    ["Disease deaths", commaInt(payload.stats.total_deaths ?? 0)],
   ];
   return (
     <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">

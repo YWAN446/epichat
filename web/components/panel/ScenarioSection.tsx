@@ -1,3 +1,4 @@
+import { countryName, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import { commaInt } from "@/lib/sim/pyformat";
 import type { ConfigPayload, DiseasePayload } from "@/lib/tools/types";
 
@@ -5,20 +6,27 @@ const STATUS: Record<string, string> = { ok: "", under_review: "under review", e
 
 type Props = { config: ConfigPayload | null; disease: DiseasePayload | null };
 
+/** The disease's display name when the lookup matches the configuration; the key in sentence case otherwise. */
+function diseaseName(key: string | null, disease: DiseasePayload | null): string {
+  if (!key) return "—";
+  if (disease && disease.canonical_name === key) return disease.display_name;
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
 /** The present configuration and the literature parameters behind it. */
 export function ScenarioSection({ config, disease }: Props) {
   if (!config && !disease) return <p className="text-ink-faint">The configuration appears here once a scenario is set up.</p>;
   const c = config?.config;
   const rows: [string, string][] = c
     ? [
-        ["Disease", c.disease ?? "—"],
+        ["Disease", diseaseName(c.disease, disease)],
         ["Model", c.disease_type.toUpperCase()],
-        ["Country", c.country ?? "—"],
+        ["Country", c.country ? countryName(c.country) : "—"],
         ["Agents", commaInt(c.n_agents)],
-        ["Duration", `${c.sim_dur_years} year${c.sim_dur_years === 1 ? "" : "s"}`],
-        ["R0 (approx.)", (config?.approx_r0 ?? 0).toFixed(1)],
-        ["Infectious period", `${c.dur_inf} days`],
-        ...(c.dur_exp ? ([["Exposed period", `${c.dur_exp} days`]] as [string, string][]) : []),
+        ["Duration", formatQuantity(c.sim_dur_years, "years")],
+        ["R₀ (approx.)", (config?.approx_r0 ?? 0).toFixed(1)],
+        ["Infectious period", formatQuantity(c.dur_inf, "days")],
+        ...(c.dur_exp ? ([["Exposed period", formatQuantity(c.dur_exp, "days")]] as [string, string][]) : []),
         ["Interventions", c.interventions.length > 0 ? c.interventions.join(", ") : "none"],
       ]
     : [];
@@ -56,9 +64,9 @@ export function ScenarioSection({ config, disease }: Props) {
             <tbody>
               {Object.entries(disease.parameters).map(([name, p]) => (
                 <tr key={name} className="border-t border-line">
-                  <td className="py-1 pr-2">{name}</td>
-                  <td className="py-1 pr-2 font-mono">{p.typical !== undefined ? `${p.typical}${p.unit ? ` ${p.unit}` : ""}` : "—"}</td>
-                  <td className="py-1 pr-2 font-mono">{p.min !== undefined && p.max !== undefined ? `${p.min}–${p.max}` : "—"}</td>
+                  <td className="py-1 pr-2">{parameterLabel(name)}</td>
+                  <td className="py-1 pr-2 font-mono">{p.typical !== undefined ? formatQuantity(p.typical, p.unit) : "—"}</td>
+                  <td className="py-1 pr-2 font-mono">{p.min !== undefined && p.max !== undefined ? formatRange(p.min, p.max, p.unit) : "—"}</td>
                   <td className="py-1 text-ink-soft">
                     {STATUS[p.status] ?? p.status}
                     {p.n_estimates > 0 ? ` (${p.n_estimates})` : ""}

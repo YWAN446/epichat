@@ -9,7 +9,7 @@ import { fmtValue } from "@/lib/sim/pyformat";
 import { Chart } from "../Chart";
 import { StatTiles, useRunSeries } from "../RunSummary";
 
-const VIEW_LABELS: Record<(typeof CHART_VIEWS)[number], string> = { compartments: "Compartments", incidence: "Incidence", cumulative: "Cumulative", deaths: "Deaths" };
+const VIEW_LABELS: Record<(typeof CHART_VIEWS)[number], string> = { compartments: "Compartments", incidence: "Incidence", cumulative: "Cumulative", deaths: "Disease deaths" };
 const PARAM_KEYS = ["beta", "n_contacts", "init_prev", "dur_inf", "dur_exp", "dur_immune", "p_death", "sim_dur_years", "n_agents"] as const;
 
 type Props = { runs: RunArtifact[]; onChartView: (view: ChartView, turnId: string) => void };

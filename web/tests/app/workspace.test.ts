@@ -21,7 +21,7 @@ describe("the reply in the middle column", () => {
 
   it("draws the run's tiles and curve, fetching a replayed series through the loader", () => {
     const summary = read("components/RunSummary.tsx");
-    for (const piece of ["Peak day", "Peak infections", "Attack rate", "Deaths", "loadSeries(", "initialSeriesState(", "Series unavailable.", 'view="infected"']) expect(summary).toContain(piece);
+    for (const piece of ["Peak day", "Peak infections", "Attack rate", "Disease deaths", "loadSeries(", "initialSeriesState(", "Series unavailable.", 'view="infected"']) expect(summary).toContain(piece);
     const chart = read("components/Chart.tsx");
     for (const piece of ["<svg", "viewBox", "seriesFor(", "thinPoints(", "niceTicks(", "linePath(", "nearestIndex(", "onPointerMove", "Series unavailable."]) expect(chart).toContain(piece);
     expect(existsSync("components/Chart.tsx")).toBe(true);
@@ -109,5 +109,26 @@ describe("review fixes", () => {
     expect(chart).toContain("touch-pan-y");
     expect(chart).not.toContain("touch-none");
     expect(read("components/panel/RunsSection.tsx")).toContain("width={320}");
+  });
+});
+
+describe("readable values", () => {
+  it("writes the scenario in words: country names, parameter labels, units", () => {
+    const scenario = read("components/panel/ScenarioSection.tsx");
+    for (const piece of ["countryName(", "parameterLabel(", "formatQuantity(", "formatRange("]) expect(scenario).toContain(piece);
+    expect(scenario).not.toContain("${p.unit}");
+    expect(scenario).not.toContain("{name}</td>");
+  });
+
+  it("writes every applied data field with a label and a unit, under the country's name", () => {
+    const data = read("components/panel/DataSection.tsx");
+    for (const piece of ["describeField(", "countryName("]) expect(data).toContain(piece);
+    expect(data).not.toContain("{key}</dt>");
+    expect(data).not.toContain("{entry.iso3}");
+  });
+
+  it("calls deaths what they are: deaths the disease caused", () => {
+    expect(read("components/panel/RunsSection.tsx")).toContain('deaths: "Disease deaths"');
+    expect(read("components/RunSummary.tsx")).not.toContain('["Deaths",');
   });
 });

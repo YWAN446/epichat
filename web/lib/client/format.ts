@@ -1,0 +1,113 @@
+/**
+ * Words for what the details panel shows: country names for ISO3 codes, the
+ * literature parameters and their units, and the fields the data tools apply.
+ * Values are formatted the way the Python app prints them (lib/sim/pyformat).
+ */
+import names from "@/data/country_names.json";
+import { fmtValue } from "@/lib/sim/pyformat";
+
+const NAMES = names as Record<string, string>;
+
+/** The UN's English name for an ISO3 code; the code itself when it is not a UN location. */
+export function countryName(iso3: string): string {
+  return NAMES[iso3.trim().toUpperCase()] ?? iso3;
+}
+
+const PARAMETER_LABELS: Record<string, string> = {
+  r0: "R₀",
+  incubation_days: "Incubation period",
+  infectious_days: "Infectious period",
+  fatality_rate: "Case fatality",
+  average_contacts_daily: "Contacts per day",
+  immunity_duration: "Immunity duration",
+  asymptomatic_fraction: "Asymptomatic share",
+};
+
+/** snake_case to a sentence-case phrase. */
+function words(key: string): string {
+  const text = key.replace(/_/g, " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export function parameterLabel(name: string): string {
+  return PARAMETER_LABELS[name] ?? words(name);
+}
+
+const plain = (value: number): string => fmtValue(value);
+const PERIODS = new Set(["days", "weeks", "months", "years"]);
+
+/** 15 (dimensionless), "10 days", "1 day", "0.1%" for a fraction, "15%" for a percentage. */
+export function formatQuantity(value: number, unit?: string): string {
+  if (unit === undefined || unit === "dimensionless") return plain(value);
+  if (unit === "fraction") return `${plain(value * 100)}%`;
+  if (unit === "percentage") return `${plain(value)}%`;
+  if (PERIODS.has(unit)) return `${plain(value)} ${value === 1 ? unit.slice(0, -1) : unit}`;
+  return `${plain(value)} ${unit}`;
+}
+
+/** "12–18", "7–21 days", "0.1–0.3%": the unit once, at the end. */
+export function formatRange(min: number, max: number, unit?: string): string {
+  if (min === max) return formatQuantity(min, unit);
+  if (unit === undefined || unit === "dimensionless") return `${plain(min)}–${plain(max)}`;
+  if (unit === "fraction") return `${plain(min * 100)}–${plain(max * 100)}%`;
+  if (unit === "percentage") return `${plain(min)}–${plain(max)}%`;
+  return `${plain(min)}–${plain(max)} ${unit}`;
+}
+
+type FieldSpec = { label: string; unit?: string; kind?: "percent_of_one" | "age" | "network" };
+
+/** WHO routine-immunization indicators, by the prefix of the field the adapter names. */
+const VACCINES: Record<string, string> = {
+  bcg: "BCG",
+  dtp3: "DTP3",
+  polio: "Polio (Pol3)",
+  hepb3: "Hepatitis B (HepB3)",
+  hib3: "Hib3",
+  mcv1: "Measles, first dose (MCV1)",
+  mcv2: "Measles, second dose (MCV2)",
+  pcv3: "Pneumococcal (PCV3)",
+  rotac: "Rotavirus",
+  hpv: "HPV",
+  menga: "Meningococcal A (MenA)",
+  yfv: "Yellow fever",
+  pab: "Tetanus, protected at birth (PAB)",
+};
+
+/** Every field the demographics, health-system, and vaccination tools can apply (lib/data, lib/tools). */
+const FIELDS: Record<string, FieldSpec> = {
+  birth_rate: { label: "Birth rate", unit: "per 1,000 per year" },
+  death_rate: { label: "Death rate", unit: "per 1,000 per year" },
+  total_population: { label: "Population" },
+  age_structure_pct: { label: "Age structure", kind: "age" },
+  network_type: { label: "Contact network", kind: "network" },
+  beta_recalibrated_to_hold_r0: { label: "Transmission rate recalibrated to hold R₀" },
+  treatment_capacity: { label: "Treatment capacity", unit: "per 1,000 people" },
+  applied_treatment_capacity: { label: "Treatment capacity applied", unit: "agents" },
+  uhc_coverage: { label: "UHC service coverage index", unit: "of 100" },
+  applied_vaccine_coverage: { label: "Vaccine coverage applied", kind: "percent_of_one" },
+  tb_incidence: { label: "TB incidence", unit: "per 100,000 per year" },
+  malaria_incidence: { label: "Malaria incidence", unit: "per 1,000 at risk per year" },
+  hiv_prevalence: { label: "HIV prevalence" },
+  diabetes_prevalence: { label: "Diabetes prevalence", unit: "% of adults" },
+  hepb_prevalence: { label: "Hepatitis B prevalence", unit: "%" },
+};
+
+function ageStructure(value: unknown): string {
+  if (typeof value !== "object" || value === null) return fmtValue(value);
+  return Object.entries(value as Record<string, unknown>)
+    .map(([band, share]) => `${band.replace("-", "–")}: ${Math.round(Number(share))}%`)
+    .join(", ");
+}
+
+/** A label and a readable value for a field a data tool applied; unknown fields fall back to the key in words. */
+export function describeField(key: string, value: unknown): { label: string; value: string } {
+  const vaccine = /^([a-z0-9]+)_coverage$/.exec(key);
+  if (vaccine && VACCINES[vaccine[1]]) return { label: `${VACCINES[vaccine[1]]} coverage`, value: `${fmtValue(value)}%` };
+  const spec = FIELDS[key];
+  if (!spec) return { label: words(key), value: fmtValue(value) };
+  if (spec.kind === "age") return { label: spec.label, value: ageStructure(value) };
+  if (spec.kind === "network") return { label: spec.label, value: String(value).replace(/_/g, "-") };
+  if (spec.kind === "percent_of_one") return { label: spec.label, value: `${plain(Number(value) * 100)}%` };
+  if (!spec.unit) return { label: spec.label, value: fmtValue(value) };
+  return { label: spec.label, value: `${fmtValue(value)}${spec.unit.startsWith("%") ? "" : " "}${spec.unit}` };
+}

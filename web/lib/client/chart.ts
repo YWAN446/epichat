@@ -18,7 +18,7 @@ const LINES: Record<ChartView, { key: string; label: string; color: string }[]> 
   ],
   incidence: [{ key: "new_infections", label: "New infections per day", color: ACCENT }],
   cumulative: [{ key: "cum_infections", label: "Cumulative infections", color: INK }],
-  deaths: [{ key: "cum_deaths", label: "Cumulative deaths", color: INK }],
+  deaths: [{ key: "cum_deaths", label: "Cumulative disease deaths", color: INK }],
 };
 
 /** The view's lines that the series actually has, in display order. */
