@@ -35,6 +35,16 @@ describe("buildSnapshot", () => {
     expect(JSON.stringify(snapshot)).not.toContain("@");
   });
 
+  it("keeps a report result but without its id, so the public page offers no participant-only downloads", () => {
+    const report = { kind: "report" as const, report_id: "rep-1", version: 2, title: "T", sections: [{ id: "summary" as const, heading: "Summary" }], words: 50 };
+    const withReport: ReplayTurn[] = [{ ...replay[0], blocks: [{ kind: "tool_result", id: "tu3", name: "write_report", ok: true, payload: report }] }];
+    const snapshot = buildSnapshot({ title: "T", replay: withReport, series: new Map(), report: null }, NOW);
+    const block = snapshot.turns[0].blocks[0];
+    if (block.kind !== "tool_result" || block.payload.kind !== "report") throw new Error("report");
+    expect(block.payload).toEqual({ ...report, report_id: null });
+    expect(JSON.stringify(snapshot)).not.toContain("rep-1");
+  });
+
   it("drops thinking blocks that slipped in", () => {
     const withThinking: ReplayTurn[] = [{ ...replay[0], blocks: [{ kind: "thinking", summary: "plan" } as never, ...replay[0].blocks] }];
     const snapshot = buildSnapshot({ title: "T", replay: withThinking, series: new Map(), report: null }, NOW);

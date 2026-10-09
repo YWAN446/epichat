@@ -37,7 +37,10 @@ function turnsWith(replay: ReplayTurn[], series: Map<string, Series>, max: numbe
     blocks: turn.blocks
       .filter((block) => (block.kind as string) !== "thinking")
       .map((block) => {
-        if (block.kind !== "tool_result" || !block.ok || block.payload.kind !== "run" || !block.payload.run_id) return block;
+        if (block.kind !== "tool_result" || !block.ok) return block;
+        // The report travels as the snapshot's own document; its id would only point at participant-only downloads.
+        if (block.payload.kind === "report") return { ...block, payload: { ...block.payload, report_id: null } };
+        if (block.payload.kind !== "run" || !block.payload.run_id) return block;
         const found = series.get(block.payload.run_id);
         if (!found || max === null) {
           const { series: _dropped, ...payload } = block.payload;

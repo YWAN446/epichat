@@ -185,7 +185,12 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
         return;
       }
       if (!response.ok || !response.body) {
-        const problem = (await response.json().catch(() => null)) as { message?: string } | null;
+        const problem = (await response.json().catch(() => null)) as { code?: string; message?: string } | null;
+        // The consent text changed since this participant agreed: the form is the way forward, not a dead end.
+        if (response.status === 403 && problem?.code === "consent_required") {
+          router.replace("/consent");
+          return;
+        }
         fail(problem?.message ?? INTERRUPTED);
         return;
       }
