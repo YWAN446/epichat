@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { countryName, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { referenceButtonLabel } from "@/lib/client/references";
 import { commaInt } from "@/lib/sim/pyformat";
 import type { ConfigPayload, DiseasePayload } from "@/lib/tools/types";
 import { ReferenceList } from "./ReferenceList";
@@ -83,9 +84,9 @@ export function ScenarioSection({ config, disease, onReferencesOpen }: Props) {
                     <td className="py-1 pr-2 font-mono">{p.min !== undefined && p.max !== undefined ? formatRange(p.min, p.max, p.unit) : "—"}</td>
                     <td className="py-1 text-ink-soft">
                       {STATUS[p.status] ?? p.status}
-                      {p.n_estimates > 0 && (
+                      {referenceButtonLabel(p) && (
                         <button type="button" aria-expanded={open === name} aria-controls={`refs-${name}`} onClick={() => toggle(name)} className={`${STATUS[p.status] ? "ml-1 " : ""}${COUNT}`}>
-                          {p.n_estimates} {p.n_estimates === 1 ? "source" : "sources"}
+                          {referenceButtonLabel(p)}
                         </button>
                       )}
                     </td>

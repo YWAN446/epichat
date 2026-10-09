@@ -137,7 +137,8 @@ describe("readable values", () => {
 describe("references behind a parameter", () => {
   it("turns the estimate count into a button that opens the list under the row", () => {
     const scenario = read("components/panel/ScenarioSection.tsx");
-    for (const piece of ["<ReferenceList", "aria-expanded", "aria-controls", "n_estimates", "onReferencesOpen"]) expect(scenario).toContain(piece);
+    for (const piece of ["<ReferenceList", "aria-expanded", "aria-controls", "referenceButtonLabel(", "onReferencesOpen"]) expect(scenario).toContain(piece);
+    expect(scenario).not.toContain("p.n_estimates > 0 &&");
     expect(scenario).not.toContain("` (${p.n_estimates})`");
   });
 
@@ -193,5 +194,13 @@ describe("collapsible, resizable columns", () => {
     const chat = read("components/Chat.tsx");
     for (const piece of ["useLayout(", "useWide(", "layoutStore.toggle(", "layoutStore.resize(", "wide ?"]) expect(chat).toContain(piece);
     expect(chat).toContain("panelVisible");
+  });
+});
+
+describe("review fixes", () => {
+  it("keeps a drag local to the shell and commits the width once, on release", () => {
+    const shell = read("components/WorkspaceShell.tsx");
+    for (const piece of ["const [dragging, setDragging]", "onDrag(side, latest)", "onDrop(side, latest)", "setDragging(null)", '"pointerup"']) expect(shell).toContain(piece);
+    expect(shell).not.toMatch(/const move = [^\n]*onResize\(/);
   });
 });

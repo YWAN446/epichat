@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearReferencesCache, loadReferences, referenceHref, referenceMeta, referenceValue, type Reference } from "@/lib/client/references";
+import { clearReferencesCache, loadReferences, referenceButtonLabel, referenceHref, referenceMeta, referenceValue, type Reference } from "@/lib/client/references";
 
 const BODY = { display_name: "Measles", parameters: { r0: { source: "https://pubmed.ncbi.nlm.nih.gov/28757186/", estimates: [{ title: "A review", value: 15 }] } } };
 
@@ -51,5 +51,17 @@ describe("one reference, in words", () => {
     expect(referenceValue({ title: "Range only", range: [0.001, 0.003] }, "fraction")).toBe("0.1–0.3%");
     expect(referenceValue({ title: "Special", special_value: "lifelong" }, "months")).toBe("lifelong");
     expect(referenceValue({ title: "None" }, "days")).toBe("");
+    expect(referenceValue({ title: "Case", value: 10, range: [8, 11], metric: "CFR" }, "percentage")).toBe("CFR 10% (8–11%)");
+    expect(referenceValue({ title: "Infection", value: 0.27, metric: "IFR" }, "percentage")).toBe("IFR 0.27%");
+  });
+});
+
+describe("the button that opens the list", () => {
+  it("counts the estimates, offers the consensus source alone when there are none, and hides when there is nothing", () => {
+    expect(referenceButtonLabel({ n_estimates: 11, source: "https://pubmed.ncbi.nlm.nih.gov/28757186/" })).toBe("11 sources");
+    expect(referenceButtonLabel({ n_estimates: 1 })).toBe("1 source");
+    expect(referenceButtonLabel({ n_estimates: 0, source: "https://www.cdc.gov/dengue" })).toBe("source");
+    expect(referenceButtonLabel({ n_estimates: 0 })).toBeNull();
+    expect(referenceButtonLabel({ n_estimates: 0, source: "" })).toBeNull();
   });
 });

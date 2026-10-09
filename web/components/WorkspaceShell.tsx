@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { BOUNDS, dragWidth, nudgeWidth, type Layout, type Side } from "@/lib/client/layout";
 
 type Props = {
@@ -22,20 +22,33 @@ const DRAWER = "absolute inset-y-0 left-0 z-20 w-72 max-w-[85vw] flex-col overfl
 const SHEET = "absolute inset-y-0 right-0 z-20 w-96 max-w-[92vw] flex-col overflow-y-auto border-l border-line bg-paper xl:static xl:w-(--column) xl:max-w-none";
 const HANDLE = "hidden w-1.5 shrink-0 cursor-col-resize hover:bg-accent-wash focus-visible:bg-accent-wash focus-visible:outline-none xl:block";
 
-type HandleProps = { side: Side; width: number; label: string; onResize: (side: Side, width: number) => void };
+type HandleProps = {
+  side: Side;
+  width: number;
+  label: string;
+  /** Every pointer move while dragging: the shell shows the width without committing it. */
+  onDrag: (side: Side, width: number) => void;
+  /** The release, and every key press: the width is committed. */
+  onDrop: (side: Side, width: number) => void;
+};
 
 /** A focusable splitter between a side column and the middle: drag it, or press the arrow keys, Home, or End. */
-function Handle({ side, width, label, onResize }: HandleProps) {
+function Handle({ side, width, label, onDrag, onDrop }: HandleProps) {
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return;
     const target = event.currentTarget;
     const startX = event.clientX;
     const startWidth = width;
-    const move = (pointer: globalThis.PointerEvent) => onResize(side, dragWidth(side, startWidth, startX, pointer.clientX));
+    let latest = width;
+    const move = (pointer: globalThis.PointerEvent) => {
+      latest = dragWidth(side, startWidth, startX, pointer.clientX);
+      onDrag(side, latest);
+    };
     const stop = () => {
       target.removeEventListener("pointermove", move);
       target.removeEventListener("pointerup", stop);
       target.removeEventListener("pointercancel", stop);
+      onDrop(side, latest);
     };
     target.setPointerCapture(event.pointerId);
     target.addEventListener("pointermove", move);
@@ -48,7 +61,7 @@ function Handle({ side, width, label, onResize }: HandleProps) {
     const next = nudgeWidth(side, width, event.key);
     if (next === null) return;
     event.preventDefault();
-    onResize(side, next);
+    onDrop(side, next);
   }
 
   return (
@@ -73,6 +86,8 @@ function Handle({ side, width, label, onResize }: HandleProps) {
  */
 export function WorkspaceShell({ header, sidebar, panel, children, drawerOpen, sheetOpen, onClose, columnRef, layout, onResize }: Props) {
   const overlay = drawerOpen || sheetOpen;
+  // A drag in progress lives here, not in the store: the shell re-renders, but the columns' elements are the same, so the conversation does not.
+  const [dragging, setDragging] = useState<{ side: Side; width: number } | null>(null);
 
   useEffect(() => {
     if (!overlay) return;
@@ -83,8 +98,14 @@ export function WorkspaceShell({ header, sidebar, panel, children, drawerOpen, s
     return () => window.removeEventListener("keydown", onKey);
   }, [overlay, onClose]);
 
-  const leftStyle = { "--column": `${layout.left.width}px` } as CSSProperties;
-  const rightStyle = { "--column": `${layout.right.width}px` } as CSSProperties;
+  const widthOf = (side: Side) => (dragging?.side === side ? dragging.width : layout[side].width);
+  const onDrag = (side: Side, width: number) => setDragging({ side, width });
+  const onDrop = (side: Side, width: number) => {
+    setDragging(null);
+    onResize(side, width);
+  };
+  const leftStyle = { "--column": `${widthOf("left")}px` } as CSSProperties;
+  const rightStyle = { "--column": `${widthOf("right")}px` } as CSSProperties;
 
   return (
     <div className="flex h-dvh flex-col">
@@ -93,11 +114,11 @@ export function WorkspaceShell({ header, sidebar, panel, children, drawerOpen, s
         <aside aria-label="Conversations" style={leftStyle} className={`${drawerOpen ? "flex" : "hidden"} ${layout.left.open ? "xl:flex" : "xl:hidden"} ${DRAWER}`}>
           {sidebar}
         </aside>
-        {layout.left.open && <Handle side="left" width={layout.left.width} label="Resize the conversations column" onResize={onResize} />}
+        {layout.left.open && <Handle side="left" width={widthOf("left")} label="Resize the conversations column" onDrag={onDrag} onDrop={onDrop} />}
         <main ref={columnRef} className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           {children}
         </main>
-        {layout.right.open && <Handle side="right" width={layout.right.width} label="Resize the details column" onResize={onResize} />}
+        {layout.right.open && <Handle side="right" width={widthOf("right")} label="Resize the details column" onDrag={onDrag} onDrop={onDrop} />}
         <aside aria-label="Details" style={rightStyle} className={`${sheetOpen ? "flex" : "hidden"} ${layout.right.open ? "xl:flex" : "xl:hidden"} ${SHEET}`}>
           {panel}
         </aside>

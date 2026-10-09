@@ -392,4 +392,9 @@ sub-project 4c and the share link a new spec.
   (every death less the `ss.Deaths` module's count) instead of the
   population's `cum_deaths`, which counted background mortality once
   demographics were applied. The series keys and stats are unchanged;
-  the labels read "Disease deaths".
+  the labels read "Disease deaths". The cumulative series now includes the
+  current day (np.cumsum), where the population's cum_deaths excluded it.
+- **Review fixes (2026-10-09).** A row with a consensus source but no
+  estimates gets a "source" button; a study's metric (CFR, IFR) prefixes
+  its value; a drag keeps its width in the shell and commits to the store
+  on release, so the conversation does not re-render per frame.

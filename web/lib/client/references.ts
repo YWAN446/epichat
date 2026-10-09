@@ -59,10 +59,17 @@ export function referenceMeta(ref: Reference): string {
   return [ref.year, ref.country, ref.population, ref.source_type?.replace(/_/g, " ")].filter((part) => part !== undefined && part !== "").join(" · ");
 }
 
-/** The estimate in the parameter's unit: "15 (12–18)", "10 days", "0.1–0.3%", or a special value such as "lifelong". */
+/** The estimate in the parameter's unit: "15 (12–18)", "10 days", "0.1–0.3%", "CFR 10%" when the study names its metric, or a special value such as "lifelong". */
 export function referenceValue(ref: Reference, unit?: string): string {
   if (ref.special_value) return ref.special_value;
+  const prefix = ref.metric ? `${ref.metric} ` : "";
   const range = ref.range ? formatRange(ref.range[0], ref.range[1], unit) : null;
-  if (ref.value !== undefined) return range ? `${formatQuantity(ref.value, unit)} (${range})` : formatQuantity(ref.value, unit);
-  return range ?? "";
+  if (ref.value !== undefined) return prefix + (range ? `${formatQuantity(ref.value, unit)} (${range})` : formatQuantity(ref.value, unit));
+  return range ? prefix + range : "";
+}
+
+/** What the Status column's button says: the estimate count, "source" when only a consensus source exists, nothing when there is nothing to open. */
+export function referenceButtonLabel(summary: { n_estimates: number; source?: string }): string | null {
+  if (summary.n_estimates > 0) return `${summary.n_estimates} ${summary.n_estimates === 1 ? "source" : "sources"}`;
+  return summary.source ? "source" : null;
 }
