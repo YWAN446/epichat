@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ChatShell } from "@/components/ChatShell";
+import { Chat } from "@/components/Chat";
 import { SessionProvider } from "@/components/SessionProvider";
 import { listConversations } from "@/lib/db/conversations";
 import { loadParticipant, redirectFor } from "@/lib/participant.server";
@@ -8,6 +8,7 @@ import { adminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
+/** A new conversation, with the list of earlier ones. */
 export default async function ChatPage() {
   const participant = await loadParticipant();
   const destination = redirectFor(participant.status);
@@ -20,7 +21,7 @@ export default async function ChatPage() {
 
   return (
     <SessionProvider>
-      <ChatShell email={participant.user.email} conversations={conversations} contactEmail={participant.settings.contactEmail} />
+      <Chat email={participant.user.email} conversations={conversations} initial={null} maxMessageChars={participant.settings.maxMessageChars} contactEmail={participant.settings.contactEmail} />
     </SessionProvider>
   );
 }
