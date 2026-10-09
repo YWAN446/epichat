@@ -40,6 +40,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
         initial={{ id, title: conversation.title, turns }}
         maxMessageChars={participant.settings.maxMessageChars}
         contactEmail={participant.settings.contactEmail}
+        websiteUrl={participant.settings.websiteUrl}
         initialShare={share ? { token: share.token, url: `/s/${share.token}`, takenAt: share.taken_at, turnCount: share.turn_count } : null}
         initialProfile={participant.profile?.fields ?? EMPTY_PROFILE}
         diseases={diseaseOptions()}

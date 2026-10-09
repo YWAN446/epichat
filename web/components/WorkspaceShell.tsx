@@ -118,8 +118,8 @@ export function WorkspaceShell({ header, sidebar, panel, children, drawerOpen, s
         <main ref={columnRef} className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           {children}
         </main>
-        {layout.right.open && <Handle side="right" width={widthOf("right")} label="Resize the details column" onDrag={onDrag} onDrop={onDrop} />}
-        <aside aria-label="Details" style={rightStyle} className={`${sheetOpen ? "flex" : "hidden"} ${layout.right.open ? "xl:flex" : "xl:hidden"} ${SHEET}`}>
+        {layout.right.open && <Handle side="right" width={widthOf("right")} label="Resize the dashboard column" onDrag={onDrag} onDrop={onDrop} />}
+        <aside aria-label="Dashboard" style={rightStyle} className={`${sheetOpen ? "flex" : "hidden"} ${layout.right.open ? "xl:flex" : "xl:hidden"} ${SHEET}`}>
           {panel}
         </aside>
         {overlay && <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 z-10 bg-ink/20 xl:hidden" />}

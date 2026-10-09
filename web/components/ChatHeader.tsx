@@ -1,38 +1,25 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Brand } from "@/components/Brand";
-import { createClient } from "@/lib/supabase/client";
 
 const QUIET = "rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-ink-soft hover:bg-paper-2 hover:text-ink";
 const ICON = "relative rounded-full px-2.5 py-1.5 text-sm text-ink-soft hover:bg-paper-2 hover:text-ink";
 
 type Props = {
-  email: string;
   busy: boolean;
-  onNew: () => void;
   onShare: () => void;
   /** The conversation exists and has a finished turn. */
   canShare: boolean;
   onMenu: () => void;
-  onDetails: () => void;
+  onDashboard: () => void;
   menuOpen: boolean;
-  detailsOpen: boolean;
-  /** Something new arrived in the panel while it was closed. */
+  dashboardOpen: boolean;
+  /** Something new arrived in the dashboard while it was closed. */
   unseen: boolean;
 };
 
-/** The full-width bar: the conversations toggle, the brand, New, the Details toggle, the address, Sign out. The toggles open overlays on narrow screens and collapse columns on wide ones. */
-export function ChatHeader({ email, busy, onNew, onShare, canShare, onMenu, onDetails, menuOpen, detailsOpen, unseen }: Props) {
-  const router = useRouter();
-
-  async function signOut() {
-    await createClient().auth.signOut();
-    router.replace("/sign-in");
-    router.refresh();
-  }
-
+/** The full-width bar: the conversations toggle, the brand, Share, and the Dashboard toggle. The toggles open overlays on narrow screens and collapse columns on wide ones. */
+export function ChatHeader({ busy, onShare, canShare, onMenu, onDashboard, menuOpen, dashboardOpen, unseen }: Props) {
   return (
     <header className="z-30 border-b border-line bg-paper/90 backdrop-blur-sm">
       <div className="flex items-center gap-2 px-3 py-2">
@@ -41,23 +28,10 @@ export function ChatHeader({ email, busy, onNew, onShare, canShare, onMenu, onDe
         </button>
         <Brand />
         <nav aria-label="Chat" className="ml-auto flex items-center gap-1">
-          <span className="hidden truncate text-xs text-ink-faint sm:inline">{email}</span>
-          {busy ? (
-            <span className={`${QUIET} opacity-50`} aria-disabled="true">
-              New
-            </span>
-          ) : (
-            <Link href="/chat" onClick={onNew} className={QUIET} aria-label="New conversation">
-              New
-            </Link>
-          )}
           {canShare && <button type="button" onClick={onShare} disabled={busy} className={QUIET}>Share</button>}
-          <button type="button" onClick={onDetails} aria-expanded={detailsOpen} aria-label="Details" className={ICON}>
-            Details
+          <button type="button" onClick={onDashboard} aria-expanded={dashboardOpen} aria-label="Dashboard" className={ICON}>
+            <span>Dashboard</span>
             {unseen && <span aria-hidden="true" className="absolute top-1 right-1 h-2 w-2 rounded-full bg-accent" />}
-          </button>
-          <button type="button" onClick={signOut} className={QUIET}>
-            Sign out
           </button>
         </nav>
       </div>

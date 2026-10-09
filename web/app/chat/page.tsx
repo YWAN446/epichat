@@ -23,7 +23,17 @@ export default async function ChatPage() {
 
   return (
     <SessionProvider>
-      <Chat email={participant.user.email} conversations={conversations} initial={null} maxMessageChars={participant.settings.maxMessageChars} contactEmail={participant.settings.contactEmail} initialShare={null} initialProfile={participant.profile?.fields ?? EMPTY_PROFILE} diseases={diseaseOptions()} />
+      <Chat
+        email={participant.user.email}
+        conversations={conversations}
+        initial={null}
+        maxMessageChars={participant.settings.maxMessageChars}
+        contactEmail={participant.settings.contactEmail}
+        websiteUrl={participant.settings.websiteUrl}
+        initialShare={null}
+        initialProfile={participant.profile?.fields ?? EMPTY_PROFILE}
+        diseases={diseaseOptions()}
+      />
     </SessionProvider>
   );
 }

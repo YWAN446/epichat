@@ -63,6 +63,7 @@ describe("protected pages", () => {
     const chat = readFileSync("components/Chat.tsx", "utf8");
     expect(chat).toContain("function startNew");
     expect(chat).toContain("onNew={startNew}");
-    expect(readFileSync("components/ChatHeader.tsx", "utf8")).toContain("onClick={onNew}");
+    expect(readFileSync("components/ConversationList.tsx", "utf8")).toContain("onClick={onNew}");
+    expect(readFileSync("components/ChatHeader.tsx", "utf8")).not.toContain("onNew");
   });
 });

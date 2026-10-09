@@ -17,6 +17,7 @@ import type { ConversationSummary } from "@/lib/db/conversations";
 import type { ExportFormat, PanelSection } from "@/lib/enums";
 import type { DiseaseOption } from "@/lib/profile/options";
 import type { ProfileFields } from "@/lib/profile/schema";
+import { AccountMenu } from "./AccountMenu";
 import { ChatHeader } from "./ChatHeader";
 import { Composer } from "./Composer";
 import { ConversationList } from "./ConversationList";
@@ -41,6 +42,8 @@ type Props = {
   initial: { id: string; title: string; turns: DisplayTurn[] } | null;
   maxMessageChars: number;
   contactEmail: string;
+  /** The project website, for the account menu's Homepage item. */
+  websiteUrl: string;
   /** The conversation's active share, read by the server, or null. */
   initialShare: ShareState | null;
   /** The participant's profile, read by the server; the Profile tab edits it. */
@@ -49,8 +52,8 @@ type Props = {
   diseases: DiseaseOption[];
 };
 
-/** The workspace: the list on the left, the conversation and its bottom stack in the middle, the details on the right. Owns the conversation state. */
-export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail, initialShare, initialProfile, diseases }: Props) {
+/** The workspace: the list and the account menu on the left, the conversation and its bottom stack in the middle, the dashboard on the right. Owns the conversation state. */
+export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail, websiteUrl, initialShare, initialProfile, diseases }: Props) {
   const router = useRouter();
   const sessionId = useSessionId();
   const [conversationId, setConversationId] = useState<string | null>(initial?.id ?? null);
@@ -125,7 +128,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     if (wide) layoutStore.toggle("left");
     else setDrawer((open) => !open);
   }
-  function onDetails() {
+  function onDashboard() {
     if (wide) {
       const opening = !layout.right.open;
       layoutStore.toggle("right");
@@ -135,6 +138,23 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     } else {
       setSheet(true);
       panelOpened();
+    }
+  }
+  /** The account menu's Profile item: the Dashboard's Profile tab, with the column shown when it is collapsed. */
+  function openProfile() {
+    setTab("profile");
+    onSectionOpen("profile");
+    if (wide) {
+      if (!layout.right.open) {
+        layoutStore.toggle("right");
+        panelOpened();
+      }
+    } else {
+      setDrawer(false);
+      if (!sheet) {
+        setSheet(true);
+        panelOpened();
+      }
     }
   }
   function onSectionOpen(section: PanelSection) {
@@ -292,19 +312,24 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     <WorkspaceShell
       header={
         <ChatHeader
-          email={email}
           busy={live !== null}
-          onNew={startNew}
           onShare={() => setShareOpen(true)}
           canShare={conversationId !== null && turns.length > 0}
           onMenu={onMenu}
-          onDetails={onDetails}
+          onDashboard={onDashboard}
           menuOpen={wide ? layout.left.open : drawer}
-          detailsOpen={panelVisible}
+          dashboardOpen={panelVisible}
           unseen={unseen}
         />
       }
-      sidebar={<ConversationList items={conversations} currentId={conversationId} busy={live !== null} onNew={startNew} onPick={() => setDrawer(false)} onRemoved={onRemoved} />}
+      sidebar={
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ConversationList items={conversations} currentId={conversationId} busy={live !== null} onNew={startNew} onPick={() => setDrawer(false)} onRemoved={onRemoved} />
+          </div>
+          <AccountMenu email={email} contactEmail={contactEmail} websiteUrl={websiteUrl} onProfile={openProfile} />
+        </div>
+      }
       panel={
         <PanelTabs
           tab={tab}
