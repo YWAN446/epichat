@@ -218,3 +218,16 @@ describe("the report in the panel", () => {
     expect(chat).toContain("artifacts.report ? 1 : 0");
   });
 });
+
+describe("the report line in the conversation", () => {
+  it("tells the participant the report is ready under the tool call, with the same downloads", () => {
+    const line = read("components/ReportLine.tsx");
+    for (const piece of ["Report ready", "<ReportDownloads", "onExport"]) expect(line).toContain(piece);
+    const blocks = read("components/TurnBlocks.tsx");
+    expect(blocks).toContain("<ReportLine");
+    expect(blocks).toContain('block.payload.kind === "report"');
+    expect(read("components/Turn.tsx")).toContain("onExport");
+    const chat = read("components/Chat.tsx");
+    expect(chat.match(/onExport=\{onExport\}/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
+  });
+});

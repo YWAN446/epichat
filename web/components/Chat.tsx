@@ -295,9 +295,9 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
       ) : (
         <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">
           {turns.map((turn) => (
-            <Turn key={turn.id} turn={turn} status={null} feedback={feedback} onActivityExpand={() => onActivityExpand(turn.id)} />
+            <Turn key={turn.id} turn={turn} status={null} feedback={feedback} onActivityExpand={() => onActivityExpand(turn.id)} onExport={onExport} />
           ))}
-          {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} />}
+          {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} onExport={onExport} />}
         </div>
       )}
 
