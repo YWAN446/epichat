@@ -13,7 +13,7 @@ import { readEvents } from "@/lib/client/sse";
 import { track } from "@/lib/client/track";
 import { INTERRUPTED, applyEvent, lastRecap, lastStage, lastSuggestions, startTurn, type TurnProgress } from "@/lib/client/turn";
 import type { ConversationSummary } from "@/lib/db/conversations";
-import type { PanelSection } from "@/lib/enums";
+import type { ExportFormat, PanelSection } from "@/lib/enums";
 import { ChatHeader } from "./ChatHeader";
 import { Composer } from "./Composer";
 import { ConversationList } from "./ConversationList";
@@ -85,7 +85,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   }, [turns, live, error]);
 
   const artifacts = useMemo(() => deriveArtifacts(live ? [...turns, { id: "live", blocks: live.progress.blocks }] : turns), [turns, live]);
-  const artifactCount = artifacts.runs.length + artifacts.data.length + (artifacts.config ? 1 : 0);
+  const artifactCount = artifacts.runs.length + artifacts.data.length + (artifacts.config ? 1 : 0) + (artifacts.report ? 1 : 0);
   const seen = useRef(artifactCount);
   // On a wide screen the panel is a column that may be collapsed; below that it is the sheet.
   const panelVisible = wide ? layout.right.open : sheet;
@@ -133,6 +133,9 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   function onReferencesOpen() {
     const turnId = turns.at(-1)?.id;
     if (conversationId && turnId) track({ kind: "card_expanded", sessionId: session, conversationId, turnId, card: "references" });
+  }
+  function onExport(format: ExportFormat) {
+    if (conversationId) track({ kind: "export", sessionId: session, conversationId, format });
   }
   function onRecapExpand() {
     const turnId = turns.at(-1)?.id;
@@ -272,7 +275,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
         />
       }
       sidebar={<ConversationList items={conversations} currentId={conversationId} busy={live !== null} onNew={startNew} onPick={() => setDrawer(false)} onRemoved={onRemoved} />}
-      panel={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} onReferencesOpen={onReferencesOpen} />}
+      panel={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} onReferencesOpen={onReferencesOpen} onExport={onExport} />}
       drawerOpen={drawer}
       sheetOpen={sheet}
       onClose={() => {

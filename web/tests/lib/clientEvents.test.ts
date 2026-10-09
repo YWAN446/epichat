@@ -17,6 +17,10 @@ describe("readClientEvent", () => {
     expect(readClientEvent(JSON.stringify({ kind: "chart_view_changed", conversationId: CONVERSATION, turnId: TURN, view: "incidence" }))).toMatchObject({ view: "incidence" });
     expect(readClientEvent(JSON.stringify({ kind: "feedback_given", conversationId: CONVERSATION, turnId: TURN, rating: "up" }))).toMatchObject({ rating: "up" });
     expect(readClientEvent(JSON.stringify({ kind: "export", conversationId: CONVERSATION, format: "pdf" }))).toMatchObject({ format: "pdf" });
+    expect(readClientEvent(JSON.stringify({ kind: "export", conversationId: CONVERSATION, format: "md" }))).toMatchObject({ format: "md" });
+    expect(readClientEvent(JSON.stringify({ kind: "export", conversationId: CONVERSATION, format: "html" }))).toMatchObject({ format: "html" });
+    expect(readClientEvent(JSON.stringify({ kind: "scenario_panel_opened", conversationId: CONVERSATION, section: "report" }))).toMatchObject({ section: "report" });
+    expect(readClientEvent(JSON.stringify({ kind: "card_expanded", conversationId: CONVERSATION, turnId: TURN, card: "report" }))).toMatchObject({ card: "report" });
     expect(readClientEvent(JSON.stringify({ kind: "conversation_opened", conversationId: CONVERSATION }))).toMatchObject({ kind: "conversation_opened" });
     expect(readClientEvent(JSON.stringify({ kind: "suggestion_used", conversationId: CONVERSATION, stage: "ground", source: "draft" }))).toMatchObject({ source: "draft" });
     expect(readClientEvent(JSON.stringify({ kind: "suggestion_used", conversationId: CONVERSATION, stage: "understand", source: "intro" }))).toMatchObject({ source: "intro" });

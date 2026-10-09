@@ -4,6 +4,7 @@
  * replayed.
  */
 import type { Block } from "@/lib/chat/events";
+import type { ReportPayload } from "@/lib/report/document";
 import type { ConfigPayload, DataPayload, DiseasePayload, RunPayload } from "@/lib/tools/types";
 import { toolLabel, toolLine } from "./toolLine";
 
@@ -28,10 +29,12 @@ export type Artifacts = {
   runs: RunArtifact[];
   /** Every tool and web step, in order. */
   activity: ActivityItem[];
+  /** The latest report, cleared by a new scenario. */
+  report: ReportPayload | null;
 };
 
 export function emptyArtifacts(): Artifacts {
-  return { disease: null, config: null, data: [], runs: [], activity: [] };
+  return { disease: null, config: null, data: [], runs: [], activity: [], report: null };
 }
 
 export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artifacts {
@@ -55,9 +58,13 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
       if (payload.kind === "disease") out.disease = payload;
       else if (payload.kind === "config") {
         out.config = payload;
-        if (payload.new_scenario) out.data = [];
+        if (payload.new_scenario) {
+          out.data = [];
+          out.report = null;
+        }
       } else if (payload.kind === "data") out.data.push(payload);
       else if (payload.kind === "run") out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload });
+      else if (payload.kind === "report") out.report = payload;
     }
   }
   return out;

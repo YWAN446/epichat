@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { Artifacts } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
-import type { PanelSection } from "@/lib/enums";
+import type { ExportFormat, PanelSection } from "@/lib/enums";
 import { ActivitySection } from "./ActivitySection";
 import { DataSection } from "./DataSection";
+import { ReportSection } from "./ReportSection";
 import { RunsSection } from "./RunsSection";
 import { ScenarioSection } from "./ScenarioSection";
 import { Section } from "./Section";
@@ -15,17 +16,26 @@ type Props = {
   onSectionOpen: (section: PanelSection) => void;
   onChartView: (view: ChartView, turnId: string) => void;
   onReferencesOpen: (parameter: string) => void;
+  onExport: (format: ExportFormat) => void;
 };
 
 /** The right column: the present scenario, the data applied, every run, and every step. The newest run opens its section. */
-export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen }: Props) {
-  const [open, setOpen] = useState<Record<PanelSection, boolean>>({ scenario: true, data: false, runs: true, activity: false });
+export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onExport }: Props) {
+  const [open, setOpen] = useState<Record<PanelSection, boolean>>({ scenario: true, data: false, runs: true, report: false, activity: false });
   const runCount = useRef(artifacts.runs.length);
+  const reportId = useRef(artifacts.report?.report_id ?? null);
 
   useEffect(() => {
     if (artifacts.runs.length > runCount.current) setOpen((state) => ({ ...state, runs: true }));
     runCount.current = artifacts.runs.length;
   }, [artifacts.runs.length]);
+
+  // A new report (a first one, or a new version) opens its section the way a new run opens Runs.
+  useEffect(() => {
+    const id = artifacts.report?.report_id ?? null;
+    if (id && id !== reportId.current) setOpen((state) => ({ ...state, report: true }));
+    reportId.current = id;
+  }, [artifacts.report]);
 
   const toggle = (section: PanelSection) => (next: boolean) => {
     setOpen((state) => ({ ...state, [section]: next }));
@@ -43,6 +53,9 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
       </Section>
       <Section id="panel-runs" title="Runs" count={artifacts.runs.length} open={open.runs} onToggle={toggle("runs")}>
         <RunsSection runs={artifacts.runs} onChartView={onChartView} />
+      </Section>
+      <Section id="panel-report" title="Report" open={open.report} onToggle={toggle("report")}>
+        <ReportSection report={artifacts.report} onExport={onExport} />
       </Section>
       <Section id="panel-activity" title="Activity" count={artifacts.activity.length} open={open.activity} onToggle={toggle("activity")}>
         <ActivitySection items={artifacts.activity} />

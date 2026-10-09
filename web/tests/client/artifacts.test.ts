@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Block } from "@/lib/chat/events";
 import { deriveArtifacts, emptyArtifacts } from "@/lib/client/artifacts";
+import type { ReportPayload } from "@/lib/report/document";
 import type { CardPayload, ConfigPayload, DataPayload, DiseasePayload, RunPayload } from "@/lib/tools/types";
 import { params } from "../tools/helpers";
 
@@ -43,5 +44,21 @@ describe("deriveArtifacts", () => {
     expect(a.activity[2].detail).toBe("measles Kenya 2026");
     expect(a.activity[3].label).toBe("🔧 UN WPP demographics");
     expect(deriveArtifacts(turns.slice(0, 3)).data).toEqual([DATA]);
+  });
+});
+
+describe("deriveArtifacts and the report", () => {
+  const REPORT: ReportPayload = { kind: "report", report_id: "rep-1", version: 1, title: "T", sections: [{ id: "summary", heading: "Summary" }], words: 120 };
+
+  it("keeps the latest report and clears it on a new scenario", () => {
+    expect(emptyArtifacts().report).toBeNull();
+    const turns = [
+      { id: "t1", blocks: [result("run_simulation", RUN), result("write_report", REPORT)] },
+      { id: "t2", blocks: [result("write_report", { ...REPORT, version: 2 })] },
+    ];
+    expect(deriveArtifacts(turns).report).toEqual({ ...REPORT, version: 2 });
+    expect(deriveArtifacts([...turns, { id: "t3", blocks: [result("configure_simulation", CONFIG(true))] }]).report).toBeNull();
+    expect(deriveArtifacts([...turns, { id: "t3", blocks: [result("write_report", { kind: "tool_error", message: "x" }, false)] }]).report).toEqual({ ...REPORT, version: 2 });
+    expect(deriveArtifacts(turns).activity.map((s) => s.name)).toEqual(["run_simulation", "write_report", "write_report"]);
   });
 });

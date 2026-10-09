@@ -204,3 +204,17 @@ describe("review fixes", () => {
     expect(shell).not.toMatch(/const move = [^\n]*onResize\(/);
   });
 });
+
+describe("the report in the panel", () => {
+  it("shows the latest report with four downloads and Open, and the empty state", () => {
+    const section = read("components/panel/ReportSection.tsx");
+    for (const piece of ["The report appears here once you ask for one.", 'format: "md"', 'format: "html"', 'format: "docx"', 'format: "pdf"', "?format=${format}", "download", 'target="_blank"', "onExport(", "Version"]) {
+      expect(section).toContain(piece);
+    }
+    const panel = read("components/panel/DetailsPanel.tsx");
+    for (const piece of ["<ReportSection", 'title="Report"', "artifacts.report", "onExport"]) expect(panel).toContain(piece);
+    const chat = read("components/Chat.tsx");
+    expect(chat).toContain('kind: "export"');
+    expect(chat).toContain("artifacts.report ? 1 : 0");
+  });
+});
