@@ -27,3 +27,22 @@ describe("the reply in the middle column", () => {
     expect(existsSync("components/Chart.tsx")).toBe(true);
   });
 });
+
+describe("the details panel", () => {
+  it("has four collapsible sections with the spec's empty states", () => {
+    const panel = read("components/panel/DetailsPanel.tsx");
+    for (const piece of ["<ScenarioSection", "<DataSection", "<RunsSection", "<ActivitySection", "runs.length"]) expect(panel).toContain(piece);
+    expect(read("components/panel/ScenarioSection.tsx")).toContain("The configuration appears here once a scenario is set up.");
+    expect(read("components/panel/DataSection.tsx")).toContain("Real data appears here once it is fetched.");
+    expect(read("components/panel/RunsSection.tsx")).toContain("Results appear here after the first run.");
+    expect(read("components/panel/ActivitySection.tsx")).toContain("Steps appear here as the assistant works.");
+    const section = read("components/panel/Section.tsx");
+    expect(section).toContain("aria-expanded");
+    expect(section).toContain("aria-controls");
+  });
+
+  it("gives every run its tiles, a chart with the four views, its parameters, repairs, and sources", () => {
+    const runs = read("components/panel/RunsSection.tsx");
+    for (const piece of ["<StatTiles", "<Chart", "CHART_VIEWS", "useRunSeries(", "effective_params", "repairs", "data_sources", "onChartView("]) expect(runs).toContain(piece);
+  });
+});
