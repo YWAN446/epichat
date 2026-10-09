@@ -6,7 +6,7 @@ import { applyMigrations, createTestDb } from "./helpers";
 const ALICE = "11111111-1111-1111-1111-111111111111";
 const TABLES = [
   "profiles", "sessions", "conversations", "messages", "turns", "turn_events",
-  "scenarios", "runs", "feedback", "step_events", "usage_daily", "reports",
+  "scenarios", "runs", "feedback", "step_events", "usage_daily", "reports", "shares",
 ];
 
 let db: PGlite;

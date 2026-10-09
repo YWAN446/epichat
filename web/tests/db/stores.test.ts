@@ -5,6 +5,7 @@ import { supabaseMessageStore } from "@/lib/db/messages";
 import { reportRow, supabaseReportStore } from "@/lib/db/reports";
 import { runRow, supabaseRunStore } from "@/lib/db/runs";
 import { scenarioFromRow, scenarioToJson, supabaseScenarioStore } from "@/lib/db/scenarios";
+import { shareRow, supabaseShareStore } from "@/lib/db/shares";
 import { supabaseTurnStore } from "@/lib/db/turns";
 import { emptyScenario } from "@/lib/tools/types";
 import { callOn, fakeAdmin } from "../helpers/fakeAdmin";
@@ -192,5 +193,37 @@ describe("listForReport for a scenario that is not stored yet", () => {
     const admin = fakeAdmin({ runs: [{ data: [row("run-1", "s1", "t1"), row("run-2", null, "t2"), row("run-3", null, "t9")] }] });
     const runs = await supabaseRunStore(admin.client).listForReport("c1", null, "t9");
     expect(runs.map((r) => r.id)).toEqual(["run-3"]);
+  });
+});
+
+describe("share store", () => {
+  const SNAPSHOT = { version: 1 as const, title: "Measles in Kenya", takenAt: "2026-10-09T18:00:00Z", turns: [], report: null };
+  const ROW = { id: "sh1", token: "t".repeat(22), conversation_id: "c1", user_id: "u1", title: "Measles in Kenya", snapshot: SNAPSHOT, turn_count: 3, taken_at: "2026-10-09T18:00:00Z", revoked_at: null, view_count: 0 };
+
+  it("creates a share, reads the active one, updates, and revokes", async () => {
+    const admin = fakeAdmin({ shares: [{ data: ROW }, { data: ROW }, { data: null }, { data: [{ id: "sh1" }] }, { data: [] }] });
+    const store = supabaseShareStore(admin.client);
+    const insert = { conversationId: "c1", userId: "u1", title: "Measles in Kenya", snapshot: SNAPSHOT, turnCount: 3, token: "t".repeat(22) };
+    expect(await store.create(insert)).toEqual(ROW);
+    expect(callOn(admin.recorded, "shares", "insert")).toEqual([shareRow(insert)]);
+    expect(shareRow(insert)).toEqual({ conversation_id: "c1", user_id: "u1", title: "Measles in Kenya", snapshot: SNAPSHOT, turn_count: 3, token: "t".repeat(22) });
+    expect(await store.active("c1", "u1")).toEqual(ROW);
+    expect(admin.recorded[1].calls.map(([m]) => m)).toEqual(["select", "eq", "eq", "is", "maybeSingle"]);
+    await store.update("sh1", { title: "T2", snapshot: SNAPSHOT, turnCount: 4 }, new Date("2026-10-09T19:00:00Z"));
+    expect(admin.recorded[2].calls.find(([m]) => m === "update")?.[1]).toEqual([{ title: "T2", snapshot: SNAPSHOT, turn_count: 4, taken_at: "2026-10-09T19:00:00.000Z" }]);
+    expect(await store.revoke("c1", "u1", new Date("2026-10-09T20:00:00Z"))).toBe(true);
+    expect(admin.recorded[3].calls.find(([m]) => m === "update")?.[1]).toEqual([{ revoked_at: "2026-10-09T20:00:00.000Z" }]);
+    expect(await store.revoke("c1", "u1", new Date())).toBe(false);
+  });
+
+  it("reads by token and counts a view through the function", async () => {
+    const admin = fakeAdmin({ shares: [{ data: ROW }, { data: null }], "rpc:record_share_view": [{ data: "sh1" }, { data: null }] });
+    const store = supabaseShareStore(admin.client);
+    expect(await store.byToken("t".repeat(22))).toEqual(ROW);
+    expect(admin.recorded[0].calls.map(([m]) => m)).toEqual(["select", "eq", "is", "maybeSingle"]);
+    expect(await store.byToken("nope")).toBeNull();
+    expect(await store.view("t".repeat(22))).toBe("sh1");
+    expect(admin.rpcCalls[0]).toEqual(["record_share_view", { p_token: "t".repeat(22) }]);
+    expect(await store.view("gone")).toBeNull();
   });
 });

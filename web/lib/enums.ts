@@ -40,6 +40,10 @@ export const SERVER_EVENT_KINDS = [
   "consent_declined",
   "web_search",
   "web_fetch",
+  "share_created",
+  "share_updated",
+  "share_revoked",
+  "share_opened",
 ] as const;
 
 /** Step events the browser reports through /api/event. */
