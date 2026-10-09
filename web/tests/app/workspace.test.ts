@@ -68,3 +68,18 @@ describe("the bottom stack, the sidebar, and the header", () => {
     for (const piece of ['aria-label="Conversations"', 'aria-label="Details"', "xl:hidden", "onClick={onNew}", "aria-expanded"]) expect(header).toContain(piece);
   });
 });
+
+describe("the shell", () => {
+  it("lays out three regions, overlays on narrow screens, and closes them on Escape", () => {
+    const shell = read("components/WorkspaceShell.tsx");
+    for (const piece of ['aria-label="Conversations"', 'aria-label="Details"', "<main", "xl:static", "xl:hidden", '"Escape"', "overflow-y-auto", "h-dvh"]) expect(shell).toContain(piece);
+  });
+
+  it("composes the chat from the shell, the panel, the strip, the recap, and the chips, and reports the panel events", () => {
+    const chat = read("components/Chat.tsx");
+    for (const piece of ["<WorkspaceShell", "<DetailsPanel", "<StageStrip", "<RecapBar", "<Suggestions", "deriveArtifacts(", "chipsFor(", "lastRecap(", "summaryFor(", 'kind: "scenario_panel_opened"', 'kind: "chart_view_changed"', 'card: "activity"', 'card: "recap"', "source"]) expect(chat).toContain(piece);
+    expect(chat).not.toContain("window.scrollTo");
+    expect(chat).not.toContain("EXAMPLES");
+    expect(chat).toContain("DRAFTS.understand");
+  });
+});
