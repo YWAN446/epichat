@@ -34,7 +34,9 @@ describe("system prompt", () => {
     expect(systemBlocks()).toEqual([{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }]);
   });
 
-  it("puts the date on the first line of the first user message", () => {
+  it("puts the date on the first line of the first user message, and the About block between the date and the text", () => {
     expect(firstUserMessage("2026-10-08", "Model measles in Kenya")).toBe("Today's date: 2026-10-08.\n\nModel measles in Kenya");
+    expect(firstUserMessage("2026-10-08", "Model measles in Kenya", null)).toBe("Today's date: 2026-10-08.\n\nModel measles in Kenya");
+    expect(firstUserMessage("2026-10-08", "Hi", "About this participant: x")).toBe("Today's date: 2026-10-08.\n\nAbout this participant: x\n\nHi");
   });
 });

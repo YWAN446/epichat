@@ -69,7 +69,7 @@ export function systemBlocks(): Anthropic.Beta.BetaTextBlockParam[] {
   return [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }];
 }
 
-/** The first message of a conversation carries the date, so the system prompt stays byte-stable. */
-export function firstUserMessage(dateIso: string, text: string): string {
-  return `Today's date: ${dateIso}.\n\n${text}`;
+/** The first message of a conversation carries the date and the About block (profile spec, section 8), so the system prompt stays byte-stable. */
+export function firstUserMessage(dateIso: string, text: string, about?: string | null): string {
+  return `Today's date: ${dateIso}.\n\n${about ? `${about}\n\n` : ""}${text}`;
 }

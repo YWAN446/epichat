@@ -11,6 +11,9 @@ import { RunsSection } from "./RunsSection";
 import { ScenarioSection } from "./ScenarioSection";
 import { Section } from "./Section";
 
+/** The sections of this panel; the Profile tab reports its own. */
+type DetailsSection = Exclude<PanelSection, "profile">;
+
 type Props = {
   artifacts: Artifacts;
   onSectionOpen: (section: PanelSection) => void;
@@ -21,7 +24,7 @@ type Props = {
 
 /** The right column: the present scenario, the data applied, every run, and every step. The newest run opens its section. */
 export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onExport }: Props) {
-  const [open, setOpen] = useState<Record<PanelSection, boolean>>({ scenario: true, data: false, runs: true, report: false, activity: false });
+  const [open, setOpen] = useState<Record<DetailsSection, boolean>>({ scenario: true, data: false, runs: true, report: false, activity: false });
   const runCount = useRef(artifacts.runs.length);
   const reportId = useRef(artifacts.report?.report_id ?? null);
 
@@ -37,7 +40,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
     reportId.current = id;
   }, [artifacts.report]);
 
-  const toggle = (section: PanelSection) => (next: boolean) => {
+  const toggle = (section: DetailsSection) => (next: boolean) => {
     setOpen((state) => ({ ...state, [section]: next }));
     if (next) onSectionOpen(section);
   };
