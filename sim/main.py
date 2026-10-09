@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Literal
 
 HERE = Path(__file__).resolve().parent
 PACKAGE_ROOT = HERE if (HERE / "epichat").is_dir() else HERE.parent   # Vercel copy vs. local checkout
@@ -27,7 +28,7 @@ from importlib.metadata import version as _package_version  # noqa: E402
 
 from fastapi import Depends, FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.exceptions import RequestValidationError  # noqa: E402
-from fastapi.responses import JSONResponse  # noqa: E402
+from fastapi.responses import JSONResponse, Response  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from epichat.data_loaders.demographics import get_demographics_for_sim  # noqa: E402
@@ -35,6 +36,7 @@ from epichat.schema import SimParams  # noqa: E402
 from series import scaled_outcome, thin  # noqa: E402
 from service import agent_years, exceeds_cap, simulate  # noqa: E402
 from settings import Settings, load_settings  # noqa: E402
+import report_render as render  # noqa: E402
 
 # Read from package metadata: importing starsim itself costs over a second
 # in the parent, which only ever runs it in a child process.
@@ -140,3 +142,18 @@ def demographics(iso3: str, settings: Settings = Depends(require_bearer)):
         return _error(404, "not_found")
     return {"ok": True, "iso3": code, "birth_rate": demo["birth_rate"],
             "death_rate": demo["death_rate"], "source": demo["source"]}
+
+
+class ExportRequest(BaseModel):
+    format: Literal["docx", "pdf"]
+    document: dict
+
+
+@app.post("/export")
+def export_route(body: ExportRequest, settings: Settings = Depends(require_bearer)):
+    """A report document (web/lib/report/document.ts) as Word or PDF; the web app's download route calls this."""
+    problems = render.validate_document(body.document)
+    if problems:
+        return _error(422, "invalid_document", detail="; ".join(problems[:10]))
+    data = render.render_docx(body.document) if body.format == "docx" else render.render_pdf(body.document)
+    return Response(content=data, media_type=render.MEDIA[body.format])
