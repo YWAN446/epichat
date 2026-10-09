@@ -58,4 +58,11 @@ describe("protected pages", () => {
     expect(readFileSync("components/FeedbackControl.tsx", "utf8")).toContain('fetch("/api/feedback"');
     expect(readFileSync("components/ConversationList.tsx", "utf8")).toContain('method: "DELETE"');
   });
+
+  it("New resets the chat's own state, since the first turn swaps the address without remounting the page", () => {
+    const chat = readFileSync("components/Chat.tsx", "utf8");
+    expect(chat).toContain("function startNew");
+    expect(chat).toContain("onNew={startNew}");
+    expect(readFileSync("components/ChatHeader.tsx", "utf8")).toContain("onClick={onNew}");
+  });
 });

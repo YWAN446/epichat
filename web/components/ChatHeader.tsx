@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 const QUIET = "rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-ink-soft hover:bg-paper-2 hover:text-ink";
 
 /** The bar at the top of the chat: the brand, the address, New, Sign out. New waits while a reply is arriving. */
-export function ChatHeader({ email, busy }: { email: string; busy: boolean }) {
+export function ChatHeader({ email, busy, onNew }: { email: string; busy: boolean; onNew: () => void }) {
   const router = useRouter();
 
   async function signOut() {
@@ -28,7 +28,7 @@ export function ChatHeader({ email, busy }: { email: string; busy: boolean }) {
               New
             </span>
           ) : (
-            <Link href="/chat" className={QUIET} aria-label="New conversation">
+            <Link href="/chat" onClick={onNew} className={QUIET} aria-label="New conversation">
               New
             </Link>
           )}

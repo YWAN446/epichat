@@ -156,6 +156,23 @@ export function Chat({ email, conversations, initial, maxMessageChars, contactEm
     }
   }
 
+  /**
+   * Start a new conversation. The first turn swaps the address to /chat/[id]
+   * without a navigation, so a link back to /chat can land on this same
+   * component instance with its state intact; reset it here before the link
+   * navigates, rather than relying on a remount.
+   */
+  function startNew() {
+    if (live) return;
+    inFlight.current?.abort();
+    inFlight.current = null;
+    following.current = true;
+    setTurns([]);
+    setConversationId(null);
+    setError(null);
+    setInput("");
+  }
+
   function submit(event: FormEvent) {
     event.preventDefault();
     void send(input);
@@ -172,7 +189,7 @@ export function Chat({ email, conversations, initial, maxMessageChars, contactEm
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <ChatHeader email={email} busy={live !== null} />
+      <ChatHeader email={email} busy={live !== null} onNew={startNew} />
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
         {showList && (
