@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { fetchReport } from "@/lib/client/download";
+import { fetchReport, orderFormats } from "@/lib/client/download";
 
 function answering(status: number, body: BodyInit, headers: Record<string, string>) {
   return vi.fn(async () => new Response(body, { status, headers })) as unknown as typeof fetch;
@@ -33,5 +33,13 @@ describe("fetchReport", () => {
       throw new Error("offline");
     }) as unknown as typeof fetch;
     expect(await fetchReport("/api/reports/r1?format=pdf", offline)).toEqual({ ok: false, message: "The download failed. Please try again." });
+  });
+});
+
+describe("orderFormats", () => {
+  it("puts the preferred format first and keeps the rest in order", () => {
+    expect(orderFormats("docx")).toEqual(["docx", "md", "html", "pdf"]);
+    expect(orderFormats("md")).toEqual(["md", "html", "docx", "pdf"]);
+    expect(orderFormats("pdf")).toEqual(["pdf", "md", "html", "docx"]);
   });
 });

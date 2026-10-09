@@ -31,10 +31,12 @@ export type Artifacts = {
   activity: ActivityItem[];
   /** The latest report, cleared by a new scenario. */
   report: ReportPayload | null;
+  /** Successful remember calls so far; the Profile tab re-reads its list when this grows. */
+  memoryWrites: number;
 };
 
 export function emptyArtifacts(): Artifacts {
-  return { disease: null, config: null, data: [], runs: [], activity: [], report: null };
+  return { disease: null, config: null, data: [], runs: [], activity: [], report: null, memoryWrites: 0 };
 }
 
 export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artifacts {
@@ -65,6 +67,7 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
       } else if (payload.kind === "data") out.data.push(payload);
       else if (payload.kind === "run") out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload });
       else if (payload.kind === "report") out.report = payload;
+      else if (payload.kind === "memory") out.memoryWrites += 1;
     }
   }
   return out;

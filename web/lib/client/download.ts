@@ -1,4 +1,10 @@
 /** A report file fetched for a download: the panel shows the route's message when the sim service cannot render (report spec, section 11). */
+import { EXPORT_FORMATS, type ExportFormat } from "@/lib/enums";
+
+/** The download links' order: the participant's preferred format first (profile spec, section 10). */
+export function orderFormats(preferred: ExportFormat): ExportFormat[] {
+  return [preferred, ...EXPORT_FORMATS.filter((format) => format !== preferred)];
+}
 
 export type FetchedReport = { ok: true; blob: Blob; filename: string } | { ok: false; message: string };
 

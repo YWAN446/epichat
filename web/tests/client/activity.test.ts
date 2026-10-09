@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Block } from "@/lib/chat/events";
 import { formatDuration, summarizeActivity } from "@/lib/client/activity";
+import { statusLabel, toolLabel } from "@/lib/client/toolLine";
 
 const STATS = { peak_infections: 9, peak_day: 4, total_infected: 40, total_deaths: 0, n_agents: 100, sim_days: 30 };
 const run = (duration_ms: number, ok = true): Block => ({
@@ -43,5 +44,14 @@ describe("summarizeActivity for the report", () => {
     const payload = { kind: "report" as const, report_id: "rep-1", version: 2, title: "T", sections: [], words: 100 };
     expect(summarizeActivity([tool("write_report", payload)])).toBe("Wrote the report, version 2");
     expect(summarizeActivity([tool("write_report", { kind: "tool_error", message: "x" }, false)])).toBe("⚠ Report failed");
+  });
+});
+
+describe("summarizeActivity for a memory", () => {
+  it("says what was remembered, and labels the tool line", () => {
+    expect(summarizeActivity([tool("remember", { kind: "memory", memory_id: "m1", memory_kind: "preference", text: "Prefers tables", replaced: false })])).toBe("Remembered: Prefers tables");
+    expect(summarizeActivity([tool("remember", { kind: "tool_error", message: "x" }, false)])).toBe("⚠ Memory failed");
+    expect(toolLabel("remember")).toBe("🧠 Memory");
+    expect(statusLabel("remember")).toBe("Remembering…");
   });
 });

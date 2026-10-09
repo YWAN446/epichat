@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Block } from "@/lib/chat/events";
 import { deriveArtifacts, emptyArtifacts } from "@/lib/client/artifacts";
 import type { ReportPayload } from "@/lib/report/document";
-import type { CardPayload, ConfigPayload, DataPayload, DiseasePayload, RunPayload } from "@/lib/tools/types";
+import type { CardPayload, ConfigPayload, DataPayload, DiseasePayload, MemoryPayload, RunPayload } from "@/lib/tools/types";
 import { params } from "../tools/helpers";
 
 const STATS = { peak_infections: 900, peak_day: 40, total_infected: 4000, total_deaths: 12, n_agents: 10000, sim_days: 365 };
@@ -60,5 +60,20 @@ describe("deriveArtifacts and the report", () => {
     expect(deriveArtifacts([...turns, { id: "t3", blocks: [result("configure_simulation", CONFIG(true))] }]).report).toBeNull();
     expect(deriveArtifacts([...turns, { id: "t3", blocks: [result("write_report", { kind: "tool_error", message: "x" }, false)] }]).report).toEqual({ ...REPORT, version: 2 });
     expect(deriveArtifacts(turns).activity.map((s) => s.name)).toEqual(["run_simulation", "write_report", "write_report"]);
+  });
+});
+
+describe("deriveArtifacts and the memory", () => {
+  const MEMORY: MemoryPayload = { kind: "memory", memory_id: "m1", memory_kind: "preference", text: "Prefers tables", replaced: false };
+
+  it("counts successful remember calls so the tab knows to re-read the list", () => {
+    expect(emptyArtifacts().memoryWrites).toBe(0);
+    const turns = [
+      { id: "t1", blocks: [result("remember", MEMORY), result("remember", { ...MEMORY, memory_id: "m2" })] },
+      { id: "t2", blocks: [result("remember", { kind: "tool_error", message: "x" }, false)] },
+    ];
+    expect(deriveArtifacts(turns).memoryWrites).toBe(2);
+    expect(deriveArtifacts(turns).activity.map((s) => s.name)).toEqual(["remember", "remember", "remember"]);
+    expect(deriveArtifacts([...turns, { id: "t3", blocks: [result("configure_simulation", CONFIG(true))] }]).memoryWrites).toBe(2);
   });
 });

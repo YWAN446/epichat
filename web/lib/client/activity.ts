@@ -43,6 +43,7 @@ export function summarizeActivity(blocks: Block[]): string {
       else if (block.name.startsWith("fetch_")) bump("fetch");
       else if (block.name === "run_simulation") pieces.push({ text: `Ran the simulation${payload.kind === "run" ? `, ${formatDuration(payload.duration_ms)}` : ""}` });
       else if (block.name === "write_report") pieces.push({ text: payload.kind === "report" ? `Wrote the report, version ${payload.version}` : "Wrote the report" });
+      else if (block.name === "remember") pieces.push({ text: payload.kind === "memory" ? `Remembered: ${payload.text}` : "Remembered" });
       else pieces.push({ text: plainLabel(block.name) });
     }
   }
