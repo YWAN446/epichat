@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
     "/admin": ["./content/**/*.md"],
     "/api/consent": ["./content/**/*.md"],
     "/api/event": ["./content/**/*.md"],
+    "/chat/[id]": ["./content/**/*.md"],
+    "/api/chat": ["./content/**/*.md"],
+    "/api/feedback": ["./content/**/*.md"],
+    "/api/conversations/[id]": ["./content/**/*.md"],
   },
 };
 
