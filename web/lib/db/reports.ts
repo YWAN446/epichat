@@ -21,6 +21,8 @@ export interface ReportStore {
   count(conversationId: string): Promise<number>;
   /** One report with its document, for the download route. */
   get(id: string): Promise<ReportRow | null>;
+  /** The conversation's latest version, or null (the share's snapshot). */
+  latest(conversationId: string): Promise<ReportRow | null>;
 }
 
 /** The reports columns for one version. */
@@ -52,6 +54,17 @@ export function supabaseReportStore(admin: SupabaseClient): ReportStore {
     },
     async get(id) {
       const { data, error } = await admin.from("reports").select("id, user_id, conversation_id, version, title, document").eq("id", id).maybeSingle();
+      if (error) throw new Error(`reports read failed: ${error.message}`);
+      return (data as ReportRow | null) ?? null;
+    },
+    async latest(conversationId) {
+      const { data, error } = await admin
+        .from("reports")
+        .select("id, user_id, conversation_id, version, title, document")
+        .eq("conversation_id", conversationId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (error) throw new Error(`reports read failed: ${error.message}`);
       return (data as ReportRow | null) ?? null;
     },

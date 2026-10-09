@@ -227,3 +227,23 @@ describe("share store", () => {
     expect(await store.view("gone")).toBeNull();
   });
 });
+
+describe("the share's reads", () => {
+  it("fetches the series of the runs it is given, skipping runs without one, and nothing for no ids", async () => {
+    const admin = fakeAdmin({ runs: [{ data: [{ id: "run-1", series: { day: [0] } }, { id: "run-2", series: null }] }] });
+    const series = await supabaseRunStore(admin.client).seriesFor(["run-1", "run-2"]);
+    expect([...series.entries()]).toEqual([["run-1", { day: [0] }]]);
+    expect(callOn(admin.recorded, "runs", "in")).toEqual(["id", ["run-1", "run-2"]]);
+    const none = fakeAdmin();
+    expect((await supabaseRunStore(none.client).seriesFor([])).size).toBe(0);
+    expect(none.recorded).toHaveLength(0);
+  });
+
+  it("reads the conversation's latest report, or null", async () => {
+    const row = { id: "r2", user_id: "u1", conversation_id: "c1", version: 2, title: "T", document: { version: 1, title: "T", subtitle: "", generatedAt: "", language: "en", sections: [] } };
+    const admin = fakeAdmin({ reports: [{ data: row }] });
+    expect(await supabaseReportStore(admin.client).latest("c1")).toEqual(row);
+    expect(admin.recorded[0].calls.map(([m]) => m)).toEqual(["select", "eq", "order", "limit", "maybeSingle"]);
+    expect(await supabaseReportStore(fakeAdmin({ reports: [{ data: null }] }).client).latest("c1")).toBeNull();
+  });
+});

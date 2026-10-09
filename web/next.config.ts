@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     "/api/runs/[id]": ["./content/**/*.md"],
     "/api/diseases/[key]/references": ["./content/**/*.md"],
     "/api/reports/[id]": ["./content/**/*.md"],
+    "/api/shares": ["./content/**/*.md"],
   },
 };
 

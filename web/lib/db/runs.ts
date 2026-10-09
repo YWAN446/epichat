@@ -25,6 +25,8 @@ export interface RunStore {
   insert(run: RunInsert): Promise<string>;
   /** The scenario's successful runs plus this turn's not-yet-linked ones, oldest first, with their series (the report). */
   listForReport(conversationId: string, scenarioId: string | null, turnId: string): Promise<ReportRun[]>;
+  /** The stored series of the given runs, by id; runs without one are left out (the share's snapshot). */
+  seriesFor(ids: string[]): Promise<Map<string, Record<string, number[]>>>;
 }
 
 type ReportRunRow = {
@@ -101,6 +103,14 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
           warnings: row.warnings ?? [],
           dataSources: row.data_sources ?? [],
         }));
+    },
+    async seriesFor(ids) {
+      const out = new Map<string, Record<string, number[]>>();
+      if (ids.length === 0) return out;
+      const { data, error } = await admin.from("runs").select("id, series").in("id", ids);
+      if (error) throw new Error(`runs read failed: ${error.message}`);
+      for (const row of (data ?? []) as { id: string; series: Record<string, number[]> | null }[]) if (row.series) out.set(row.id, row.series);
+      return out;
     },
   };
 }

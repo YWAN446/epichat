@@ -76,8 +76,8 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
     async listForReplay() { return []; },
     async lastRecap() { return []; },
   };
-  const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; }, async listForReport() { return []; } };
-  const reports: ReportStore = { async insert() { return "rep-1"; }, async count() { return 0; }, async get() { return null; } };
+  const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; }, async listForReport() { return []; }, async seriesFor() { return new Map(); } };
+  const reports: ReportStore = { async insert() { return "rep-1"; }, async count() { return 0; }, async get() { return null; }, async latest() { return null; } };
   const sim: SimClient = {
     async simulate(_params, popScale, contextText) {
       calls.simulated.push({ popScale, contextText });

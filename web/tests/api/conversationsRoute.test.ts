@@ -20,7 +20,7 @@ function del(id: string) {
 describe("DELETE /api/conversations/[id]", () => {
   beforeEach(() => {
     vi.mocked(requireParticipant).mockResolvedValue({ ok: true, user: USER, settings: loadSettings({}) });
-    admin = fakeAdmin({ conversations: [{ data: [{ id: CONVERSATION }] }] });
+    admin = fakeAdmin({ conversations: [{ data: [{ id: CONVERSATION }] }], shares: [{ data: [{ id: "sh1" }] }], step_events: [{ data: null }] });
     vi.mocked(adminClient).mockReturnValue(admin.client);
   });
 
@@ -28,6 +28,16 @@ describe("DELETE /api/conversations/[id]", () => {
     expect((await del(CONVERSATION)).status).toBe(204);
     expect(callOn(admin.recorded, "conversations", "update")?.[0]).toMatchObject({ deleted_at: expect.any(String) });
     expect(callOn(admin.recorded, "conversations", "eq")).toEqual(["id", CONVERSATION]);
+    expect(callOn(admin.recorded, "shares", "update")).toEqual([{ revoked_at: expect.any(String) }]);
+    const event = (callOn(admin.recorded, "step_events", "insert")?.[0] as { kind: string }[])[0];
+    expect(event).toMatchObject({ kind: "share_revoked", conversation_id: CONVERSATION });
+  });
+
+  it("still hides the conversation when revoking its share fails", async () => {
+    admin = fakeAdmin({ conversations: [{ data: [{ id: CONVERSATION }] }], shares: [{ data: null, error: { message: "down" } }] });
+    vi.mocked(adminClient).mockReturnValue(admin.client);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await del(CONVERSATION)).status).toBe(204);
   });
 
   it("answers 404 for someone else's, an already hidden, or a malformed id, and passes the gate's refusal through", async () => {
