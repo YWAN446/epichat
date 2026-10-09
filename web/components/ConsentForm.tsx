@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { PARTICIPANT_LABEL, PARTICIPANT_TYPES, type ParticipantType } from "@/lib/enums";
+import { ConsentText } from "./ConsentText";
 
 const PRIMARY = "rounded-full bg-accent px-5 py-2.5 font-semibold text-white hover:bg-accent-deep disabled:bg-line disabled:text-ink-faint";
 const QUIET = "rounded-full px-5 py-2.5 font-medium text-ink-soft hover:bg-paper-2 hover:text-ink";
@@ -31,9 +30,7 @@ export function ConsentForm({ markdown }: { markdown: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="prose-epichat rounded-2xl border border-line bg-surface p-6">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
-      </div>
+      <ConsentText markdown={markdown} />
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 font-medium">I am a…</legend>
