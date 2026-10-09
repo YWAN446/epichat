@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("protected pages", () => {
-  for (const page of ["app/chat/page.tsx", "app/chat/[id]/page.tsx", "app/admin/page.tsx", "app/consent/page.tsx"]) {
+  for (const page of ["app/chat/page.tsx", "app/chat/[id]/page.tsx", "app/admin/page.tsx", "app/consent/page.tsx", "app/profile/page.tsx"]) {
     it(`${page} decides from loadParticipant and is never static`, () => {
       const source = readFileSync(page, "utf8");
       expect(source).toContain("loadParticipant()");

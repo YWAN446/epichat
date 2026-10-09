@@ -36,10 +36,15 @@ export async function loadParticipant(): Promise<Participant> {
 
 export type Gate = { ok: true; user: { id: string; email: string }; settings: Settings } | { ok: false; response: Response };
 
-/** The three gates every agent-core route applies, in order, answering JSON. The settings are the caller's own. */
-export async function requireParticipant(): Promise<Gate> {
+/**
+ * The gates every participant route applies, in order, answering JSON. The
+ * settings are the caller's own. Only the questionnaire's own route lets a
+ * participant through before the profile is saved.
+ */
+export async function requireParticipant(options: { allowIncompleteProfile?: boolean } = {}): Promise<Gate> {
   const participant = await loadParticipant();
-  const refusal = apiRefusal(participant.status) ?? (participant.user ? null : apiRefusal("sign_in"));
+  const waived = options.allowIncompleteProfile === true && participant.status === "profile";
+  const refusal = (waived ? null : apiRefusal(participant.status)) ?? (participant.user ? null : apiRefusal("sign_in"));
   if (refusal || !participant.user) {
     const { status, code, message } = refusal ?? apiRefusal("sign_in")!;
     return { ok: false, response: Response.json({ code, message }, { status }) };

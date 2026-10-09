@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
     "/api/diseases/[key]/references": ["./content/**/*.md"],
     "/api/reports/[id]": ["./content/**/*.md"],
     "/api/shares": ["./content/**/*.md"],
+    "/profile": ["./content/**/*.md"],
+    "/api/profile": ["./content/**/*.md"],
+    "/api/profile/setup": ["./content/**/*.md"],
+    "/api/memories": ["./content/**/*.md"],
+    "/api/memories/[id]": ["./content/**/*.md"],
   },
 };
 

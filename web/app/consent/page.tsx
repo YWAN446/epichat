@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function ConsentPage() {
   const participant = await loadParticipant();
   if (participant.status === "sign_in" || participant.status === "forbidden") redirect("/sign-in");
+  if (participant.status === "profile") redirect("/profile");
   if (participant.status === "ok") redirect("/chat");
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col px-6 py-10">

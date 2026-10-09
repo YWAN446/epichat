@@ -24,7 +24,8 @@ export function ConsentForm({ markdown }: { markdown: string }) {
       setError("That did not save. Please try again.");
       return;
     }
-    router.replace(body.decision === "agree" ? "/chat" : "/sign-in?declined=1");
+    // After consent comes the questionnaire (profile spec, section 3); the profile page sends a finished participant on to the chat.
+    router.replace(body.decision === "agree" ? "/profile" : "/sign-in?declined=1");
     router.refresh();
   }
 

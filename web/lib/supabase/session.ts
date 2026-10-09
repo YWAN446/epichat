@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Pages a signed-out visitor is sent away from. The consent check itself happens in the pages. */
-export const PROTECTED_PREFIXES = ["/chat", "/consent", "/admin"] as const;
+/** Pages a signed-out visitor is sent away from. The consent and profile checks themselves happen in the pages. */
+export const PROTECTED_PREFIXES = ["/chat", "/consent", "/admin", "/profile"] as const;
 
 export function needsSignIn(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
