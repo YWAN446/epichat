@@ -172,6 +172,10 @@ dr = res[list(sim.diseases.keys())[0]]
 
 n_infected     = dr['n_infected'].values
 cum_infections = dr['cum_infections'].values
-cum_deaths = res['cum_deaths'].values if 'cum_deaths' in res else np.zeros(len(res['timevec']))
+# Deaths the disease caused: every death in the population less the background mortality (ss.Deaths).
+_all_deaths = res['new_deaths'].values if 'new_deaths' in res else np.zeros(len(res['timevec']))
+_bg_deaths = sim.demographics['deaths'].results['new'].values if 'deaths' in sim.demographics else 0
+new_deaths = np.clip(_all_deaths - _bg_deaths, 0, None)
+cum_deaths = np.cumsum(new_deaths)
 
 {% include "_output.py.j2" %}

@@ -127,7 +127,11 @@ dr = res[list(sim.diseases.keys())[0]]
 
 n_infected     = dr['n_infected'].values
 cum_infections = dr['cum_infections'].values
-cum_deaths = res['cum_deaths'].values if 'cum_deaths' in res else np.zeros(len(res['timevec']))
+# Deaths the disease caused: every death in the population less the background mortality (ss.Deaths).
+_all_deaths = res['new_deaths'].values if 'new_deaths' in res else np.zeros(len(res['timevec']))
+_bg_deaths = sim.demographics['deaths'].results['new'].values if 'deaths' in sim.demographics else 0
+new_deaths = np.clip(_all_deaths - _bg_deaths, 0, None)
+cum_deaths = np.cumsum(new_deaths)
 
 import matplotlib.pyplot as plt
 
@@ -192,14 +196,12 @@ if 'cum_infections' in _dr:
 # (2,1) New deaths per day
 _ax[7].set_title('New deaths / day')
 _ax[7].set_xlabel('Day')
-if 'new_deaths' in _rs:
-    _ax[7].plot(_days, _rs['new_deaths'].values, color='darkred')
+_ax[7].plot(_days, new_deaths, color='darkred')
 
 # (2,2) Cumulative deaths
 _ax[8].set_title('Cumulative deaths')
 _ax[8].set_xlabel('Day')
-if 'cum_deaths' in _rs:
-    _ax[8].plot(_days, _rs['cum_deaths'].values, color='darkred')
+_ax[8].plot(_days, cum_deaths, color='darkred')
 
 fig.suptitle(_dis_key.upper() + ' Simulation', fontsize=13, y=1.01)
 fig.tight_layout()

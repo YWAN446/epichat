@@ -62,14 +62,12 @@ if 'cum_infections' in _dr:
 # (2,1) New deaths per day
 _ax[7].set_title('New deaths / day')
 _ax[7].set_xlabel('Day')
-if 'new_deaths' in _rs:
-    _ax[7].plot(_days, _rs['new_deaths'].values, color='darkred')
+_ax[7].plot(_days, new_deaths, color='darkred')
 
 # (2,2) Cumulative deaths
 _ax[8].set_title('Cumulative deaths')
 _ax[8].set_xlabel('Day')
-if 'cum_deaths' in _rs:
-    _ax[8].plot(_days, _rs['cum_deaths'].values, color='darkred')
+_ax[8].plot(_days, cum_deaths, color='darkred')
 
 fig.suptitle(_dis_key.upper() + ' Simulation', fontsize=13, y=1.01)
 fig.tight_layout()
@@ -83,9 +81,8 @@ for _k in ('n_susceptible', 'n_exposed', 'n_infected', 'n_asymptomatic', 'n_reco
            'new_infections', 'cum_infections'):
     if _k in _dr:
         _series[_k] = [float(_v) for _v in _dr[_k].values]
-for _k in ('new_deaths', 'cum_deaths'):
-    if _k in _rs:
-        _series[_k] = [float(_v) for _v in _rs[_k].values]
+_series['new_deaths'] = [float(_v) for _v in new_deaths]
+_series['cum_deaths'] = [float(_v) for _v in cum_deaths]
 _stats = {
     'peak_infections': int(n_infected.max()),
     'peak_day':        int(n_infected.argmax()),

@@ -62,3 +62,15 @@ def test_same_seed_is_deterministic(client):
     a = client.post("/simulate", json={"params": _params()}, headers=AUTH).json()
     b = client.post("/simulate", json={"params": _params()}, headers=AUTH).json()
     assert a["stats_agents"] == b["stats_agents"]
+
+
+def test_deaths_count_only_the_disease(client):
+    """Background mortality (ss.Deaths) is not a disease outcome: with p_death 0 the
+    death series and the total stay at zero however many agents die of other causes."""
+    params = _params(use_demographics=True, birth_rate=20.0, death_rate=500.0, p_death=0.0)
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["stats"]["total_deaths"] == 0
+    assert body["series"]["cum_deaths"][-1] == 0
+    assert max(body["series"]["new_deaths"]) == 0
