@@ -9,7 +9,7 @@ import { ReferenceList } from "./ReferenceList";
 const STATUS: Record<string, string> = { ok: "", under_review: "under review", estimates_only: "estimates only", no_source: "no source" };
 const COUNT = "rounded-full border border-line px-2 py-0.5 text-xs font-medium text-accent hover:border-accent hover:bg-accent-wash";
 
-type Props = { config: ConfigPayload | null; disease: DiseasePayload | null; onReferencesOpen?: (parameter: string) => void };
+type Props = { config: ConfigPayload | null; disease: DiseasePayload | null; onReferencesOpen?: (parameter: string) => void; /** False on the public share page, where the references route is out of reach. */ references?: boolean };
 
 /** The disease's display name when the lookup matches the configuration; the key in sentence case otherwise. */
 function diseaseName(key: string | null, disease: DiseasePayload | null): string {
@@ -19,7 +19,7 @@ function diseaseName(key: string | null, disease: DiseasePayload | null): string
 }
 
 /** The present configuration and the literature parameters behind it, each with its references a press away. */
-export function ScenarioSection({ config, disease, onReferencesOpen }: Props) {
+export function ScenarioSection({ config, disease, onReferencesOpen, references = true }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   if (!config && !disease) return <p className="text-ink-faint">The configuration appears here once a scenario is set up.</p>;
   const c = config?.config;
@@ -71,7 +71,7 @@ export function ScenarioSection({ config, disease, onReferencesOpen }: Props) {
                     <td className="py-1 pr-2 font-mono">{p.min !== undefined && p.max !== undefined ? formatRange(p.min, p.max, p.unit) : "—"}</td>
                     <td className="py-1 text-ink-soft">
                       {STATUS[p.status] ?? p.status}
-                      {referenceButtonLabel(p) && (
+                      {references && referenceButtonLabel(p) && (
                         <button type="button" aria-expanded={open === name} aria-controls={`refs-${name}`} onClick={() => toggle(name)} className={`${STATUS[p.status] ? "ml-1 " : ""}${COUNT}`}>
                           {referenceButtonLabel(p)}
                         </button>
