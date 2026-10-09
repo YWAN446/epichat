@@ -6,9 +6,14 @@ function plain(text: string): string {
   return text.replace(/([\\|*_`#<>[\]])/g, "\\$1");
 }
 
+/** A table cell: one line, or the table breaks. */
+function cell(text: string): string {
+  return plain(text.replace(/\s*\n\s*/g, " "));
+}
+
 function table(columns: string[], rows: string[][], caption?: string): string {
-  const head = `| ${columns.map(plain).join(" | ")} |\n| ${columns.map(() => "---").join(" | ")} |`;
-  const body = rows.map((row) => `| ${row.map(plain).join(" | ")} |`).join("\n");
+  const head = `| ${columns.map(cell).join(" | ")} |\n| ${columns.map(() => "---").join(" | ")} |`;
+  const body = rows.map((row) => `| ${row.map(cell).join(" | ")} |`).join("\n");
   return `${caption ? `**${plain(caption)}**\n\n` : ""}${head}\n${body}`;
 }
 

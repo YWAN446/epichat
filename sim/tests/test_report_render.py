@@ -88,3 +88,14 @@ def test_export_route_contract(client):
     r = client.post("/export", json={"format": "docx", "document": {"version": 2}}, headers=AUTH)
     assert r.status_code == 422 and r.json()["error"]["kind"] == "invalid_document"
     assert client.post("/export", json={"format": "txt", "document": SAMPLE}, headers=AUTH).status_code == 422
+
+
+def test_pdf_keeps_non_latin1_text_in_a_unicode_font():
+    """A Polish or Vietnamese narrative must not become question marks; R₀ still reads R0 on both paths."""
+    assert render.pdf_text("R₀ Łódź Việt Nam Ελλάδα Москва", cjk=False) == "R0 Łódź Việt Nam Ελλάδα Москва"
+    assert render.pdf_text("R₀ 麻疹", cjk=True) == "R0 麻疹"
+    polish = {**SAMPLE, "sections": [{"id": "summary", "heading": "Podsumowanie", "blocks": [{"kind": "paragraph", "text": "Odra rozprzestrzeniałaby się szybko w Łodzi."}]}]}
+    data = render.render_pdf(polish)
+    assert data.startswith(b"%PDF")
+    assert b"DejaVuSans" in data
+    assert b"DejaVuSans" in render.render_pdf(SAMPLE)

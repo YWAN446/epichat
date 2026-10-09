@@ -280,7 +280,11 @@ builds with two more libraries (`python-docx`, `reportlab`) and serves
    order by at` shows two `tool_called` rows and one `export` row per
    download with its `format`; `select has_report, report_current, stage
    from scenarios where conversation_id = '<id>'` reads true, true, report
-   after step 4.
+   after step 4. Once, after applying 0004: `select relrowsecurity from
+   pg_class where relname = 'reports'` reads true and
+   `select has_table_privilege('service_role', 'reports', 'insert')` reads
+   true, so the server can write reports and the browser roles cannot read
+   them.
 
 ## 7. Simulation service (`sim/`)
 

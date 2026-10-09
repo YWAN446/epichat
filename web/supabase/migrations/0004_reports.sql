@@ -19,6 +19,24 @@ create table if not exists reports (
 );
 create index if not exists reports_conversation_idx on reports (conversation_id, version desc);
 
+-- The same rule as 0001: row-level security on, the browser roles get nothing,
+-- the server role gets what the stores need.
+alter table reports enable row level security;
+do $$
+declare
+  browser_role text;
+begin
+  foreach browser_role in array array['anon', 'authenticated'] loop
+    if exists (select 1 from pg_roles where rolname = browser_role) then
+      execute format('revoke all on reports from %I', browser_role);
+    end if;
+  end loop;
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant select, insert, update, delete on reports to service_role;
+  end if;
+end;
+$$;
+
 alter table scenarios add column if not exists has_report boolean not null default false;
 alter table scenarios add column if not exists report_current boolean not null default false;
 alter table scenarios drop constraint if exists scenarios_stage_check;

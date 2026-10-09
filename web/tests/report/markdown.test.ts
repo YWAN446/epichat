@@ -20,6 +20,12 @@ describe("renderMarkdown", () => {
     expect(md.endsWith("\n")).toBe(true);
   });
 
+  it("folds line breaks inside a table cell so the table survives", () => {
+    const doc = composeReport({ ...FIXTURE, runs: [{ ...FIXTURE.runs[0], repairs: [{ attempt: 1, error: "Traceback (most recent call last):\n  File x\nValueError: bad", changes: [] }] }] }, new Date());
+    const text = renderMarkdown(doc);
+    expect(text).toContain("| Run 1 | 1 | Traceback (most recent call last): File x ValueError: bad |  |");
+  });
+
   it("keeps pipes and markup literal", () => {
     const doc = composeReport({ ...FIXTURE, narrative: { ...FIXTURE.narrative, summary: "A | B and **not bold** <b>x</b>" } }, new Date());
     const text = renderMarkdown(doc);

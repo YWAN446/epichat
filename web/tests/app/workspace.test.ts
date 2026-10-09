@@ -231,3 +231,10 @@ describe("the report line in the conversation", () => {
     expect(chat.match(/onExport=\{onExport\}/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe("review fixes (report)", () => {
+  it("fetches Word and PDF so a 503 shows its message under the buttons for a minute, and keeps Markdown and HTML as plain links", () => {
+    const section = read("components/panel/ReportSection.tsx");
+    for (const piece of ["fetchReport(", "createObjectURL", "60_000", 'role="status"', 'format === "md" || format === "html"']) expect(section).toContain(piece);
+  });
+});

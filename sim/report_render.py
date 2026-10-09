@@ -1,16 +1,48 @@
 """Render a ReportDocument (web/lib/report/document.ts, format 1) to Word or PDF.
 
-Figures are drawn with matplotlib (shipped with Starsim). The PDF uses
-Helvetica with the exporter's Latin fallback, or reportlab's built-in CJK font
-when the text needs it (the helpers in epichat.exporter).
+Figures are drawn with matplotlib (shipped with Starsim). The PDF uses DejaVu
+Sans from matplotlib's own data (Latin, Greek, Cyrillic, Vietnamese and more,
+so a narrative in the user's language survives), or reportlab's built-in CJK
+font when the text needs it (the helpers in epichat.exporter).
 """
 from __future__ import annotations
 
 import io
 import json
+from pathlib import Path
 from typing import Any
 
-from epichat.exporter import _has_cjk, _rl_register_cjk, _sanitize_latin
+from epichat.exporter import _has_cjk, _replace_special, _rl_register_cjk
+
+_DEJAVU_REGISTERED = False
+# DejaVu has the subscripts, but the exporter's convention (R₀ → R0) keeps every export alike.
+_SUBSCRIPTS = {"R₀": "R0", "₀": "0", "₂": "2"}
+
+
+def _register_dejavu() -> tuple[str, str]:
+    """DejaVu Sans and its bold from matplotlib's data folder; no new dependency."""
+    global _DEJAVU_REGISTERED
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    if not _DEJAVU_REGISTERED:
+        import matplotlib
+
+        folder = Path(matplotlib.get_data_path()) / "fonts" / "ttf"
+        pdfmetrics.registerFont(TTFont("DejaVuSans", str(folder / "DejaVuSans.ttf")))
+        pdfmetrics.registerFont(TTFont("DejaVuSans-Bold", str(folder / "DejaVuSans-Bold.ttf")))
+        _DEJAVU_REGISTERED = True
+    return "DejaVuSans", "DejaVuSans-Bold"
+
+
+def pdf_text(text: str, cjk: bool) -> str:
+    """What the PDF prints. The CJK font lacks the exporter's special characters, so that path maps
+    them all; DejaVu only needs the subscripts mapped. Nothing else is lost on either path."""
+    if cjk:
+        return _replace_special(text)
+    for char, repl in _SUBSCRIPTS.items():
+        text = text.replace(char, repl)
+    return text
 
 MEDIA = {
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -155,12 +187,13 @@ def render_pdf(doc: dict) -> bytes:
                                     Spacer, Table, TableStyle)
 
     cjk = _has_cjk(json.dumps(doc, ensure_ascii=False))
-    font = _rl_register_cjk() if cjk else "Helvetica"
-    bold = font if cjk else "Helvetica-Bold"
+    if cjk:
+        font = bold = _rl_register_cjk()
+    else:
+        font, bold = _register_dejavu()
 
     def fix(value: Any) -> str:
-        text = str(value)
-        return text if cjk else _sanitize_latin(text)
+        return pdf_text(str(value), cjk)
 
     def text(value: Any) -> str:
         return _escape(fix(value))

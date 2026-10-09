@@ -87,7 +87,8 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
         .order("created_at", { ascending: true });
       if (error) throw new Error(`runs read failed: ${error.message}`);
       return ((data ?? []) as ReportRunRow[])
-        .filter((row) => row.scenario_id === scenarioId || (row.scenario_id === null && row.turn_id === turnId))
+        // The stored scenario's runs, plus this turn's not-yet-linked ones; never an earlier turn's orphan when the scenario is new.
+        .filter((row) => (scenarioId !== null && row.scenario_id === scenarioId) || (row.scenario_id === null && row.turn_id === turnId))
         .map((row) => ({
           id: row.id,
           createdAt: row.created_at,

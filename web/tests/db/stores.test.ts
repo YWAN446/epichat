@@ -185,3 +185,12 @@ describe("report store and the report reads", () => {
     expect(await supabaseTurnStore(fakeAdmin({ turns: [{ data: null }] }).client).lastRecap("c1")).toEqual([]);
   });
 });
+
+describe("listForReport for a scenario that is not stored yet", () => {
+  it("takes only this turn's unlinked runs, never an earlier turn's", async () => {
+    const row = (id: string, scenario_id: string | null, turn_id: string) => ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id, effective_params: {}, stats: {}, stats_agents: {}, pop_scale: 1, series: null, repairs: [], warnings: [], data_sources: [] });
+    const admin = fakeAdmin({ runs: [{ data: [row("run-1", "s1", "t1"), row("run-2", null, "t2"), row("run-3", null, "t9")] }] });
+    const runs = await supabaseRunStore(admin.client).listForReport("c1", null, "t9");
+    expect(runs.map((r) => r.id)).toEqual(["run-3"]);
+  });
+});
