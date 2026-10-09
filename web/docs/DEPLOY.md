@@ -9,6 +9,9 @@ creates projects or changes dashboard settings.
 1. Create a new project on the free plan. Region: US East.
 2. SQL editor: paste and run `web/supabase/migrations/0001_init.sql`. It is
    safe to run twice. Later migrations are run in order by file name.
+   Sub-project 3 adds `web/supabase/migrations/0002_turns.sql` (the
+   `finish_turn` function and two scenario columns); run it the same way
+   after 0001.
 3. Sign-in is by an emailed code only. The app has no page for a sign-in link
    to land on, so the emails must carry the code and no link.
    - Authentication > Sign In / Providers > Email: set "Email OTP Length" to
@@ -35,9 +38,11 @@ creates projects or changes dashboard settings.
 
 ## 2. Anthropic
 
-Not needed until sub-project 3. When it is: create a workspace for EpiChat in
-the Anthropic Console, create an API key in it, and set the workspace's monthly
-spend limit a little above `MONTHLY_BUDGET_USD` as the backstop.
+Used by the web app from sub-project 3 on (every chat turn) and by the sim
+service's parameter repair. Create a workspace for EpiChat in the Anthropic
+Console, create an API key in it (`ANTHROPIC_API_KEY`), and set the
+workspace's monthly spend limit a little above `MONTHLY_BUDGET_USD` as the
+backstop.
 
 ## 3. Environment
 
@@ -47,6 +52,13 @@ Production and Preview. Copy `web/.env.example` and fill in the Supabase keys,
 and `CRON_SECRET` (any long random string; Vercel sends it as a bearer token
 with every cron request, and `/api/health` reports the enrollment count only
 to that bearer). Every other setting has a default.
+
+`UN_API_KEY` is the UN Population Data Portal bearer for `fetch_demographics`.
+Empty is allowed: the live call then goes without a bearer, and a failure
+falls back to the simulation service's CSV demographics. Set it in Vercel
+(Production and Preview) and in `web/.env.local` before the agent-core
+deploy; the key is the owner's UN Population Data Portal bearer (see
+`UN_API_KEY` in `.env.example`).
 
 ## 4. Vercel
 
@@ -109,6 +121,49 @@ the Hobby plan as written.
   then delete the user under Authentication > Users.
 - **Monthly:** check Supabase database size and Vercel usage against the free
   allowances (500 MB; 4 active-CPU hours, 360 GB-hours, 1M invocations).
+
+## 6b. Agent core verification
+
+Done on a preview deployment after the agent-core branch is pushed, by the
+owner and the session together (`docs/superpowers/specs/2026-10-08-agent-core-design.md`,
+section 1). Each line is one conversation; the Table Editor checks follow.
+
+1. English, end to end: "Model a measles outbreak in Kenya" → confirm the
+   configuration → "Fetch the data" → "Run it". Expect the disease lookup
+   line, the configuration line, three data lines (UN, World Bank, WHO), the
+   simulation line with peak and attack rate, suggestion chips after every
+   reply, and thumbs under each reply.
+2. Portuguese: "Simule um surto de dengue no Brasil" — the reply is in
+   Portuguese and the tools still run.
+3. A refusal: ask for something the model declines (for instance, how to
+   make an outbreak worse on purpose). Expect the refusal message
+   ("I'm unable to help with that request…") and nothing appended: the next
+   message continues the conversation as before.
+4. A pause_turn with web search: "Search the web for the latest measles
+   case counts in Kenya and summarize them" — expect web-search and read-page
+   lines, and a reply that cites pages.
+5. Resume: open the conversation from the list; every turn replays with its
+   tool lines; delete it; it leaves the list and its address answers 404.
+
+Table Editor, for the English conversation (replace the id):
+
+    select seq, stop, model, input_tokens, output_tokens, cache_read_tokens, cost_usd,
+           first_token_at - started_at as to_first_token, finished_at - started_at as total,
+           jsonb_array_length(api_calls) as calls, stage_before, stage_after
+    from turns where conversation_id = '<id>' order by seq;
+    select t.seq, e.seq, e.kind, e.at from turn_events e join turns t on t.id = e.turn_id
+    where t.conversation_id = '<id>' order by t.seq, e.seq;   -- thinking rows present, in order, timestamps ascending
+    select seq, disease, country_iso3, total_population, stage, stage_reached, has_run from scenarios where conversation_id = '<id>';
+    select turn_id, pop_scale, duration_ms, sim_cold_start, error is not null as failed from runs where conversation_id = '<id>';
+    select kind, stage, tool, meta, at from step_events where conversation_id = '<id>' order by at;
+    select rating, comment, created_at from feedback where conversation_id = '<id>';
+    select * from usage_daily where day = current_date;
+
+Expected: `turns.api_calls` has one entry per model call with tokens and
+latency; `thinking` events exist; `feedback` has the thumbs pressed;
+`step_events` shows conversation_started, tool_called, stage_reached (one per
+stage), run_completed, turn, suggestion_used, feedback_given, with ascending
+times; `usage_daily.cost_usd` grew by the sum of `turns.cost_usd`.
 
 ## 7. Simulation service (`sim/`)
 
