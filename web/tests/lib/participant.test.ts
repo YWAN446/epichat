@@ -4,7 +4,7 @@ import { apiRefusal, participantStatus, redirectFor } from "@/lib/participant";
 
 const settings = loadSettings({});
 const user = { id: "u1", email: "student@emory.edu", email_confirmed_at: "2026-10-01T00:00:00Z" };
-const enrolled = { consent_version: "2026-10-07", consented_at: "2026-10-02T00:00:00Z" };
+const enrolled = { consent_version: "2026-10-07", consented_at: "2026-10-02T00:00:00Z", profile_completed_at: "2026-10-02T00:05:00Z" };
 
 describe("participantStatus", () => {
   it("sends a signed-out visitor to sign in", () => {
@@ -22,7 +22,13 @@ describe("participantStatus", () => {
     expect(participantStatus(user, { ...enrolled, consent_version: "2026-09-01" }, settings, "2026-10-07")).toBe("consent");
   });
 
-  it("admits a confirmed, allowed, currently consented user", () => {
+  it("asks for the profile when consent is current but the questionnaire was never saved", () => {
+    expect(participantStatus(user, { ...enrolled, profile_completed_at: null }, settings, "2026-10-07")).toBe("profile");
+    expect(participantStatus(user, { consent_version: "2026-10-07", consented_at: "2026-10-02T00:00:00Z" }, settings, "2026-10-07")).toBe("profile");
+    expect(participantStatus(user, { ...enrolled, consent_version: "2026-09-01", profile_completed_at: null }, settings, "2026-10-07")).toBe("consent");
+  });
+
+  it("admits a confirmed, allowed, currently consented user with a saved profile", () => {
     expect(participantStatus(user, enrolled, settings, "2026-10-07")).toBe("ok");
   });
 });
@@ -32,6 +38,7 @@ describe("redirectFor", () => {
     expect(redirectFor("sign_in")).toBe("/sign-in");
     expect(redirectFor("forbidden")).toBe("/sign-in?forbidden=1");
     expect(redirectFor("consent")).toBe("/consent");
+    expect(redirectFor("profile")).toBe("/profile");
     expect(redirectFor("ok")).toBeNull();
   });
 });
@@ -41,6 +48,7 @@ describe("apiRefusal", () => {
     expect(apiRefusal("sign_in")).toEqual({ status: 401, code: "not_signed_in", message: "Please sign in." });
     expect(apiRefusal("forbidden")).toEqual({ status: 403, code: "email_not_allowed", message: "This account is not eligible for the study." });
     expect(apiRefusal("consent")).toEqual({ status: 403, code: "consent_required", message: "Please review the consent form before continuing." });
+    expect(apiRefusal("profile")).toEqual({ status: 403, code: "profile_required", message: "Please tell us about yourself before continuing." });
     expect(apiRefusal("ok")).toBeNull();
   });
 });

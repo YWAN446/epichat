@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { supabaseFeedbackStore } from "@/lib/db/feedback";
+import { supabaseMemoryStore } from "@/lib/db/memories";
 import { supabaseMessageStore } from "@/lib/db/messages";
 import { reportRow, supabaseReportStore } from "@/lib/db/reports";
 import { runRow, supabaseRunStore } from "@/lib/db/runs";
@@ -245,5 +246,56 @@ describe("the share's reads", () => {
     expect(await supabaseReportStore(admin.client).latest("c1")).toEqual(row);
     expect(admin.recorded[0].calls.map(([m]) => m)).toEqual(["select", "eq", "order", "limit", "maybeSingle"]);
     expect(await supabaseReportStore(fakeAdmin({ reports: [{ data: null }] }).client).latest("c1")).toBeNull();
+  });
+});
+
+describe("memory store", () => {
+  const NOW = new Date("2026-10-09T12:00:00Z");
+  const ROW = { id: "m1", kind: "situation", text: "Works at a county health office", source: "agent", created_at: "2026-10-08T10:00:00Z" };
+
+  it("lists active memories newest first and maps the columns", async () => {
+    const { client, recorded } = fakeAdmin({ memories: [{ data: [ROW] }] });
+    expect(await supabaseMemoryStore(client).list(USER)).toEqual([{ id: "m1", kind: "situation", text: "Works at a county health office", source: "agent", createdAt: "2026-10-08T10:00:00Z" }]);
+    expect(recorded[0].calls.filter(([m]) => m === "eq").map(([, a]) => a)).toEqual([["user_id", USER], ["active", true]]);
+    expect(callOn(recorded, "memories", "order")).toEqual(["created_at", { ascending: false }]);
+    const failing = fakeAdmin({ memories: [{ data: null, error: { message: "down" } }] });
+    await expect(supabaseMemoryStore(failing.client).list(USER)).rejects.toThrow(/down/);
+  });
+
+  it("adds with the source and the conversation and answers the id", async () => {
+    const { client, recorded } = fakeAdmin({ memories: [{ data: { id: "m9" } }] });
+    expect(await supabaseMemoryStore(client).add(USER, "preference", "Prefers tables", "agent", CONVERSATION)).toBe("m9");
+    expect(callOn(recorded, "memories", "insert")).toEqual([{ user_id: USER, kind: "preference", text: "Prefers tables", source: "agent", source_conversation_id: CONVERSATION }]);
+    expect(callOn(recorded, "memories", "single")).toEqual([]);
+  });
+
+  it("updates, deactivates, and deactivates all for the owner only, reporting what changed", async () => {
+    const hit = fakeAdmin({ memories: [{ data: [{ id: "m1" }] }] });
+    expect(await supabaseMemoryStore(hit.client).update(USER, "m1", { text: "Prefers charts" }, NOW)).toBe(true);
+    expect(callOn(hit.recorded, "memories", "update")).toEqual([{ text: "Prefers charts", updated_at: NOW.toISOString() }]);
+    expect(hit.recorded[0].calls.filter(([m]) => m === "eq").map(([, a]) => a)).toEqual([["user_id", USER], ["id", "m1"], ["active", true]]);
+    const miss = fakeAdmin({ memories: [{ data: [] }] });
+    expect(await supabaseMemoryStore(miss.client).deactivate(USER, "m2", NOW)).toBe(false);
+    expect(callOn(miss.recorded, "memories", "update")).toEqual([{ active: false, updated_at: NOW.toISOString() }]);
+    const all = fakeAdmin({ memories: [{ data: [{ id: "m1" }, { id: "m2" }] }] });
+    expect(await supabaseMemoryStore(all.client).deactivateAll(USER, NOW)).toBe(2);
+    expect(all.recorded[0].calls.filter(([m]) => m === "eq").map(([, a]) => a)).toEqual([["user_id", USER], ["active", true]]);
+  });
+
+  it("counts active memories and evicts the oldest agent memory", async () => {
+    const { client, recorded } = fakeAdmin({ memories: [{ data: null, count: 30 }] });
+    expect(await supabaseMemoryStore(client).countActive(USER)).toBe(30);
+    expect(callOn(recorded, "memories", "select")).toEqual(["id", { count: "exact", head: true }]);
+    const evict = fakeAdmin({ memories: [{ data: [{ id: "m-old" }] }, { data: [{ id: "m-old" }] }] });
+    expect(await supabaseMemoryStore(evict.client).evictOldestAgent(USER, NOW)).toBe(true);
+    const [find, update] = evict.recorded.filter((r) => r.table === "memories");
+    expect(find.calls.filter(([m]) => m === "eq").map(([, a]) => a)).toEqual([["user_id", USER], ["active", true], ["source", "agent"]]);
+    expect(find.calls.find(([m]) => m === "order")?.[1]).toEqual(["created_at", { ascending: true }]);
+    expect(find.calls.find(([m]) => m === "limit")?.[1]).toEqual([1]);
+    expect(update.calls.find(([m]) => m === "update")?.[1]).toEqual([{ active: false, updated_at: NOW.toISOString() }]);
+    expect(update.calls.find(([m, a]) => m === "eq" && a[0] === "id")?.[1]).toEqual(["id", "m-old"]);
+    const none = fakeAdmin({ memories: [{ data: [] }] });
+    expect(await supabaseMemoryStore(none.client).evictOldestAgent(USER, NOW)).toBe(false);
+    expect(none.recorded).toHaveLength(1);
   });
 });

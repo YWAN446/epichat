@@ -27,7 +27,7 @@ export async function loadParticipant(): Promise<Participant> {
   const profile = user ? await supabaseProfileStore(adminClient()).get(user.id).catch(() => null) : null;
   const status = participantStatus(
     user,
-    profile ? { consent_version: profile.consentVersion, consented_at: profile.consentedAt } : null,
+    profile ? { consent_version: profile.consentVersion, consented_at: profile.consentedAt, profile_completed_at: profile.fields.completedAt } : null,
     settings,
     consent.version,
   );
