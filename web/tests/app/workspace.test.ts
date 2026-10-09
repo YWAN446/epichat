@@ -116,7 +116,7 @@ describe("review fixes", () => {
 describe("readable values", () => {
   it("writes the scenario in words: country names, parameter labels, units", () => {
     const scenario = read("components/panel/ScenarioSection.tsx");
-    for (const piece of ["countryName(", "parameterLabel(", "formatQuantity(", "formatRange("]) expect(scenario).toContain(piece);
+    for (const piece of ["configurationRows(", "parameterLabel(", "formatQuantity(", "formatRange("]) expect(scenario).toContain(piece);
     expect(scenario).not.toContain("${p.unit}");
     expect(scenario).not.toContain("{name}</td>");
   });

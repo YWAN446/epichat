@@ -1,9 +1,8 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { countryName, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { configurationRows, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import { referenceButtonLabel } from "@/lib/client/references";
-import { commaInt } from "@/lib/sim/pyformat";
 import type { ConfigPayload, DiseasePayload } from "@/lib/tools/types";
 import { ReferenceList } from "./ReferenceList";
 
@@ -24,19 +23,7 @@ export function ScenarioSection({ config, disease, onReferencesOpen }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   if (!config && !disease) return <p className="text-ink-faint">The configuration appears here once a scenario is set up.</p>;
   const c = config?.config;
-  const rows: [string, string][] = c
-    ? [
-        ["Disease", diseaseName(c.disease, disease)],
-        ["Model", c.disease_type.toUpperCase()],
-        ["Country", c.country ? countryName(c.country) : "—"],
-        ["Agents", commaInt(c.n_agents)],
-        ["Duration", formatQuantity(c.sim_dur_years, "years")],
-        ["R₀ (approx.)", (config?.approx_r0 ?? 0).toFixed(1)],
-        ["Infectious period", formatQuantity(c.dur_inf, "days")],
-        ...(c.dur_exp ? ([["Exposed period", formatQuantity(c.dur_exp, "days")]] as [string, string][]) : []),
-        ["Interventions", c.interventions.length > 0 ? c.interventions.join(", ") : "none"],
-      ]
-    : [];
+  const rows: [string, string][] = c ? configurationRows(c, config?.approx_r0 ?? 0, diseaseName(c.disease, disease)) : [];
 
   function toggle(parameter: string) {
     const next = open === parameter ? null : parameter;

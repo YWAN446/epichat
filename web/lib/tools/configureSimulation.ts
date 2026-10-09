@@ -2,6 +2,7 @@ import { z } from "zod";
 import { detectDisease } from "@/lib/disease/db";
 import { DEFAULT_BETA, approxR0, calibrateBeta, clampBeta, validateParams } from "@/lib/sim/params";
 import { pyRound } from "@/lib/sim/pyformat";
+import { configView } from "./configView";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
 import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
 
@@ -92,16 +93,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   scenario.params = params;
   scenario.countryIso3 = params.country;
   const warnings = paramWarnings(scenario, params, deps.contextText);
-  const config = {
-    disease: scenario.disease,
-    disease_type: params.disease_type,
-    country: params.country,
-    n_agents: params.n_agents,
-    sim_dur_years: params.sim_dur_years,
-    dur_inf: params.dur_inf,
-    dur_exp: params.dur_exp,
-    interventions: params.interventions.map((i) => i.type),
-  };
+  const config = configView(params, scenario.disease);
   const approx_r0 = pyRound(approxR0(params), 2);
   return {
     content: JSON.stringify({ applied, approx_r0, config, warnings }),

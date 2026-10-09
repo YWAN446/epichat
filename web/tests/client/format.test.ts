@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { countryName, describeField, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { configurationRows, countryName, describeField, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 
 describe("country names", () => {
   it("turns ISO3 codes into names and leaves unknown codes alone", () => {
@@ -73,5 +73,17 @@ describe("applied data fields", () => {
   it("falls back to the key in words and the raw value", () => {
     expect(describeField("hiv_prevalence", 4.2)).toEqual({ label: "HIV prevalence", value: "4.2" });
     expect(describeField("some_new_thing", true)).toEqual({ label: "Some new thing", value: "True" });
+  });
+});
+
+describe("configuration rows", () => {
+  it("writes the configuration in words, the same rows the panel shows", () => {
+    const config = { disease: "measles", disease_type: "sir", country: "KEN", n_agents: 10000, sim_dur_years: 1, dur_inf: 8, dur_exp: null, interventions: [] as string[] };
+    expect(configurationRows(config, 14.9, "Measles")).toEqual([
+      ["Disease", "Measles"], ["Model", "SIR"], ["Country", "Kenya"], ["Agents", "10,000"], ["Duration", "1 year"], ["R₀ (approx.)", "14.9"], ["Infectious period", "8 days"], ["Interventions", "none"],
+    ]);
+    expect(configurationRows({ ...config, dur_exp: 10, interventions: ["vaccine"] }, 12, "Measles")).toContainEqual(["Exposed period", "10 days"]);
+    expect(configurationRows({ ...config, interventions: ["vaccine", "treatment"] }, 12, "Measles")).toContainEqual(["Interventions", "vaccine, treatment"]);
+    expect(configurationRows({ ...config, country: null }, 12, "Measles")).toContainEqual(["Country", "—"]);
   });
 });

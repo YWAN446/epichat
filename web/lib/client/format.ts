@@ -4,7 +4,8 @@
  * Values are formatted the way the Python app prints them (lib/sim/pyformat).
  */
 import names from "@/data/country_names.json";
-import { fmtValue } from "@/lib/sim/pyformat";
+import { commaInt, fmtValue } from "@/lib/sim/pyformat";
+import type { ConfigPayload } from "@/lib/tools/types";
 
 const NAMES = names as Record<string, string>;
 
@@ -43,6 +44,21 @@ export function formatQuantity(value: number, unit?: string): string {
   if (unit === "percentage") return `${plain(value)}%`;
   if (PERIODS.has(unit)) return `${plain(value)} ${value === 1 ? unit.slice(0, -1) : unit}`;
   return `${plain(value)} ${unit}`;
+}
+
+/** The configuration as label and value pairs, shared by the panel's Scenario section and the report. */
+export function configurationRows(c: ConfigPayload["config"], approxR0: number, diseaseName: string): [string, string][] {
+  return [
+    ["Disease", diseaseName],
+    ["Model", c.disease_type.toUpperCase()],
+    ["Country", c.country ? countryName(c.country) : "—"],
+    ["Agents", commaInt(c.n_agents)],
+    ["Duration", formatQuantity(c.sim_dur_years, "years")],
+    ["R₀ (approx.)", approxR0.toFixed(1)],
+    ["Infectious period", formatQuantity(c.dur_inf, "days")],
+    ...(c.dur_exp ? ([["Exposed period", formatQuantity(c.dur_exp, "days")]] as [string, string][]) : []),
+    ["Interventions", c.interventions.length > 0 ? c.interventions.join(", ") : "none"],
+  ];
 }
 
 /** "12–18", "7–21 days", "0.1–0.3%": the unit once, at the end. */
