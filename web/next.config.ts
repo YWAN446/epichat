@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     "/api/chat": ["./content/**/*.md"],
     "/api/feedback": ["./content/**/*.md"],
     "/api/conversations/[id]": ["./content/**/*.md"],
+    "/api/runs/[id]": ["./content/**/*.md"],
   },
 };
 
