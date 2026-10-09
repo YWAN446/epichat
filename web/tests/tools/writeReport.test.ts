@@ -22,7 +22,7 @@ describe("write_report", () => {
     const out = await writeReport(NARRATIVE, deps);
     expect(out.isError).toBeUndefined();
     expect(out.content).toBe(
-      `Report written: "Measles in Kenya, SIR model, 1 year", version 3, 8 sections, ~${wordCount(NARRATIVE)} words. The participant can download it from the Details panel as Markdown, HTML, Word, or PDF.`,
+      `Report written: "Measles in Kenya, SIR model, 1 year", version 3, 8 sections, ~${wordCount(NARRATIVE)} words. The participant can download it from the Dashboard's Report section as Markdown, HTML, Word, or PDF.`,
     );
     expect(out.payload).toMatchObject({ kind: "report", report_id: "rep-3", version: 3, title: "Measles in Kenya, SIR model, 1 year", words: wordCount(NARRATIVE) });
     expect((out.payload as { sections: { id: string }[] }).sections.map((s) => s.id)).toEqual(SECTIONS);

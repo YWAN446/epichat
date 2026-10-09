@@ -53,7 +53,7 @@ export async function writeReport(input: WriteReportArgs, deps: ToolDeps): Promi
     words,
   };
   return {
-    content: `Report written: "${document.title}", version ${version}, ${document.sections.length} sections, ~${words} words. The participant can download it from the Details panel as Markdown, HTML, Word, or PDF.`,
+    content: `Report written: "${document.title}", version ${version}, ${document.sections.length} sections, ~${words} words. The participant can download it from the Dashboard's Report section as Markdown, HTML, Word, or PDF.`,
     payload,
   };
 }

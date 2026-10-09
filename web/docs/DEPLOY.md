@@ -191,8 +191,9 @@ migration 0003 applied first (section 1.2). One browser at desktop width
 (1280 px or wider) and one phone.
 
 1. Desktop: three columns. New conversation at the top left; the welcome
-   card with three draft chips in the middle; Details on the right with
-   Scenario, Data, Runs, Activity and their empty states.
+   card with three draft chips in the middle; the Dashboard on the right
+   with Scenario, Data, Parameters, Runs, Report, Activity and their empty
+   states.
 2. "Model a measles outbreak in Kenya" → confirm → "Fetch the data" →
    "Run it". After each reply: one activity line (press it to see the
    steps), the recap bar under the conversation growing by a line or two,
@@ -200,8 +201,8 @@ migration 0003 applied first (section 1.2). One browser at desktop width
    Run → Interpret, chips that are the model's suggestions. After the run:
    four tiles and the infected curve inline; the Runs section opens with
    the chart, its four views, the effective parameters, and the sources.
-3. Phone: the menu button opens the conversation drawer; Details opens the
-   sheet, with a dot on the button after the run completed while it was
+3. Phone: the menu button opens the conversation drawer; Dashboard opens
+   the sheet, with a dot on the button after the run completed while it was
    closed; Escape and the backdrop close both.
 4. Resume the conversation from the sidebar: the same panel, the recap,
    and the chart (loaded through `/api/runs/[id]`, visible in the
@@ -252,7 +253,7 @@ nothing from the UN API.
    view is "Disease deaths", and with Kenya's demographics applied the
    number is far below the population's background deaths for the year.
 6. Desktop columns: press the ☰ button and the conversations column
-   collapses, the middle widens; press Details and the details column
+   collapses, the middle widens; press Dashboard and the dashboard column
    collapses; press again to restore. Drag the thin strip beside either
    column to resize it; Tab to the strip and press the arrow keys, Home,
    and End. Reload: the widths and the collapsed state are as left. On the
@@ -270,7 +271,7 @@ builds with two more libraries (`python-docx`, `reportlab`) and serves
    the chips include "Create a report" and the stage strip reads Interpret.
 2. Press "Create a report": the activity line says "Wrote the report,
    version 1"; the reply says the report is ready and names the four formats;
-   the stage strip's sixth step, Report, is current; the Details panel's
+   the stage strip's sixth step, Report, is current; the Dashboard's
    Report section opens with the title, "Version 1 · 8 sections", the eight
    headings, and Markdown, HTML, Word, PDF, Open; the same line sits under
    the tool call in the conversation.
@@ -313,8 +314,8 @@ signed in, one private window.
 2. Private window: open the link (`/s/<token>`). No sign-in; the brand, the
    title, "A frozen
    copy of an EpiChat conversation, shared by a study participant on
-   <date>", the turns without thumbs or chips, the Details sections with the
-   charts, and "View report" when the conversation has a report (it opens the
+   <date>", the turns without thumbs or chips, the Dashboard's sections with
+   the charts, and "View report" when the conversation has a report (it opens the
    report's HTML in a new tab). The network tab shows `X-Robots-Tag:
    noindex, nofollow` and `Cache-Control: no-store` on the page.
 3. Signed in: send one more message, reopen the dialog, press "Update
@@ -375,6 +376,45 @@ pushed, with migration 0006 applied first (section 1.2).
    `profile_completed_at` set to null in the Table Editor), send a message:
    the chat goes to the profile page (403 `profile_required`), not to a
    dead end.
+
+## 6h. Dashboard verification
+
+Done on a preview or production deployment after the dashboard branch is
+pushed. No migration. One browser at desktop width and one phone.
+
+1. Desktop: the header holds the ☰ button, the brand, Share (once a
+   conversation exists), and Dashboard; no New, no email, no Sign out. New
+   conversation sits at the top of the left column. Press Dashboard: the
+   right column collapses; press again: it is back. On the phone, Dashboard
+   opens the sheet.
+2. The bottom of the left column shows a round avatar with the email's
+   first letter and the email. Press it: a menu opens with Profile,
+   Contact support, Consent form, Homepage, Sign out; Escape and a press
+   outside close it; the arrow keys move between the items.
+3. Collapse the dashboard, then Profile from the menu: the column returns
+   on its Profile tab (`step_events` gains a `scenario_panel_opened` row
+   with `{"section": "profile"}` when a conversation is open). The item
+   Contact support is a `mailto:` link to `CONTACT_EMAIL` and is absent
+   when none is configured. Consent form opens `/consent` with the text you agreed
+   to, "You agreed to this text on <date> (version …)", and "Back to the
+   chat"; no Agree or Decline buttons. Homepage opens `WEBSITE_URL` in a
+   new tab. Sign out returns to the sign-in page.
+4. "Model a measles outbreak in Kenya" → confirm: Scenario shows only
+   Disease, Model, Country, Duration, Interventions; Data starts with
+   "Measles in the literature" (the table with the reference buttons) above
+   "Real data appears here once it is fetched."; Parameters sits between
+   Data and Runs and lists R₀, the transmission rate, contacts per day, the
+   initial prevalence, the periods, the death probability, the agents, the
+   duration, "Births and deaths: not modelled", and "No interventions.".
+5. "Fetch the data": Parameters now reads the births and deaths, the age
+   structure, and "age-structured" for the contact network. "Run it", then
+   "Set the vaccine coverage to 90%": the Parameters section opens by
+   itself with the vaccination line, before the next run. `step_events`
+   gains `scenario_panel_opened` rows with `{"section": "parameters"}` when
+   you open the section by hand.
+6. Share the conversation and open the link in a private window: the same
+   six sections, Parameters included, with the literature table at the top
+   of Data and no reference buttons.
 
 ## 7. Simulation service (`sim/`)
 

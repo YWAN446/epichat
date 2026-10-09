@@ -18,6 +18,8 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT.indexOf("```recap")).toBeLessThan(SYSTEM_PROMPT.indexOf("```next"));
     expect(SYSTEM_PROMPT).toContain("three to eight lines");
     expect(SYSTEM_PROMPT).toContain("panel beside the conversation");
+    expect(SYSTEM_PROMPT).toContain("in the Dashboard");
+    expect(SYSTEM_PROMPT).not.toContain("Details panel");
   });
 
   it("tells the assistant how to use the About block and the remember tool, between About EpiChat and the recap", () => {

@@ -16,7 +16,7 @@ export const STAGE_HINTS: Record<Stage, string> = {
   ground: "Real data is applied. Run the simulation when you are ready.",
   run: "The simulation is running. This usually takes one to two minutes.",
   interpret: "Explore the results, change something and run again, or ask for a report.",
-  report: "The report is ready. Download it from the Details panel, or ask for changes.",
+  report: "The report is ready. Download it from the Dashboard's Report section, or ask for changes.",
 };
 
 export const DRAFTS: Record<Stage, string[]> = {

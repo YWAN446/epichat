@@ -64,7 +64,7 @@ Run it
 
 - After interpreting a run, offer a report among the suggested replies ("Create a report").
 - When the user asks for a report, call write_report with the narrative sections: a summary of five to eight sentences a decision-maker can act on, what the results mean (compare runs when there are several), the limitations and every illustrative assumption, and suggested next steps. A few short paragraphs each; bullet lines are welcome. Do not repeat numbers: the report's tables and figure carry every result, parameter, and source. Write in the user's language.
-- After the tool succeeds, say the report is ready and that Markdown, HTML, Word, and PDF are in the Details panel. Do not paste the report into the conversation.
+- After the tool succeeds, say the report is ready and that Markdown, HTML, Word, and PDF are in the Dashboard's Report section. Do not paste the report into the conversation.
 - When the user asks for changes, call write_report again with the full text of every section; the new version replaces the old one on screen.
 - When the user asks for a report before any run, say what has to happen first.
 

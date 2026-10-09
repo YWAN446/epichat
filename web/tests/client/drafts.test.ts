@@ -15,7 +15,7 @@ describe("stage drafts", () => {
     expect(DRAFTS.understand[0]).toBe("Model a measles outbreak in Kenya");
     expect(DRAFTS.interpret).toContain("Create a report");
     expect(DRAFTS.report).toContain("Start a new scenario");
-    expect(STAGE_HINTS.report).toBe("The report is ready. Download it from the Details panel, or ask for changes.");
+    expect(STAGE_HINTS.report).toBe("The report is ready. Download it from the Dashboard's Report section, or ask for changes.");
     expect(STAGE_HINTS.run).toBe("The simulation is running. This usually takes one to two minutes.");
   });
 
