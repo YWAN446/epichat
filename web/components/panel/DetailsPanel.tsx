@@ -68,7 +68,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
         <DataSection data={artifacts.data} disease={artifacts.disease} onReferencesOpen={onReferencesOpen} />
       </Section>
       <Section id="panel-parameters" title="Parameters" open={open.parameters} onToggle={toggle("parameters")}>
-        <ParametersSection params={artifacts.params} />
+        <ParametersSection params={artifacts.params} configured={artifacts.config !== null} />
       </Section>
       <Section id="panel-runs" title="Runs" count={artifacts.runs.length} open={open.runs} onToggle={toggle("runs")}>
         <RunsSection runs={artifacts.runs} onChartView={onChartView} />

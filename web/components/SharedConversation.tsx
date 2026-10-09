@@ -52,7 +52,7 @@ export function SharedConversation({ snapshot, token, takenAt }: Props) {
             <DataSection data={artifacts.data} disease={artifacts.disease} references={false} />
           </Section>
           <Section id="shared-parameters" title="Parameters" open={open.parameters} onToggle={toggle("parameters")}>
-            <ParametersSection params={artifacts.params} />
+            <ParametersSection params={artifacts.params} configured={artifacts.config !== null} />
           </Section>
           <Section id="shared-runs" title="Runs" count={artifacts.runs.length} open={open.runs} onToggle={toggle("runs")}>
             <RunsSection runs={artifacts.runs} onChartView={() => {}} />

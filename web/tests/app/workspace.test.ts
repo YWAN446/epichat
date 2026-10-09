@@ -52,6 +52,14 @@ describe("the details panel", () => {
     for (const piece of ["artifacts.params", "parameters: true", "PARAMETER_TOOLS", "artifacts.runs.length > 0"]) expect(panel).toContain(piece);
   });
 
+  it("tells the truth about a scenario stored before the payloads carried parameters", () => {
+    const section = read("components/panel/ParametersSection.tsx");
+    expect(section).toContain("configured");
+    expect(section).toContain("This scenario's parameters were not recorded; they appear after the next change or run.");
+    expect(read("components/panel/DetailsPanel.tsx")).toContain("configured={artifacts.config !== null}");
+    expect(read("components/SharedConversation.tsx")).toContain("configured={artifacts.config !== null}");
+  });
+
   it("keeps the literature table out of Scenario and puts it at the top of Data", () => {
     const scenario = read("components/panel/ScenarioSection.tsx");
     for (const piece of ["in the literature", "<ReferenceList", "<table"]) expect(scenario).not.toContain(piece);

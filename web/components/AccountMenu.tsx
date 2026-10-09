@@ -28,6 +28,7 @@ export function AccountMenu({ email, contactEmail, websiteUrl, onProfile }: Prop
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -35,7 +36,12 @@ export function AccountMenu({ email, contactEmail, websiteUrl, onProfile }: Prop
       if (root.current && !root.current.contains(event.target as Node)) setOpen(false);
     };
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        // The innermost popup only: the shell's Escape listener on window would also close the drawer around the menu.
+        event.stopPropagation();
+        setOpen(false);
+        toggle.current?.focus();
+      }
     };
     document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
@@ -70,9 +76,12 @@ export function AccountMenu({ email, contactEmail, websiteUrl, onProfile }: Prop
     router.refresh();
   }
 
+  /** A link was followed: the page changes, so focus is left alone. */
   const close = () => setOpen(false);
+  /** A button item: the menu closes, focus returns to the toggle, then the action runs. */
   const choose = (action: () => void) => () => {
-    close();
+    setOpen(false);
+    toggle.current?.focus();
     action();
   };
 
@@ -89,7 +98,7 @@ export function AccountMenu({ email, contactEmail, websiteUrl, onProfile }: Prop
           <button type="button" role="menuitem" onClick={choose(() => void signOut())} className={ITEM}>Sign out</button>
         </div>
       )}
-      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((state) => !state)} className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left hover:bg-paper-2">
+      <button ref={toggle} type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((state) => !state)} className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left hover:bg-paper-2">
         <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white">{initialOf(email)}</span>
         <span className="min-w-0 flex-1 truncate text-sm text-ink">{email}</span>
         <span aria-hidden="true" className="text-ink-faint">{open ? "▾" : "▴"}</span>

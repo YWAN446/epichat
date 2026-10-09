@@ -1,9 +1,21 @@
 import { interventionLines, parameterRows } from "@/lib/client/format";
 import type { SimParams } from "@/lib/sim/params";
 
+type Props = {
+  params: SimParams | null;
+  /** A configuration exists. Without parameters it was stored before the payloads carried them, which is said rather than denied. */
+  configured: boolean;
+};
+
 /** The scenario's current parameters in words with units: what the next run uses, or what the latest run used. */
-export function ParametersSection({ params }: { params: SimParams | null }) {
-  if (!params) return <p className="text-ink-faint">Parameters appear here once a scenario is set up.</p>;
+export function ParametersSection({ params, configured }: Props) {
+  if (!params) {
+    return (
+      <p className="text-ink-faint">
+        {configured ? "This scenario's parameters were not recorded; they appear after the next change or run." : "Parameters appear here once a scenario is set up."}
+      </p>
+    );
+  }
   const lines = interventionLines(params);
   return (
     <div className="space-y-3">

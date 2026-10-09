@@ -27,6 +27,16 @@ describe("the account menu", () => {
     }
   });
 
+  it("closes on Escape without closing the drawer around it, and hands focus back to its toggle", () => {
+    const menu = read("components/AccountMenu.tsx");
+    // Escape: the innermost popup only. The shell's own Escape listener sits on window; the menu's on document stops the key there.
+    const escape = /if \(event\.key === "Escape"\) \{[\s\S]*?\n    \}/.exec(menu)?.[0] ?? "";
+    expect(escape).toContain("event.stopPropagation()");
+    // The toggle keeps a ref, and closing by key or by a button item returns focus to it; a navigation link does not.
+    expect(menu).toContain("toggle.current?.focus()");
+    expect(menu).toContain("ref={toggle}");
+  });
+
   it("offers Profile, Contact support, Consent form, Homepage, and Sign out, each going where it says", () => {
     const menu = read("components/AccountMenu.tsx");
     for (const piece of [">Profile<", ">Contact support<", ">Consent form<", ">Homepage<", ">Sign out<", "onProfile", "mailto:${contactEmail}", 'href="/consent"', "href={websiteUrl}", 'target="_blank"', 'rel="noreferrer"', "auth.signOut()", 'router.replace("/sign-in")']) {
