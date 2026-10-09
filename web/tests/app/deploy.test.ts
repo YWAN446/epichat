@@ -24,6 +24,7 @@ describe("deployment files", () => {
       "Polish verification", "/api/diseases/", "country_names.json", "disease_refs.json", "Disease deaths",
       "0004_reports.sql", "/api/reports/", "/export", "python-docx", "reportlab", "Report verification",
       "0005_shares.sql", "/api/shares", "/s/", "Share verification", "version: 2026-10-09",
+      "0006_profile_memory.sql", "/api/profile", "/api/memories", "Profile verification", "version: 2026-10-10",
     ]) {
       expect(doc).toContain(phrase);
     }

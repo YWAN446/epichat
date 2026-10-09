@@ -70,3 +70,18 @@ describe("the Profile tab", () => {
     }
   });
 });
+
+describe("consent and deployment (profile)", () => {
+  it("tells participants, in the spec's words, that their answers and the assistant's memory are collected, under a new version", () => {
+    const consent = read("content/consent.md");
+    expect(consent).toContain("version: 2026-10-10");
+    expect(consent.replace(/\s+/g, " ")).toContain("Your answers to the profile questions and what the assistant remembers about you, which you can see and edit.");
+  });
+
+  it("documents the migration, the routes, and the verification steps", () => {
+    const doc = read("docs/DEPLOY.md");
+    for (const phrase of ["0006_profile_memory.sql", "## 6g. Profile verification", "/api/profile", "/api/memories", "profile_completed", "memory_added", "memory_toggled", "version: 2026-10-10", "Tell us about yourself", "seq = 1"]) {
+      expect(doc).toContain(phrase);
+    }
+  });
+});

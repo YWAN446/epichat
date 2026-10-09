@@ -1,5 +1,5 @@
 ---
-version: 2026-10-09
+version: 2026-10-10
 ---
 
 # Taking part in the EpiChat usability study
@@ -22,6 +22,8 @@ part in that study.
 - You can share a conversation with anyone by creating a link; the link
   shows a copy of the conversation taken at that moment, without your email,
   and we count how often it is opened.
+- Your answers to the profile questions and what the assistant remembers
+  about you, which you can see and edit.
 
 Your messages are sent to Anthropic's Claude API to produce replies.
 Simulation settings are sent to our own simulation service. Public data

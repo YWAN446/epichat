@@ -49,7 +49,7 @@ describe("the Share dialog", () => {
 describe("review fixes (share)", () => {
   it("tells participants, in the spec's words, that a link can be shared with anyone", () => {
     const consent = read("content/consent.md");
-    expect(consent).toContain("version: 2026-10-09");
+    expect(consent).toContain("version: 2026-10-10");
     expect(consent.replace(/\s+/g, " ")).toContain(
       "You can share a conversation with anyone by creating a link; the link shows a copy of the conversation taken at that moment, without your email, and we count how often it is opened.",
     );

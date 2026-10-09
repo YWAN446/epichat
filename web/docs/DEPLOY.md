@@ -25,6 +25,12 @@ creates projects or changes dashboard settings.
    deploys, or every share request fails. The same deploy carries
    `content/consent.md` at `version: 2026-10-09`, so every participant is
    shown the consent text once more on their next visit.
+   Sub-project 4d adds `web/supabase/migrations/0006_profile_memory.sql` (the
+   profile columns on `profiles`, the `memories` table, and six step-event
+   kinds); run it after 0005, twice, before the profile code deploys, or
+   every chat turn and every profile request fails on the new columns. The
+   same deploy carries `content/consent.md` at `version: 2026-10-10`, so
+   every participant passes the consent page and then the profile page once.
 3. Sign-in is by an emailed code only. The app has no page for a sign-in link
    to land on, so the emails must carry the code and no link.
    - Authentication > Sign In / Providers > Email: set "Email OTP Length" to
@@ -326,6 +332,49 @@ signed in, one private window.
    share_revoked.
 7. Any participant who signs in sees the consent page once more (version
    2026-10-09) and continues after accepting.
+
+## 6g. Profile verification
+
+Done on a preview or production deployment after the profile branch is
+pushed, with migration 0006 applied first (section 1.2).
+
+1. Sign in. The consent page shows version 2026-10-10 with the new bullet
+   ("Your answers to the profile questions and what the assistant remembers
+   about you"); accept. "Tell us about yourself" opens, the role pre-filled
+   from the study category where it maps (Graduate student → Student). Press
+   "Save and continue" with no experience chosen: the field is marked and
+   nothing is sent. Type "Narnia" as the country: "Pick a country from the
+   list". Fill the required fields, pick a disease from the list, and save:
+   the chat opens; the network tab shows `POST /api/profile/setup` answering
+   204.
+2. The right column has two tabs, Details and Profile. Profile shows three
+   sections: the fields as saved, the preferences (results, report format,
+   the memory switch on), and "Nothing remembered yet…". Change a goal and
+   press Save: "Saved." appears and `PATCH /api/profile` answers the
+   profile. Switch memory off and on again.
+3. Start a conversation and state something about yourself ("I work at a
+   county health office and I prefer tables"). The activity line reads
+   "Remembered: …" and the Profile tab's Memory section lists it with "Added
+   by the assistant on <date>". Edit its text, delete it, add one of your
+   own (`POST /api/memories` answers 201), then "Forget everything" and
+   Forget: the list empties.
+4. Start a new conversation. Table Editor: `select content from messages
+   where conversation_id = '<id>' and seq = 1` shows the About block between
+   the date line and your text (the profile lines and, when memories exist,
+   the Remembered line); `select user_text from turns where conversation_id
+   = '<id>'` shows the typed text only.
+5. Switch memory off, start another conversation, and state a preference:
+   no "Remembered:" line appears, and the first stored message has no
+   Remembered line.
+6. Table Editor: `select kind, meta from step_events where kind in
+   ('profile_completed', 'profile_updated', 'memory_added',
+   'memory_updated', 'memory_removed', 'memory_toggled') order by at` shows
+   the sequence above; `meta` holds field names, kinds, and flags, never
+   typed text.
+7. In a chat tab opened before the deploy (or with the profile row's
+   `profile_completed_at` set to null in the Table Editor), send a message:
+   the chat goes to the profile page (403 `profile_required`), not to a
+   dead end.
 
 ## 7. Simulation service (`sim/`)
 
