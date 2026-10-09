@@ -22,7 +22,7 @@ export function fakeAdmin(outcomes: Record<string, Outcome[]> = {}) {
         return Promise.resolve({ error: null, ...outcome() }).then(resolve, reject);
       },
     };
-    for (const method of ["insert", "upsert", "update", "delete", "select", "eq", "is", "order", "limit", "single", "maybeSingle"]) {
+    for (const method of ["insert", "upsert", "update", "delete", "select", "eq", "in", "is", "order", "limit", "single", "maybeSingle"]) {
       chain[method] = (...args: unknown[]) => {
         entry.calls.push([method, args]);
         return chain;

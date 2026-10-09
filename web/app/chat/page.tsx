@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { ChatShell } from "@/components/ChatShell";
 import { SessionProvider } from "@/components/SessionProvider";
-import { listConversations } from "@/lib/conversations";
+import { listConversations } from "@/lib/db/conversations";
 import { loadParticipant, redirectFor } from "@/lib/participant.server";
 import { supabaseProfileStore } from "@/lib/profiles";
 import { adminClient } from "@/lib/supabase/admin";

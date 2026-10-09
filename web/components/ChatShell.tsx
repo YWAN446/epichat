@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Brand } from "@/components/Brand";
-import type { ConversationSummary } from "@/lib/conversations";
+import type { ConversationSummary } from "@/lib/db/conversations";
 import { createClient } from "@/lib/supabase/client";
 
 type Props = {
