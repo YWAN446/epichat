@@ -82,6 +82,13 @@ describe("configure_simulation", () => {
     expect(deps.scenario.params!.interventions.find((i) => i.type === "seasonality")).toMatchObject({ scale: 0.3, shift: 0 });
   });
 
+  it("carries the full parameters for the Parameters section, not for the model", async () => {
+    const deps = makeDeps();
+    const out = await run(deps, { disease: "measles", r0: 15, dur_inf: 8, vaccine_coverage: 0.8 });
+    expect(out.payload).toMatchObject({ kind: "config", params: deps.scenario.params });
+    expect(JSON.parse(out.content).params).toBeUndefined();
+  });
+
   it("starts a new scenario when asked", async () => {
     const deps = makeDeps();
     await run(deps, { disease: "measles", n_agents: 5000, country_iso3: "KEN" });

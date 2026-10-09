@@ -63,6 +63,37 @@ describe("deriveArtifacts and the report", () => {
   });
 });
 
+describe("deriveArtifacts and the parameters", () => {
+  const P1 = params({ n_agents: 5000 });
+  const P2 = params({ n_agents: 7000 });
+
+  it("keeps the parameters of the latest configuration, data step, or run: what the next run uses", () => {
+    expect(emptyArtifacts().params).toBeNull();
+    const turns = [
+      { id: "t1", blocks: [result("configure_simulation", { ...CONFIG(true), params: P1 })] },
+      { id: "t2", blocks: [result("fetch_demographics", { ...DATA, params: P2 })] },
+      { id: "t3", blocks: [result("run_simulation", { ...RUN, effective_params: params({ n_agents: 9000 }) })] },
+      { id: "t4", blocks: [result("configure_simulation", { ...CONFIG(false), params: P1 })] },
+    ];
+    expect(deriveArtifacts(turns.slice(0, 1)).params).toEqual(P1);
+    expect(deriveArtifacts(turns.slice(0, 2)).params).toEqual(P2);
+    expect(deriveArtifacts(turns.slice(0, 3)).params?.n_agents).toBe(9000);
+    expect(deriveArtifacts(turns).params).toEqual(P1);
+  });
+
+  it("falls back to the latest run for conversations stored before the payloads carried parameters", () => {
+    const turns = [
+      { id: "t1", blocks: [result("configure_simulation", CONFIG(true))] },
+      { id: "t2", blocks: [result("fetch_demographics", DATA)] },
+    ];
+    expect(deriveArtifacts(turns).params).toBeNull();
+    const ran = [...turns, { id: "t3", blocks: [result("run_simulation", RUN)] }];
+    expect(deriveArtifacts(ran).params).toEqual(RUN.effective_params);
+    expect(deriveArtifacts([...ran, { id: "t4", blocks: [result("fetch_demographics", DATA)] }]).params).toEqual(RUN.effective_params);
+    expect(deriveArtifacts([...ran, { id: "t4", blocks: [result("configure_simulation", CONFIG(true))] }]).params).toBeNull();
+  });
+});
+
 describe("deriveArtifacts and the memory", () => {
   const MEMORY: MemoryPayload = { kind: "memory", memory_id: "m1", memory_kind: "preference", text: "Prefers tables", replaced: false };
 

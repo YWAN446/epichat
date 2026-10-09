@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { configurationRows, countryName, describeField, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows } from "@/lib/client/format";
+import { params } from "../tools/helpers";
 
 describe("country names", () => {
   it("turns ISO3 codes into names and leaves unknown codes alone", () => {
@@ -73,6 +74,53 @@ describe("applied data fields", () => {
   it("falls back to the key in words and the raw value", () => {
     expect(describeField("hiv_prevalence", 4.2)).toEqual({ label: "HIV prevalence", value: "4.2" });
     expect(describeField("some_new_thing", true)).toEqual({ label: "Some new thing", value: "True" });
+  });
+});
+
+describe("parameter rows", () => {
+  it("writes the current parameters in words with units, R₀ first", () => {
+    const p = params({ disease_type: "seir", beta: 171.09375, n_contacts: 4, init_prev: 0.01, dur_inf: 8, dur_exp: 11, p_death: 0.001, n_agents: 10000, sim_dur_years: 1 });
+    expect(parameterRows(p)).toEqual([
+      ["R₀ (approx.)", "15.0"],
+      ["Transmission rate (β)", "171.1"],
+      ["Contacts per day", "4"],
+      ["Contact network", "random"],
+      ["Initial prevalence", "1%"],
+      ["Infectious period", "8 days"],
+      ["Exposed period", "11 days"],
+      ["Death probability", "0.1%"],
+      ["Agents", "10,000"],
+      ["Duration", "1 year"],
+      ["Births and deaths", "not modelled"],
+    ]);
+  });
+
+  it("adds the rows a model or a data step brings: immunity, the asymptomatic share, vital rates, the age structure, the seed", () => {
+    const rows = parameterRows(params({
+      disease_type: "seiar", dur_exp: 5, dur_immune: 180, p_asymp: 0.3, rel_trans_asymp: 0.5, use_demographics: true, birth_rate: 28.1, death_rate: 7.9,
+      network_type: "age_structured", age_pct_under18: 38.6, age_pct_18_64: 57.6, age_pct_over65: 3.8, rand_seed: 42,
+    }));
+    expect(rows).toContainEqual(["Contact network", "age-structured"]);
+    expect(rows).toContainEqual(["Immunity duration", "180 days"]);
+    expect(rows).toContainEqual(["Asymptomatic share", "30%"]);
+    expect(rows).toContainEqual(["Asymptomatic transmission", "50% of symptomatic"]);
+    expect(rows).toContainEqual(["Births and deaths", "28.1 and 7.9 per 1,000 per year"]);
+    expect(rows).toContainEqual(["Age structure", "0–17: 39%, 18–64: 58%, 65+: 4%"]);
+    expect(rows).toContainEqual(["Random seed", "42"]);
+    expect(parameterRows(params({ disease_type: "sir" })).map(([label]) => label)).not.toContain("Asymptomatic share");
+  });
+
+  it("writes each intervention as one line", () => {
+    expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.72, start_day: 60 }, { type: "treatment", coverage: 1, capacity: 252 }, { type: "seasonality", scale: 0.3 }] }))).toEqual([
+      "Vaccination: 72% coverage from day 60",
+      "Treatment: 100% coverage, capacity 252 agents",
+      "Seasonality: amplitude 0.3, shift 0",
+    ]);
+    expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.5 }, { type: "treatment", coverage: 0.8 }] }))).toEqual([
+      "Vaccination: 50% coverage from the start",
+      "Treatment: 80% coverage, no capacity limit",
+    ]);
+    expect(interventionLines(params({}))).toEqual([]);
   });
 });
 

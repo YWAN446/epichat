@@ -45,8 +45,20 @@ export type ConfigPayload = {
   config: { disease: string | null; disease_type: string; country: string | null; n_agents: number; sim_dur_years: number; dur_inf: number; dur_exp: number | null; interventions: string[] };
   warnings: string[];
   new_scenario: boolean;
+  /** The scenario's full parameters after this step, for the panel's Parameters section; absent on payloads stored before it existed. */
+  params?: SimParams;
 };
-export type DataPayload = { kind: "data"; source: "un_wpp" | "wb_data360" | "who_gho" | "sim_fallback"; iso3: string; applied: Record<string, unknown>; citations: string[]; warnings?: string[]; approx_r0?: number };
+export type DataPayload = {
+  kind: "data";
+  source: "un_wpp" | "wb_data360" | "who_gho" | "sim_fallback";
+  iso3: string;
+  applied: Record<string, unknown>;
+  citations: string[];
+  warnings?: string[];
+  approx_r0?: number;
+  /** The scenario's full parameters after this step (see ConfigPayload.params). */
+  params?: SimParams;
+};
 export type RunPayload = {
   kind: "run";
   run_id: string | null;

@@ -97,6 +97,6 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   const approx_r0 = pyRound(approxR0(params), 2);
   return {
     content: JSON.stringify({ applied, approx_r0, config, warnings }),
-    payload: { kind: "config", applied, approx_r0, config, warnings, new_scenario: newScenario },
+    payload: { kind: "config", applied, approx_r0, config, warnings, new_scenario: newScenario, params },
   };
 }

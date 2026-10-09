@@ -5,6 +5,7 @@
  */
 import type { Block } from "@/lib/chat/events";
 import type { ReportPayload } from "@/lib/report/document";
+import type { SimParams } from "@/lib/sim/params";
 import type { ConfigPayload, DataPayload, DiseasePayload, RunPayload } from "@/lib/tools/types";
 import { toolLabel, toolLine } from "./toolLine";
 
@@ -25,6 +26,14 @@ export type Artifacts = {
   config: ConfigPayload | null;
   /** Successful data fetches since the last new scenario, in order. */
   data: DataPayload[];
+  /**
+   * The scenario's current parameters: those of the latest configuration,
+   * data step, or run, so after a run they are the values it used and after a
+   * revision they are what the next run will use. Null until a scenario is set
+   * up, and for conversations stored before the payloads carried them, until
+   * their first run.
+   */
+  params: SimParams | null;
   /** Every successful run of the conversation, oldest first. */
   runs: RunArtifact[];
   /** Every tool and web step, in order. */
@@ -36,7 +45,7 @@ export type Artifacts = {
 };
 
 export function emptyArtifacts(): Artifacts {
-  return { disease: null, config: null, data: [], runs: [], activity: [], report: null, memoryWrites: 0 };
+  return { disease: null, config: null, data: [], params: null, runs: [], activity: [], report: null, memoryWrites: 0 };
 }
 
 export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artifacts {
@@ -60,12 +69,18 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
       if (payload.kind === "disease") out.disease = payload;
       else if (payload.kind === "config") {
         out.config = payload;
+        out.params = payload.params ?? null;
         if (payload.new_scenario) {
           out.data = [];
           out.report = null;
         }
-      } else if (payload.kind === "data") out.data.push(payload);
-      else if (payload.kind === "run") out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload });
+      } else if (payload.kind === "data") {
+        out.data.push(payload);
+        if (payload.params) out.params = payload.params;
+      } else if (payload.kind === "run") {
+        out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload });
+        out.params = payload.effective_params;
+      }
       else if (payload.kind === "report") out.report = payload;
       else if (payload.kind === "memory") out.memoryWrites += 1;
     }

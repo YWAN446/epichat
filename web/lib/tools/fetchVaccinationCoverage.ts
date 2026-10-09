@@ -41,7 +41,7 @@ export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageAr
       applied.applied_vaccine_coverage = coverage;
     }
     const citations = recordSources(scenario, fields);
-    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "who_gho", iso3, applied, citations } };
+    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "who_gho", iso3, applied, citations, params: scenario.params } };
   } catch (error) {
     return errorOutcome(`FETCH ERROR: ${errorMessage(error)}`);
   }

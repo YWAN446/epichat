@@ -65,7 +65,7 @@ export async function fetchDemographics(input: FetchDemographicsArgs, deps: Tool
     const approx_r0 = pyRound(approxR0(params), 2);
     return {
       content: JSON.stringify({ applied, approx_r0, warnings, citations }),
-      payload: { kind: "data", source, iso3, applied, citations, warnings, approx_r0 },
+      payload: { kind: "data", source, iso3, applied, citations, warnings, approx_r0, params },
     };
   } catch (error) {
     return errorOutcome(`FETCH ERROR: ${errorMessage(error)}`);

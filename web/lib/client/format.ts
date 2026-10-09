@@ -4,6 +4,7 @@
  * Values are formatted the way the Python app prints them (lib/sim/pyformat).
  */
 import names from "@/data/country_names.json";
+import { approxR0, type SimParams } from "@/lib/sim/params";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
 import type { ConfigPayload, DataPayload } from "@/lib/tools/types";
 
@@ -67,6 +68,43 @@ export function configurationRows(c: ConfigPayload["config"], approxR0: number, 
     ...(c.dur_exp ? ([["Exposed period", formatQuantity(c.dur_exp, "days")]] as [string, string][]) : []),
     ["Interventions", c.interventions.length > 0 ? c.interventions.join(", ") : "none"],
   ];
+}
+
+/**
+ * The scenario's current parameters as label and value pairs for the panel's
+ * Parameters section: what the next run uses, in words with units. Rows a
+ * model or a data step does not bring are left out.
+ */
+export function parameterRows(p: SimParams): [string, string][] {
+  const asymptomatic = p.disease_type === "seiar";
+  const ages = p.age_pct_under18 !== null && p.age_pct_18_64 !== null && p.age_pct_over65 !== null;
+  return [
+    ["R₀ (approx.)", approxR0(p).toFixed(1)],
+    ["Transmission rate (β)", fmtValue(p.beta)],
+    ["Contacts per day", fmtValue(p.n_contacts)],
+    ["Contact network", p.network_type.replace(/_/g, "-")],
+    ["Initial prevalence", formatQuantity(p.init_prev, "fraction")],
+    ["Infectious period", formatQuantity(p.dur_inf, "days")],
+    ...(p.dur_exp !== null ? ([["Exposed period", formatQuantity(p.dur_exp, "days")]] as [string, string][]) : []),
+    ...(p.dur_immune !== null ? ([["Immunity duration", formatQuantity(p.dur_immune, "days")]] as [string, string][]) : []),
+    ["Death probability", formatQuantity(p.p_death, "fraction")],
+    ...(asymptomatic ? ([["Asymptomatic share", formatQuantity(p.p_asymp, "fraction")], ["Asymptomatic transmission", `${formatQuantity(p.rel_trans_asymp, "fraction")} of symptomatic`]] as [string, string][]) : []),
+    ["Agents", commaInt(p.n_agents)],
+    ["Duration", formatQuantity(p.sim_dur_years, "years")],
+    ["Births and deaths", p.use_demographics ? `${fmtValue(p.birth_rate)} and ${fmtValue(p.death_rate)} per 1,000 per year` : "not modelled"],
+    ...(ages ? ([["Age structure", ageStructure({ "0-17": p.age_pct_under18, "18-64": p.age_pct_18_64, "65+": p.age_pct_over65 })]] as [string, string][]) : []),
+    ...(p.rand_seed !== null ? ([["Random seed", fmtValue(p.rand_seed)]] as [string, string][]) : []),
+  ];
+}
+
+/** One line per intervention: "Vaccination: 72% coverage from day 60", "Treatment: 100% coverage, capacity 252 agents", "Seasonality: amplitude 0.3, shift 0". */
+export function interventionLines(p: SimParams): string[] {
+  return p.interventions.map((i) => {
+    const coverage = i.coverage === null ? "coverage not set" : `${formatQuantity(i.coverage, "fraction")} coverage`;
+    if (i.type === "vaccine") return `Vaccination: ${coverage} from ${i.start_day > 0 ? `day ${fmtValue(i.start_day)}` : "the start"}`;
+    if (i.type === "treatment") return `Treatment: ${coverage}, ${i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} agents`}`;
+    return `Seasonality: amplitude ${fmtValue(i.scale)}, shift ${fmtValue(i.shift)}`;
+  });
 }
 
 /** "12–18", "7–21 days", "0.1–0.3%": the unit once, at the end. */

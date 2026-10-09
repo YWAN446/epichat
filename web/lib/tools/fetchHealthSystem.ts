@@ -30,7 +30,7 @@ export async function fetchHealthSystem(input: FetchHealthSystemArgs, deps: Tool
       applied.applied_treatment_capacity = capacity;
     }
     const citations = recordSources(scenario, fields);
-    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "wb_data360", iso3, applied, citations } };
+    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "wb_data360", iso3, applied, citations, params: scenario.params } };
   } catch (error) {
     return errorOutcome(`FETCH ERROR: ${errorMessage(error)}`);
   }

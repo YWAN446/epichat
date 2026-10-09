@@ -89,6 +89,14 @@ describe("fetch_demographics", () => {
     expect(deps.scenario.totalPopulation).toBeNull();
   });
 
+  it("carries the parameters after the fetch for the Parameters section", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", n_agents: 50000 });
+    const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(out.payload).toMatchObject({ kind: "data", params: deps.scenario.params });
+    expect((out.payload as { params: { network_type: string } }).params.network_type).toBe("age_structured");
+    expect(JSON.parse(out.content).params).toBeUndefined();
+  });
+
   it("reports an adapter failure as a FETCH ERROR", async () => {
     const deps = await configured(makeDeps({ unWpp: new Error("UN is down"), fallback: null }), { disease: "dengue" });
     const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
@@ -114,9 +122,16 @@ describe("fetch_health_system", () => {
 
   it("records only when there is no treatment intervention", async () => {
     const deps = await configured(makeDeps({ wbData360: fields }), { disease: "measles" });
-    await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    const out = await fetchHealthSystem({ country_iso3: "KEN" }, deps);
     expect(getTreatment(deps.scenario.params!)).toBeNull();
     expect(deps.scenario.dataSources).toHaveLength(2);
+    expect(out.payload).toMatchObject({ kind: "data", params: deps.scenario.params });
+  });
+
+  it("carries the parameters with the applied capacity", async () => {
+    const deps = await configured(makeDeps({ wbData360: fields }), { disease: "measles", n_agents: 100000, treatment_capacity: 10 });
+    const out = await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    expect(out.payload).toMatchObject({ kind: "data", params: { interventions: [{ type: "treatment", capacity: 252 }] } });
   });
 
   it("reports empty and failed fetches", async () => {
@@ -135,8 +150,9 @@ describe("fetch_vaccination_coverage", () => {
     expect(getVaccine(deps.scenario.params!)).toMatchObject({ coverage: 0.88, start_day: 0 });
     expect(first.applied).toEqual({ mcv1_coverage: 88, applied_vaccine_coverage: 0.88 });
     expect(deps.queries[0]).toEqual({ source: "who_gho", indicatorCodes: ["WHS8_110", "MCV2"], locationCode: "KEN" });
-    await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
+    const second = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
     expect(deps.scenario.params!.interventions.filter((i) => i.type === "vaccine")).toHaveLength(1);
+    expect(second.payload).toMatchObject({ kind: "data", params: { interventions: [{ type: "vaccine", coverage: 0.88 }] } });
   });
 
   it("says when no indicator exists and when the adapter fails", async () => {
