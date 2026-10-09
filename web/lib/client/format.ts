@@ -5,9 +5,17 @@
  */
 import names from "@/data/country_names.json";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
-import type { ConfigPayload } from "@/lib/tools/types";
+import type { ConfigPayload, DataPayload } from "@/lib/tools/types";
 
 const NAMES = names as Record<string, string>;
+
+/** The data sources, by the field's source key. */
+export const SOURCE_LABELS: Record<DataPayload["source"], string> = {
+  un_wpp: "UN World Population Prospects",
+  wb_data360: "World Bank Data360",
+  who_gho: "WHO Global Health Observatory",
+  sim_fallback: "Built-in fallback",
+};
 
 /** The UN's English name for an ISO3 code; the code itself when it is not a UN location. */
 export function countryName(iso3: string): string {

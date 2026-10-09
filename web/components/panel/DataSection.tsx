@@ -1,12 +1,7 @@
-import { countryName, describeField } from "@/lib/client/format";
+import { SOURCE_LABELS, countryName, describeField } from "@/lib/client/format";
 import type { DataPayload } from "@/lib/tools/types";
 
-export const SOURCE_LABELS: Record<DataPayload["source"], string> = {
-  un_wpp: "UN World Population Prospects",
-  wb_data360: "World Bank Data360",
-  who_gho: "WHO Global Health Observatory",
-  sim_fallback: "Built-in fallback",
-};
+export { SOURCE_LABELS };
 
 /** Every data fetch applied to the current scenario, each field in words with its unit. */
 export function DataSection({ data }: { data: DataPayload[] }) {
