@@ -401,6 +401,13 @@ Stage derivation and strip, suggestions, the six card types and the chart, the s
 
 Verification points: live and replayed conversations render identically; stage funnel matches a hand-counted sample; an exported conversation matches its replay; mobile layout.
 
+**Revision 2026-10-08.** Sub-project 4 is split into 4a workspace
+(`2026-10-08-workspace-design.md`: three columns, a projected details
+panel, an SVG chart instead of Recharts, a model-kept recap), 4b staged
+workflow with roles, 4c report export, and 4d per-participant memory; the
+researcher view and exports move to sub-project 5. The vision for 4b–4d
+is recorded in the workspace spec's section 15.
+
 ### 15.5 Pilot hardening
 
 Golden set against the API; PDF and Word export through a sim endpoint reusing `epichat/exporter.py`; scenario compare; Streamlit retirement; domain.

@@ -168,6 +168,37 @@ latency; `thinking` events exist; `feedback` has the thumbs pressed;
 stage), run_completed, turn, suggestion_used, feedback_given, with ascending
 times; `usage_daily.cost_usd` grew by the sum of `turns.cost_usd`.
 
+## 6c. Workspace verification
+
+Done on a preview deployment after the workspace branch is pushed, with
+migration 0003 applied first (section 1.2). One browser at desktop width
+(1280 px or wider) and one phone.
+
+1. Desktop: three columns. New conversation at the top left; the welcome
+   card with three draft chips in the middle; Details on the right with
+   Scenario, Data, Runs, Activity and their empty states.
+2. "Model a measles outbreak in Kenya" → confirm → "Fetch the data" →
+   "Run it". After each reply: one activity line (press it to see the
+   steps), the recap bar under the conversation growing by a line or two,
+   the stage strip advancing Understand → Configure → Ground in data →
+   Run → Interpret, chips that are the model's suggestions. After the run:
+   four tiles and the infected curve inline; the Runs section opens with
+   the chart, its four views, the effective parameters, and the sources.
+3. Phone: the menu button opens the conversation drawer; Details opens the
+   sheet, with a dot on the button after the run completed while it was
+   closed; Escape and the backdrop close both.
+4. Resume the conversation from the sidebar: the same panel, the recap,
+   and the chart (loaded through `/api/runs/[id]`, visible in the
+   network tab as one request per run). Delete it from the sidebar: it
+   leaves the list and its address answers 404.
+5. Table Editor, for the conversation: `select seq, kind, payload from
+   turn_events where turn_id in (select id from turns where
+   conversation_id = '<id>') order by turn_id, seq` shows a `recap` row
+   before each `suggestions` row; `select kind, meta from step_events
+   where conversation_id = '<id>' and kind in ('suggestion_used',
+   'card_expanded', 'scenario_panel_opened', 'chart_view_changed')`
+   shows `source`, `card`, `section`, and `view` values.
+
 ## 7. Simulation service (`sim/`)
 
 The second Vercel service. Private: no rewrite reaches it; the web app calls
