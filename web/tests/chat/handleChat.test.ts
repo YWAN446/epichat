@@ -73,8 +73,9 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
     async finishTurn(payload) { if (over.finishError) throw over.finishError; calls.finished.push(structuredClone(payload)); return "s1"; },
     async userTexts() { return over.texts ?? []; },
     async listForReplay() { return []; },
+    async lastRecap() { return []; },
   };
-  const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; } };
+  const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; }, async listForReport() { return []; } };
   const sim: SimClient = {
     async simulate(_params, popScale, contextText) {
       calls.simulated.push({ popScale, contextText });

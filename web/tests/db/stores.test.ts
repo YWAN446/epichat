@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { supabaseFeedbackStore } from "@/lib/db/feedback";
 import { supabaseMessageStore } from "@/lib/db/messages";
+import { reportRow, supabaseReportStore } from "@/lib/db/reports";
 import { runRow, supabaseRunStore } from "@/lib/db/runs";
 import { scenarioFromRow, scenarioToJson, supabaseScenarioStore } from "@/lib/db/scenarios";
 import { supabaseTurnStore } from "@/lib/db/turns";
@@ -152,5 +153,35 @@ describe("scenario report flags", () => {
     expect(json).toMatchObject({ has_report: true, report_current: true, stage: "report" });
     expect(scenarioFromRow({ ...json, id: "s1" })).toMatchObject({ hasReport: true, reportCurrent: true, stage: "report", stageReached: "report" });
     expect(scenarioFromRow({ ...scenarioToJson(emptyScenario()), id: "s2" })).toMatchObject({ hasReport: false, reportCurrent: false });
+  });
+});
+
+describe("report store and the report reads", () => {
+  const INSERT = { conversationId: "c1", userId: "u1", turnId: "t1", scenarioId: null, version: 2, title: "Measles in Kenya", language: "en", narrative: { summary: "s", meaning: "m", limitations: "l", next_steps: "n" }, document: { version: 1 as const, title: "Measles in Kenya", subtitle: "", generatedAt: "", language: "en", sections: [] } };
+
+  it("inserts a version, counts, and reads one back", async () => {
+    const admin = fakeAdmin({ reports: [{ data: { id: "r1" } }, { count: 2 }, { data: { id: "r1", user_id: "u1", conversation_id: "c1", version: 2, title: "T", document: INSERT.document } }] });
+    const store = supabaseReportStore(admin.client);
+    expect(await store.insert(INSERT)).toBe("r1");
+    expect(callOn(admin.recorded, "reports", "insert")).toEqual([reportRow(INSERT)]);
+    expect(reportRow(INSERT)).toMatchObject({ conversation_id: "c1", user_id: "u1", turn_id: "t1", scenario_id: null, version: 2, title: "Measles in Kenya", language: "en" });
+    expect(await store.count("c1")).toBe(2);
+    expect(await store.get("r1")).toMatchObject({ id: "r1", version: 2 });
+  });
+
+  it("lists the scenario's successful runs plus this turn's unlinked ones, oldest first", async () => {
+    const row = (id: string, scenario_id: string | null, turn_id: string) => ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id, effective_params: {}, stats: {}, stats_agents: {}, pop_scale: 2, series: { day: [0] }, repairs: [], warnings: [], data_sources: [] });
+    const admin = fakeAdmin({ runs: [{ data: [row("run-1", "s1", "t1"), row("run-2", "s0", "t0"), row("run-3", null, "t9"), row("run-4", null, "t2")] }] });
+    const runs = await supabaseRunStore(admin.client).listForReport("c1", "s1", "t9");
+    expect(runs.map((r) => r.id)).toEqual(["run-1", "run-3"]);
+    expect(runs[0]).toMatchObject({ popScale: 2, series: { day: [0] }, repairs: [], warnings: [], dataSources: [] });
+    expect(callOn(admin.recorded, "runs", "eq")).toEqual(["conversation_id", "c1"]);
+    expect(callOn(admin.recorded, "runs", "is")).toEqual(["error", null]);
+  });
+
+  it("reads the latest finished turn's recap", async () => {
+    const admin = fakeAdmin({ turns: [{ data: { id: "t2", turn_events: [{ kind: "text", payload: { text: "hi" } }, { kind: "recap", payload: { items: ["Measles in Kenya", "Run 1 done"] } }] } }] });
+    expect(await supabaseTurnStore(admin.client).lastRecap("c1")).toEqual(["Measles in Kenya", "Run 1 done"]);
+    expect(await supabaseTurnStore(fakeAdmin({ turns: [{ data: null }] }).client).lastRecap("c1")).toEqual([]);
   });
 });

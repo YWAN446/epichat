@@ -71,6 +71,8 @@ export interface TurnStore {
   userTexts(conversationId: string): Promise<string[]>;
   /** The finished turns with their display blocks (thinking left out), for /chat/[id]. */
   listForReplay(conversationId: string): Promise<ReplayTurn[]>;
+  /** The recap block of the latest finished turn, or [] (the report's Decisions section). */
+  lastRecap(conversationId: string): Promise<string[]>;
 }
 
 type ReplayRow = {
@@ -113,6 +115,21 @@ export function supabaseTurnStore(admin: SupabaseClient): TurnStore {
           .filter((event) => event.kind !== "thinking")
           .map((event) => ({ kind: event.kind, ...event.payload }) as Block),
       }));
+    },
+
+    async lastRecap(conversationId) {
+      const { data, error } = await admin
+        .from("turns")
+        .select("id, turn_events(kind, payload)")
+        .eq("conversation_id", conversationId)
+        .in("stop", ["end_turn", "max_tokens"])
+        .order("seq", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(`turns read failed: ${error.message}`);
+      const events = ((data as { turn_events?: { kind: string; payload: Record<string, unknown> }[] } | null)?.turn_events ?? []);
+      const recap = events.find((event) => event.kind === "recap")?.payload.items;
+      return Array.isArray(recap) ? recap.filter((item): item is string => typeof item === "string") : [];
     },
   };
 }

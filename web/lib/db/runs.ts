@@ -1,12 +1,36 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ResolvedField } from "@/lib/data/types";
+import type { RepairRecord, SimStats } from "@/lib/sim/client";
+import type { SimParams } from "@/lib/sim/params";
 import type { RunRecord } from "@/lib/tools/types";
 
 export type RunInsert = { conversationId: string; userId: string; turnId: string; scenarioId: string | null; record: RunRecord };
 
+/** One successful run as the report reads it back (report spec, section 5). */
+export type ReportRun = {
+  id: string;
+  createdAt: string;
+  effectiveParams: SimParams;
+  stats: SimStats;
+  statsAgents: SimStats;
+  popScale: number;
+  series: Record<string, number[]> | null;
+  repairs: RepairRecord[];
+  warnings: string[];
+  dataSources: ResolvedField[];
+};
+
 export interface RunStore {
   /** Insert the row and return its id. Throws when the database refuses; onRun swallows it. */
   insert(run: RunInsert): Promise<string>;
+  /** The scenario's successful runs plus this turn's not-yet-linked ones, oldest first, with their series (the report). */
+  listForReport(conversationId: string, scenarioId: string | null, turnId: string): Promise<ReportRun[]>;
 }
+
+type ReportRunRow = {
+  id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: SimParams; stats: SimStats; stats_agents: SimStats;
+  pop_scale: number | string | null; series: Record<string, number[]> | null; repairs: RepairRecord[] | null; warnings: string[] | null; data_sources: ResolvedField[] | null;
+};
 
 /** The runs columns for one simulation, finished or failed. */
 export function runRow(run: RunInsert): Record<string, unknown> {
@@ -53,6 +77,29 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
       const { data, error } = await admin.from("runs").insert(runRow(run)).select("id").single();
       if (error || !data) throw new Error(`runs insert failed: ${error?.message ?? "no row"}`);
       return (data as { id: string }).id;
+    },
+    async listForReport(conversationId, scenarioId, turnId) {
+      const { data, error } = await admin
+        .from("runs")
+        .select("id, created_at, scenario_id, turn_id, effective_params, stats, stats_agents, pop_scale, series, repairs, warnings, data_sources")
+        .eq("conversation_id", conversationId)
+        .is("error", null)
+        .order("created_at", { ascending: true });
+      if (error) throw new Error(`runs read failed: ${error.message}`);
+      return ((data ?? []) as ReportRunRow[])
+        .filter((row) => row.scenario_id === scenarioId || (row.scenario_id === null && row.turn_id === turnId))
+        .map((row) => ({
+          id: row.id,
+          createdAt: row.created_at,
+          effectiveParams: row.effective_params,
+          stats: row.stats,
+          statsAgents: row.stats_agents,
+          popScale: Number(row.pop_scale ?? 1),
+          series: row.series ?? null,
+          repairs: row.repairs ?? [],
+          warnings: row.warnings ?? [],
+          dataSources: row.data_sources ?? [],
+        }));
     },
   };
 }

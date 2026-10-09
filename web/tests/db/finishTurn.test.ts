@@ -159,3 +159,20 @@ describe("finish_turn", () => {
     await expect(db.query("insert into turn_events (turn_id, seq, kind) values ($1, 2, 'image')", [TURN_1])).rejects.toThrow();
   });
 });
+
+describe("reports (0004)", () => {
+  it("persists the report flags, accepts the report stage, and links this turn's report to the scenario", async () => {
+    const scenarioId = await finish(payload({ scenario: { ...payload().scenario, stage: "report", stage_reached: "report", has_run: true, has_report: true, report_current: true } }));
+    const s = await one<{ stage: string; has_report: boolean; report_current: boolean }>("select stage, has_report, report_current from scenarios where id = $1", [scenarioId]);
+    expect(s).toEqual({ stage: "report", has_report: true, report_current: true });
+    await db.query("insert into reports (conversation_id, user_id, turn_id, version, title, narrative, document) values ($1, $2, $3, 1, 'T', '{}', '{}')", [conversation, ALICE, TURN_2]);
+    await finish(payload({ turn: { ...payload().turn, id: TURN_2 }, scenario: { ...payload().scenario, id: scenarioId } }));
+    const r = await one<{ scenario_id: string }>("select scenario_id from reports where turn_id = $1", [TURN_2]);
+    expect(r.scenario_id).toBe(scenarioId);
+  });
+
+  it("applies 0004 twice", async () => {
+    await db.exec(readFileSync("supabase/migrations/0004_reports.sql", "utf8"));
+    expect(await count("reports")).toBe(0);
+  });
+});
