@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows } from "@/lib/client/format";
+import { configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows, scenarioRows } from "@/lib/client/format";
 import { params } from "../tools/helpers";
 
 describe("country names", () => {
@@ -133,5 +133,11 @@ describe("configuration rows", () => {
     expect(configurationRows({ ...config, dur_exp: 10, interventions: ["vaccine"] }, 12, "Measles")).toContainEqual(["Exposed period", "10 days"]);
     expect(configurationRows({ ...config, interventions: ["vaccine", "treatment"] }, 12, "Measles")).toContainEqual(["Interventions", "vaccine, treatment"]);
     expect(configurationRows({ ...config, country: null }, 12, "Measles")).toContainEqual(["Country", "—"]);
+  });
+
+  it("keeps the panel's Scenario to what is modelled: the values live in Parameters", () => {
+    const config = { disease: "measles", disease_type: "seir", country: "KEN", n_agents: 10000, sim_dur_years: 2, dur_inf: 8, dur_exp: 10, interventions: ["vaccine", "treatment"] };
+    expect(scenarioRows(config, "Measles")).toEqual([["Disease", "Measles"], ["Model", "SEIR"], ["Country", "Kenya"], ["Duration", "2 years"], ["Interventions", "vaccine, treatment"]]);
+    expect(scenarioRows({ ...config, country: null, interventions: [] }, "Measles")).toEqual([["Disease", "Measles"], ["Model", "SEIR"], ["Country", "—"], ["Duration", "2 years"], ["Interventions", "none"]]);
   });
 });

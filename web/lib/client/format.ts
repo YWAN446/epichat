@@ -70,6 +70,17 @@ export function configurationRows(c: ConfigPayload["config"], approxR0: number, 
   ];
 }
 
+/** What is being modelled, for the panel's Scenario section: the values live in Parameters. */
+export function scenarioRows(c: ConfigPayload["config"], diseaseName: string): [string, string][] {
+  return [
+    ["Disease", diseaseName],
+    ["Model", c.disease_type.toUpperCase()],
+    ["Country", c.country ? countryName(c.country) : "—"],
+    ["Duration", formatQuantity(c.sim_dur_years, "years")],
+    ["Interventions", c.interventions.length > 0 ? c.interventions.join(", ") : "none"],
+  ];
+}
+
 /**
  * The scenario's current parameters as label and value pairs for the panel's
  * Parameters section: what the next run uses, in words with units. Rows a

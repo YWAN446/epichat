@@ -6,6 +6,7 @@ import type { ShareSnapshot } from "@/lib/share/snapshot";
 import { Brand } from "./Brand";
 import { ActivitySection } from "./panel/ActivitySection";
 import { DataSection } from "./panel/DataSection";
+import { ParametersSection } from "./panel/ParametersSection";
 import { RunsSection } from "./panel/RunsSection";
 import { ScenarioSection } from "./panel/ScenarioSection";
 import { Section } from "./panel/Section";
@@ -15,7 +16,7 @@ const DATE = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", y
 const LINK = "inline-block rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-accent hover:border-accent hover:bg-accent-wash";
 
 type Props = { snapshot: ShareSnapshot; token: string; takenAt: string };
-type Open = Record<"scenario" | "data" | "runs" | "report" | "activity", boolean>;
+type Open = Record<"scenario" | "data" | "parameters" | "runs" | "report" | "activity", boolean>;
 
 /**
  * A shared conversation, read-only: the turns without thumbs or chips, the
@@ -23,7 +24,7 @@ type Open = Record<"scenario" | "data" | "runs" | "report" | "activity", boolean
  * Nothing to type, press, or sign in to (share spec, section 7).
  */
 export function SharedConversation({ snapshot, token, takenAt }: Props) {
-  const [open, setOpen] = useState<Open>({ scenario: true, data: false, runs: true, report: true, activity: false });
+  const [open, setOpen] = useState<Open>({ scenario: true, data: false, parameters: false, runs: true, report: true, activity: false });
   const artifacts = deriveArtifacts(snapshot.turns);
   const toggle = (key: keyof Open) => (next: boolean) => setOpen((state) => ({ ...state, [key]: next }));
   const report = snapshot.report;
@@ -45,10 +46,13 @@ export function SharedConversation({ snapshot, token, takenAt }: Props) {
         </main>
         <aside aria-label="Details" className="text-sm">
           <Section id="shared-scenario" title="Scenario" open={open.scenario} onToggle={toggle("scenario")}>
-            <ScenarioSection config={artifacts.config} disease={artifacts.disease} references={false} />
+            <ScenarioSection config={artifacts.config} disease={artifacts.disease} />
           </Section>
           <Section id="shared-data" title="Data" count={artifacts.data.length} open={open.data} onToggle={toggle("data")}>
-            <DataSection data={artifacts.data} />
+            <DataSection data={artifacts.data} disease={artifacts.disease} references={false} />
+          </Section>
+          <Section id="shared-parameters" title="Parameters" open={open.parameters} onToggle={toggle("parameters")}>
+            <ParametersSection params={artifacts.params} />
           </Section>
           <Section id="shared-runs" title="Runs" count={artifacts.runs.length} open={open.runs} onToggle={toggle("runs")}>
             <RunsSection runs={artifacts.runs} onChartView={() => {}} />

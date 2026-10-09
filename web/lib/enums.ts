@@ -107,7 +107,7 @@ export type StepEventKind = (typeof STEP_EVENT_KINDS)[number];
 
 export const CARD_KINDS = ["disease", "config", "data", "run", "tool_error", "activity", "recap", "references", "report", "memory"] as const;
 /** The details panel's sections, for scenario_panel_opened. */
-export const PANEL_SECTIONS = ["scenario", "data", "runs", "report", "activity", "profile"] as const;
+export const PANEL_SECTIONS = ["scenario", "data", "parameters", "runs", "report", "activity", "profile"] as const;
 export type PanelSection = (typeof PANEL_SECTIONS)[number];
 /** Where a pressed chip came from. */
 export const SUGGESTION_SOURCES = ["model", "draft", "intro"] as const;

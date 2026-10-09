@@ -17,13 +17,15 @@ describe("the public share page", () => {
   it("shows the turns and the panel with nothing to type, press, or sign in to", () => {
     const shared = read("components/SharedConversation.tsx");
     for (const piece of [
-      "<Turn", "feedback={null}", "<ScenarioSection", "references={false}", "<RunsSection", "<DataSection", "<ActivitySection", "deriveArtifacts(",
+      "<Turn", "feedback={null}", "<ScenarioSection", "references={false}", "<RunsSection", "<DataSection", "<ParametersSection", "<ActivitySection", "deriveArtifacts(",
       "View report", "No report was written.", "A frozen copy of an EpiChat conversation, shared by a study participant on", "EpiChat is a research prototype from Emory University.",
     ]) {
       expect(shared).toContain(piece);
     }
+    const order = ['title="Scenario"', 'title="Data"', 'title="Parameters"', 'title="Runs"', 'title="Report"', 'title="Activity"'].map((title) => shared.indexOf(title));
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
     for (const piece of ["<Composer", "<Suggestions", "<StageStrip", "<RecapBar", "FeedbackControl", "sign-in", "<DetailsPanel"]) expect(shared).not.toContain(piece);
-    expect(read("components/panel/ScenarioSection.tsx")).toContain("references = true");
+    expect(read("components/panel/LiteratureTable.tsx")).toContain("references = true");
   });
 });
 

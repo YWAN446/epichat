@@ -29,16 +29,37 @@ describe("the reply in the middle column", () => {
 });
 
 describe("the details panel", () => {
-  it("has four collapsible sections with the spec's empty states", () => {
+  it("has six collapsible sections, Parameters between Data and Runs, with the spec's empty states", () => {
     const panel = read("components/panel/DetailsPanel.tsx");
-    for (const piece of ["<ScenarioSection", "<DataSection", "<RunsSection", "<ActivitySection", "runs.length"]) expect(panel).toContain(piece);
+    for (const piece of ["<ScenarioSection", "<DataSection", "<ParametersSection", "<RunsSection", "<ReportSection", "<ActivitySection", "runs.length"]) expect(panel).toContain(piece);
+    const order = ['title="Scenario"', 'title="Data"', 'title="Parameters"', 'title="Runs"', 'title="Report"', 'title="Activity"'].map((title) => panel.indexOf(title));
+    expect(order.every((at) => at >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(read("components/panel/ScenarioSection.tsx")).toContain("The configuration appears here once a scenario is set up.");
     expect(read("components/panel/DataSection.tsx")).toContain("Real data appears here once it is fetched.");
+    expect(read("components/panel/ParametersSection.tsx")).toContain("Parameters appear here once a scenario is set up.");
     expect(read("components/panel/RunsSection.tsx")).toContain("Results appear here after the first run.");
     expect(read("components/panel/ActivitySection.tsx")).toContain("Steps appear here as the assistant works.");
     const section = read("components/panel/Section.tsx");
     expect(section).toContain("aria-expanded");
     expect(section).toContain("aria-controls");
+  });
+
+  it("shows the current parameters in words, with the interventions, and opens when they change after a run", () => {
+    const section = read("components/panel/ParametersSection.tsx");
+    for (const piece of ["parameterRows(", "interventionLines(", "No interventions.", "the next run"]) expect(section).toContain(piece);
+    const panel = read("components/panel/DetailsPanel.tsx");
+    for (const piece of ["artifacts.params", "parameters: true", "PARAMETER_TOOLS", "artifacts.runs.length > 0"]) expect(panel).toContain(piece);
+  });
+
+  it("keeps the literature table out of Scenario and puts it at the top of Data", () => {
+    const scenario = read("components/panel/ScenarioSection.tsx");
+    for (const piece of ["in the literature", "<ReferenceList", "<table"]) expect(scenario).not.toContain(piece);
+    const literature = read("components/panel/LiteratureTable.tsx");
+    for (const piece of ["in the literature", "<ReferenceList", "referenceButtonLabel(", "references = true"]) expect(literature).toContain(piece);
+    const data = read("components/panel/DataSection.tsx");
+    expect(data).toContain("<LiteratureTable");
+    expect(data.indexOf("<LiteratureTable")).toBeLessThan(data.indexOf("Real data appears here once it is fetched."));
   });
 
   it("gives every run its tiles, a chart with the four views, its parameters, repairs, and sources", () => {
@@ -115,10 +136,11 @@ describe("review fixes", () => {
 
 describe("readable values", () => {
   it("writes the scenario in words: country names, parameter labels, units", () => {
-    const scenario = read("components/panel/ScenarioSection.tsx");
-    for (const piece of ["configurationRows(", "parameterLabel(", "formatQuantity(", "formatRange("]) expect(scenario).toContain(piece);
-    expect(scenario).not.toContain("${p.unit}");
-    expect(scenario).not.toContain("{name}</td>");
+    expect(read("components/panel/ScenarioSection.tsx")).toContain("scenarioRows(");
+    const literature = read("components/panel/LiteratureTable.tsx");
+    for (const piece of ["parameterLabel(", "formatQuantity(", "formatRange("]) expect(literature).toContain(piece);
+    expect(literature).not.toContain("${p.unit}");
+    expect(literature).not.toContain("{name}</td>");
   });
 
   it("writes every applied data field with a label and a unit, under the country's name", () => {
@@ -136,10 +158,10 @@ describe("readable values", () => {
 
 describe("references behind a parameter", () => {
   it("turns the estimate count into a button that opens the list under the row", () => {
-    const scenario = read("components/panel/ScenarioSection.tsx");
-    for (const piece of ["<ReferenceList", "aria-expanded", "aria-controls", "referenceButtonLabel(", "onReferencesOpen"]) expect(scenario).toContain(piece);
-    expect(scenario).not.toContain("p.n_estimates > 0 &&");
-    expect(scenario).not.toContain("` (${p.n_estimates})`");
+    const literature = read("components/panel/LiteratureTable.tsx");
+    for (const piece of ["<ReferenceList", "aria-expanded", "aria-controls", "referenceButtonLabel(", "onReferencesOpen"]) expect(literature).toContain(piece);
+    expect(literature).not.toContain("p.n_estimates > 0 &&");
+    expect(literature).not.toContain("` (${p.n_estimates})`");
   });
 
   it("lists the consensus source first, then every estimate with its link, value, and study line", () => {
