@@ -20,10 +20,12 @@ type Props = {
   onChartView: (view: ChartView, turnId: string) => void;
   onReferencesOpen: (parameter: string) => void;
   onExport: (format: ExportFormat) => void;
+  /** The participant's preferred report format, offered first. */
+  preferredFormat: ExportFormat;
 };
 
 /** The right column: the present scenario, the data applied, every run, and every step. The newest run opens its section. */
-export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onExport }: Props) {
+export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onExport, preferredFormat }: Props) {
   const [open, setOpen] = useState<Record<DetailsSection, boolean>>({ scenario: true, data: false, runs: true, report: false, activity: false });
   const runCount = useRef(artifacts.runs.length);
   const reportId = useRef(artifacts.report?.report_id ?? null);
@@ -47,7 +49,6 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
 
   return (
     <div className="text-sm">
-      <h2 className="px-4 pt-4 pb-1 text-xs font-semibold tracking-wide text-ink-faint uppercase">Details</h2>
       <Section id="panel-scenario" title="Scenario" open={open.scenario} onToggle={toggle("scenario")}>
         <ScenarioSection config={artifacts.config} disease={artifacts.disease} onReferencesOpen={onReferencesOpen} />
       </Section>
@@ -58,7 +59,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
         <RunsSection runs={artifacts.runs} onChartView={onChartView} />
       </Section>
       <Section id="panel-report" title="Report" open={open.report} onToggle={toggle("report")}>
-        <ReportSection report={artifacts.report} onExport={onExport} />
+        <ReportSection report={artifacts.report} onExport={onExport} preferredFormat={preferredFormat} />
       </Section>
       <Section id="panel-activity" title="Activity" count={artifacts.activity.length} open={open.activity} onToggle={toggle("activity")}>
         <ActivitySection items={artifacts.activity} />

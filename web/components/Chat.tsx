@@ -15,10 +15,14 @@ import { track } from "@/lib/client/track";
 import { INTERRUPTED, applyEvent, lastRecap, lastStage, lastSuggestions, startTurn, type TurnProgress } from "@/lib/client/turn";
 import type { ConversationSummary } from "@/lib/db/conversations";
 import type { ExportFormat, PanelSection } from "@/lib/enums";
+import type { DiseaseOption } from "@/lib/profile/options";
+import type { ProfileFields } from "@/lib/profile/schema";
 import { ChatHeader } from "./ChatHeader";
 import { Composer } from "./Composer";
 import { ConversationList } from "./ConversationList";
 import { DetailsPanel } from "./panel/DetailsPanel";
+import { PanelTabs, type PanelTab } from "./panel/PanelTabs";
+import { ProfilePanel } from "./panel/ProfilePanel";
 import { RecapBar } from "./RecapBar";
 import { useSessionId } from "./SessionProvider";
 import { ShareDialog } from "./ShareDialog";
@@ -39,10 +43,14 @@ type Props = {
   contactEmail: string;
   /** The conversation's active share, read by the server, or null. */
   initialShare: ShareState | null;
+  /** The participant's profile, read by the server; the Profile tab edits it. */
+  initialProfile: ProfileFields;
+  /** The database's diseases for the tab's suggestion list. */
+  diseases: DiseaseOption[];
 };
 
 /** The workspace: the list on the left, the conversation and its bottom stack in the middle, the details on the right. Owns the conversation state. */
-export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail, initialShare }: Props) {
+export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail, initialShare, initialProfile, diseases }: Props) {
   const router = useRouter();
   const sessionId = useSessionId();
   const [conversationId, setConversationId] = useState<string | null>(initial?.id ?? null);
@@ -55,6 +63,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const [sheet, setSheet] = useState(false);
   const [share, setShare] = useState<ShareState | null>(initialShare);
   const [shareOpen, setShareOpen] = useState(false);
+  const [tab, setTab] = useState<PanelTab>("details");
+  const [profile, setProfile] = useState<ProfileFields>(initialProfile);
   const layout = useLayout();
   const wide = useWide();
   const [unseen, setUnseen] = useState(false);
@@ -191,6 +201,11 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
           router.replace("/consent");
           return;
         }
+        // The questionnaire was never saved (an old tab): the profile page is the way forward.
+        if (response.status === 403 && problem?.code === "profile_required") {
+          router.replace("/profile");
+          return;
+        }
         fail(problem?.message ?? INTERRUPTED);
         return;
       }
@@ -290,7 +305,17 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
         />
       }
       sidebar={<ConversationList items={conversations} currentId={conversationId} busy={live !== null} onNew={startNew} onPick={() => setDrawer(false)} onRemoved={onRemoved} />}
-      panel={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} onReferencesOpen={onReferencesOpen} onExport={onExport} />}
+      panel={
+        <PanelTabs
+          tab={tab}
+          onTab={(next) => {
+            setTab(next);
+            if (next === "profile") onSectionOpen("profile");
+          }}
+          details={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} onReferencesOpen={onReferencesOpen} onExport={onExport} preferredFormat={profile.reportFormat} />}
+          profile={<ProfilePanel profile={profile} diseases={diseases} memoryWrites={artifacts.memoryWrites} onProfileChange={setProfile} onSectionOpen={onSectionOpen} />}
+        />
+      }
       drawerOpen={drawer}
       sheetOpen={sheet}
       onClose={() => {

@@ -75,6 +75,7 @@ export function Welcome({ disabled, contactEmail, error, onPick, children }: Pro
         ))}
       </div>
       {contactEmail && <p className="mt-6 text-center text-xs text-ink-faint">Questions about the study: {contactEmail}.</p>}
+      <p className="mt-2 text-center text-xs text-ink-faint">Your profile shapes the answers. Edit it in the Profile tab.</p>
     </section>
   );
 }

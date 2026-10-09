@@ -3,6 +3,8 @@ import { Chat } from "@/components/Chat";
 import { SessionProvider } from "@/components/SessionProvider";
 import { listConversations } from "@/lib/db/conversations";
 import { loadParticipant, redirectFor } from "@/lib/participant.server";
+import { diseaseOptions } from "@/lib/profile/options";
+import { EMPTY_PROFILE } from "@/lib/profile/schema";
 import { supabaseProfileStore } from "@/lib/profiles";
 import { adminClient } from "@/lib/supabase/admin";
 
@@ -21,7 +23,7 @@ export default async function ChatPage() {
 
   return (
     <SessionProvider>
-      <Chat email={participant.user.email} conversations={conversations} initial={null} maxMessageChars={participant.settings.maxMessageChars} contactEmail={participant.settings.contactEmail} initialShare={null} />
+      <Chat email={participant.user.email} conversations={conversations} initial={null} maxMessageChars={participant.settings.maxMessageChars} contactEmail={participant.settings.contactEmail} initialShare={null} initialProfile={participant.profile?.fields ?? EMPTY_PROFILE} diseases={diseaseOptions()} />
     </SessionProvider>
   );
 }

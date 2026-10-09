@@ -7,6 +7,8 @@ import { listConversations, supabaseConversationStore } from "@/lib/db/conversat
 import { supabaseShareStore } from "@/lib/db/shares";
 import { supabaseTurnStore } from "@/lib/db/turns";
 import { loadParticipant, redirectFor } from "@/lib/participant.server";
+import { diseaseOptions } from "@/lib/profile/options";
+import { EMPTY_PROFILE } from "@/lib/profile/schema";
 import { adminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +41,8 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
         maxMessageChars={participant.settings.maxMessageChars}
         contactEmail={participant.settings.contactEmail}
         initialShare={share ? { token: share.token, url: `/s/${share.token}`, takenAt: share.taken_at, turnCount: share.turn_count } : null}
+        initialProfile={participant.profile?.fields ?? EMPTY_PROFILE}
+        diseases={diseaseOptions()}
       />
     </SessionProvider>
   );
