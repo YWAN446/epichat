@@ -34,3 +34,13 @@ export function redirectFor(status: ParticipantStatus): string | null {
   if (status === "consent") return "/consent";
   return null;
 }
+
+export type ApiRefusal = { status: 401 | 403; code: "not_signed_in" | "email_not_allowed" | "consent_required"; message: string };
+
+/** How an API route answers a visitor who is not an enrolled participant, or null when they may proceed (spec 3.1). */
+export function apiRefusal(status: ParticipantStatus): ApiRefusal | null {
+  if (status === "sign_in") return { status: 401, code: "not_signed_in", message: "Please sign in." };
+  if (status === "forbidden") return { status: 403, code: "email_not_allowed", message: "This account is not eligible for the study." };
+  if (status === "consent") return { status: 403, code: "consent_required", message: "Please review the consent form before continuing." };
+  return null;
+}

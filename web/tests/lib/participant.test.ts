@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadSettings } from "@/lib/config";
-import { participantStatus, redirectFor } from "@/lib/participant";
+import { apiRefusal, participantStatus, redirectFor } from "@/lib/participant";
 
 const settings = loadSettings({});
 const user = { id: "u1", email: "student@emory.edu", email_confirmed_at: "2026-10-01T00:00:00Z" };
@@ -33,5 +33,14 @@ describe("redirectFor", () => {
     expect(redirectFor("forbidden")).toBe("/sign-in?forbidden=1");
     expect(redirectFor("consent")).toBe("/consent");
     expect(redirectFor("ok")).toBeNull();
+  });
+});
+
+describe("apiRefusal", () => {
+  it("answers each status with the spec's code and leaves an enrolled participant alone", () => {
+    expect(apiRefusal("sign_in")).toEqual({ status: 401, code: "not_signed_in", message: "Please sign in." });
+    expect(apiRefusal("forbidden")).toEqual({ status: 403, code: "email_not_allowed", message: "This account is not eligible for the study." });
+    expect(apiRefusal("consent")).toEqual({ status: 403, code: "consent_required", message: "Please review the consent form before continuing." });
+    expect(apiRefusal("ok")).toBeNull();
   });
 });

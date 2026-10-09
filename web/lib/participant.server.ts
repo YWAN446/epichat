@@ -1,6 +1,6 @@
 import { loadConsent, type ConsentText } from "./consent";
-import { loadSettings, type Settings } from "./config";
-import { participantStatus, redirectFor, type ParticipantStatus } from "./participant";
+import { loadSettings, settingsFor, type Settings } from "./config";
+import { apiRefusal, participantStatus, redirectFor, type ParticipantStatus } from "./participant";
 
 export { redirectFor };
 import { supabaseProfileStore, type Profile } from "./profiles";
@@ -32,4 +32,17 @@ export async function loadParticipant(): Promise<Participant> {
     consent.version,
   );
   return { status, user: user ? { id: user.id, email: user.email ?? "" } : null, profile, settings, consent };
+}
+
+export type Gate = { ok: true; user: { id: string; email: string }; settings: Settings } | { ok: false; response: Response };
+
+/** The three gates every agent-core route applies, in order, answering JSON. The settings are the caller's own. */
+export async function requireParticipant(): Promise<Gate> {
+  const participant = await loadParticipant();
+  const refusal = apiRefusal(participant.status) ?? (participant.user ? null : apiRefusal("sign_in"));
+  if (refusal || !participant.user) {
+    const { status, code, message } = refusal ?? apiRefusal("sign_in")!;
+    return { ok: false, response: Response.json({ code, message }, { status }) };
+  }
+  return { ok: true, user: participant.user, settings: settingsFor(participant.settings, participant.user.email) };
 }
