@@ -17,7 +17,7 @@ import { scenarioToJson, type ScenarioStore } from "@/lib/db/scenarios";
 import type { ApiCall, FinishTurnPayload, StepEventJson, StoredStop, TurnStore } from "@/lib/db/turns";
 import type { StepEventKind } from "@/lib/enums";
 import { costUsd, repairCostUsd } from "@/lib/models";
-import { aboutBlock, type Memory } from "@/lib/profile/about";
+import { aboutBlock, withoutKindSuffix, type Memory } from "@/lib/profile/about";
 import type { ProfileFields } from "@/lib/profile/schema";
 import type { ProfileStore } from "@/lib/profiles";
 import type { SimClient } from "@/lib/sim/client";
@@ -225,13 +225,18 @@ export async function handleChat(
       async add(kind, text, replaces) {
         const now = deps.now();
         if (replaces !== undefined) {
-          // The model names the earlier memory by its text, as the About block showed it.
-          const wanted = replaces.trim().toLowerCase();
+          // The model names the earlier memory by its text, with or without the "(kind)" the About block appends.
+          const wanted = withoutKindSuffix(replaces).toLowerCase();
           const earlier = (await deps.memories.list(user.id)).find((memory) => memory.text.trim().toLowerCase() === wanted);
           if (!earlier) return "not_found";
+          // Insert first: a failed insert must never cost the participant the memory it replaces.
+          const id = await deps.memories.add(user.id, kind, text, "agent", conversationId);
           await deps.memories.deactivate(user.id, earlier.id, now);
-        } else if ((await deps.memories.countActive(user.id)) >= MEMORY_CAP && !(await deps.memories.evictOldestAgent(user.id, now))) {
-          // Every active memory is the participant's own: nothing gives way.
+          return { id };
+        }
+        if ((await deps.memories.countActive(user.id)) >= MEMORY_CAP && !(await deps.memories.evictOldestAgent(user.id, now))) {
+          // Every active memory is the participant's own: nothing gives way. (An evicted one is the
+          // assistant's own oldest, which the spec lets go; losing it to a failed insert costs nothing the cap would not.)
           return "full";
         }
         return { id: await deps.memories.add(user.id, kind, text, "agent", conversationId) };

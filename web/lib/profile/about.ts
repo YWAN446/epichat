@@ -5,7 +5,7 @@
  */
 import { countryName } from "@/lib/client/format";
 import { lookup } from "@/lib/disease/db";
-import { EXPERIENCE_LABELS, GOAL_LABELS, RESULTS_PREF_LABELS, ROLE_LABELS, type MemoryKind } from "@/lib/enums";
+import { EXPERIENCE_LABELS, GOAL_LABELS, MEMORY_KINDS, RESULTS_PREF_LABELS, ROLE_LABELS, type MemoryKind } from "@/lib/enums";
 import type { ProfileFields } from "./schema";
 
 export type Memory = {
@@ -17,6 +17,12 @@ export type Memory = {
 };
 
 const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+const KIND_SUFFIX = new RegExp(`\\s*\\((?:${MEMORY_KINDS.join("|")})\\)\\s*$`);
+
+/** A memory's text as the model may quote it from the Remembered line: with or without the "(kind)" suffix. */
+export function withoutKindSuffix(text: string): string {
+  return text.replace(KIND_SUFFIX, "").trim();
+}
 const FORMAT_NAMES: Record<ProfileFields["reportFormat"], string> = { md: "Markdown", html: "HTML", docx: "Word", pdf: "PDF" };
 
 /** Null until the questionnaire is done. The Remembered line lists the memories oldest first and is left out when memory is off. */

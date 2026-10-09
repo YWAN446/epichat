@@ -37,6 +37,13 @@ describe("the Profile tab", () => {
     for (const piece of ['role="tablist"', 'role="tab"', "aria-selected", 'role="tabpanel"', "aria-controls", '"ArrowRight"', '"ArrowLeft"', ">Details<", ">Profile<"]) expect(tabs).toContain(piece);
   });
 
+  it("keeps both panels mounted, so a half-edited profile and the Details sections survive a tab switch", () => {
+    const tabs = read("components/panel/PanelTabs.tsx");
+    expect(tabs).toContain('hidden={tab !== "details"}');
+    expect(tabs).toContain('hidden={tab !== "profile"}');
+    expect(tabs).not.toContain('tab === "details" ? details : profile');
+  });
+
   it("shows the profile, the preferences, and the memory as three sections with the spec's words", () => {
     const panel = read("components/panel/ProfilePanel.tsx");
     for (const piece of [

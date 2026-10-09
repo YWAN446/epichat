@@ -54,7 +54,7 @@ function configured(): Scenario {
 type Over = {
   reservation?: TurnReservation; conversation?: ConversationRow | null; history?: Anthropic.Beta.BetaMessageParam[]; scenario?: Scenario | null;
   texts?: string[]; finishError?: Error; runError?: Error; loadError?: Error; simulate?: SimResult | Error;
-  profile?: ProfileFields; profileError?: Error; memories?: Memory[]; memoryCount?: number; evicted?: boolean;
+  profile?: ProfileFields; profileError?: Error; memories?: Memory[]; memoryCount?: number; evicted?: boolean; memoryAddError?: Error;
 };
 
 function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}) {
@@ -108,7 +108,11 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
   };
   const memories: MemoryStore = {
     async list() { return over.memories ?? []; },
-    async add(userId, kind, text, source, conversationId) { calls.memoriesAdded.push([userId, kind, text, source, conversationId]); return "m-new"; },
+    async add(userId, kind, text, source, conversationId) {
+      if (over.memoryAddError) throw over.memoryAddError;
+      calls.memoriesAdded.push([userId, kind, text, source, conversationId]);
+      return "m-new";
+    },
     async update() { return true; },
     async deactivate(userId, id) { calls.deactivated.push([userId, id]); return true; },
     async deactivateAll() { return 0; },
@@ -160,6 +164,25 @@ describe("handleChat", () => {
     await unknown.run({ ...HELLO, sessionId: SESSION });
     expect(unknown.memoriesAdded).toEqual([]);
     expect((unknown.requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("MEMORY NOT FOUND: no such memory to replace.");
+  });
+
+  it("keeps the replaced memory when the new one cannot be stored", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const script = [{ message: REMEMBER({ kind: "preference", text: "Prefers tables", replaces: "Works at a county health office" }) }, { message: ANSWER }];
+    const { run, deactivated, memoriesAdded, requests } = setup(script, { profile: COMPLETE, memories: [REMEMBERED], memoryAddError: new Error("down") });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect(memoriesAdded).toEqual([]);
+    expect(deactivated).toEqual([]);
+    expect((requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("This tool failed. Tell the user this part is temporarily unavailable.");
+    logged.mockRestore();
+  });
+
+  it("matches replaces with the (kind) suffix the About block shows", async () => {
+    const script = [{ message: REMEMBER({ kind: "situation", text: "Works at the state office", replaces: "Works at a county health office (situation)" }) }, { message: ANSWER }];
+    const { run, deactivated, memoriesAdded } = setup(script, { profile: COMPLETE, memories: [REMEMBERED] });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect(deactivated).toEqual([[USER.id, "m1"]]);
+    expect(memoriesAdded).toHaveLength(1);
   });
 
   it("answers MEMORY FULL at the cap when every memory is the participant's own, and evicts the oldest agent memory otherwise", async () => {

@@ -62,8 +62,12 @@ export function PanelTabs({ tab, onTab, details, profile }: Props) {
         {/* prettier-ignore */}
         <Tab id="profile" selected={tab === "profile"} onSelect={onTab} setRef={setRef}>Profile</Tab>
       </div>
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="min-h-0 flex-1">
-        {tab === "details" ? details : profile}
+      {/* Both panels stay mounted: a half-edited profile and the Details sections survive a tab switch. */}
+      <div role="tabpanel" id="panel-details" aria-labelledby="tab-details" hidden={tab !== "details"} className="min-h-0 flex-1">
+        {details}
+      </div>
+      <div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile" hidden={tab !== "profile"} className="min-h-0 flex-1">
+        {profile}
       </div>
     </div>
   );

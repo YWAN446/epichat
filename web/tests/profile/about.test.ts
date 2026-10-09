@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { aboutBlock, type Memory } from "@/lib/profile/about";
+import { aboutBlock, withoutKindSuffix, type Memory } from "@/lib/profile/about";
 import { EMPTY_PROFILE, type ProfileFields } from "@/lib/profile/schema";
 
 const PROFILE: ProfileFields = {
@@ -43,6 +43,14 @@ describe("aboutBlock", () => {
     expect(aboutBlock(EMPTY_PROFILE, MEMORIES)).toBeNull();
     expect(aboutBlock({ ...PROFILE, completedAt: null }, MEMORIES)).toBeNull();
     expect(aboutBlock({ ...PROFILE, memoryEnabled: false }, MEMORIES)).not.toContain("Remembered");
+  });
+
+  it("strips the (kind) suffix the Remembered line appends, and nothing else", () => {
+    expect(withoutKindSuffix("Works at a county health office (situation)")).toBe("Works at a county health office");
+    expect(withoutKindSuffix("Prefers tables")).toBe("Prefers tables");
+    expect(withoutKindSuffix("Likes (parentheses) (other)")).toBe("Likes (parentheses)");
+    expect(withoutKindSuffix("Not a kind (wizard)")).toBe("Not a kind (wizard)");
+    expect(withoutKindSuffix("  Prefers tables (preference)  ")).toBe("Prefers tables");
   });
 
   it("lists thirty memories on one line", () => {
