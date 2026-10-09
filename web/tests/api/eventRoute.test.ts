@@ -12,7 +12,7 @@ import { callOn, fakeAdmin } from "../helpers/fakeAdmin";
 const USER = "11111111-1111-1111-1111-111111111111";
 const SESSION = "44444444-4444-4444-8444-444444444444";
 const CONVERSATION = "33333333-3333-4333-8333-333333333333";
-const enrolled = { user_id: USER, email: "student@emory.edu", participant_type: "other", consent_version: "2026-10-07", consented_at: "2026-10-02T00:00:00Z" };
+const enrolled = { user_id: USER, email: "student@emory.edu", participant_type: "other", consent_version: "2026-10-07", consented_at: "2026-10-02T00:00:00Z", profile_completed_at: "2026-10-02T00:05:00Z" };
 
 let admin: ReturnType<typeof fakeAdmin>;
 

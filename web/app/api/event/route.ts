@@ -28,7 +28,7 @@ export async function POST(request: Request): Promise<Response> {
   const admin = adminClient();
   const profile = await supabaseProfileStore(admin).get(user.id).catch(() => null);
   const { version } = await loadConsent();
-  const status = participantStatus(user, profile ? { consent_version: profile.consentVersion, consented_at: profile.consentedAt } : null, settings, version);
+  const status = participantStatus(user, profile ? { consent_version: profile.consentVersion, consented_at: profile.consentedAt, profile_completed_at: profile.fields.completedAt } : null, settings, version);
   if (status !== "ok") return new Response(null, { status: 403 });
 
   const action = readClientEvent(await request.text());
