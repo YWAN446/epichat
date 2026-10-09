@@ -85,6 +85,7 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
       return over.simulate ?? SUCCESS;
     },
     async demographicsFallback() { return null; },
+    async export() { return { ok: false, status: 0, kind: "unavailable", detail: "no export in tests" }; },
   };
   const deps: ChatDeps = {
     settings: loadSettings(env), client, usage, conversations, messages, scenarios, turns, runs, reports, sim,

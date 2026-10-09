@@ -4,6 +4,7 @@
  * failure comes back as data: the tool decides what the model is told.
  */
 import type { FetchLike } from "@/lib/data/types";
+import type { ReportDocument } from "@/lib/report/document";
 import type { SimParams } from "./params";
 
 export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number };
@@ -33,13 +34,20 @@ export type SimFailure = { ok: false; status: number; kind: SimFailureKind; deta
 export type SimResult = SimSuccess | SimFailure;
 export type Demographics = { birth_rate: number; death_rate: number; source: string };
 
+/** A rendered report file, or why the service could not render it. */
+export type ExportResult = { ok: true; bytes: Uint8Array; contentType: string } | { ok: false; status: number; kind: SimFailureKind; detail: string };
+
 export type SimClient = {
   simulate(params: SimParams, popScale: number, contextText: string): Promise<SimResult>;
   demographicsFallback(iso3: string): Promise<Demographics | null>;
+  /** Word or PDF for a report document (report spec, section 12). */
+  export(format: "docx" | "pdf", document: ReportDocument): Promise<ExportResult>;
 };
 
 /** Just under the chat route's own 300 s limit. */
 const DEFAULT_TIMEOUT_MS = 290_000;
+/** Rendering a report takes seconds; a cold matplotlib import a few more. */
+const EXPORT_TIMEOUT_MS = 60_000;
 const KINDS: readonly string[] = ["invalid_params", "too_large", "execution_failed", "timeout", "unauthorized", "misconfigured"];
 
 function failure(status: number, kind: SimFailureKind, detail: string, extra: Partial<SimFailure> = {}): SimFailure {
@@ -106,6 +114,25 @@ export function createSimClient(opts: { baseUrl: string; secret: string; fetchIm
       } catch {
         return null;
       }
+    },
+
+    async export(format, document) {
+      if (!base) return { ok: false, status: 0, kind: "not_configured", detail: "The simulation service address is not configured." };
+      let response: Response;
+      try {
+        response = await fetchImpl(`${base}/export`, { method: "POST", headers, body: JSON.stringify({ format, document }), signal: AbortSignal.timeout(EXPORT_TIMEOUT_MS) });
+      } catch (error) {
+        return { ok: false, status: 0, kind: "unavailable", detail: error instanceof Error ? error.message : String(error) };
+      }
+      if (response.ok) return { ok: true, bytes: new Uint8Array(await response.arrayBuffer()), contentType: response.headers.get("content-type") ?? "application/octet-stream" };
+      let detail = `The simulation service answered ${response.status}.`;
+      try {
+        const body = (await response.json()) as ErrorBody;
+        if (body?.error?.detail) detail = describeDetail(body.error.detail);
+      } catch {
+        // The status line is all there is.
+      }
+      return { ok: false, status: response.status, kind: response.status === 401 ? "unauthorized" : "unavailable", detail };
     },
   };
 }

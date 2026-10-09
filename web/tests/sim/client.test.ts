@@ -61,3 +61,34 @@ describe("sim client", () => {
     expect(await down.demographicsFallback("KEN")).toBeNull();
   });
 });
+
+describe("sim client export", () => {
+  const DOC = { version: 1 as const, title: "T", subtitle: "", generatedAt: "", language: "en", sections: [] };
+  const binary = (status: number, body: Uint8Array | string, type: string, capture: { url?: string; init?: RequestInit } = {}): FetchLike =>
+    async (url, init) => {
+      capture.url = url;
+      capture.init = init;
+      return new Response(body as BodyInit, { status, headers: { "content-type": type } });
+    };
+
+  it("posts the document with the secret and returns the bytes and content type", async () => {
+    const capture: { url?: string; init?: RequestInit } = {};
+    const client = createSimClient({ baseUrl: "http://sim.internal", secret: "s3", fetchImpl: binary(200, new Uint8Array([37, 80, 68, 70]), "application/pdf", capture) });
+    const result = await client.export("pdf", DOC);
+    expect(result).toEqual({ ok: true, bytes: new Uint8Array([37, 80, 68, 70]), contentType: "application/pdf" });
+    expect(capture.url).toBe("http://sim.internal/export");
+    expect(JSON.parse(capture.init?.body as string)).toEqual({ format: "pdf", document: DOC });
+    expect((capture.init?.headers as Record<string, string>).authorization).toBe("Bearer s3");
+    expect(capture.init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("maps a service error, an unreachable service, and a missing address to failures", async () => {
+    const failing = createSimClient({ baseUrl: "http://sim.internal", secret: "s3", fetchImpl: binary(422, JSON.stringify({ ok: false, error: { kind: "invalid_document", detail: "bad figure" } }), "application/json") });
+    expect(await failing.export("docx", DOC)).toEqual({ ok: false, status: 422, kind: "unavailable", detail: "bad figure" });
+    const unauthorized = createSimClient({ baseUrl: "http://sim.internal", secret: "s3", fetchImpl: binary(401, JSON.stringify({ ok: false, error: { kind: "unauthorized" } }), "application/json") });
+    expect(await unauthorized.export("docx", DOC)).toMatchObject({ ok: false, status: 401, kind: "unauthorized" });
+    const down = createSimClient({ baseUrl: "http://sim.internal", secret: "s3", fetchImpl: async () => { throw new Error("down"); } });
+    expect(await down.export("docx", DOC)).toMatchObject({ ok: false, status: 0, kind: "unavailable", detail: "down" });
+    expect(await createSimClient({ baseUrl: "", secret: "s3" }).export("docx", DOC)).toMatchObject({ ok: false, kind: "not_configured" });
+  });
+});

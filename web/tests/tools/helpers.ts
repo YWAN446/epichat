@@ -27,6 +27,7 @@ export function makeDeps(over: Partial<{
   const sim: SimClient = {
     async simulate() { if (over.simulate instanceof Error) throw over.simulate; if (!over.simulate) throw new Error("no simulate result configured"); return over.simulate; },
     async demographicsFallback() { return over.fallback ?? null; },
+    async export() { return { ok: false, status: 0, kind: "unavailable", detail: "no export in tests" }; },
   };
   const deps: FakeDeps = {
     scenario: over.scenario ?? emptyScenario(),
