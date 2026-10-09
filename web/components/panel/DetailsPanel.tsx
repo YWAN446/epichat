@@ -10,10 +10,15 @@ import { RunsSection } from "./RunsSection";
 import { ScenarioSection } from "./ScenarioSection";
 import { Section } from "./Section";
 
-type Props = { artifacts: Artifacts; onSectionOpen: (section: PanelSection) => void; onChartView: (view: ChartView, turnId: string) => void };
+type Props = {
+  artifacts: Artifacts;
+  onSectionOpen: (section: PanelSection) => void;
+  onChartView: (view: ChartView, turnId: string) => void;
+  onReferencesOpen: (parameter: string) => void;
+};
 
 /** The right column: the present scenario, the data applied, every run, and every step. The newest run opens its section. */
-export function DetailsPanel({ artifacts, onSectionOpen, onChartView }: Props) {
+export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen }: Props) {
   const [open, setOpen] = useState<Record<PanelSection, boolean>>({ scenario: true, data: false, runs: true, activity: false });
   const runCount = useRef(artifacts.runs.length);
 
@@ -31,7 +36,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView }: Props) {
     <div className="text-sm">
       <h2 className="px-4 pt-4 pb-1 text-xs font-semibold tracking-wide text-ink-faint uppercase">Details</h2>
       <Section id="panel-scenario" title="Scenario" open={open.scenario} onToggle={toggle("scenario")}>
-        <ScenarioSection config={artifacts.config} disease={artifacts.disease} />
+        <ScenarioSection config={artifacts.config} disease={artifacts.disease} onReferencesOpen={onReferencesOpen} />
       </Section>
       <Section id="panel-data" title="Data" count={artifacts.data.length} open={open.data} onToggle={toggle("data")}>
         <DataSection data={artifacts.data} />

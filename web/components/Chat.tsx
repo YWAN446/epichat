@@ -110,6 +110,10 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   function onActivityExpand(turnId: string) {
     if (conversationId && turnId !== "live") track({ kind: "card_expanded", sessionId: session, conversationId, turnId, card: "activity" });
   }
+  function onReferencesOpen() {
+    const turnId = turns.at(-1)?.id;
+    if (conversationId && turnId) track({ kind: "card_expanded", sessionId: session, conversationId, turnId, card: "references" });
+  }
   function onRecapExpand() {
     const turnId = turns.at(-1)?.id;
     if (conversationId && turnId) track({ kind: "card_expanded", sessionId: session, conversationId, turnId, card: "recap" });
@@ -246,7 +250,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
         />
       }
       sidebar={<ConversationList items={conversations} currentId={conversationId} busy={live !== null} onNew={startNew} onPick={() => setDrawer(false)} onRemoved={onRemoved} />}
-      panel={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} />}
+      panel={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} onReferencesOpen={onReferencesOpen} />}
       drawerOpen={drawer}
       sheetOpen={sheet}
       onClose={() => {

@@ -132,3 +132,23 @@ describe("readable values", () => {
     expect(read("components/RunSummary.tsx")).not.toContain('["Deaths",');
   });
 });
+
+describe("references behind a parameter", () => {
+  it("turns the estimate count into a button that opens the list under the row", () => {
+    const scenario = read("components/panel/ScenarioSection.tsx");
+    for (const piece of ["<ReferenceList", "aria-expanded", "aria-controls", "n_estimates", "onReferencesOpen"]) expect(scenario).toContain(piece);
+    expect(scenario).not.toContain("` (${p.n_estimates})`");
+  });
+
+  it("lists the consensus source first, then every estimate with its link, value, and study line", () => {
+    const list = read("components/panel/ReferenceList.tsx");
+    for (const piece of ["loadReferences(", "referenceHref(", "referenceMeta(", "referenceValue(", "Consensus", "Loading references…", "References unavailable.", 'rel="noreferrer"']) {
+      expect(list).toContain(piece);
+    }
+  });
+
+  it("reports an opened reference list as a card expansion", () => {
+    expect(read("components/panel/DetailsPanel.tsx")).toContain("onReferencesOpen");
+    expect(read("components/Chat.tsx")).toContain('card: "references"');
+  });
+});
