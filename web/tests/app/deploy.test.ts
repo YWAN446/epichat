@@ -20,7 +20,7 @@ describe("deployment files", () => {
     const doc = readFileSync("docs/DEPLOY.md", "utf8");
     for (const phrase of [
       "Email OTP Length", "{{ .Token }}", "0001_init.sql", "smtp.resend.com", "Site URL", "RESEARCHER_EMAILS", "CRON_SECRET", "delete from",
-      "0002_turns.sql", "UN_API_KEY", "ANTHROPIC_API_KEY", "Agent core verification",
+      "0002_turns.sql", "UN_API_KEY", "ANTHROPIC_API_KEY", "Agent core verification", "0003_recap.sql",
     ]) {
       expect(doc).toContain(phrase);
     }

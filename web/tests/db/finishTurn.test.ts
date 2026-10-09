@@ -1,4 +1,5 @@
 import type { PGlite } from "@electric-sql/pglite";
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestDb } from "./helpers";
@@ -149,5 +150,12 @@ describe("finish_turn", () => {
     expect(await can("service_role")).toBe(true);
     expect(await can("anon")).toBe(false);
     expect(await can("authenticated")).toBe(false);
+  });
+  it("stores a recap event once 0003 is applied, and 0003 applies twice", async () => {
+    await db.exec(readFileSync("supabase/migrations/0003_recap.sql", "utf8"));
+    await finish(payload({ events: [{ seq: 1, at: "2026-10-08T15:00:09Z", kind: "recap", items: ["Measles in Kenya"] }] }));
+    const { rows } = await db.query<{ kind: string; payload: { items: string[] } }>("select kind, payload from turn_events where turn_id = $1", [TURN_1]);
+    expect(rows).toEqual([{ kind: "recap", payload: { items: ["Measles in Kenya"] } }]);
+    await expect(db.query("insert into turn_events (turn_id, seq, kind) values ($1, 2, 'image')", [TURN_1])).rejects.toThrow();
   });
 });

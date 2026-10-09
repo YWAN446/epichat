@@ -12,6 +12,9 @@ creates projects or changes dashboard settings.
    Sub-project 3 adds `web/supabase/migrations/0002_turns.sql` (the
    `finish_turn` function and two scenario columns); run it the same way
    after 0001.
+   Sub-project 4a adds `web/supabase/migrations/0003_recap.sql` (one more
+   turn event kind, `recap`); run it after 0002, before the workspace code
+   deploys, or every turn is rejected by `finish_turn`.
 3. Sign-in is by an emailed code only. The app has no page for a sign-in link
    to land on, so the emails must carry the code and no link.
    - Authentication > Sign In / Providers > Email: set "Email OTP Length" to
