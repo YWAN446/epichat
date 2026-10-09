@@ -190,6 +190,11 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
    */
   function startNew() {
     if (live) return;
+    resetConversation();
+  }
+
+  /** Forget the conversation on screen: abort a reply in flight and clear every piece of its state. */
+  function resetConversation() {
     inFlight.current?.abort();
     inFlight.current = null;
     following.current = true;
@@ -198,11 +203,20 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     setError(null);
     setInput("");
     setDrawer(false);
+    setUnseen(false);
   }
 
+  /**
+   * A conversation was deleted from the list. When it is the one on screen,
+   * reset the state the same way New does: the first turn swapped the address
+   * with replaceState, so a push to /chat can land on this same instance.
+   */
   function onRemoved(id: string) {
     setConversations((list) => list.filter((item) => item.id !== id));
-    if (id === conversationId) router.push("/chat");
+    if (id === conversationId) {
+      resetConversation();
+      router.push("/chat");
+    }
   }
 
   function submit(event: FormEvent) {

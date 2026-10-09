@@ -47,7 +47,7 @@ function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact;
               </button>
             ))}
           </div>
-          {series === "loading" ? <p className="text-ink-faint">Loading the curve…</p> : series ? <Chart series={series} view={view} /> : <p className="text-ink-faint">Series unavailable.</p>}
+          {series === "loading" ? <p className="text-ink-faint">Loading the curve…</p> : series ? <Chart series={series} view={view} width={320} /> : <p className="text-ink-faint">Series unavailable.</p>}
           <details>
             <summary className="cursor-pointer text-xs font-semibold tracking-wide text-ink-faint uppercase">Effective parameters</summary>
             <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs">

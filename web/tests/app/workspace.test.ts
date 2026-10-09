@@ -60,7 +60,7 @@ describe("the bottom stack, the sidebar, and the header", () => {
 
   it("lists conversations by day with New at the top and a two-press delete", () => {
     const list = read("components/ConversationList.tsx");
-    for (const piece of ["groupByDay(", "New conversation", "A conversation appears here after your first message.", "Delete?", "onRemoved(", "aria-current"]) expect(list).toContain(piece);
+    for (const piece of ["groupsFor(", "New conversation", "A conversation appears here after your first message.", "Delete?", "onRemoved(", "aria-current"]) expect(list).toContain(piece);
   });
 
   it("gives the header the two narrow-screen toggles and keeps New's reset", () => {
@@ -81,5 +81,33 @@ describe("the shell", () => {
     expect(chat).not.toContain("window.scrollTo");
     expect(chat).not.toContain("EXAMPLES");
     expect(chat).toContain("DRAFTS.understand");
+  });
+});
+
+describe("review fixes", () => {
+  it("deleting the current conversation resets the chat the way New does, not only the address", () => {
+    const chat = read("components/Chat.tsx");
+    expect(chat).toContain("function resetConversation(");
+    const removed = /function onRemoved\(id: string\) \{[\s\S]*?\n  \}/.exec(chat)?.[0] ?? "";
+    expect(removed).toContain("resetConversation()");
+    expect(removed).toContain('router.push("/chat")');
+    const fresh = /function startNew\(\) \{[\s\S]*?\n  \}/.exec(chat)?.[0] ?? "";
+    expect(fresh).toContain("resetConversation()");
+  });
+
+  it("groups the sidebar by day only once the browser's clock is known", () => {
+    const list = read("components/ConversationList.tsx");
+    expect(list).toContain("useClientNow()");
+    expect(list).toContain("useSyncExternalStore(");
+    expect(list).toContain("groupsFor(items, now)");
+    expect(list).not.toContain("groupByDay(items, new Date())");
+  });
+
+  it("draws the panel chart at the panel's width and lets vertical swipes scroll", () => {
+    const chart = read("components/Chart.tsx");
+    expect(chart).toContain("width = 640");
+    expect(chart).toContain("touch-pan-y");
+    expect(chart).not.toContain("touch-none");
+    expect(read("components/panel/RunsSection.tsx")).toContain("width={320}");
   });
 });

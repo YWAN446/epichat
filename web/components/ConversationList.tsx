@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { groupByDay } from "@/lib/client/conversations";
+import { useState, useSyncExternalStore } from "react";
+import { groupsFor } from "@/lib/client/conversations";
 import type { ConversationSummary } from "@/lib/db/conversations";
 
 type Props = {
@@ -20,10 +20,19 @@ type Props = {
 const ROW = "flex min-w-0 flex-1 flex-col gap-0.5 py-2 text-sm hover:text-accent aria-[current=page]:font-semibold aria-[current=page]:text-accent";
 const NEW = "mb-3 block rounded-full border border-line bg-surface px-3.5 py-1.5 text-center text-sm font-medium text-accent hover:border-accent hover:bg-accent-wash";
 
+const LOADED_AT = new Date();
+const subscribe = () => () => {};
+/** The browser's clock once hydrated, null while the server-rendered tree must still match (the server's zone differs). */
+function useClientNow(): Date | null {
+  return useSyncExternalStore(subscribe, () => LOADED_AT, () => null);
+}
+
 /** The left column: New, then the participant's conversations by day, each with a two-press delete. */
 export function ConversationList({ items, currentId, busy, onNew, onPick, onRemoved }: Props) {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  // The day labels depend on the browser's clock and zone, which the server does not know; group once hydrated.
+  const now = useClientNow();
 
   async function remove(id: string) {
     setFailed(false);
@@ -49,11 +58,9 @@ export function ConversationList({ items, currentId, busy, onNew, onPick, onRemo
       {items.length === 0 ? (
         <p className="px-1 text-sm text-ink-soft">A conversation appears here after your first message.</p>
       ) : (
-        groupByDay(items, new Date()).map((group) => (
-          <section key={group.label} className="mb-3">
-            <h2 className="px-1 text-xs font-semibold tracking-wide text-ink-faint uppercase" suppressHydrationWarning>
-              {group.label}
-            </h2>
+        groupsFor(items, now).map((group) => (
+          <section key={group.label ?? "all"} className="mb-3">
+            {group.label && <h2 className="px-1 text-xs font-semibold tracking-wide text-ink-faint uppercase">{group.label}</h2>}
             <ul>
               {group.items.map((item) => (
                 <li key={item.id} className="flex items-center gap-1 px-1">

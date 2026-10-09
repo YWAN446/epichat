@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dayLabel, groupByDay, summaryFor } from "@/lib/client/conversations";
+import { dayLabel, groupByDay, groupsFor, summaryFor } from "@/lib/client/conversations";
 
 const NOW = new Date(2026, 9, 8, 12, 0, 0);
 const at = (y: number, m: number, d: number, h = 9) => new Date(y, m, d, h).toISOString();
@@ -26,5 +26,14 @@ describe("sidebar grouping", () => {
 
   it("builds the row for a conversation the first turn just opened", () => {
     expect(summaryFor("x", "Model a measles outbreak in Kenya", NOW)).toEqual({ id: "x", title: "Model a measles outbreak in Kenya", updatedAt: NOW.toISOString() });
+  });
+  it("renders one unlabeled group until the browser's clock is known", () => {
+    const items = [
+      { id: "a", title: "A", updatedAt: at(2026, 9, 8, 11) },
+      { id: "c", title: "C", updatedAt: at(2026, 9, 7) },
+    ];
+    expect(groupsFor(items, null)).toEqual([{ label: null, items }]);
+    expect(groupsFor(items, NOW)).toEqual(groupByDay(items, NOW));
+    expect(groupsFor([], null)).toEqual([]);
   });
 });

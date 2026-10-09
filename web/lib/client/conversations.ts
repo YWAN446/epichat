@@ -2,6 +2,8 @@
 import { titleFrom, type ConversationSummary } from "@/lib/db/conversations";
 
 export type DayGroup = { label: string; items: ConversationSummary[] };
+/** A day group, or the single unlabeled group shown before the browser's clock is known. */
+export type SidebarGroup = { label: string | null; items: ConversationSummary[] };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -30,6 +32,17 @@ export function groupByDay(items: ConversationSummary[], now: Date): DayGroup[] 
     else groups.push({ label, items: [item] });
   }
   return groups;
+}
+
+/**
+ * The groups the sidebar renders. The server and the browser may sit in
+ * different time zones, so the day labels are computed only once the browser's
+ * clock is known (`now` set from an effect); until then, one unlabeled group
+ * keeps the server-rendered and client-rendered trees identical.
+ */
+export function groupsFor(items: ConversationSummary[], now: Date | null): SidebarGroup[] {
+  if (now) return groupByDay(items, now);
+  return items.length === 0 ? [] : [{ label: null, items }];
 }
 
 /** The sidebar row for a conversation whose first turn just finished; the server's title rule, applied here. */

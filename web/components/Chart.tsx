@@ -3,20 +3,19 @@
 import { useState, type PointerEvent } from "react";
 import { compact, linePath, nearestIndex, niceTicks, seriesFor, thinPoints, type ChartView, type Series } from "@/lib/client/chart";
 
-const WIDTH = 640;
 const PAD = { top: 12, right: 12, bottom: 28, left: 52 };
 const MAX_POINTS = 400;
 
-type Props = { series: Series; view: ChartView; height?: number };
+type Props = { series: Series; view: ChartView; height?: number; /** The viewBox width; pass the column's rendered width so text and strokes keep their size. */ width?: number };
 
 /** An epidemic curve as inline SVG: axes, one path per line, a legend, and a readout of the day under the pointer. */
-export function Chart({ series, view, height = 240 }: Props) {
+export function Chart({ series, view, height = 240, width = 640 }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const lines = seriesFor(view, series);
   const days = Array.isArray(series.day) ? series.day : [];
   if (lines.length === 0 || days.length === 0) return <p className="text-sm text-ink-faint">Series unavailable.</p>;
 
-  const plotW = WIDTH - PAD.left - PAD.right;
+  const plotW = width - PAD.left - PAD.right;
   const plotH = height - PAD.top - PAD.bottom;
   const xMax = days[days.length - 1] || 1;
   const yTicks = niceTicks(Math.max(...lines.flatMap((line) => line.values)), 4);
@@ -28,7 +27,7 @@ export function Chart({ series, view, height = 240 }: Props) {
 
   function onMove(event: PointerEvent<SVGSVGElement>) {
     const box = event.currentTarget.getBoundingClientRect();
-    const px = ((event.clientX - box.left) / box.width) * WIDTH - PAD.left;
+    const px = ((event.clientX - box.left) / box.width) * width - PAD.left;
     const day = Math.round(Math.max(0, Math.min(1, px / plotW)) * xMax);
     setHover(nearestIndex(days, day));
   }
@@ -36,8 +35,8 @@ export function Chart({ series, view, height = 240 }: Props) {
   return (
     <figure>
       <svg
-        viewBox={`0 0 ${WIDTH} ${height}`}
-        className="w-full touch-none"
+        viewBox={`0 0 ${width} ${height}`}
+        className="w-full touch-pan-y"
         role="img"
         aria-label={lines.map((line) => line.label).join(", ")}
         onPointerMove={onMove}
