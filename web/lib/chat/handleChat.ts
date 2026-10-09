@@ -11,6 +11,7 @@ import type { Adapters } from "@/lib/data/types";
 import { titleFrom, type ConversationStore } from "@/lib/db/conversations";
 import type { MessageStore } from "@/lib/db/messages";
 import type { RunStore } from "@/lib/db/runs";
+import type { ReportStore } from "@/lib/db/reports";
 import { scenarioToJson, type ScenarioStore } from "@/lib/db/scenarios";
 import type { ApiCall, FinishTurnPayload, StepEventJson, StoredStop, TurnStore } from "@/lib/db/turns";
 import type { StepEventKind } from "@/lib/enums";
@@ -36,6 +37,7 @@ export type ChatDeps = {
   scenarios: ScenarioStore;
   turns: TurnStore;
   runs: RunStore;
+  reports: ReportStore;
   sim: SimClient;
   adapters: Adapters;
   now: () => Date;
@@ -109,6 +111,7 @@ export async function handleChat(
     stepEvents.push({ kind, session_id: request.sessionId, stage: scenario.stage, tool: null, meta: {}, ...extra });
   let conversationId: string;
   let title: string | null = null;
+  let conversationTitle = "";
   let history: Message[] = [];
   let earlierTexts: string[] = [];
   try {
@@ -119,12 +122,14 @@ export async function handleChat(
         return;
       }
       conversationId = found.id;
+      conversationTitle = found.title;
       const saved = found.activeScenarioId ? await deps.scenarios.get(found.activeScenarioId) : null;
       if (saved) Object.assign(scenario, saved);
       [history, earlierTexts] = await Promise.all([deps.messages.list(conversationId), deps.turns.userTexts(conversationId)]);
     } else {
       title = titleFrom(request.text);
       conversationId = await deps.conversations.create(user.id, title);
+      conversationTitle = title;
       step("conversation_started");
     }
   } catch (error) {
@@ -172,6 +177,20 @@ export async function handleChat(
     },
     onScenarioStart() {
       step("new_scenario");
+    },
+    reports: {
+      runs: () => deps.runs.listForReport(conversationId, scenario.id, turnId),
+      recap: () => deps.turns.lastRecap(conversationId),
+      nextVersion: async () => (await deps.reports.count(conversationId)) + 1,
+      async insert(report) {
+        try {
+          return await deps.reports.insert({ conversationId, userId: user.id, turnId, scenarioId: scenario.id, ...report });
+        } catch (error) {
+          console.error("reports insert failed", failureText(error));
+          return null;
+        }
+      },
+      conversationTitle,
     },
   };
 

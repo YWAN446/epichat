@@ -42,6 +42,7 @@ export function summarizeActivity(blocks: Block[]): string {
       else if (block.name === "configure_simulation") pieces.push({ text: payload.kind === "config" && payload.new_scenario ? "Started a new scenario" : "Configured the simulation" });
       else if (block.name.startsWith("fetch_")) bump("fetch");
       else if (block.name === "run_simulation") pieces.push({ text: `Ran the simulation${payload.kind === "run" ? `, ${formatDuration(payload.duration_ms)}` : ""}` });
+      else if (block.name === "write_report") pieces.push({ text: payload.kind === "report" ? `Wrote the report, version ${payload.version}` : "Wrote the report" });
       else pieces.push({ text: plainLabel(block.name) });
     }
   }

@@ -6,6 +6,7 @@ import { fetchWbData360 } from "@/lib/data/wbData360";
 import { fetchWhoGho } from "@/lib/data/whoGho";
 import { supabaseConversationStore } from "@/lib/db/conversations";
 import { supabaseMessageStore } from "@/lib/db/messages";
+import { supabaseReportStore } from "@/lib/db/reports";
 import { supabaseRunStore } from "@/lib/db/runs";
 import { supabaseScenarioStore } from "@/lib/db/scenarios";
 import { supabaseTurnStore } from "@/lib/db/turns";
@@ -37,6 +38,7 @@ export async function POST(request: Request): Promise<Response> {
     scenarios: supabaseScenarioStore(admin),
     turns: supabaseTurnStore(admin),
     runs: supabaseRunStore(admin),
+    reports: supabaseReportStore(admin),
     sim: createSimClient({ baseUrl: settings.simInternalUrl, secret: settings.simSharedSecret }),
     adapters: {
       unWpp: (query) => fetchUnWpp(query, { apiKey: settings.unApiKey }),

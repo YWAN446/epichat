@@ -7,7 +7,9 @@ import promptFile from "@/data/system_prompt.json";
 describe("system prompt", () => {
   it("starts with the Python agent's prompt verbatim and adds the four sections", () => {
     expect(SYSTEM_PROMPT.startsWith((promptFile as { system: string }).system)).toBe(true);
-    for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Repairs"]) expect(SYSTEM_PROMPT).toContain(heading);
+    for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Report", "## Repairs"]) expect(SYSTEM_PROMPT).toContain(heading);
+    expect(SYSTEM_PROMPT).toContain("Create a report");
+    expect(SYSTEM_PROMPT).toContain("Do not paste the report into the conversation");
     expect(SYSTEM_PROMPT.indexOf("## About EpiChat")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Decisions recap"));
     for (const phrase of ["Starsim", "World Population Prospects", "Global Health Observatory", "Data360", "not forecasts", "What is EpiChat"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).toMatch(/\b1[0-9] diseases\b/);

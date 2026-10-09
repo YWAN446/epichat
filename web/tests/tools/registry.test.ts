@@ -4,8 +4,9 @@ import { TOOLS, executeTool } from "@/lib/tools";
 import { makeDeps } from "./helpers";
 
 describe("tool registry", () => {
-  it("declares the six tools in the agent's order with streaming on and no extra properties", () => {
-    expect(TOOLS.map((t) => t.name)).toEqual(["configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation"]);
+  it("declares the seven tools in the agent's order with streaming on and no extra properties", () => {
+    expect(TOOLS.map((t) => t.name)).toEqual(["configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report"]);
+    expect((TOOLS[6].input_schema as { required: string[] }).required).toEqual(["summary", "meaning", "limitations", "next_steps"]);
     for (const tool of TOOLS) {
       expect(tool.eager_input_streaming).toBe(true);
       expect(tool.input_schema.additionalProperties).toBe(false);

@@ -37,3 +37,11 @@ describe("summarizeActivity", () => {
     expect(formatDuration(120000)).toBe("2 min");
   });
 });
+
+describe("summarizeActivity for the report", () => {
+  it("says the report was written, with its version", () => {
+    const payload = { kind: "report" as const, report_id: "rep-1", version: 2, title: "T", sections: [], words: 100 };
+    expect(summarizeActivity([tool("write_report", payload)])).toBe("Wrote the report, version 2");
+    expect(summarizeActivity([tool("write_report", { kind: "tool_error", message: "x" }, false)])).toBe("⚠ Report failed");
+  });
+});

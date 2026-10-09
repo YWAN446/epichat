@@ -1,4 +1,6 @@
 import type { Adapters, ResolvedField } from "@/lib/data/types";
+import type { ReportRun } from "@/lib/db/runs";
+import type { ReportDocument, ReportNarrative, ReportPayload } from "@/lib/report/document";
 import type { ParameterSummary } from "@/lib/disease/db";
 import type { Stage } from "@/lib/enums";
 import type { RepairRecord, SimClient, SimResult, SimStats } from "@/lib/sim/client";
@@ -62,12 +64,22 @@ export type RunPayload = {
   series?: Record<string, number[]>;
 };
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
-export type CardPayload = (DiseasePayload | ConfigPayload | DataPayload | RunPayload | ToolErrorPayload) & { duration_ms?: number };
+export type CardPayload = (DiseasePayload | ConfigPayload | DataPayload | RunPayload | ReportPayload | ToolErrorPayload) & { duration_ms?: number };
 
 /** What a tool sends back: `content` for the model, `payload` for the card and the event store. */
 export type ToolOutcome = { content: string; isError?: boolean; payload?: CardPayload };
 
 export type RunRecord = { params: SimParams; popScale: number; result: SimResult; warnings: string[]; dataSources: ResolvedField[] };
+
+/** What write_report reads and writes; built by the chat handler from the stores (report spec, section 7.2). */
+export type ReportDeps = {
+  runs(): Promise<ReportRun[]>;
+  recap(): Promise<string[]>;
+  nextVersion(): Promise<number>;
+  /** The id, or null when the insert failed (the handler logs it). */
+  insert(report: { version: number; title: string; language: string; narrative: ReportNarrative; document: ReportDocument }): Promise<string | null>;
+  conversationTitle: string;
+};
 
 /** Everything a tool may touch. Built fresh for each chat request. */
 export type ToolDeps = {
@@ -82,4 +94,5 @@ export type ToolDeps = {
   onRun: (run: RunRecord) => Promise<string | null>;
   /** The scenario was just reset; the handler records new_scenario. */
   onScenarioStart: () => void;
+  reports: ReportDeps;
 };

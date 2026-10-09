@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ChatStreamEvent } from "@/lib/chat/events";
 import { CONVERSATION_INVALID, CUT_OFF_NOTICE, DISCARD_MESSAGES, UNAVAILABLE, handleChat, type ChatDeps } from "@/lib/chat/handleChat";
+import type { ReportStore } from "@/lib/db/reports";
 import { systemBlocks } from "@/lib/chat/prompt";
 import { loadSettings } from "@/lib/config";
 import type { ConversationRow, ConversationStore } from "@/lib/db/conversations";
@@ -76,6 +77,7 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
     async lastRecap() { return []; },
   };
   const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; }, async listForReport() { return []; } };
+  const reports: ReportStore = { async insert() { return "rep-1"; }, async count() { return 0; }, async get() { return null; } };
   const sim: SimClient = {
     async simulate(_params, popScale, contextText) {
       calls.simulated.push({ popScale, contextText });
@@ -85,7 +87,7 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
     async demographicsFallback() { return null; },
   };
   const deps: ChatDeps = {
-    settings: loadSettings(env), client, usage, conversations, messages, scenarios, turns, runs, sim,
+    settings: loadSettings(env), client, usage, conversations, messages, scenarios, turns, runs, reports, sim,
     adapters: makeDeps().adapters, now: clock(), newId: () => TURN,
   };
   const emitted: ChatStreamEvent[] = [];
@@ -107,7 +109,7 @@ describe("handleChat", () => {
     expect(requests[0].messages).toEqual([userMessage]);
     expect(requests[0].system).toEqual(systemBlocks());
     expect((requests[0].tools as { name: string }[]).map((tool) => tool.name)).toEqual([
-      "configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "web_search", "web_fetch",
+      "configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "web_search", "web_fetch",
     ]);
     expect(emitted).toEqual([
       { type: "text", delta: "Sure." },

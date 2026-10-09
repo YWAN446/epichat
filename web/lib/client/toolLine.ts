@@ -9,6 +9,7 @@ export const TOOL_LABELS: Record<string, string> = {
   fetch_health_system: "🔧 World Bank health system",
   fetch_vaccination_coverage: "🔧 WHO vaccination coverage",
   run_simulation: "▶️ Simulation",
+  write_report: "📝 Report",
   web_search: "🔎 Web search",
   web_fetch: "📄 Read page",
 };
@@ -21,6 +22,7 @@ export const TOOL_STATUS: Record<string, string> = {
   fetch_health_system: "Fetching World Bank health-system data…",
   fetch_vaccination_coverage: "Fetching WHO vaccination coverage…",
   run_simulation: "Running the simulation — this usually takes 1–2 minutes…",
+  write_report: "Writing the report…",
   web_search: "Searching the web…",
   web_fetch: "Reading the page…",
 };
