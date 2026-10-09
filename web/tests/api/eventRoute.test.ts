@@ -63,6 +63,16 @@ describe("POST /api/event", () => {
     expect(events[0]).toMatchObject({ kind: "suggestion_used", session_id: SESSION, conversation_id: CONVERSATION, stage: "configure", meta: {} });
   });
 
+  it("keeps the chip source and the panel section in meta", async () => {
+    await post({ kind: "suggestion_used", sessionId: SESSION, conversationId: CONVERSATION, stage: "ground", source: "draft" });
+    let events = callOn(admin.recorded, "step_events", "insert")?.[0] as Record<string, unknown>[];
+    expect(events[0]).toMatchObject({ kind: "suggestion_used", meta: { source: "draft" } });
+    admin.recorded.length = 0;
+    await post({ kind: "scenario_panel_opened", sessionId: SESSION, conversationId: CONVERSATION, section: "runs" });
+    events = callOn(admin.recorded, "step_events", "insert")?.[0] as Record<string, unknown>[];
+    expect(events[0]).toMatchObject({ kind: "scenario_panel_opened", meta: { section: "runs" } });
+  });
+
   it("turns away a signed-out request, a disallowed address, and a user without current consent", async () => {
     signedInAs(null);
     expect((await post({ kind: "session_ping", sessionId: SESSION })).status).toBe(401);

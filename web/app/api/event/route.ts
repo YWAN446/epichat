@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
     const event: StepEvent = { kind, sessionId: sessionId ?? null, conversationId, meta: {} };
     if ("turnId" in rest && rest.turnId) event.turnId = rest.turnId;
     if ("stage" in rest) event.stage = rest.stage;
-    for (const key of ["card", "view", "format", "rating", "runId"] as const) {
+    for (const key of ["card", "view", "format", "rating", "runId", "source", "section"] as const) {
       if (key in rest) event.meta![key] = (rest as Record<string, string>)[key];
     }
     await events.log(user.id, [event]);

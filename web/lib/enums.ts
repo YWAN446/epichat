@@ -60,7 +60,12 @@ export const CLIENT_EVENT_KINDS = [
 export const STEP_EVENT_KINDS = [...SERVER_EVENT_KINDS, ...CLIENT_EVENT_KINDS] as const;
 export type StepEventKind = (typeof STEP_EVENT_KINDS)[number];
 
-export const CARD_KINDS = ["disease", "config", "data", "run", "tool_error"] as const;
+export const CARD_KINDS = ["disease", "config", "data", "run", "tool_error", "activity", "recap"] as const;
+/** The details panel's sections, for scenario_panel_opened. */
+export const PANEL_SECTIONS = ["scenario", "data", "runs", "activity"] as const;
+export type PanelSection = (typeof PANEL_SECTIONS)[number];
+/** Where a pressed chip came from. */
+export const SUGGESTION_SOURCES = ["model", "draft"] as const;
 export const CHART_VIEWS = ["compartments", "incidence", "cumulative", "deaths"] as const;
 export const EXPORT_FORMATS = ["pdf", "docx"] as const;
 export const RATINGS = ["up", "down"] as const;

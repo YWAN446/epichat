@@ -18,6 +18,11 @@ describe("readClientEvent", () => {
     expect(readClientEvent(JSON.stringify({ kind: "feedback_given", conversationId: CONVERSATION, turnId: TURN, rating: "up" }))).toMatchObject({ rating: "up" });
     expect(readClientEvent(JSON.stringify({ kind: "export", conversationId: CONVERSATION, format: "pdf" }))).toMatchObject({ format: "pdf" });
     expect(readClientEvent(JSON.stringify({ kind: "conversation_opened", conversationId: CONVERSATION }))).toMatchObject({ kind: "conversation_opened" });
+    expect(readClientEvent(JSON.stringify({ kind: "suggestion_used", conversationId: CONVERSATION, stage: "ground", source: "draft" }))).toMatchObject({ source: "draft" });
+    expect(readClientEvent(JSON.stringify({ kind: "card_expanded", conversationId: CONVERSATION, turnId: TURN, card: "activity" }))).toMatchObject({ card: "activity" });
+    expect(readClientEvent(JSON.stringify({ kind: "card_expanded", conversationId: CONVERSATION, turnId: TURN, card: "recap" }))).toMatchObject({ card: "recap" });
+    expect(readClientEvent(JSON.stringify({ kind: "scenario_panel_opened", conversationId: CONVERSATION, section: "runs" }))).toMatchObject({ section: "runs" });
+    expect(readClientEvent(JSON.stringify({ kind: "scenario_panel_opened", conversationId: CONVERSATION }))).toMatchObject({ kind: "scenario_panel_opened" });
   });
 
   it("refuses unknown kinds, extra fields, free text, bad ids, and oversized bodies", () => {
@@ -28,5 +33,7 @@ describe("readClientEvent", () => {
     expect(readClientEvent(JSON.stringify({ kind: "feedback_given", conversationId: CONVERSATION, turnId: TURN, rating: "meh" }))).toBeNull();
     expect(readClientEvent("not json")).toBeNull();
     expect(readClientEvent("x".repeat(1001))).toBeNull();
+    expect(readClientEvent(JSON.stringify({ kind: "suggestion_used", conversationId: CONVERSATION, stage: "ground", source: "typed" }))).toBeNull();
+    expect(readClientEvent(JSON.stringify({ kind: "scenario_panel_opened", conversationId: CONVERSATION, section: "notes" }))).toBeNull();
   });
 });

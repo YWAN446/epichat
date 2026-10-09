@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CARD_KINDS, CHART_VIEWS, EXPORT_FORMATS, RATINGS, STAGES } from "./enums";
+import { CARD_KINDS, CHART_VIEWS, EXPORT_FORMATS, PANEL_SECTIONS, RATINGS, STAGES, SUGGESTION_SOURCES } from "./enums";
 
 /**
  * What the browser may report about what a participant did. Every field is a
@@ -20,13 +20,13 @@ const ClientEvent = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("session_end"), sessionId: id }),
   z.strictObject({ kind: z.literal("conversation_opened"), sessionId, conversationId: id }),
   z.strictObject({ kind: z.literal("conversation_resumed"), sessionId, conversationId: id }),
-  z.strictObject({ kind: z.literal("suggestion_used"), sessionId, conversationId: id, turnId: id.optional(), stage: z.enum(STAGES) }),
+  z.strictObject({ kind: z.literal("suggestion_used"), sessionId, conversationId: id, turnId: id.optional(), stage: z.enum(STAGES), source: z.enum(SUGGESTION_SOURCES).optional() }),
   z.strictObject({ kind: z.literal("card_expanded"), sessionId, conversationId: id, turnId: id, card: z.enum(CARD_KINDS) }),
   z.strictObject({ kind: z.literal("chart_view_changed"), sessionId, conversationId: id, turnId: id, view: z.enum(CHART_VIEWS) }),
   z.strictObject({ kind: z.literal("series_downloaded"), sessionId, conversationId: id, runId: id }),
   z.strictObject({ kind: z.literal("export"), sessionId, conversationId: id, format: z.enum(EXPORT_FORMATS) }),
   z.strictObject({ kind: z.literal("feedback_given"), sessionId, conversationId: id, turnId: id, rating: z.enum(RATINGS) }),
-  z.strictObject({ kind: z.literal("scenario_panel_opened"), sessionId, conversationId: id }),
+  z.strictObject({ kind: z.literal("scenario_panel_opened"), sessionId, conversationId: id, section: z.enum(PANEL_SECTIONS).optional() }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEvent>;
 
