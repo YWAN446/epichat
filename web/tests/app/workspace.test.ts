@@ -46,3 +46,25 @@ describe("the details panel", () => {
     for (const piece of ["<StatTiles", "<Chart", "CHART_VIEWS", "useRunSeries(", "effective_params", "repairs", "data_sources", "onChartView("]) expect(runs).toContain(piece);
   });
 });
+
+describe("the bottom stack, the sidebar, and the header", () => {
+  it("shows the decisions so far, collapsed to the first one", () => {
+    const bar = read("components/RecapBar.tsx");
+    for (const piece of ["Decisions so far", "aria-expanded", "items.length - 1", "more"]) expect(bar).toContain(piece);
+  });
+
+  it("marks the current stage and explains it", () => {
+    const strip = read("components/StageStrip.tsx");
+    for (const piece of ["STAGE_LABELS", "STAGE_HINTS", "STAGE_INDEX", "aria-current={", '"step"']) expect(strip).toContain(piece);
+  });
+
+  it("lists conversations by day with New at the top and a two-press delete", () => {
+    const list = read("components/ConversationList.tsx");
+    for (const piece of ["groupByDay(", "New conversation", "A conversation appears here after your first message.", "Delete?", "onRemoved(", "aria-current"]) expect(list).toContain(piece);
+  });
+
+  it("gives the header the two narrow-screen toggles and keeps New's reset", () => {
+    const header = read("components/ChatHeader.tsx");
+    for (const piece of ['aria-label="Conversations"', 'aria-label="Details"', "xl:hidden", "onClick={onNew}", "aria-expanded"]) expect(header).toContain(piece);
+  });
+});

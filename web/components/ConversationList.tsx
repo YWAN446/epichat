@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { groupByDay } from "@/lib/client/conversations";
 import type { ConversationSummary } from "@/lib/db/conversations";
 
-type Props = { items: ConversationSummary[]; currentId: string | null };
+type Props = {
+  items: ConversationSummary[];
+  currentId: string | null;
+  /** A reply is arriving: New waits. */
+  busy: boolean;
+  onNew: () => void;
+  /** A row was pressed (the link navigates); the shell closes its drawer. */
+  onPick: () => void;
+  /** A conversation was deleted; the owner of the list drops it. */
+  onRemoved: (id: string) => void;
+};
 
-/** The participant's earlier conversations, newest first, each with a two-click delete. */
-export function ConversationList({ items: initial, currentId }: Props) {
-  const router = useRouter();
-  const [items, setItems] = useState(initial);
+const ROW = "flex min-w-0 flex-1 flex-col gap-0.5 py-2 text-sm hover:text-accent aria-[current=page]:font-semibold aria-[current=page]:text-accent";
+const NEW = "mb-3 block rounded-full border border-line bg-surface px-3.5 py-1.5 text-center text-sm font-medium text-accent hover:border-accent hover:bg-accent-wash";
+
+/** The left column: New, then the participant's conversations by day, each with a two-press delete. */
+export function ConversationList({ items, currentId, busy, onNew, onPick, onRemoved }: Props) {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -21,51 +32,62 @@ export function ConversationList({ items: initial, currentId }: Props) {
       setFailed(true);
       return;
     }
-    setItems((list) => list.filter((item) => item.id !== id));
-    if (id === currentId) router.push("/chat");
+    onRemoved(id);
   }
 
   return (
-    <section className="mt-8">
-      <h2 className="text-sm font-semibold tracking-wide text-ink-faint uppercase">Your conversations</h2>
-      {items.length === 0 ? (
-        <p className="mt-3 text-ink-soft">None yet. A conversation appears here after your first message.</p>
+    <div className="flex flex-col px-3 py-4">
+      {busy ? (
+        <span className={`${NEW} opacity-50`} aria-disabled="true">
+          New conversation
+        </span>
       ) : (
-        <ul className="mt-3 border-t border-line">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 border-b border-line">
-              <Link href={`/chat/${item.id}`} aria-current={item.id === currentId ? "page" : undefined} className="flex min-w-0 flex-1 flex-col gap-0.5 py-3 hover:text-accent">
-                <span className="truncate font-medium">{item.title}</span>
-                <time dateTime={item.updatedAt} className="font-mono text-xs text-ink-faint">
-                  {new Date(item.updatedAt).toLocaleDateString()}
-                </time>
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirming !== item.id) return setConfirming(item.id);
-                  setConfirming(null);
-                  void remove(item.id);
-                }}
-                onBlur={() => setConfirming(null)}
-                aria-label={`${confirming === item.id ? "Confirm deleting" : "Delete"} the conversation "${item.title}"`}
-                className={
-                  confirming === item.id
-                    ? "rounded-full bg-warn-wash px-3 py-1.5 text-sm font-medium whitespace-nowrap text-warn-ink"
-                    : "rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-ink-soft hover:bg-warn-wash hover:text-warn-ink"
-                }
-              >
-                {confirming === item.id ? "Delete?" : "Delete"}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <Link href="/chat" onClick={onNew} className={NEW}>
+          New conversation
+        </Link>
+      )}
+      {items.length === 0 ? (
+        <p className="px-1 text-sm text-ink-soft">A conversation appears here after your first message.</p>
+      ) : (
+        groupByDay(items, new Date()).map((group) => (
+          <section key={group.label} className="mb-3">
+            <h2 className="px-1 text-xs font-semibold tracking-wide text-ink-faint uppercase" suppressHydrationWarning>
+              {group.label}
+            </h2>
+            <ul>
+              {group.items.map((item) => (
+                <li key={item.id} className="flex items-center gap-1 px-1">
+                  <Link href={`/chat/${item.id}`} onClick={onPick} aria-current={item.id === currentId ? "page" : undefined} className={ROW}>
+                    <span className="truncate">{item.title}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirming !== item.id) return setConfirming(item.id);
+                      setConfirming(null);
+                      void remove(item.id);
+                    }}
+                    onBlur={() => setConfirming(null)}
+                    aria-label={`${confirming === item.id ? "Confirm deleting" : "Delete"} the conversation "${item.title}"`}
+                    className={
+                      confirming === item.id
+                        ? "rounded-full bg-warn-wash px-2 py-1 text-xs font-medium whitespace-nowrap text-warn-ink"
+                        : "rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap text-ink-faint hover:bg-warn-wash hover:text-warn-ink"
+                    }
+                  >
+                    {confirming === item.id ? "Delete?" : "Delete"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
       )}
       {failed && (
-        <p role="alert" className="mt-3 text-sm text-warn-ink">
+        <p role="alert" className="px-1 text-sm text-warn-ink">
           That conversation could not be deleted. Please try again.
         </p>
       )}
-    </section>
+    </div>
   );
 }
