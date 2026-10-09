@@ -17,13 +17,15 @@ export type ScenarioJson = {
   stage: string | null;
   stage_reached: string | null;
   has_run: boolean;
+  has_report: boolean;
+  report_current: boolean;
 };
 
 export interface ScenarioStore {
   get(id: string): Promise<Scenario | null>;
 }
 
-const COLUMNS = "id, seq, params, disease, country_iso3, total_population, data_sources, web_sources, stage, stage_reached, has_run";
+const COLUMNS = "id, seq, params, disease, country_iso3, total_population, data_sources, web_sources, stage, stage_reached, has_run, has_report, report_current";
 
 function stageOf(value: unknown, fallback: Stage): Stage {
   return (STAGES as readonly string[]).includes(value as string) ? (value as Stage) : fallback;
@@ -50,6 +52,8 @@ export function scenarioFromRow(row: ScenarioJson): Scenario {
     stage,
     stageReached: stageOf(row.stage_reached, stage),
     hasRun: Boolean(row.has_run),
+    hasReport: Boolean(row.has_report),
+    reportCurrent: Boolean(row.report_current),
   };
 }
 
@@ -58,6 +62,7 @@ export function scenarioToJson(s: Scenario): ScenarioJson {
   return {
     id: s.id, seq: s.seq, params: s.params, disease: s.disease, country_iso3: s.countryIso3, total_population: s.totalPopulation,
     data_sources: s.dataSources, web_sources: s.webSources, stage: s.stage, stage_reached: s.stageReached, has_run: s.hasRun,
+    has_report: s.hasReport, report_current: s.reportCurrent,
   };
 }
 

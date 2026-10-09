@@ -25,6 +25,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   }
 
   scenario.hasRun = true;
+  scenario.reportCurrent = false; // the report, if any, no longer covers this run
   const agents = result.stats_agents;
   const n = agents.n_agents || params.n_agents || 1;
   // Agent counts: the scaled total over the real population is the same ratio.

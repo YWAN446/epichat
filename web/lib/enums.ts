@@ -22,7 +22,7 @@ export const PARTICIPANT_LABEL: Record<ParticipantType, string> = {
 };
 
 /** The simulation workflow, in order (spec 10.1). */
-export const STAGES = ["understand", "configure", "ground", "run", "interpret"] as const;
+export const STAGES = ["understand", "configure", "ground", "run", "interpret", "report"] as const;
 export type Stage = (typeof STAGES)[number];
 
 /** Step events the server writes (spec section 7). */

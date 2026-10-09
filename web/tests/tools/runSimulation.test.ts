@@ -21,6 +21,7 @@ describe("run_simulation", () => {
     await configureSimulation({ disease: "dengue", n_agents: 50000 } as never, deps);
     deps.scenario.totalPopulation = 213_000_000;
     deps.scenario.dataSources.push(rf("total_population", 213_000_000, "UN WPP 2024"));
+    deps.scenario.reportCurrent = true;
     const out = await runSimulation({}, deps);
     expect(out.isError).toBeUndefined();
     const body = JSON.parse(out.content);
@@ -31,6 +32,7 @@ describe("run_simulation", () => {
     expect(body.data_sources).toEqual([{ field: "total_population", value: 213_000_000, citation: "UN WPP 2024" }]);
     expect(out.payload).toMatchObject({ kind: "run", run_id: "run-9", attack_rate_pct: 12, pop_scale: 4260, population: 213_000_000, series: { day: [0, 1] } });
     expect(deps.scenario.hasRun).toBe(true);
+    expect(deps.scenario.reportCurrent).toBe(false);
     expect(deps.runs).toHaveLength(1);
     expect(deps.runs[0].popScale).toBe(4260);
     expect(deps.runs[0].result.ok).toBe(true);

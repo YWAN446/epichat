@@ -4,8 +4,9 @@ import type { Scenario } from "@/lib/tools/types";
 
 export const STAGE_INDEX = Object.fromEntries(STAGES.map((s, i) => [s, i])) as Record<Stage, number>;
 
-export function deriveStage(scenario: Pick<Scenario, "params" | "dataSources" | "hasRun">, running = false): Stage {
+export function deriveStage(scenario: Pick<Scenario, "params" | "dataSources" | "hasRun" | "reportCurrent">, running = false): Stage {
   if (running) return "run";
+  if (scenario.reportCurrent) return "report";
   if (scenario.hasRun) return "interpret";
   if (scenario.dataSources.length > 0) return "ground";
   if (scenario.params) return "configure";

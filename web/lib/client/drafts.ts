@@ -7,6 +7,7 @@ export const STAGE_LABELS: Record<Stage, string> = {
   ground: "Ground in data",
   run: "Run",
   interpret: "Interpret",
+  report: "Report",
 };
 
 export const STAGE_HINTS: Record<Stage, string> = {
@@ -14,7 +15,8 @@ export const STAGE_HINTS: Record<Stage, string> = {
   configure: "Check the configuration. When it looks right, ground it in real data.",
   ground: "Real data is applied. Run the simulation when you are ready.",
   run: "The simulation is running. This usually takes one to two minutes.",
-  interpret: "Explore the results, or change something and run again.",
+  interpret: "Explore the results, change something and run again, or ask for a report.",
+  report: "The report is ready. Download it from the Details panel, or ask for changes.",
 };
 
 export const DRAFTS: Record<Stage, string[]> = {
@@ -22,7 +24,8 @@ export const DRAFTS: Record<Stage, string[]> = {
   configure: ["Yes, fetch the data", "Use a population of 2 million", "Add a vaccination campaign at 80% coverage"],
   ground: ["Run it", "Which data sources were used?", "Lower the contact rate by 20%"],
   run: [],
-  interpret: ["What does the peak mean for hospitals?", "Compare with 90% vaccine coverage", "Start a new scenario"],
+  interpret: ["What does the peak mean for hospitals?", "Compare with 90% vaccine coverage", "Create a report"],
+  report: ["Shorten the summary", "Run another scenario to compare", "Start a new scenario"],
 };
 
 /** model: the assistant suggested it; draft: a stage draft; intro: one of the welcome's introduction questions. */

@@ -16,7 +16,13 @@ describe("stages", () => {
     s.hasRun = true;
     expect(deriveStage(s)).toBe("interpret");
     expect(deriveStage(s, true)).toBe("run");
-    expect(STAGE_INDEX).toEqual({ understand: 0, configure: 1, ground: 2, run: 3, interpret: 4 });
+    s.reportCurrent = true;
+    s.hasReport = true;
+    expect(deriveStage(s)).toBe("report");
+    expect(deriveStage(s, true)).toBe("run");
+    s.reportCurrent = false;
+    expect(deriveStage(s)).toBe("interpret");
+    expect(STAGE_INDEX).toEqual({ understand: 0, configure: 1, ground: 2, run: 3, interpret: 4, report: 5 });
   });
 
   it("advances and records each stage reached once", () => {
@@ -28,7 +34,11 @@ describe("stages", () => {
     expect(advanceStage(s, true)).toEqual({ stage: "run", changed: true, reached: "run" });
     s.hasRun = true;
     expect(advanceStage(s)).toEqual({ stage: "interpret", changed: true, reached: "interpret" });
+    s.reportCurrent = true;
+    expect(advanceStage(s)).toEqual({ stage: "report", changed: true, reached: "report" });
+    s.reportCurrent = false;
+    expect(advanceStage(s)).toEqual({ stage: "interpret", changed: true, reached: null });
     expect(advanceStage(s, true)).toEqual({ stage: "run", changed: true, reached: null });
-    expect(s.stageReached).toBe("interpret");
+    expect(s.stageReached).toBe("report");
   });
 });

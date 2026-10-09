@@ -19,10 +19,14 @@ export type Scenario = {
   stage: Stage;
   stageReached: Stage;
   hasRun: boolean;
+  /** A report exists for this scenario. */
+  hasReport: boolean;
+  /** The latest report was written after the latest run; a run resets it. */
+  reportCurrent: boolean;
 };
 
 export function emptyScenario(seq = 1): Scenario {
-  return { id: null, seq, params: null, disease: null, countryIso3: null, totalPopulation: null, dataSources: [], webSources: [], stage: "understand", stageReached: "understand", hasRun: false };
+  return { id: null, seq, params: null, disease: null, countryIso3: null, totalPopulation: null, dataSources: [], webSources: [], stage: "understand", stageReached: "understand", hasRun: false, hasReport: false, reportCurrent: false };
 }
 
 /** start_new_scenario: the same object becomes the next, empty scenario. */

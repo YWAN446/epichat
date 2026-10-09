@@ -29,7 +29,7 @@ describe("message store", () => {
 describe("scenario store", () => {
   const row = {
     id: "s1", seq: 2, params: params({ n_agents: 500 }), disease: "measles", country_iso3: "KEN", total_population: 54027487,
-    data_sources: [rf("birth_rate", 0.028)], web_sources: [{ title: "WHO", url: "https://www.who.int" }], stage: "ground", stage_reached: "ground", has_run: false,
+    data_sources: [rf("birth_rate", 0.028)], web_sources: [{ title: "WHO", url: "https://www.who.int" }], stage: "ground", stage_reached: "ground", has_run: false, has_report: false, report_current: false,
   };
 
   it("reads a row back as the live scenario and writes it as finish_turn expects", async () => {
@@ -37,7 +37,7 @@ describe("scenario store", () => {
     const scenario = await supabaseScenarioStore(client).get("s1");
     expect(scenario).toEqual({
       id: "s1", seq: 2, params: params({ n_agents: 500 }), disease: "measles", countryIso3: "KEN", totalPopulation: 54027487,
-      dataSources: [rf("birth_rate", 0.028)], webSources: [{ title: "WHO", url: "https://www.who.int" }], stage: "ground", stageReached: "ground", hasRun: false,
+      dataSources: [rf("birth_rate", 0.028)], webSources: [{ title: "WHO", url: "https://www.who.int" }], stage: "ground", stageReached: "ground", hasRun: false, hasReport: false, reportCurrent: false,
     });
     expect(callOn(recorded, "scenarios", "eq")).toEqual(["id", "s1"]);
     expect(scenarioToJson(scenario!)).toEqual(row);
@@ -142,5 +142,15 @@ describe("feedback store", () => {
     expect(callOn(recorded, "feedback", "insert")).toEqual([{ user_id: USER, conversation_id: CONVERSATION, turn_id: TURN, rating: "down", comment: "Too slow" }]);
     const failing = fakeAdmin({ feedback: [{ data: null, error: { message: "down" } }] });
     await expect(supabaseFeedbackStore(failing.client).insert({ userId: USER, conversationId: CONVERSATION, turnId: TURN, rating: "up", comment: null })).rejects.toThrow(/down/);
+  });
+});
+
+describe("scenario report flags", () => {
+  it("carries the report flags both ways", () => {
+    const s = { ...emptyScenario(), hasReport: true, reportCurrent: true, stage: "report" as const, stageReached: "report" as const };
+    const json = scenarioToJson(s);
+    expect(json).toMatchObject({ has_report: true, report_current: true, stage: "report" });
+    expect(scenarioFromRow({ ...json, id: "s1" })).toMatchObject({ hasReport: true, reportCurrent: true, stage: "report", stageReached: "report" });
+    expect(scenarioFromRow({ ...scenarioToJson(emptyScenario()), id: "s2" })).toMatchObject({ hasReport: false, reportCurrent: false });
   });
 });
