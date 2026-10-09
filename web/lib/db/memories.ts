@@ -3,7 +3,8 @@
  * participant keeps across conversations. Rows are deactivated, never deleted.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { MemoryKind } from "@/lib/enums";
+import { z } from "zod";
+import { MEMORY_KINDS, type MemoryKind } from "@/lib/enums";
 import type { Memory } from "@/lib/profile/about";
 
 export type { Memory };
@@ -11,6 +12,14 @@ export type MemorySource = Memory["source"];
 
 /** Active memories per participant; the assistant's oldest give way first, the participant's own never. */
 export const MEMORY_CAP = 30;
+
+const text = z.string().trim().min(3).max(200);
+/** A memory the participant adds from the tab. */
+export const MemoryInput = z.strictObject({ kind: z.enum(MEMORY_KINDS), text });
+export type MemoryInputArgs = z.infer<typeof MemoryInput>;
+/** An edit from the tab: the kind, the text, or both. */
+export const MemoryPatchInput = z.strictObject({ kind: z.enum(MEMORY_KINDS).optional(), text: text.optional() }).refine((patch) => patch.kind !== undefined || patch.text !== undefined, "Nothing to change");
+export type MemoryPatchArgs = z.infer<typeof MemoryPatchInput>;
 
 type Row = { id: string; kind: MemoryKind; text: string; source: MemorySource; created_at: string };
 const COLUMNS = "id, kind, text, source, created_at";
