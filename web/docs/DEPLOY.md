@@ -19,6 +19,12 @@ creates projects or changes dashboard settings.
    `reports` table, two scenario columns, the sixth stage, and `finish_turn`
    linking reports); run it after 0003, twice, before the report code
    deploys, or `finish_turn` rejects the scenario's report fields.
+   Sub-project 4e adds `web/supabase/migrations/0005_shares.sql` (the
+   `shares` table, the four share step-event kinds, and
+   `record_share_view`); run it after 0004, twice, before the share code
+   deploys, or every share request fails. The same deploy carries
+   `content/consent.md` at `version: 2026-10-09`, so every participant is
+   shown the consent text once more on their next visit.
 3. Sign-in is by an emailed code only. The app has no page for a sign-in link
    to land on, so the emails must carry the code and no link.
    - Authentication > Sign In / Providers > Email: set "Email OTP Length" to
@@ -285,6 +291,41 @@ builds with two more libraries (`python-docx`, `reportlab`) and serves
    `select has_table_privilege('service_role', 'reports', 'insert')` reads
    true, so the server can write reports and the browser roles cannot read
    them.
+
+## 6f. Share verification
+
+Done on a preview or production deployment after the share branch is
+pushed, with migration 0005 applied first (section 1.2). Two browsers: one
+signed in, one private window.
+
+1. Signed in, open a conversation with a run. The header shows Share. Press
+   it: the dialog explains that anyone with the link can read the
+   conversation and that your email is not shown; press "Create link". The
+   link appears with Copy, "Snapshot taken <date> · N turns", "Update
+   snapshot", and "Stop sharing". Copy reads "Copied" for a moment. The
+   network tab shows one `POST /api/shares` answering the token and the link.
+2. Private window: open the link (`/s/<token>`). No sign-in; the brand, the
+   title, "A frozen
+   copy of an EpiChat conversation, shared by a study participant on
+   <date>", the turns without thumbs or chips, the Details sections with the
+   charts, and "View report" when the conversation has a report (it opens the
+   report's HTML in a new tab). The network tab shows `X-Robots-Tag:
+   noindex, nofollow` and `Cache-Control: no-store` on the page.
+3. Signed in: send one more message, reopen the dialog, press "Update
+   snapshot": the turn count grows by one; reload the private window: the
+   new turn is there.
+4. Press "Stop sharing": the dialog shows "Create link" again; reload the
+   private window: "This shared conversation is no longer available."
+5. Share again (a new link), then delete the conversation from the sidebar:
+   the new link answers the unavailable page too.
+6. Table Editor: `select token, turn_count, view_count, revoked_at from shares
+   where conversation_id = '<id>' order by created_at` shows two rows, both
+   revoked, the first with `view_count` 2 or more; `select kind, meta from
+   step_events where kind like 'share_%' order by at` shows share_created,
+   share_opened (one per open), share_updated, share_revoked, share_created,
+   share_revoked.
+7. Any participant who signs in sees the consent page once more (version
+   2026-10-09) and continues after accepting.
 
 ## 7. Simulation service (`sim/`)
 
