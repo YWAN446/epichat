@@ -4114,7 +4114,375 @@
               ]
             }
           }
+        },
+
+        "rsv": {
+          "display_name": "Respiratory Syncytial Virus",
+          "aliases": ["rsv", "respiratory syncytial virus", "human respiratory syncytial virus", "hrsv", "human orthopneumovirus", "rsv-a", "rsv-b", "bronchiolitis"],
+          "parameters": {
+
+            "r0": {
+              "unit": "dimensionless",
+              "consensus": {
+                "min": 0.92,
+                "max": 7.1,
+                "typical": 3.0,
+                "notes": "MODEL STRUCTURE DOMINATES SETTING: fitted to the same series, SIRS structures give 1-2 while structures with gradual acquisition of partial immunity give 5-7, so an RSV R0 is uninterpretable without the assumed immunity structure. Because RSV is endemic and almost nobody is fully susceptible after infancy, most published values are effective rather than basic reproduction numbers, and values below unity in the estimates reflect partial population immunity rather than a non-viable pathogen."
+              },
+
+              "estimates": [
+                {
+                  "value": 3.0,
+                  "range": "N/A",
+                  "population": "General, US census divisions, multiple seasons",
+                  "source_type": "modeling_study",
+                  "title": "Retrospective Parameter Estimation and Forecast of Respiratory Syncytial Virus in the United States",
+                  "url": "https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+                  "doi": "10.1371/journal.pcbi.1005133",
+                  "country": "United States",
+                  "year": 2016,
+                  "notes": "Reis & Shaman, Bayesian filtering across US census divisions and seasons gave R0 3.0 (SD 0.6)."
+                },
+
+                {
+                  "value": 1.65,
+                  "range": [1.2, 2.1],
+                  "population": "General, model-dependent",
+                  "source_type": "modeling_study",
+                  "title": "Modeling epidemics caused by respiratory syncytial virus (RSV)",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/11520501/",
+                  "doi": "N/A",
+                  "country": "Multiple",
+                  "year": 2001,
+                  "notes": "SIRS model"
+                },
+
+                {
+                  "value": 6.25,
+                  "range": [5.4, 7.1],
+                  "population": "General, model-dependent",
+                  "source_type": "modeling_study",
+                  "title": "Modeling epidemics caused by respiratory syncytial virus (RSV)",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/11520501/",
+                  "doi": "N/A",
+                  "country": "Multiple",
+                  "year": 2001,
+                  "notes": "model with gradual acquisition of partial immunity"
+                },
+
+                {
+                  "value": 1.375,
+                  "range": [0.92, 1.83],
+                  "population": "Closed community settings including children, by region, year and subtype",
+                  "source_type": "systematic_review",
+                  "title": "Respiratory Syncytial Virus Transmission in Closed Community Settings That Include Children: A Systematic Review and Meta-Analysis",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13261290/",
+                  "doi": "10.1111/irv.70270",
+                  "country": "Philippines",
+                  "year": 2026,
+                  "notes": "Estimates computed with a gamma-fitted 3.2-day serial interval standing in for the generation time: highest 1.76 (95% CI 1.62-1.83) for RSV-B and lowest 0.92 (0.92-1.0) for RSV-A, both in Caibiran, with variability between regions and years. Sub-unity values in an endemic partially immune population are effective reproduction numbers and must not be read as R0."
+                },
+
+                {
+                  "value": 2.46,
+                  "range": [0.92, 4.0],
+                  "population": "General, pooled across the published evidence base",
+                  "source_type": "review_article",
+                  "title": "What are the parameters and modes of transmission of RSV? A rapid review",
+                  "url": "https://usher.ed.ac.uk/sites/default/files/atoms/files/rsv_transmission_parameters_rr_-_version_3_formatted.pdf",
+                  "doi": "N/A",
+                  "country": "N/A",
+                  "year": 2023,
+                  "notes": "Rapid review using adapted systematic methods found only FOUR studies estimating RSV R0, spanning 0.92 (95% CI 0.92-1.0) to 3.0 (range 1.5-4.0). LOW WEIGHT, GREY LITERATURE: its value is as evidence that no proper meta-analysis of RSV R0 exists and the evidence base is four studies wide, not as an independent estimate."
+                }
+              ]
+            },
+
+            "incubation_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 2,
+                "max": 8,
+                "typical": 5,
+                "notes": "Consensus reflects generalized estimates for multiple countries."
+              },
+
+              "estimates": [
+                {
+                  "value": 4.4,
+                  "range": "N/A",
+                  "population": "General, pooled across studies",
+                  "source_type": "systematic_review",
+                  "title": "Incubation periods of acute respiratory viral infections: a systematic review",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+                  "doi": "10.1016/S1473-3099(09)70069-6",
+                  "country": "N/A",
+                  "year": 2009,
+                  "notes": "Lessler et al. screened 436 articles across nine respiratory viruses and pooled 38 with usable data, fitting log-normal distributions; the RSV pooled mean is 4.4 days. The reference estimate for this field, and the authors stress using the full distribution rather than the central value — right tail for quarantine policy, centre for source attribution."
+                },
+
+                {
+                  "value": 5,
+                  "range": [2, 8],
+                  "population": "General, clinical reference",
+                  "source_type": "review_article",
+                  "title": "Respiratory Syncytial Virus Infections in Neonates: A Persisting Problem",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10860331/",
+                  "doi": "10.5005/jp-journals-11002-0073",
+                  "country": "Multiple",
+                  "year": 2024,
+                  "notes": "States an incubation period of 4-6 days with a range of 2-8; value shown is the midpoint of the typical window. Consistent with the pooled estimate above and with adult challenge-model protocols, which use the same 4-5 day centre and 2-8 day span."
+                },
+
+                {
+                  "value": 5,
+                  "range": [2, 8],
+                  "population": "General",
+                  "source_type": "government_report",
+                  "title": "Respiratory syncytial virus",
+                  "url": "https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
+                  "doi": "N/A",
+                  "country": "Singapore",
+                  "year": 2025,
+                  "notes": "Singapore CDA professional guidance gives a typical incubation of 5 days ranging from 2 to 8, matching the clinical reference entry exactly and sitting close to the 4.4-day pooled estimate. TERTIARY RESTATEMENT, not independent evidence — retained because national agency guidance is what contact-tracing and exclusion policy is actually written against."
+                }
+              ]
+            },
+
+            "infectious_days": {
+              "unit": "days",
+              "consensus": {
+                "min": 3.4,
+                "max": 18,
+                "typical": 11.2,
+                "notes": "STRONGLY AGE-STRATIFIED, and this is the dominant source of spread rather than measurement error: shedding runs about 18 days in infants against 9 days in adults, and 13.5 days in symptomatic against 7.8 in asymptomatic episodes. Sampling intensity and detection method also drive the estimate — infrequent symptom-triggered sampling and culture give short durations, frequent PCR surveillance gives long ones — so a single scalar here will misrepresent whichever age group the model cares about."
+              },
+
+              "estimates": [
+                {
+                  "value": 6.5,
+                  "range": [4, 10],
+                  "population": "General, practical transmissibility window",
+                  "source_type": "government_report",
+                  "title": "Respiratory syncytial virus",
+                  "url": "https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
+                  "doi": "N/A",
+                  "country": "Singapore",
+                  "year": 2025,
+                  "notes": "Singapore CDA gives an infectious period of 1-2 days before symptom onset to 3-8 days after; value and range are the derived total window width (4 to 10 days, midpoint 6.5), NOT published figures. CONFIRMS PRESYMPTOMATIC TRANSMISSION and is far shorter than the 11.2-day PCR shedding estimate because agency guidance is written around practical transmissibility and exclusion policy rather than detectable virus."
+                },
+
+                {
+                  "value": 6.5,
+                  "range": [4, 10],
+                  "population": "General, practical contagious window",
+                  "source_type": "government_report",
+                  "title": "How RSV Spreads",
+                  "url": "https://www.cdc.gov/rsv/causes/index.html",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2026,
+                  "notes": "CDC states people are usually contagious for 3 to 8 days and may become contagious a day or two before symptoms appear; value and range are the derived total window (4-10 days, midpoint 6.5), NOT published figures. LONG RIGHT TAIL OMITTED FROM THE RANGE: some infants and immunocompromised people shed for 4 weeks or longer after symptoms resolve, which is the mechanism behind the prolonged shedders carrying ~30% of cumulative shedding days in the Kenya cohort."
+                }
+              ]
+            },
+##double check following
+            "fatality_rate": {
+              "unit": "percentage",
+              "consensus": {
+                "min": 0.0,
+                "max": 4,
+                "typical": 0.31,
+                "notes": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%, per hospital admission about 0.73%, and 3-4% among hospitalized infants with underlying heart or lung disease, while healthy adults essentially never die of RSV. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.31,
+                  "range": "N/A",
+                  "metric": "CFR per LRTI episode",
+                  "population": "Children 0-60 months, global, 2019",
+                  "source_type": "systematic_review",
+                  "title": "Global, regional, and national disease burden estimates of acute lower respiratory infections due to respiratory syncytial virus in children younger than 5 years in 2019: a systematic analysis",
+                  "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
+                  "doi": "10.1016/S0140-6736(22)00478-0",
+                  "country": "Multiple",
+                  "year": 2022,
+                  "notes": "Li et al. estimated 33.0 million (UR 25.4-44.6 million) RSV-associated ALRI episodes and 101,400 RSV-attributable deaths globally, giving roughly 0.31% deaths per episode, with RSV behind 1 in 50 deaths in children under 5 and 1 in 28 in those under 6 months. DENOMINATOR IS LRTI EPISODES, not all infections, so this sits well above a true infection fatality rate."
+                },
+
+                {
+                  "value": 0.73,
+                  "range": "N/A",
+                  "metric": "In-hospital CFR",
+                  "population": "Children 0-60 months admitted with RSV ALRI, global, 2019",
+                  "source_type": "systematic_review",
+                  "title": "Global, regional, and national disease burden estimates of acute lower respiratory infections due to respiratory syncytial virus in children younger than 5 years in 2019: a systematic analysis",
+                  "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
+                  "doi": "10.1016/S0140-6736(22)00478-0",
+                  "country": "Multiple",
+                  "year": 2022,
+                  "notes": "Same study: 26,300 in-hospital deaths among 3.6 million admissions, about 0.73%. BIAS RUNS THE UNUSUAL WAY — for every in-hospital death there are roughly three community deaths, so hospital-based CFRs understate total RSV mortality wherever access to care is poor, the reverse of the usual severity-selection effect."
+                },
+
+                {
+                  "value": 0.0,
+                  "range": "N/A",
+                  "metric": "CFR",
+                  "population": "Healthy term infants, first year of life, US",
+                  "source_type": "modeling_study",
+                  "title": "Respiratory Syncytial Virus Prevalence and Risk Factors among Healthy Term Infants, United States",
+                  "url": "https://wwwnc.cdc.gov/eid/article/30/10/24-0609_article",
+                  "doi": "10.3201/eid3010.240609",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Population-based birth cohort of 1,680 healthy term infants across two seasons: 53.4% infected in the first year, 2.8% of infected infants hospitalized, and no deaths. A CEILING STATEMENT, NOT A RATE — the cohort cannot resolve a fatality rate this low, but it bounds risk for healthy term infants with access to care and anchors the bottom of the consensus band."
+                }
+              ]
+            },
+
+            "average_contacts_daily": {
+              "unit": "contacts/day",
+              "consensus": {
+                "min": 7.95,
+                "max": 19.77,
+                "typical": 13.4,
+                "notes": "APPLICABLE HERE, unlike the dengue entry: RSV spreads person to person by respiratory secretions and close contact, so a measured human contact rate is the right object. Two cautions — contacts are strongly age-assortative and children drive RSV transmission, so an unstratified mean is the wrong input for an age-structured model, and raw counts ignore contact duration and intensity, which the POLYMOD authors themselves flag as a limit on using contact rates alone."
+              },
+
+              "estimates": [
+                {
+                  "value": 13.4,
+                  "range": [7.95, 19.77],
+                  "population": "General population, eight European countries",
+                  "source_type": "modeling_study",
+                  "title": "Social Contacts and Mixing Patterns Relevant to the Spread of Infectious Diseases",
+                  "url": "https://journals.plos.org/plosmedicine/article?id=10.1371%2Fjournal.pmed.0050074",
+                  "doi": "10.1371/journal.pmed.0050074",
+                  "country": "Multiple (Europe)",
+                  "year": 2008,
+                  "notes": "POLYMOD: 7,290 diary participants recorded 97,904 contacts, mean 13.4 per person per day; range shown is the span of country means (Germany 7.95, Italy 19.77), NOT a confidence interval. A contact is skin-to-skin touch or a face-to-face conversation of three or more words within two metres, so the figure is definition-bound and only comparable to surveys using the same definition."
+                },
+
+                {
+                  "value": 8.1,
+                  "range": "N/A",
+                  "population": "General population, Hong Kong",
+                  "source_type": "modeling_study",
+                  "title": "Social contact patterns relevant to the spread of respiratory infectious diseases in Hong Kong",
+                  "url": "https://www.nature.com/articles/s41598-017-08241-1",
+                  "doi": "10.1038/s41598-017-08241-1",
+                  "country": "Hong Kong",
+                  "year": 2017,
+                  "notes": "POLYMOD-design diary survey recorded 8.1 contacts per person per day, against 13.4 in Europe and 18.0 in an earlier Hong Kong survey using a different instrument. DO NOT TRANSPORT BETWEEN SETTINGS: a better than two-fold spread across surveys sharing a contact definition, and a wider one across instruments, bounds how much a borrowed contact rate can be trusted."
+                }
+              ]
+            },
+
+            "immunity_duration": {
+              "unit": "days",
+              "consensus": {
+                "min": 60,
+                "max": 730,
+                "typical": 240,
+                "notes": "SHORT, PARTIAL AND NEVER STERILIZING — reinfection throughout life is the norm for RSV, including within a single season, and repeat infection does not require antigenic change. Immunity attenuates severity more than it prevents infection, so the correct model structure returns people to a reduced-severity susceptible state rather than holding them in a recovered compartment; no correlate of protection is established, so every value here is an interval between detected infections rather than a measured protection duration."
+              },
+
+              "estimates": [
+                {
+                  "value": 60,
+                  "range": [60, 240],
+                  "population": "Adults rechallenged with homologous strain group",
+                  "source_type": "modeling_study",
+                  "title": "Immunity to and frequency of reinfection with respiratory syncytial virus",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/2010624/",
+                  "doi": "10.1093/infdis/163.4.693",
+                  "country": "United States",
+                  "year": 1991,
+                  "notes": "Hall et al. challenged 15 adults with prior natural infection using the same strain group at 2, 4, 8, 14, 20 and 26 months: about half were reinfected by 2 months and two-thirds by 8 months, every challenge infected at least a quarter of subjects, and within 26 months 73% had two or more infections. The strongest direct evidence in this parameter, but n=15, so treat the timeline as well-demonstrated and the proportions as imprecise."
+                },
+
+                {
+                  "value": 90,
+                  "range": "N/A",
+                  "population": "Birth cohort, post-primary-infection antibody kinetics",
+                  "source_type": "modeling_study",
+                  "title": "Kinetics of the Neutralizing Antibody Response to Respiratory Syncytial Virus Infections in a Birth Cohort",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3798117/",
+                  "doi": "N/A",
+                  "country": "Kenya",
+                  "year": 2013,
+                  "notes": "Neutralizing antibody declined to pre-infection levels within roughly 3 months of primary infection, which the authors offer as a mechanism for rapid repeat infection. IMMUNOLOGICAL MARKER, NOT PROTECTION: no correlate of protection exists for RSV, so this is a floor on detectable humoral response rather than a duration of immunity."
+                },
+
+                {
+                  "value": 460,
+                  "range": [324, 812],
+                  "population": "Children with hospital-attended RSV reinfection",
+                  "source_type": "modeling_study",
+                  "title": "Respiratory Syncytial Virus Reinfections in Children in Western Australia",
+                  "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10747877/",
+                  "doi": "10.3390/v15122417",
+                  "country": "Australia",
+                  "year": 2023,
+                  "notes": "Median interval between RSV detections was 460 days (IQR 324-812), with reinfection most common in children whose first detection was before 6 months of age. ASCERTAINMENT-LIMITED: only reinfections severe enough to reach care are counted, so this measures the gap between detected episodes and is an overestimate of the interval between infections."
+                }
+              ]
+            },
+
+            "asymptomatic_fraction": {
+              "unit": "fraction",
+              "consensus": {
+                "min": 0.26,
+                "max": 0.70,
+                "typical": 0.55,
+                "notes": "Driven by age and by surveillance intensity rather than by genuine disagreement: infants are the most symptomatic group and give the lowest fractions, while cohorts sampling on a fixed schedule regardless of symptoms find far more silent infection than clinic-based or symptom-triggered designs. Detection method compounds this, since serology-only ascertainment counts both truly silent infection and illness the surveillance missed, so the definition of asymptomatic should be recorded alongside any value used."
+              },
+
+              "estimates": [
+                {
+                  "value": 0.67,
+                  "range": "N/A",
+                  "population": "All ages, rural and urban household cohort",
+                  "source_type": "modeling_study",
+                  "title": "Incidence and transmission of respiratory syncytial virus in urban and rural South Africa, 2017-2018",
+                  "url": "https://www.nature.com/articles/s41467-023-44275-y",
+                  "doi": "10.1038/s41467-023-44275-y",
+                  "country": "South Africa",
+                  "year": 2023,
+                  "notes": "PHIRST cohort sampled regardless of symptoms: 32% of individuals had at least one infection, 33% of 396 infections were symptomatic, and only 2% sought care, giving an asymptomatic fraction near 0.67. Symptom-independent sampling is why this runs well above clinic-based estimates, and 10% of infected individuals had a repeat infection within the same season."
+                },
+
+                {
+                  "value": 0.26,
+                  "range": "N/A",
+                  "population": "Healthy term infants, weekly surveillance birth cohort",
+                  "source_type": "modeling_study",
+                  "title": "Epidemiology of RSV infections in a birth cohort of healthy children, PREVAIL Cohort 2017-2020",
+                  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11777740/",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Of 91 PCR-identified infections under weekly surveillance, 24 (26%) were asymptomatic, 24% symptomatic but not medically attended and 50% medically attended. LOWEST ANCHOR AND AGE-SPECIFIC: infants are the most symptomatic age group, so this should not be generalized past the first two years of life."
+                },
+
+                {
+                  "value": 0.639,
+                  "range": "N/A",
+                  "population": "Healthy term infants, first year of life, serology-ascertained",
+                  "source_type": "modeling_study",
+                  "title": "Respiratory Syncytial Virus Prevalence and Risk Factors among Healthy Term Infants, United States",
+                  "url": "https://wwwnc.cdc.gov/eid/article/30/10/24-0609_article",
+                  "doi": "10.3201/eid3010.240609",
+                  "country": "United States",
+                  "year": 2024,
+                  "notes": "Among 1,680 healthy term infants, 53.4% were infected in the first year and 63.9% of infections were found by year-end serology alone rather than by symptom-triggered active surveillance. NOT STRICTLY ASYMPTOMATIC: serology-only detection also captures illness the surveillance missed, so this is an upper bound for an age group whose PCR-surveillance counterpart above gave 0.26."
+                }
+              ]
+            }
+          }
         }
+
       }
 
 
@@ -4124,31 +4492,6 @@
 
 
 
-
-  "rsv": {
-    "aliases": ["respiratory syncytial virus", "respiratory syncytial virus infection"],
-    "r0":{
-      "min": 1.2,
-      "max": 9.0,
-      "typical": 3.0,
-      "note": "Strong seasonality; high burden in infants.",
-      "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133"
-    },
-
-    "incubation_days":{
-      "min": 2,
-      "max": 8,
-      "typical": 5,
-      "source": "https://cdphe.colorado.gov/child-care-school-settings/rsv"
-    },
-
-    "infectious_days":{
-      "min": 3,
-      "max": 28,
-      "typical": 6,
-      "source": "https://www.cdc.gov/rsv/causes/index.html"
-    }
-  },
 
   "cholera": {
     "aliases": ["vibrio cholerae"],
