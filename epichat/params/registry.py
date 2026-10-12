@@ -78,7 +78,7 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("disease.beta", "disease", "Transmission rate", "Per-contact transmission rate per year; the configure tool sets it from R0. "
               "Starsim turns it into a daily probability 1 - exp(-beta / 365).", "number", "per year", 22.8125, (0.001, 1000.0), None, (),
               "advanced", None, "disease.pars.beta = ss.peryear(beta)", ("peak", "final_size")),
-    *_duration("dur_exp", "Latent period", LATENT_MODELS, None, (0.1, 60.0), (0.01, 120.0), "incubation_days", "ss.SEIR(dur_exp=...)", ("timing",),
+    *_duration("dur_exp", "Latent period", LATENT_MODELS, None, (0.1, 1000.0), (0.01, 2000.0), "incubation_days", "ss.SEIR(dur_exp=...)", ("timing",),
                "Days between infection and becoming infectious. Required for seir, seirs and seiar; the database incubation period is the usual source."),
     *_duration("dur_inf", "Infectious period", (), 10.0, (0.5, 365.0), (0.01, 730.0), "infectious_days", "ss.SIR(dur_inf=...)", ("peak", "final_size", "timing"),
                "Days an infected person transmits. The database infectious period is the usual source."),

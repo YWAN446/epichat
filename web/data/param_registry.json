@@ -66,7 +66,7 @@
    "default": null,
    "bounds": [
     0.1,
-    60.0
+    1000.0
    ],
    "choices": null,
    "models": [
@@ -121,7 +121,7 @@
    "default": null,
    "bounds": [
     0.01,
-    120.0
+    2000.0
    ],
    "choices": null,
    "models": [

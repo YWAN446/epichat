@@ -79,3 +79,19 @@ def test_export_is_a_plain_json_document_in_registry_order():
     first = out["params"][0]
     assert set(first) == {"path", "module", "label", "description", "kind", "unit", "default", "bounds", "choices", "models", "tier", "db_field", "starsim_target", "affects", "requires"}
     assert first["choices"] == list(reg.MODELS) and first["models"] == []
+
+
+def test_registry_bounds_admit_every_database_consensus_value():
+    """A disease the database describes must be configurable from its own numbers (tuberculosis
+    incubates 14 to 730 days)."""
+    db = json.loads((ROOT / "epichat" / "data" / "disease_parameters.json").read_text(encoding="utf-8"))
+    checks = {"incubation_days": "disease.dur_exp.mean_days", "infectious_days": "disease.dur_inf.mean_days",
+              "immunity_duration": "disease.dur_immune.mean_days"}
+    for name, entry in db["diseases"].items():
+        for field, path in checks.items():
+            consensus = (entry.get("parameters", {}).get(field) or {}).get("consensus") or {}
+            lo, hi = reg.spec_for(path).bounds
+            for key in ("min", "max", "typical"):
+                value = consensus.get(key)
+                if value is not None:
+                    assert lo <= value <= hi, (name, field, key, value, (lo, hi))

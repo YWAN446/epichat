@@ -547,6 +547,12 @@ Rulings for the phases 1 and 2 plan:
   the 7.3 sd; a later change to its mean keeps the distribution and
   recomputes the sd by the same rule; `constant` stays constant. Migrated
   durations are constant and stay so.
+- **`disease.dur_exp.mean_days` ranges 0.1 to 1000 days** (its sd 0.01 to 2000),
+  not the 60 days of 7.2: the database's tuberculosis incubation range reaches
+  730 days, and a bound below the database locks a disease out.
+- **`replicates` in the service answer are population-scaled** like `stats` and
+  the series (the per-replicate stats and the bands), so the model reads one
+  unit; `recalibrate_beta` reads a changed beta on the network it was set on.
 - **`beta` keeps the v1 unit and bounds** (`0.001` to `1000` per year). The
   TypeScript `SimParams` type becomes the v2 shape and `validateParams`
   accepts v1 or v2, migrating v1, so every stored row reads as v2.
