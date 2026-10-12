@@ -3,8 +3,9 @@ and on failure ask the model to repair the parameters, up to the configured
 number of times.
 
 Runner and Repairer are injected so the loop is tested without Starsim or the
-model. A timed-out attempt is final. Scaling and thinning are not done here;
-main.py applies them to the raw outcome."""
+model. Parameters are schema v2 throughout (main.py coerces a v1 body first).
+A timed-out attempt is final. The child computes the stats from the full
+series; scaling and thinning are not done here, main.py applies them."""
 from __future__ import annotations
 
 import tempfile
@@ -13,29 +14,29 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from epichat.generator import resolve_demographics
-from epichat.schema import SimParams
+from epichat.params.paths import diff as diff_paths
+from epichat.params.resolve import resolve_demographics
+from epichat.params.schema_v2 import SimParamsV2
 from runner import RunResult, run_params
-from series import stats_from
 from settings import Settings
 
 if TYPE_CHECKING:  # the Anthropic SDK is imported only when a repair actually happens
-    from epichat.parser import RepairResult
+    from epichat.params.repair import RepairResult
 
-Runner = Callable[[SimParams, Path, float], RunResult]
-Repairer = Callable[[str, SimParams, str, str], "RepairResult"]
-
-
-def agent_years(params: SimParams) -> float:
-    return params.n_agents * params.sim_dur_years
+Runner = Callable[[SimParamsV2, Path, float], RunResult]
+Repairer = Callable[[str, SimParamsV2, str, str], "RepairResult"]
 
 
-def exceeds_cap(params: SimParams, settings: Settings) -> bool:
+def agent_years(params: SimParamsV2) -> float:
+    return params.run.n_agents * params.run.sim_dur_years * params.run.n_replicates
+
+
+def exceeds_cap(params: SimParamsV2, settings: Settings) -> bool:
     return agent_years(params) > settings.max_agent_years
 
 
 def _default_repairer() -> Repairer:
-    from epichat.parser import repair_params
+    from epichat.params.repair import repair_params
     return repair_params
 
 
@@ -43,25 +44,26 @@ def _default_repairer() -> Repairer:
 class Outcome:
     ok: bool
     status: int
-    effective_params: SimParams
+    effective_params: SimParamsV2
     stats: dict = field(default_factory=dict)
     series: dict = field(default_factory=dict)
     repairs: list[dict] = field(default_factory=list)
     attempts: int = 0
     error: str | None = None
     timed_out: bool = False
+    replicates: dict | None = None
 
 
-def diff_params(before: SimParams, after: SimParams) -> list[dict]:
-    old, new = before.model_dump(), after.model_dump()
-    return [{"field": key, "from": old[key], "to": new[key]} for key in old if old[key] != new[key]]
+def diff_params(before: SimParamsV2, after: SimParamsV2) -> list[dict]:
+    """Changes by dotted v2 path, for the repair record."""
+    return diff_paths(before.model_dump(), after.model_dump())
 
 
 def _output_path() -> Path:
     return Path(tempfile.gettempdir()) / f"epichat-{uuid.uuid4().hex}.json"
 
 
-def simulate(params: SimParams, context_text: str, settings: Settings,
+def simulate(params: SimParamsV2, context_text: str, settings: Settings,
              run: Runner = run_params, repair: Repairer | None = None) -> Outcome:
     params = resolve_demographics(params)
     repairs: list[dict] = []
@@ -73,8 +75,8 @@ def simulate(params: SimParams, context_text: str, settings: Settings,
         output_path = _output_path()
         result = run(params, output_path, settings.timeout_seconds)
         if result.ok:
-            return Outcome(True, 200, params, stats=stats_from(result.series, params.n_agents),
-                           series=result.series, repairs=repairs, attempts=attempts)
+            return Outcome(True, 200, params, stats=result.stats, series=result.series, replicates=result.replicates,
+                           repairs=repairs, attempts=attempts)
         last_error = result.error or "unknown execution error"
         if result.timed_out:
             return Outcome(False, 504, params, repairs=repairs, attempts=attempts,
@@ -90,7 +92,7 @@ def simulate(params: SimParams, context_text: str, settings: Settings,
         if exceeds_cap(repaired.params, settings):
             repairs.append({"attempt": attempts, "error": last_error,
                             "repair_error": (f"repaired params exceed the cap of {settings.max_agent_years:,.0f} "
-                                             f"agent-years ({agent_years(repaired.params):,.0f})")})
+                                             f"agent-years (n_agents × sim_dur_years × n_replicates = {agent_years(repaired.params):,.0f})")})
             return Outcome(False, 500, params, repairs=repairs, attempts=attempts, error=last_error)
         after = resolve_demographics(repaired.params)   # diff what will actually run, not the model's raw echo
         repairs.append({

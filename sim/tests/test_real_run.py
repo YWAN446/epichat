@@ -34,7 +34,7 @@ def test_real_run_returns_consistent_stats_and_series(client, params, expected_e
     assert r.status_code == 200, r.text
     body = r.json()
     series = body["series"]
-    base_keys = {"day", "n_susceptible", "n_infected", "n_recovered", "new_infections", "cum_infections",
+    base_keys = {"day", "n_susceptible", "n_infectious", "n_infected", "n_recovered", "new_infections", "cum_infections",
                  "new_deaths", "cum_deaths"}
     assert set(series) == base_keys | expected_extra
     lengths = {len(v) for v in series.values()}
@@ -44,7 +44,7 @@ def test_real_run_returns_consistent_stats_and_series(client, params, expected_e
     assert body["stats_agents"]["total_infected"] == round(series["cum_infections"][-1])
     assert body["stats"] == body["stats_agents"]
     assert body["repairs"] == [] and body["attempts"] == 1
-    assert body["effective_params"]["rand_seed"] == 1
+    assert body["effective_params"]["run"]["rand_seed"] == 1 and body["effective_params"]["schema_version"] == 2
     assert body["duration_ms"] > 0
 
 
@@ -64,13 +64,19 @@ def test_same_seed_is_deterministic(client):
     assert a["stats_agents"] == b["stats_agents"]
 
 
-def test_deaths_count_only_the_disease(client):
+def test_demographics_add_the_all_causes_deaths_and_keep_disease_deaths_apart(client):
     """Background mortality (ss.Deaths) is not a disease outcome: with p_death 0 the
-    death series and the total stay at zero however many agents die of other causes."""
+    death series and the total stay at zero; the all-causes pair carries the rest (spec 8.6)."""
     params = _params(use_demographics=True, birth_rate=20.0, death_rate=500.0, p_death=0.0)
-    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
-    assert r.status_code == 200, r.text
-    body = r.json()
-    assert body["stats"]["total_deaths"] == 0
-    assert body["series"]["cum_deaths"][-1] == 0
+    body = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH).json()
+    assert body["stats"]["total_deaths"] == 0 and body["series"]["cum_deaths"][-1] == 0
     assert max(body["series"]["new_deaths"]) == 0
+    assert body["series"]["cum_deaths_all"][-1] > 0
+
+
+def test_two_replicates_run_for_real(client):
+    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"beta": 0.05}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 2}}, "pop_scale": 1}, headers=AUTH).json()
+    rep = body["replicates"]
+    assert rep["seeds"] == [1, 2] and len(rep["stats"]) == 2 and rep["representative"] in (1, 2)
+    assert len(rep["bands"]["cum_infections"]["p90"]) == len(body["series"]["day"]) == 31
+    assert body["stats"]["total_infected"] == min(s["total_infected"] for s in rep["stats"])

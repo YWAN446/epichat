@@ -1,10 +1,12 @@
 """EpiChat simulation service.
 
-Private FastAPI app: validates SimParams, runs Starsim through the package's
+Private FastAPI app: accepts parameters in the v1 flat shape or schema v2
+(a v1 body is migrated before validation), runs Starsim through the package's
 builder in a child process (`python -m epichat.sim.run_params`), repairs
-parameters with the model when a run fails, and returns stats and series.
-Reachable from the web app only through the Vercel service binding plus a
-shared secret.
+parameters with the model when a run fails, and returns v2 effective
+parameters, stats, series and, for more than one replicate, the replicate
+block. Reachable from the web app only through the Vercel service binding
+plus a shared secret.
 """
 from __future__ import annotations
 
@@ -30,11 +32,11 @@ from importlib.metadata import version as _package_version  # noqa: E402
 from fastapi import Depends, FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.exceptions import RequestValidationError  # noqa: E402
 from fastapi.responses import JSONResponse, Response  # noqa: E402
-from pydantic import BaseModel, Field  # noqa: E402
+from pydantic import BaseModel, Field, ValidationError  # noqa: E402
 
 from epichat.data_loaders.demographics import get_demographics_for_sim  # noqa: E402
-from epichat.schema import SimParams  # noqa: E402
-from series import scaled_outcome, thin  # noqa: E402
+from epichat.params.migrate import coerce_params  # noqa: E402
+from series import scaled_outcome, thin, thin_bands  # noqa: E402
 from service import agent_years, exceeds_cap, simulate  # noqa: E402
 from settings import Settings, load_settings  # noqa: E402
 import report_render as render  # noqa: E402
@@ -48,7 +50,7 @@ _state = {"served": False}
 
 
 class SimulateRequest(BaseModel):
-    params: SimParams
+    params: dict                                     # v1 flat or schema v2; coerced in the route
     pop_scale: float = Field(default=1.0, ge=1.0, le=1e9)
     context_text: str = Field(default="", max_length=6000)
 
@@ -69,12 +71,15 @@ async def _http_error(_: Request, exc: HTTPException) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"ok": False, "error": detail})
 
 
+def _validation_detail(errors: list[dict], prefix: tuple[str, ...] = ()) -> list[dict]:
+    # pydantic's error objects can carry non-serializable ctx values; copy only what the client needs
+    return [{"loc": [*prefix, *[str(p) for p in e.get("loc", [])]], "msg": e.get("msg", ""), "type": e.get("type", "")}
+            for e in errors]
+
+
 @app.exception_handler(RequestValidationError)
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-    # pydantic's error objects can carry non-serializable ctx values; copy only what the client needs
-    detail = [{"loc": [str(p) for p in e.get("loc", [])], "msg": e.get("msg", ""), "type": e.get("type", "")}
-              for e in exc.errors()]
-    return _error(422, "invalid_params", detail=detail)
+    return _error(422, "invalid_params", detail=_validation_detail(exc.errors()))
 
 
 def require_bearer(request: Request) -> Settings:
@@ -96,17 +101,21 @@ def health() -> dict:
 
 @app.post("/simulate")
 def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_bearer)):
-    if exceeds_cap(body.params, settings):
-        requested = agent_years(body.params)
+    try:
+        params = coerce_params(body.params)
+    except ValidationError as exc:
+        return _error(422, "invalid_params", detail=_validation_detail(exc.errors(), ("params",)))
+    if exceeds_cap(params, settings):
+        requested = agent_years(params)
         return _error(
             422, "too_large",
-            detail=(f"n_agents × sim_dur_years = {requested:,.0f} exceeds the cap of "
-                    f"{settings.max_agent_years:,.0f} agent-years; reduce n_agents or sim_dur_years"),
+            detail=(f"n_agents × sim_dur_years × n_replicates = {requested:,.0f} exceeds the cap of "
+                    f"{settings.max_agent_years:,.0f} agent-years; reduce n_agents, sim_dur_years or n_replicates"),
             agent_years=requested, cap=settings.max_agent_years,
         )
     cold_start = not _state["served"]
     started = time.perf_counter()
-    outcome = simulate(body.params, body.context_text, settings)
+    outcome = simulate(params, body.context_text, settings)
     _state["served"] = True
     duration_ms = int((time.perf_counter() - started) * 1000)
 
@@ -118,13 +127,19 @@ def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_b
                       repairs=outcome.repairs, attempts=outcome.attempts)
 
     stats, series = scaled_outcome(outcome.stats, outcome.series, body.pop_scale)
+    replicates = None
+    if outcome.replicates:
+        # Agent units, like stats_agents; the bands are thinned on the same stride as the series.
+        replicates = dict(outcome.replicates)
+        replicates["bands"] = thin_bands(replicates.get("bands", {}), outcome.series["day"], settings.series_max_points)
     return {
         "ok": True,
-        "effective_params": outcome.effective_params.model_dump(),
-        "population": int(round(outcome.effective_params.n_agents * body.pop_scale)),
+        "effective_params": outcome.effective_params.model_dump(mode="json"),
+        "population": int(round(outcome.effective_params.run.n_agents * body.pop_scale)),
         "stats": stats,
         "stats_agents": outcome.stats,
         "series": thin(series, settings.series_max_points),
+        "replicates": replicates,
         "pop_scale": body.pop_scale,
         "repairs": outcome.repairs,
         "attempts": outcome.attempts,

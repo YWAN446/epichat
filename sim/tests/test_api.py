@@ -3,12 +3,15 @@ import importlib
 import pytest
 from fastapi.testclient import TestClient
 
-from epichat.schema import SimParams
+from epichat.params.migrate import coerce_params
+from epichat.params.schema_v2 import SimParamsV2
 from service import Outcome
 
-GOOD_SERIES = {"day": list(range(5)), "n_infected": [1.0, 4.0, 3.0, 2.0, 1.0],
+GOOD_SERIES = {"day": list(range(5)), "n_infectious": [1.0, 4.0, 3.0, 2.0, 1.0], "n_infected": [1.0, 4.0, 3.0, 2.0, 1.0],
                "cum_infections": [1.0, 5.0, 8.0, 10.0, 11.0], "cum_deaths": [0.0, 0.0, 0.0, 1.0, 1.0]}
+GOOD_STATS = {"peak_infections": 4, "peak_day": 1, "total_infected": 11, "total_deaths": 1, "n_agents": 1000, "sim_days": 5, "seeds_day0": 1}
 PARAMS = {"disease_type": "sir", "beta": 0.05, "n_agents": 1000, "sim_dur_years": 0.1, "rand_seed": 1}
+V2 = {"schema_version": 2, "disease": {"beta": 0.05}, "run": {"n_agents": 1000, "sim_dur_years": 0.1, "rand_seed": 1}}
 AUTH = {"Authorization": "Bearer test"}
 
 
@@ -36,9 +39,8 @@ def _fake_simulate(outcome: Outcome):
     return fake
 
 
-def _success(params: SimParams) -> Outcome:
-    from series import stats_from
-    return Outcome(True, 200, params, stats=stats_from(GOOD_SERIES, params.n_agents), series=GOOD_SERIES, attempts=1)
+def _success(params: SimParamsV2) -> Outcome:
+    return Outcome(True, 200, params, stats={**GOOD_STATS, "n_agents": params.run.n_agents}, series=GOOD_SERIES, attempts=1)
 
 
 def test_health_needs_no_bearer_and_reports_versions(client):
@@ -87,11 +89,11 @@ def test_too_large_is_422_naming_the_cap(client, monkeypatch, main):
     assert r.status_code == 422
     err = r.json()["error"]
     assert err["kind"] == "too_large" and err["cap"] == 1000 and err["agent_years"] == 2000
-    assert "reduce n_agents or sim_dur_years" in err["detail"]
+    assert "reduce n_agents, sim_dur_years or n_replicates" in err["detail"]
 
 
 def test_success_scales_thins_and_flips_cold_start(client, main, monkeypatch):
-    params = SimParams(**PARAMS)
+    params = coerce_params(PARAMS)
     fake = _fake_simulate(_success(params))
     monkeypatch.setattr(main, "simulate", fake)
     monkeypatch.setenv("SIM_SERIES_MAX_POINTS", "3")
@@ -103,7 +105,7 @@ def test_success_scales_thins_and_flips_cold_start(client, main, monkeypatch):
     assert body["stats_agents"]["total_infected"] == 11 and body["stats"]["total_infected"] == 1100
     assert body["stats"]["peak_day"] == 1 and body["stats"]["sim_days"] == 5
     assert body["series"]["day"] == [0, 2, 4] and body["series"]["cum_infections"] == [100, 800, 1100]
-    assert body["effective_params"]["n_agents"] == 1000 and body["repairs"] == []
+    assert body["effective_params"]["run"]["n_agents"] == 1000 and body["repairs"] == [] and body["replicates"] is None
     assert body["starsim_version"] == "3.7.2" and body["duration_ms"] >= 0
     assert fake.calls[0][1] == "hi"
     assert client.get("/health").json()["cold_start"] is False
@@ -112,7 +114,7 @@ def test_success_scales_thins_and_flips_cold_start(client, main, monkeypatch):
 
 
 def test_execution_failed_and_timeout_bodies(client, main, monkeypatch):
-    params = SimParams(**PARAMS)
+    params = coerce_params(PARAMS)
     repairs = [{"attempt": 1, "error": "e1", "changes": [], "usage": {"model": "m", "input_tokens": 1, "output_tokens": 1}}]
     monkeypatch.setattr(main, "simulate", _fake_simulate(Outcome(False, 500, params, repairs=repairs, attempts=2, error="e2")))
     r = client.post("/simulate", json={"params": PARAMS}, headers=AUTH)
@@ -122,6 +124,43 @@ def test_execution_failed_and_timeout_bodies(client, main, monkeypatch):
     r = client.post("/simulate", json={"params": PARAMS}, headers=AUTH)
     assert r.status_code == 504
     assert r.json() == {"ok": False, "error": {"kind": "timeout", "seconds": 120, "repairs": [], "attempts": 1}}
+
+
+def test_v2_body_is_accepted_and_the_answer_is_v2(client, main, monkeypatch):
+    params = coerce_params(V2)
+    fake = _fake_simulate(_success(params))
+    monkeypatch.setattr(main, "simulate", fake)
+    r = client.post("/simulate", json={"params": V2}, headers=AUTH)
+    assert r.status_code == 200 and r.json()["effective_params"]["schema_version"] == 2
+    assert fake.calls[0][0] == params
+    r2 = client.post("/simulate", json={"params": PARAMS}, headers=AUTH)
+    assert r2.json()["effective_params"]["disease"]["model"] == "sir"
+
+
+def test_invalid_v2_body_names_the_path(client):
+    r = client.post("/simulate", json={"params": {**V2, "disease": {"seed": {"mode": "count", "value": 5000}}}}, headers=AUTH)
+    assert r.status_code == 422 and r.json()["error"]["kind"] == "invalid_params"
+    assert any("disease.seed.value" in e["msg"] for e in r.json()["error"]["detail"])
+    assert all(e["loc"][0] == "params" for e in r.json()["error"]["detail"])
+
+
+def test_too_large_counts_replicates(client, monkeypatch):
+    monkeypatch.setenv("SIM_MAX_AGENT_YEARS", "1000")
+    r = client.post("/simulate", json={"params": {**V2, "run": {"n_agents": 300, "sim_dur_years": 1.0, "n_replicates": 5}}}, headers=AUTH)
+    assert r.status_code == 422 and r.json()["error"]["agent_years"] == 1500
+    assert "n_replicates" in r.json()["error"]["detail"]
+
+
+def test_replicates_are_returned_in_agent_units_with_thinned_bands(client, main, monkeypatch):
+    params = coerce_params({**V2, "run": {**V2["run"], "n_replicates": 2}})
+    outcome = _success(params)
+    outcome.replicates = {"n": 2, "seeds": [1, 2], "representative": 2, "stats": [outcome.stats] * 2,
+                          "bands": {"n_infectious": {"p10": [1.0, 2.0, 3.0, 2.0, 1.0], "p90": [1.0, 4.0, 3.0, 2.0, 1.0]}, "cum_infections": {"p10": [1.0] * 5, "p90": [2.0] * 5}}}
+    monkeypatch.setattr(main, "simulate", _fake_simulate(outcome))
+    monkeypatch.setenv("SIM_SERIES_MAX_POINTS", "3")
+    body = client.post("/simulate", json={"params": PARAMS, "pop_scale": 100}, headers=AUTH).json()
+    assert body["replicates"]["n"] == 2 and body["replicates"]["stats"][0]["total_infected"] == 11      # agents, not people
+    assert body["replicates"]["bands"]["n_infectious"]["p10"] == [1.0, 3.0, 1.0]                        # thinned like the series
 
 
 def test_context_text_is_capped(client):

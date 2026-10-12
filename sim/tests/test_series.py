@@ -78,3 +78,10 @@ def test_scaled_outcome_scales_counts_only():
     assert scaled_series["day"] == [0, 1, 2]
     assert scaled_series["cum_infections"] == [0, 200, 400]
     assert scaled_outcome(stats, s, 1.0)[0] == stats
+
+
+def test_stats_from_reads_n_infectious_with_the_n_infected_fallback():
+    s = _series(31)
+    renamed = dict(s)
+    renamed["n_infectious"] = renamed.pop("n_infected")
+    assert stats_from(renamed, 500) == stats_from(s, 500)

@@ -1,10 +1,11 @@
 """Run one simulation in a child process.
 
 The child is `python -m epichat.sim.run_params <params.json> <out.json>`: it
-imports Starsim, builds the sim from the validated parameters and writes the
-result file. The parent passes its import path (so the copied package and the
-installed Starsim are found on Vercel), writable numba and matplotlib cache
-directories, and a hard timeout. stdout is ignored; stderr's tail is the error."""
+imports Starsim, builds the sim from the validated v2 parameters, runs every
+replicate and writes the result file. The parent passes its import path (so
+the copied package and the installed Starsim are found on Vercel), writable
+numba and matplotlib cache directories, and a hard timeout. stdout is
+ignored; stderr's tail is the error."""
 from __future__ import annotations
 
 import json
@@ -16,7 +17,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from epichat.schema import SimParams
+from epichat.params.schema_v2 import SimParamsV2
 
 STDERR_TAIL = 2000
 
@@ -29,6 +30,7 @@ class RunResult:
     error: str | None
     timed_out: bool
     duration_ms: int
+    replicates: dict | None = None
 
 
 def child_environment() -> dict[str, str]:
@@ -41,7 +43,7 @@ def child_environment() -> dict[str, str]:
     return env
 
 
-def run_params(params: SimParams, output_path: Path, timeout: float) -> RunResult:
+def run_params(params: SimParamsV2, output_path: Path, timeout: float) -> RunResult:
     output_path = Path(output_path)
     started = time.perf_counter()
     with tempfile.NamedTemporaryFile("w", prefix="epichat-params-", suffix=".json", delete=False, encoding="utf-8") as f:
@@ -71,6 +73,6 @@ def run_params(params: SimParams, output_path: Path, timeout: float) -> RunResul
             return RunResult(False, {}, {}, "Simulation finished but wrote no result file.", False, elapsed())
         with open(output_path, encoding="utf-8") as f:
             payload = json.load(f)
-        return RunResult(True, payload.get("stats", {}), payload.get("series", {}), None, False, elapsed())
+        return RunResult(True, payload.get("stats", {}), payload.get("series", {}), None, False, elapsed(), payload.get("replicates"))
     finally:
         output_path.unlink(missing_ok=True)
