@@ -15,6 +15,7 @@ import starsim as ss
 
 from epichat.schema import SimParams
 
+from .interventions import SimpleTreatment  # noqa: F401  (re-exported for the phase 0 tests until Task 10)
 from .models import MODELS
 
 CONTACT_MATRIX = np.array([[7.0, 2.5, 0.5], [2.5, 9.0, 1.5], [0.5, 1.5, 3.5]])
@@ -32,33 +33,6 @@ def resolve_seed(params: SimParams, seed: int | None) -> int | None:
 
 def age_groups() -> dict:
     return {"children": ss.AgeGroup(0, 18), "adults": ss.AgeGroup(18, 65), "elderly": ss.AgeGroup(65, None)}
-
-
-class SimpleTreatment(ss.Intervention):
-    """v1's _SimpleTreatment: each day from start_day, up to prob × (infectious agents),
-    capped at max_capacity, recover on the next step."""
-
-    def __init__(self, prob=1.0, max_capacity=None, start_day=0):
-        super().__init__()
-        self.prob = prob
-        self.max_capacity = max_capacity
-        self.start_day = start_day
-
-    def step(self):
-        if self.ti < self.start_day:
-            return
-        disease = self.sim.diseases[0]
-        infectious = np.asarray(disease.infectious.uids)
-        if len(infectious) == 0:
-            return
-        n = int(self.prob * len(infectious))
-        if self.max_capacity is not None:
-            n = min(n, self.max_capacity)
-        if n <= 0:
-            return
-        rng = np.random.default_rng(int(self.ti))
-        treated = ss.uids(rng.choice(infectious, size=min(n, len(infectious)), replace=False))
-        disease.ti_recovered[treated] = self.ti + 1
 
 
 def disease_kwargs(params: SimParams) -> dict:
