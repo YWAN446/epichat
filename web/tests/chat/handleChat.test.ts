@@ -13,10 +13,10 @@ import { aboutBlock, type Memory } from "@/lib/profile/about";
 import { EMPTY_PROFILE, type ProfileFields } from "@/lib/profile/schema";
 import type { ProfileStore } from "@/lib/profiles";
 import type { PreviousRun, RunInsert, RunStore } from "@/lib/db/runs";
-import type { ScenarioStore } from "@/lib/db/scenarios";
+import { scenarioFromRow, type ScenarioStore } from "@/lib/db/scenarios";
 import type { FinishTurnPayload, TurnStore } from "@/lib/db/turns";
 import type { SimClient, SimResult } from "@/lib/sim/client";
-import { emptyScenario, type Scenario } from "@/lib/tools/types";
+import { emptyScenario, type RunPayload, type Scenario } from "@/lib/tools/types";
 import type { TurnReservation, UsageDelta, UsageStore } from "@/lib/usage";
 import { makeDeps, params } from "../tools/helpers";
 import { fakeClient, fetchResult, message, searchResult, serverSearch, textBlock, toolUse, type Step } from "./helpers";
@@ -542,5 +542,59 @@ describe("handleChat", () => {
     await option.run({ conversationId: CONVERSATION, text: "Run it for two years" });
     const chosen = option.finished[0].step_events.find((e) => e.kind === "option_chosen");
     expect(chosen).toMatchObject({ tool: "configure_simulation", meta: { run_id: "run-1", diagnostic_id: "unfinished", patch: JSON.stringify({ "run.sim_dur_years": 2 }) } });
+  });
+});
+
+describe("golden flows: the sim-parameters cases of spec section 1 (evals/golden/cases/parameters.yaml, pending the API harness)", () => {
+  it("parameters-describe: 'What can I change?' lists the active model's parameters with their values and sources", async () => {
+    const scenario: Scenario = { ...configured(), params: params({ disease_type: "seir", dur_exp: 11, dur_inf: 8, beta: 253.1 }) };
+    const { run, emitted, requests, finished } = setup(
+      [{ message: message([toolUse("tu_d", "describe_parameters", {})], "tool_use") }, { message: message([textBlock("You can change…")]), text: ["You can change…"] }],
+      { history: HISTORY, scenario },
+    );
+    await run({ conversationId: CONVERSATION, text: "What can I change?" });
+    expect(emitted.map((e) => e.type)).toEqual(["tool_use", "tool_result", "text", "done"]);
+    expect(emitted[1]).toMatchObject({ type: "tool_result", ok: true, payload: { kind: "parameters", model: "seir", disease: "measles" } });
+    const toolResult = (requests[1].messages as { content: { content: string }[] }[]).at(-1)!.content[0];
+    const listed = JSON.parse(toolResult.content) as { model: string; parameters: { path: string; current: unknown; source: string }[] };
+    const byPath = Object.fromEntries(listed.parameters.map((p) => [p.path, p]));
+    expect(byPath["disease.dur_inf.mean_days"]).toMatchObject({ current: 8, source: "database" });
+    expect(byPath["disease.dur_exp.mean_days"]).toMatchObject({ current: 11, source: "user" });
+    expect(byPath["run.n_agents"]).toMatchObject({ current: 10000, source: "default" });
+    expect(byPath["disease.p_asymp"]).toBeUndefined(); // not a seir parameter
+    expect(finished[0].step_events.map((e) => [e.kind, e.tool])).toContainEqual(["tool_called", "describe_parameters"]);
+    expect(finished[0].scenario).toMatchObject({ stage: "configure" });
+  });
+
+  it("parameters-diagnostic-rerun: an early fade-out returns a diagnostic, the chosen option is recorded, and the rerun compares with the previous run", async () => {
+    const seeds = { patch: { "disease.seed.mode": "count", "disease.seed.value": 50 }, current: { "disease.seed.mode": "fraction", "disease.seed.value": 0.01 }, direction: "increase" as const, rationale: "More seeds make an early fade-out less likely: 50 instead of 10.", basis: "rule" as const };
+    const replicates = { patch: { "run.n_replicates": 5 }, current: { "run.n_replicates": 1 }, direction: "increase" as const, rationale: "Several replicates show how often the outbreak takes off at all.", basis: "rule" as const };
+    const diagnostics = [{ id: "early_fadeout", severity: "warning" as const, title: "The outbreak died out early", evidence: { r_eff: 1.2, seeds: 10, total_infected: 15, last_infectious: 0 }, levers: [seeds, replicates] }];
+    const fadedStats = { ...STATS, total_infected: 15, peak_infections: 10, peak_day: 0 };
+    const faded: SimResult = { ...SUCCESS, stats: fadedStats, stats_agents: fadedStats, diagnostics };
+
+    // Turn 1: the run comes back with the diagnostic.
+    const first = setup([{ message: RUN }, { message: message([textBlock("It died out early. Options: …")]), text: ["It died out early. Options: …"] }], { history: HISTORY, scenario: configured(), simulate: faded });
+    await first.run({ conversationId: CONVERSATION, text: "Yes, run it." });
+    expect(first.emitted[2]).toMatchObject({ type: "tool_result", payload: { kind: "run", diagnostics, compare: null } });
+    expect(first.finished[0].step_events.find((e) => e.kind === "diagnostic_shown")).toMatchObject({ meta: { run_id: "run-1", ids: "early_fadeout" } });
+    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ n_agents: 10000 }), stats: fadedStats, statsAgents: fadedStats, popScale: 1, diagnostics };
+
+    // Turn 2: the user takes the first option; the model applies the lever's patch through the seed field, not through advanced.
+    const after1 = scenarioFromRow(first.finished[0].scenario);
+    const second = setup([{ message: message([toolUse("tu_c", "configure_simulation", { seed_count: 50 })], "tool_use") }, { message: message([textBlock("Set to 50 seeds.")]) }], { history: HISTORY, scenario: after1, previous });
+    await second.run({ conversationId: CONVERSATION, text: "Take the first option and rerun." });
+    expect(second.finished[0].step_events.find((e) => e.kind === "option_chosen")).toMatchObject({ meta: { run_id: "run-1", diagnostic_id: "early_fadeout", patch: JSON.stringify(seeds.patch) } });
+    expect(second.finished[0].scenario).toMatchObject({ params: { disease: { seed: { mode: "count", value: 50 } } } });
+
+    // Turn 3: the rerun compares with the previous run.
+    const after2 = scenarioFromRow(second.finished[0].scenario);
+    const rerun: SimResult = { ...SUCCESS, effective_params: params({ schema_version: 2, disease: { seed: { mode: "count", value: 50 } } }) };
+    const third = setup([{ message: RUN }, { message: message([textBlock("Compared with the previous run…")]) }], { history: HISTORY, scenario: after2, previous, simulate: rerun });
+    await third.run({ conversationId: CONVERSATION, text: "Run it" });
+    const payload = (third.emitted[2] as { payload: RunPayload }).payload;
+    expect(payload.compare).toMatchObject({ previous_run_id: "run-1", pop_scale: { from: 1, to: 1 } });
+    expect(payload.compare?.changed).toEqual(expect.arrayContaining([{ path: "disease.seed.mode", from: "fraction", to: "count" }, { path: "disease.seed.value", from: 0.01, to: 50 }]));
+    expect(payload.compare?.stats_delta.total_infected).toBe(STATS.total_infected - 15);
   });
 });
