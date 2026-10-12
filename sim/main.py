@@ -1,9 +1,10 @@
 """EpiChat simulation service.
 
 Private FastAPI app: validates SimParams, runs Starsim through the package's
-generator and templates, repairs parameters with the model when a run fails,
-and returns stats and series. Reachable from the web app only through the
-Vercel service binding plus a shared secret.
+builder in a child process (`python -m epichat.sim.run_params`), repairs
+parameters with the model when a run fails, and returns stats and series.
+Reachable from the web app only through the Vercel service binding plus a
+shared secret.
 """
 from __future__ import annotations
 

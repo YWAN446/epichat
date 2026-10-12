@@ -1,5 +1,5 @@
 # Nothing here is needed to build or run the web or sim services.
-# epichat/ and templates/ ARE needed: the sim build copies them in.
+# epichat/ IS needed: the sim build copies it in.
 /.claude
 /.superpowers
 /.pytest_cache
@@ -17,7 +17,6 @@
 /sim/tests
 /sim/.venv
 /sim/epichat
-/sim/templates
 *.pdf
 *.mp4
 *.log

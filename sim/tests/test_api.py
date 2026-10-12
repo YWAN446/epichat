@@ -45,7 +45,7 @@ def test_health_needs_no_bearer_and_reports_versions(client):
     r = client.get("/health")
     assert r.status_code == 200
     body = r.json()
-    assert body["ok"] is True and body["starsim_version"] == "3.3.2"
+    assert body["ok"] is True and body["starsim_version"] == "3.7.2"
     assert body["python_version"].startswith("3.") and body["cold_start"] is True
 
 
@@ -104,7 +104,7 @@ def test_success_scales_thins_and_flips_cold_start(client, main, monkeypatch):
     assert body["stats"]["peak_day"] == 1 and body["stats"]["sim_days"] == 5
     assert body["series"]["day"] == [0, 2, 4] and body["series"]["cum_infections"] == [100, 800, 1100]
     assert body["effective_params"]["n_agents"] == 1000 and body["repairs"] == []
-    assert body["starsim_version"] == "3.3.2" and body["duration_ms"] >= 0
+    assert body["starsim_version"] == "3.7.2" and body["duration_ms"] >= 0
     assert fake.calls[0][1] == "hi"
     assert client.get("/health").json()["cold_start"] is False
     r2 = client.post("/simulate", json={"params": PARAMS}, headers=AUTH)

@@ -31,10 +31,10 @@ def _timeout() -> RunResult:
 class FakeRunner:
     def __init__(self, results):
         self.results = list(results)
-        self.calls: list[tuple[str, Path, float]] = []
+        self.calls: list[tuple[SimParams, Path, float]] = []
 
-    def __call__(self, code, output_path, timeout):
-        self.calls.append((code, Path(output_path), timeout))
+    def __call__(self, params, output_path, timeout):
+        self.calls.append((params, Path(output_path), timeout))
         return self.results.pop(0)
 
 
@@ -73,10 +73,9 @@ def test_success_first_try_has_no_repairs_and_computes_stats():
     assert out.stats == {"peak_infections": 3, "peak_day": 1, "total_infected": 6, "total_deaths": 1,
                          "n_agents": 100, "sim_days": 3}
     assert out.series == GOOD_SERIES
-    code, path, timeout = run.calls[0]
-    assert "json.dump(" in code and "matplotlib" not in code
-    assert path.as_posix() in code
-    assert timeout == 9.0
+    params, path, timeout = run.calls[0]
+    assert isinstance(params, SimParams) and params.rand_seed == 1
+    assert path.suffix == ".json" and timeout == 9.0
 
 
 def test_fail_then_repair_then_succeed_records_one_repair():
@@ -92,7 +91,7 @@ def test_fail_then_repair_then_succeed_records_one_repair():
     assert {"field": "dur_exp", "from": None, "to": 5.0} in record["changes"]
     assert record["usage"] == {"model": "claude-opus-5-5", "input_tokens": 120, "output_tokens": 30}
     assert repair.calls[0][0] == "measles in Kenya" and repair.calls[0][3] == "claude-opus-5-5"
-    assert "seir" in run.calls[1][0].lower()
+    assert run.calls[1][0].disease_type == "seir"
 
 
 def test_every_attempt_fails_returns_500_with_all_repairs():
@@ -135,19 +134,6 @@ def test_each_attempt_gets_its_own_output_path():
     paths = [call[1] for call in run.calls]
     assert paths[0] != paths[1]
     assert all(p.suffix == ".json" and p.name.startswith("epichat-") for p in paths)
-
-
-def test_render_failure_is_execution_failed(monkeypatch):
-    import service
-
-    class BrokenGenerator:
-        def generate(self, *a, **k):
-            raise RuntimeError("'nope' is undefined")
-
-    monkeypatch.setattr(service, "CodeGenerator", BrokenGenerator)
-    out = simulate(_params(), "x", SETTINGS, run=FakeRunner([]), repair=FakeRepairer([]))
-    assert not out.ok and out.status == 500 and out.attempts == 1
-    assert "template" in out.error and "nope" in out.error
 
 
 def test_effective_params_are_the_resolved_ones():

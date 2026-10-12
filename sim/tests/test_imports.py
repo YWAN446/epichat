@@ -15,4 +15,4 @@ def test_importing_the_app_loads_neither_starsim_nor_anthropic():
         "print('starsim' in sys.modules, 'anthropic' in sys.modules, main.STARSIM_VERSION)" % SIM
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True, cwd=SIM)
-    assert out.stdout.strip() == "False False 3.3.2"
+    assert out.stdout.strip() == "False False 3.7.2"

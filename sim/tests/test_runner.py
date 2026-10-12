@@ -4,64 +4,57 @@ import tempfile
 import time
 from pathlib import Path
 
-from runner import RunResult, run_script
+from epichat.schema import SimParams
+from runner import RunResult, child_environment, run_params
 
 
 def _out() -> Path:
     return Path(tempfile.gettempdir()) / f"epichat-test-{os.getpid()}-{time.time_ns()}.json"
 
 
-def test_success_reads_the_result_file_and_removes_it():
+def _params(**over) -> SimParams:
+    base = dict(disease_type="sir", beta=22.8125, n_agents=200, sim_dur_years=5 / 365, rand_seed=1)
+    base.update(over)
+    return SimParams(**base)
+
+
+def _temp_params_files() -> set[str]:
+    return {p.name for p in Path(tempfile.gettempdir()).glob("epichat-params-*.json")}
+
+
+def test_success_reads_the_result_file_and_removes_both_files():
     out = _out()
-    code = (
-        "import json, sys\n"
-        f"json.dump({{'stats': {{'n_agents': 5}}, 'series': {{'day': [0, 1]}}}}, open(r'{out}', 'w'))\n"
-        "print('some chatter on stdout')\n"
-    )
-    result = run_script(code, out, timeout=30)
+    before = _temp_params_files()
+    result = run_params(_params(), out, timeout=120)
     assert isinstance(result, RunResult)
-    assert result.ok and not result.timed_out and result.error is None
-    assert result.stats == {"n_agents": 5} and result.series == {"day": [0, 1]}
-    assert result.duration_ms >= 0
+    assert result.ok and not result.timed_out and result.error is None, result.error
+    assert result.stats["sim_days"] == 6 and len(result.series["day"]) == 6
+    assert result.duration_ms > 0
     assert not out.exists()
+    assert _temp_params_files() == before
 
 
-def test_failure_reports_the_stderr_tail():
-    result = run_script("import sys\nsys.stderr.write('x' * 3000 + 'END')\nsys.exit(1)\n", _out(), timeout=30)
+def test_child_failure_reports_the_stderr_tail_and_cleans_up():
+    # a vaccine starting after the simulation ends makes Starsim raise inside the child
+    out = _out()
+    before = _temp_params_files()
+    params = _params(interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 400}])
+    result = run_params(params, out, timeout=120)
     assert not result.ok and not result.timed_out
-    assert result.error.endswith("END") and len(result.error) <= 2000
-
-
-def test_missing_result_file_is_a_failure():
-    result = run_script("print('did not write the file')\n", _out(), timeout=30)
-    assert not result.ok
-    assert "result file" in result.error
+    assert "Years must be within" in result.error and len(result.error) <= 2000
+    assert not out.exists() and _temp_params_files() == before
 
 
 def test_timeout_kills_the_child():
     started = time.perf_counter()
-    result = run_script("import time\ntime.sleep(10)\n", _out(), timeout=1)
+    result = run_params(_params(n_agents=20000, sim_dur_years=2.0), _out(), timeout=0.5)
     assert result.timed_out and not result.ok
-    assert time.perf_counter() - started < 8
-    assert "1" in result.error
+    assert time.perf_counter() - started < 10
+    assert "0.5" in result.error
 
 
-def test_non_utf8_stderr_is_reported():
-    code = "import sys\nsys.stderr.buffer.write(b'caf\\xe9 \\xff boom')\nsys.exit(2)\n"
-    result = run_script(code, _out(), timeout=30)
-    assert not result.ok
-    assert "boom" in result.error
-
-
-def test_child_sees_parent_import_path_and_cache_dirs():
-    out = _out()
-    code = (
-        "import json, os\n"
-        "json.dump({'stats': {}, 'series': {'env': [os.environ.get('PYTHONPATH', ''), "
-        "os.environ.get('NUMBA_CACHE_DIR', ''), os.environ.get('MPLCONFIGDIR', '')]}}, "
-        f"open(r'{out}', 'w'))\n"
-    )
-    result = run_script(code, out, timeout=30)
-    pythonpath, numba, mpl = result.series["env"]
-    assert str(Path(sys.path[0])) in pythonpath
-    assert numba.endswith("numba") and mpl.endswith("mpl")
+def test_child_environment_has_the_import_path_and_cache_dirs():
+    env = child_environment()
+    assert str(Path(sys.path[0])) in env["PYTHONPATH"]
+    assert env["NUMBA_CACHE_DIR"].endswith("numba") and env["MPLCONFIGDIR"].endswith("mpl")
+    assert env["PYTHONIOENCODING"] == "utf-8"

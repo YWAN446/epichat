@@ -1,9 +1,10 @@
-"""Run a rendered simulation script in a child process.
+"""Run one simulation in a child process.
 
-The child gets the parent's import path (so the copied package and the
+The child is `python -m epichat.sim.run_params <params.json> <out.json>`: it
+imports Starsim, builds the sim from the validated parameters and writes the
+result file. The parent passes its import path (so the copied package and the
 installed Starsim are found on Vercel), writable numba and matplotlib cache
-directories, and a hard timeout. Its result is a JSON file it writes itself;
-stdout is ignored and stderr's tail is the error."""
+directories, and a hard timeout. stdout is ignored; stderr's tail is the error."""
 from __future__ import annotations
 
 import json
@@ -14,6 +15,8 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
+
+from epichat.schema import SimParams
 
 STDERR_TAIL = 2000
 
@@ -38,26 +41,27 @@ def child_environment() -> dict[str, str]:
     return env
 
 
-def run_script(code: str, output_path: Path, timeout: float) -> RunResult:
+def run_params(params: SimParams, output_path: Path, timeout: float) -> RunResult:
     output_path = Path(output_path)
     started = time.perf_counter()
-    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as f:
-        f.write(code)
-        script_path = Path(f.name)
+    with tempfile.NamedTemporaryFile("w", prefix="epichat-params-", suffix=".json", delete=False, encoding="utf-8") as f:
+        json.dump(params.model_dump(mode="json"), f)
+        params_path = Path(f.name)
 
     def elapsed() -> int:
         return int((time.perf_counter() - started) * 1000)
 
     try:
         completed = subprocess.run(
-            [sys.executable, str(script_path)],
+            [sys.executable, "-m", "epichat.sim.run_params", str(params_path), str(output_path)],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=timeout, env=child_environment(),
         )
     except subprocess.TimeoutExpired:
+        output_path.unlink(missing_ok=True)
         return RunResult(False, {}, {}, f"Simulation timed out after {timeout:g} seconds.", True, elapsed())
     finally:
-        script_path.unlink(missing_ok=True)
+        params_path.unlink(missing_ok=True)
 
     try:
         if completed.returncode != 0:

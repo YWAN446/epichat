@@ -10,7 +10,7 @@
     "sim": {
       "root": "sim",
       "entrypoint": "main:app",
-      "buildCommand": "rm -rf epichat templates && cp -r ../epichat ../templates . && find epichat -name __pycache__ -type d -prune -exec rm -rf {} +",
+      "buildCommand": "rm -rf epichat templates && cp -r ../epichat . && find epichat -name __pycache__ -type d -prune -exec rm -rf {} +",
       "functions": {
         "main.py": {
           "maxDuration": 300,

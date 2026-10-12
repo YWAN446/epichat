@@ -1,5 +1,6 @@
-"""The attempt loop: resolve demographics, render, run, and on failure ask the
-model to repair the parameters, up to the configured number of times.
+"""The attempt loop: resolve demographics, run the builder in a child process,
+and on failure ask the model to repair the parameters, up to the configured
+number of times.
 
 Runner and Repairer are injected so the loop is tested without Starsim or the
 model. A timed-out attempt is final. Scaling and thinning are not done here;
@@ -12,16 +13,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from epichat.generator import CodeGenerator, resolve_demographics
+from epichat.generator import resolve_demographics
 from epichat.schema import SimParams
-from runner import RunResult, run_script
+from runner import RunResult, run_params
 from series import stats_from
 from settings import Settings
 
 if TYPE_CHECKING:  # the Anthropic SDK is imported only when a repair actually happens
     from epichat.parser import RepairResult
 
-Runner = Callable[[str, Path, float], RunResult]
+Runner = Callable[[SimParams, Path, float], RunResult]
 Repairer = Callable[[str, SimParams, str, str], "RepairResult"]
 
 
@@ -61,7 +62,7 @@ def _output_path() -> Path:
 
 
 def simulate(params: SimParams, context_text: str, settings: Settings,
-             run: Runner = run_script, repair: Repairer | None = None) -> Outcome:
+             run: Runner = run_params, repair: Repairer | None = None) -> Outcome:
     params = resolve_demographics(params)
     repairs: list[dict] = []
     attempts = 0
@@ -70,12 +71,7 @@ def simulate(params: SimParams, context_text: str, settings: Settings,
     while attempts <= settings.max_repairs:
         attempts += 1
         output_path = _output_path()
-        try:
-            code = CodeGenerator().generate(params, str(output_path), output_mode="json")
-        except Exception as e:  # a template that cannot render is a failed run, not a crash
-            return Outcome(False, 500, params, repairs=repairs, attempts=attempts,
-                           error=f"template error: {type(e).__name__}: {e}")
-        result = run(code, output_path, settings.timeout_seconds)
+        result = run(params, output_path, settings.timeout_seconds)
         if result.ok:
             return Outcome(True, 200, params, stats=stats_from(result.series, params.n_agents),
                            series=result.series, repairs=repairs, attempts=attempts)

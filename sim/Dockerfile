@@ -7,7 +7,6 @@ WORKDIR /app
 COPY sim/requirements.txt sim/requirements.txt
 RUN pip install --no-cache-dir -r sim/requirements.txt
 COPY epichat epichat
-COPY templates templates
 COPY sim sim
 WORKDIR /app/sim
 ENV PORT=8000
