@@ -130,5 +130,8 @@ describe("R0 math", () => {
     expect(approxR0(recalibrateBeta(raised, 3, before))).toBeCloseTo(4 * (1 - Math.exp(-54.4 / 365)) * 9, 6);
     const stuck = must({ schema_version: 2, network: { n_contacts: 1 }, disease: { dur_inf: { mean_days: 2 } } });
     expect(recalibrateBeta(stuck, 3, before).disease.beta).toBe(stuck.disease.beta);
+    const aged = withR0(must({ schema_version: 2, network: { network_type: "age_structured" } }), 3);
+    const agedRaised = must({ ...aged, disease: { ...aged.disease, beta: 50 } });
+    expect(recalibrateBeta(agedRaised, 3, aged).disease.beta).toBeCloseTo(50, 6); // read on the network it was set on
   });
 });

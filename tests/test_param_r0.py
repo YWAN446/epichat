@@ -101,3 +101,13 @@ def test_migrated_v1_params_calibrate_without_the_population_weighting():
     p = coerce_params({"beta": 100.0, "network_type": "age_structured", "dur_inf": 10.0,
                        "age_pct_under18": 42.0, "age_pct_18_64": 55.0, "age_pct_over65": 3.0})
     assert r0.approx_r0(p) == pytest.approx(r0.CONTACT_SPECTRAL_RADIUS * (1 - math.exp(-100 / 365)) * 9)
+
+
+def test_recalibrate_reads_a_changed_beta_on_the_network_it_was_set_on():
+    """A beta set on the age-structured network means the R0 it implies there, not the random-network reading."""
+    before = r0.with_r0(v2(network={"network_type": "age_structured"}), 3.0)
+    raised = before.model_copy(deep=True)
+    raised.disease.beta = 50.0
+    out = r0.recalibrate_beta(raised, 3.0, before)
+    assert out.disease.beta == pytest.approx(50.0, abs=1e-6)
+    assert r0.approx_r0(out) == pytest.approx(r0.approx_r0(raised))

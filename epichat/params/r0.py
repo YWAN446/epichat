@@ -87,12 +87,8 @@ def with_r0(p: SimParamsV2, target_r0: float) -> SimParamsV2:
 
 def recalibrate_beta(p: SimParamsV2, r0_before: float, before: SimParamsV2) -> SimParamsV2:
     """After a change, hold the R0 the user confirmed; a changed beta means a new
-    intended R0, read with the random-network formula as the v1 agent did."""
-    if abs(p.disease.beta - before.disease.beta) > 1e-4:
-        n = p.network
-        target = n.n_contacts * n.network_beta * effective_days(p.disease) * asymp_factor(p.disease) * per_contact_prob(p.disease.beta)
-    else:
-        target = r0_before
+    intended R0, read on the network it was set on (so the beta comes back unchanged)."""
+    target = approx_r0(p) if abs(p.disease.beta - before.disease.beta) > 1e-4 else r0_before
     try:
         return with_r0(p, target)
     except R0Unreachable:

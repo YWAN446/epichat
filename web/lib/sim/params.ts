@@ -351,12 +351,9 @@ export function withR0(p: SimParams, targetR0: number): SimParams {
   return { ...p, disease: { ...p.disease, beta: clampBeta(calibrateBeta(p, targetR0)) } };
 }
 
-/** After a change, hold the R0 the user confirmed; a changed beta means a new intended R0, read with the random-network formula. Unchanged when unreachable. */
+/** After a change, hold the R0 the user confirmed; a changed beta means a new intended R0, read on the network it was set on (so the beta comes back unchanged). Unchanged when unreachable. */
 export function recalibrateBeta(p: SimParams, r0Before: number, before: SimParams): SimParams {
-  const target =
-    Math.abs(p.disease.beta - before.disease.beta) > 1e-4
-      ? p.network.n_contacts * p.network.network_beta * effectiveDays(p.disease) * asympFactor(p.disease) * perContactProb(p.disease.beta)
-      : r0Before;
+  const target = Math.abs(p.disease.beta - before.disease.beta) > 1e-4 ? approxR0(p) : r0Before;
   try {
     return withR0(p, target);
   } catch (e) {
