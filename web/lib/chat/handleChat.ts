@@ -194,15 +194,29 @@ export async function handleChat(
       } else {
         step("run_failed", { tool: "run_simulation", meta: { kind: record.result.kind, repairs: record.result.repairs.length } });
       }
+      let id: string | null = null;
       try {
-        return await deps.runs.insert({ conversationId, userId: user.id, turnId, scenarioId: scenario.id, record });
+        id = await deps.runs.insert({ conversationId, userId: user.id, turnId, scenarioId: scenario.id, record });
       } catch (error) {
         console.error("runs insert failed", failureText(error));
-        return null;
       }
+      const shown = record.result.ok ? (record.result.diagnostics ?? []).map((d) => d.id) : [];
+      if (shown.length > 0) step("diagnostic_shown", { tool: "run_simulation", meta: { run_id: id, ids: shown.join(",") } });
+      return id;
     },
     onScenarioStart() {
       step("new_scenario");
+    },
+    async previousRun() {
+      try {
+        return await deps.runs.latest(conversationId, scenario.id, turnId);
+      } catch (error) {
+        console.error("runs read failed", failureText(error));
+        return null;
+      }
+    },
+    onOptionChosen(runId, diagnosticId, patch) {
+      step("option_chosen", { tool: "configure_simulation", meta: { run_id: runId, diagnostic_id: diagnosticId, patch: JSON.stringify(patch) } });
     },
     reports: {
       runs: () => deps.runs.listForReport(conversationId, scenario.id, turnId),

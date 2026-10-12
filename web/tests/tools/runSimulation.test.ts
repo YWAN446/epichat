@@ -91,3 +91,40 @@ describe("run_simulation", () => {
     expect(out.payload).toMatchObject({ kind: "run", run_id: null });
   });
 });
+
+describe("run_simulation: diagnostics and the comparison", () => {
+  const diagnostics = [{
+    id: "unfinished", severity: "warning" as const, title: "The run ended before the epidemic did", evidence: { last_infectious: 40 },
+    levers: [{ patch: { "run.sim_dur_years": 2 }, current: { "run.sim_dur_years": 1 }, direction: "increase" as const, rationale: "r", basis: "rule" as const }],
+  }];
+
+  it("passes the diagnostics and the disease along, and compares with the previous run", async () => {
+    const previous = { id: "run-8", effectiveParams: params({ n_agents: 50000, dur_inf: 10 }), stats: { ...STATS, peak_infections: 800 * 4260, peak_day: 35, total_infected: 5000 * 4260, total_deaths: 10 * 4260 }, diagnostics: [] };
+    const deps = makeDeps({ simulate: success({ diagnostics, effective_params: params({ n_agents: 50000, dur_inf: 8 }) }), previousRun: previous });
+    await configureSimulation({ disease: "dengue", n_agents: 50000 } as never, deps);
+    deps.scenario.hasRun = true;
+    const out = await runSimulation({}, deps);
+    const body = JSON.parse(out.content);
+    expect(deps.simulated).toEqual([{ popScale: 1, contextText: "", disease: "dengue" }]);
+    expect(body.diagnostics).toEqual(diagnostics);
+    expect(body.compare).toEqual({
+      previous_run_id: "run-8",
+      changed: [{ path: "disease.dur_inf.mean_days", from: 10, to: 8 }],
+      stats_delta: { peak_infections: 100 * 4260, peak_day: 5, total_infected: 1000 * 4260, total_deaths: 2 * 4260 },
+    });
+    expect(out.payload).toMatchObject({ kind: "run", diagnostics, compare: { previous_run_id: "run-8" } });
+  });
+
+  it("has no compare before the first run, reads the previous run only after one, and detects the disease from the text", async () => {
+    const deps = makeDeps({ simulate: success(), previousRun: null, contextText: "whooping cough in Kenya" });
+    await configureSimulation({ n_agents: 50000 } as never, deps);
+    const body = JSON.parse((await runSimulation({}, deps)).content);
+    expect(body.compare).toBeNull();
+    expect(body.diagnostics).toEqual([]);
+    expect(deps.previousReads).toBe(0);
+    expect(deps.simulated[0].disease).toBe("pertussis");
+    await runSimulation({}, deps);
+    expect(deps.previousReads).toBe(1);
+    expect(JSON.parse((await runSimulation({}, deps)).content).compare).toBeNull(); // the store had no previous run
+  });
+});

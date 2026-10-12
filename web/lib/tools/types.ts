@@ -1,10 +1,10 @@
 import type { Adapters, ResolvedField } from "@/lib/data/types";
-import type { ReportRun } from "@/lib/db/runs";
+import type { PreviousRun, ReportRun } from "@/lib/db/runs";
 import type { ReportDocument, ReportNarrative, ReportPayload } from "@/lib/report/document";
 import type { ParameterSummary } from "@/lib/disease/db";
 import type { MemoryKind, Stage } from "@/lib/enums";
 import type { Memory } from "@/lib/profile/about";
-import type { RepairRecord, SimClient, SimResult, SimStats } from "@/lib/sim/client";
+import type { Diagnostic, RepairRecord, SimClient, SimResult, SimStats } from "@/lib/sim/client";
 import type { SimParams } from "@/lib/sim/params";
 import type { PathChange } from "@/lib/sim/paths";
 
@@ -62,6 +62,12 @@ export type DataPayload = {
   /** The scenario's full parameters after this step (see ConfigPayload.params). */
   params?: SimParams;
 };
+/** Spec 11: this run against the scenario's previous successful run. */
+export type RunCompare = {
+  previous_run_id: string;
+  changed: PathChange[];
+  stats_delta: { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number };
+};
 export type RunPayload = {
   kind: "run";
   run_id: string | null;
@@ -80,6 +86,10 @@ export type RunPayload = {
   series?: Record<string, number[]>;
   /** Per-replicate stats when run.n_replicates > 1 (spec 8.7); the bands wait for the workspace follow-up. */
   replicates?: { n: number; seeds: number[]; representative: number; stats: SimStats[] };
+  /** Spec 10: what the run's shape suggests about the configuration; absent on payloads stored before phase 4. */
+  diagnostics?: Diagnostic[];
+  /** Spec 11: against the previous run, or null for the scenario's first run. */
+  compare?: RunCompare | null;
 };
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
 /** A remember call (profile spec, section 9). */
@@ -114,6 +124,10 @@ export type ToolDeps = {
   onRun: (run: RunRecord) => Promise<string | null>;
   /** The scenario was just reset; the handler records new_scenario. */
   onScenarioStart: () => void;
+  /** The scenario's latest successful run (this turn's included), for the comparison and the option matching; null when there is none or the read failed. */
+  previousRun: () => Promise<PreviousRun | null>;
+  /** The next configuration applied a diagnostic's lever (spec 11); the handler records option_chosen. */
+  onOptionChosen: (runId: string, diagnosticId: string, patch: Record<string, unknown>) => void;
   reports: ReportDeps;
   /** The participant's memory (profile spec, section 9); `added` counts this turn's remember calls. */
   memory: {

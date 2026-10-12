@@ -12,7 +12,7 @@ import type { MessageStore } from "@/lib/db/messages";
 import { aboutBlock, type Memory } from "@/lib/profile/about";
 import { EMPTY_PROFILE, type ProfileFields } from "@/lib/profile/schema";
 import type { ProfileStore } from "@/lib/profiles";
-import type { RunInsert, RunStore } from "@/lib/db/runs";
+import type { PreviousRun, RunInsert, RunStore } from "@/lib/db/runs";
 import type { ScenarioStore } from "@/lib/db/scenarios";
 import type { FinishTurnPayload, TurnStore } from "@/lib/db/turns";
 import type { SimClient, SimResult } from "@/lib/sim/client";
@@ -54,7 +54,7 @@ function configured(): Scenario {
 type Over = {
   reservation?: TurnReservation; conversation?: ConversationRow | null; history?: Anthropic.Beta.BetaMessageParam[]; scenario?: Scenario | null;
   texts?: string[]; finishError?: Error; runError?: Error; loadError?: Error; simulate?: SimResult | Error;
-  profile?: ProfileFields; profileError?: Error; memories?: Memory[]; memoryCount?: number; evicted?: boolean; memoryAddError?: Error;
+  profile?: ProfileFields; profileError?: Error; memories?: Memory[]; memoryCount?: number; evicted?: boolean; memoryAddError?: Error; previous?: PreviousRun | null;
 };
 
 function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}) {
@@ -85,7 +85,7 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
     async listForReplay() { return []; },
     async lastRecap() { return []; },
   };
-  const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; }, async listForReport() { return []; }, async seriesFor() { return new Map(); }, async latest() { return null; } };
+  const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; }, async listForReport() { return []; }, async seriesFor() { return new Map(); }, async latest() { return over.previous ?? null; } };
   const reports: ReportStore = { async insert() { return "rep-1"; }, async count() { return 0; }, async get() { return null; }, async latest() { return null; } };
   const sim: SimClient = {
     async simulate(_params, popScale, contextText) {
@@ -524,5 +524,23 @@ describe("handleChat", () => {
     const plain = setup([{ message: message([textBlock("Plain.")]), text: ["Plain."] }]);
     await plain.run(HELLO);
     expect(plain.emitted.map((e) => e.type)).toEqual(["text", "done"]);
+  });
+  it("records diagnostic_shown with the run id and option_chosen when the next configuration applies a lever", async () => {
+    const diagnostics = [{ id: "unfinished", severity: "warning" as const, title: "t", evidence: {}, levers: [{ patch: { "run.sim_dur_years": 2 }, current: { "run.sim_dur_years": 1 }, direction: "increase" as const, rationale: "r", basis: "rule" as const }] }];
+    const withDiagnostics: SimResult = { ...SUCCESS, diagnostics };
+    const { run, finished, emitted } = setup([{ message: RUN }, { message: message([textBlock("Still going at the end.")]) }], { history: HISTORY, scenario: configured(), simulate: withDiagnostics });
+    await run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(finished[0].step_events.map((e) => e.kind)).toEqual(["stage_reached", "run_completed", "diagnostic_shown", "tool_called", "stage_reached", "turn"]);
+    expect(finished[0].step_events[2]).toMatchObject({ tool: "run_simulation", stage: "run", meta: { run_id: "run-1", ids: "unfinished" } });
+    expect(emitted[2]).toMatchObject({ type: "tool_result", payload: { kind: "run", diagnostics, compare: null } });
+
+    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ n_agents: 10000 }), stats: STATS, diagnostics };
+    const option = setup(
+      [{ message: message([toolUse("tu_3", "configure_simulation", { sim_dur_years: 2 })], "tool_use") }, { message: message([textBlock("Two years it is.")]) }],
+      { history: HISTORY, scenario: { ...configured(), hasRun: true, stage: "interpret", stageReached: "interpret" }, previous },
+    );
+    await option.run({ conversationId: CONVERSATION, text: "Run it for two years" });
+    const chosen = option.finished[0].step_events.find((e) => e.kind === "option_chosen");
+    expect(chosen).toMatchObject({ tool: "configure_simulation", meta: { run_id: "run-1", diagnostic_id: "unfinished", patch: JSON.stringify({ "run.sim_dur_years": 2 }) } });
   });
 });

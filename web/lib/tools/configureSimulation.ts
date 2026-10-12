@@ -6,6 +6,7 @@ import { pyRound } from "@/lib/sim/pyformat";
 import { applyAdvanced } from "./advanced";
 import { configView } from "./configView";
 import { durationFor, type DurationName } from "./durations";
+import { matchedLevers } from "./options";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
 import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
 
@@ -176,7 +177,11 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     warnings.push(`beta was clamped at ${params.disease.beta}, so the run's R0 is ${approx_r0} rather than the requested ${input.r0}; more contacts or a longer infectious period would reach it.`);
   }
   const changed: PathChange[] = before ? changedPaths(before as unknown as Obj, params as unknown as Obj) : [];
-  // Task 7 records a taken option here, from `changed` and the previous run's levers.
+  if (scenario.hasRun && changed.length > 0) {
+    // Spec 11: a lever is taken when the applied patch carries every one of its paths with its value.
+    const previous = await deps.previousRun();
+    for (const match of matchedLevers(previous, changed)) deps.onOptionChosen(previous!.id, match.diagnosticId, match.patch);
+  }
   const config = configView(params, scenario.disease);
   return {
     content: JSON.stringify({ applied, changed, approx_r0, config, warnings }),

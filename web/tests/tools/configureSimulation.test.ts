@@ -224,3 +224,40 @@ describe("configure_simulation: the spec's field names, advanced and changed", (
     expect(fine.warnings.some((w: string) => w.includes("clamped"))).toBe(false);
   });
 });
+
+describe("configure_simulation records a taken option", () => {
+  const lever = { patch: { "disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4 }, current: {}, direction: "change" as const, rationale: "r", basis: "rule" as const };
+  const previous = () => ({
+    id: "run-3", effectiveParams: params({}), stats: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 },
+    diagnostics: [
+      { id: "sharp_curve", severity: "info" as const, title: "t", evidence: {}, levers: [lever] },
+      { id: "unfinished", severity: "warning" as const, title: "u", evidence: {}, levers: [{ ...lever, patch: { "run.sim_dur_years": 2 } }] },
+    ],
+  });
+
+  it("matches a lever on every path of its patch, once per diagnostic", async () => {
+    const deps = makeDeps({ previousRun: previous() });
+    await run(deps, { disease: "measles", advanced: { "disease.dur_inf.dist": "constant", "disease.dur_inf.sd_days": null } });
+    deps.scenario.hasRun = true;
+    await run(deps, { advanced: { "disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4 }, sim_dur_years: 2 });
+    expect(deps.options).toEqual([
+      { runId: "run-3", diagnosticId: "sharp_curve", patch: lever.patch },
+      { runId: "run-3", diagnosticId: "unfinished", patch: { "run.sim_dur_years": 2 } },
+    ]);
+    expect(deps.previousReads).toBe(1);
+  });
+
+  it("records nothing for a partial match, a failed patch, an unchanged call, or before any run", async () => {
+    const deps = makeDeps({ previousRun: previous() });
+    await run(deps, { disease: "measles", advanced: { "disease.dur_inf.dist": "constant", "disease.dur_inf.sd_days": null } });
+    await run(deps, { advanced: { "disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4 } }); // no run yet
+    expect(deps.previousReads).toBe(0);
+    deps.scenario.hasRun = true;
+    await run(deps, { advanced: { "disease.dur_inf.dist": "lognormal", "disease.dur_inf.sd_days": 3 } }); // a different value
+    const failed = await run(deps, { advanced: { "run.sim_dur_years": 2, "run.n_replicates": 9 } }); // out of bounds: nothing applied
+    expect(failed.isError).toBe(true);
+    await run(deps, { n_agents: 10000 }); // unchanged: nothing to match
+    expect(deps.options).toEqual([]);
+    expect(deps.previousReads).toBe(1);
+  });
+});
