@@ -148,6 +148,9 @@ the Hobby plan as written.
 - **Monthly:** check Supabase database size and Vercel usage against the free
   allowances (500 MB; 4 active-CPU hours, 360 GB-hours, 1M invocations).
 
+- **Tuning the run diagnostics:** after the pilot's first weeks, run the two
+  diagnostics queries of section 7 and tune the thresholds.
+
 ## 6b. Agent core verification
 
 Done on a preview deployment after the agent-core branch is pushed, by the
@@ -512,6 +515,25 @@ section 10 of the same spec, computed on the child's full series in agent
 units (evidence and lever values alike), each with its levers, empty when
 nothing fired. A v1 body the migration cannot read (a non-numeric
 `start_day`, say) answers 422 like any other invalid body.
+
+**Diagnostics.** The rules and their thresholds are the named constants at
+the top of `epichat/sim/diagnostics.py` (spec section 10; the values are
+starting points). They run on the child's full series in agent units, so the
+evidence they report is in agents, not people. Tune them from what the pilot
+recorded:
+
+    -- how often each rule fired
+    select id, count(*) from step_events, jsonb_array_elements_text(
+      to_jsonb(string_to_array(meta->>'ids', ','))) as id
+    where kind = 'diagnostic_shown' group by id order by 2 desc;
+    -- how often each rule's option was taken
+    select meta->>'diagnostic_id' as id, count(*) from step_events
+    where kind = 'option_chosen' group by 1 order by 2 desc;
+
+A rule that fires on most runs and is rarely taken is too eager; one that
+never fires is too strict or its trigger regime is narrow (`instant_peak`
+needs the peak within three days). Change the constant, add the case to
+`tests/test_sim_diagnostics.py`, and note the change in the spec's section 19.
 
 **First two-service deploy, verification.** Done on 2026-10-08: the
 build-time copy of the package was bundled and ran, so the fallback in step 1

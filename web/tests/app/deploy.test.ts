@@ -37,6 +37,9 @@ describe("deployment files", () => {
     expect(doc).toContain("n_replicates");
     expect(doc).toContain("0007_run_diagnostics.sql");
     expect(doc).toContain("carries `diagnostics`");
+    expect(doc).toContain("**Diagnostics.**");
+    expect(doc).toContain("epichat/sim/diagnostics.py");
+    expect(doc).toContain("jsonb_array_elements_text");
   });
 
   it("CI runs the web checks", () => {
