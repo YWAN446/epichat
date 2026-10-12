@@ -2,27 +2,23 @@
 
     python -m epichat.sim.run_params <params.json> <out.json>
 
-The parent writes the validated parameters as JSON, this process imports
-Starsim (the expensive part), builds and runs the sim, and writes
-{"stats", "series"} to the output path. Any failure is a traceback on stderr
-and a non-zero exit; the parent keeps the stderr tail as the error."""
+The parent writes the parameters (v1 or v2) as JSON; this process imports
+Starsim (the expensive part), validates and migrates them, runs every
+replicate, and writes {"stats", "series"[, "replicates"]} to the output
+path. Any failure is a traceback on stderr and a non-zero exit; the parent
+keeps the stderr tail as the error."""
 from __future__ import annotations
 
 import json
 import sys
 
 from epichat.params.migrate import coerce_params
-from epichat.schema import SimParams
 
-from .builder import build_sim
-from .outputs import extract
+from .replicates import run_replicates
 
 
 def run(params) -> dict:
-    p = coerce_params(params)
-    sim = build_sim(p)
-    sim.run()
-    return extract(sim, p.run.n_agents)
+    return run_replicates(coerce_params(params))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
         print("usage: python -m epichat.sim.run_params <params.json> <out.json>", file=sys.stderr)
         return 2
     with open(argv[0], encoding="utf-8") as f:
-        params = SimParams(**json.load(f))
+        params = coerce_params(json.load(f))
     payload = run(params)
     with open(argv[1], "w", encoding="utf-8") as f:
         json.dump(payload, f)

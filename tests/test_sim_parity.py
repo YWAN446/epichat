@@ -1,6 +1,7 @@
 """Spec section 13: for each model's default parameters at 10k agents, the
-median over ten seeds of total infections and of peak day from the builder on
-Starsim 3.7.2 is within 5% and 3 days of the 3.3.2 template pipeline
+median over ten seeds of total infections (the v1 definition, without the
+day-0 seeds) and of peak day from the builder on Starsim 3.7.2 is within 5%
+and 3 days of the 3.3.2 template pipeline
 (tests/fixtures/sim_baseline_v1.json, captured once by
 scripts/capture_sim_baseline.py). About two minutes: sixty in-process runs."""
 import json
@@ -9,7 +10,6 @@ from pathlib import Path
 
 import pytest
 
-from epichat.schema import SimParams
 from epichat.sim.run_params import run
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,8 +21,8 @@ def test_builder_matches_the_v1_baseline(name):
     case = BASELINE["cases"][name]
     totals, peak_days, peaks = [], [], []
     for seed in BASELINE["seeds"]:
-        stats = run(SimParams(**case["params"], rand_seed=seed))["stats"]
-        totals.append(stats["total_infected"])
+        stats = run({**case["params"], "rand_seed": seed})["stats"]
+        totals.append(stats["total_infected"] - stats["seeds_day0"])     # the baseline's cum_infections excludes the day-0 seeds
         peak_days.append(stats["peak_day"])
         peaks.append(stats["peak_infections"])
     median_total, base_total = statistics.median(totals), case["median"]["total_infected"]

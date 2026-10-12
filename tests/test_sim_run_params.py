@@ -24,6 +24,20 @@ def test_writes_stats_and_series_for_valid_params(tmp_path):
     assert set(payload) == {"stats", "series"}
     assert payload["stats"]["n_agents"] == 300 and payload["stats"]["sim_days"] == 11
     assert len(payload["series"]["day"]) == 11 and payload["series"]["cum_infections"][-1] >= 0
+    assert "n_infectious" in payload["series"] and payload["stats"]["seeds_day0"] >= 0
+
+
+def test_v2_params_with_replicates_write_the_replicates_block(tmp_path):
+    params = {"schema_version": 2, "disease": {"seed": {"value": 0.05}}, "run": {"n_agents": 300, "sim_dur_years": 10 / 365, "rand_seed": 1, "n_replicates": 2}}
+    completed, out_path = run_child(params, tmp_path)
+    assert completed.returncode == 0, completed.stderr
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert set(payload) == {"stats", "series", "replicates"} and payload["replicates"]["seeds"] == [1, 2]
+
+
+def test_invalid_v2_params_fail_with_the_path_on_stderr(tmp_path):
+    completed, out_path = run_child({"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 5000}}, "run": {"n_agents": 300}}, tmp_path)
+    assert completed.returncode != 0 and "disease.seed.value" in completed.stderr and not out_path.exists()
 
 
 def test_null_seed_runs_and_is_reproducible(tmp_path):
@@ -53,9 +67,8 @@ def test_usage_error_is_exit_code_two(tmp_path):
 
 
 def test_run_in_process_matches_the_child(tmp_path):
-    from epichat.schema import SimParams
     from epichat.sim.run_params import run
-    payload = run(SimParams(**SMALL))
+    payload = run(SMALL)
     completed, out_path = run_child(SMALL, tmp_path)
     assert completed.returncode == 0, completed.stderr
     assert json.loads(out_path.read_text(encoding="utf-8")) == payload
