@@ -38,6 +38,23 @@ describe("system prompt", () => {
     for (const tool of TOOLS) expect(SYSTEM_PROMPT).toContain(tool.name);
   });
 
+  it("tells the assistant to use describe_parameters, the advanced patch, and the diagnostics' options", () => {
+    expect(SYSTEM_PROMPT.indexOf("## Repairs")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Parameters"));
+    expect(SYSTEM_PROMPT.indexOf("## Parameters")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Diagnostics and options"));
+    for (const phrase of [
+      "call describe_parameters rather than answering from memory",
+      "Never say a parameter cannot be changed",
+      "advanced patch by path",
+      "at most three options",
+      "keeps the configuration as it is",
+      "what it changes, the suggested value, and its basis",
+      "before interpreting the new run",
+      "apply the lever's whole patch",
+    ]) {
+      expect(SYSTEM_PROMPT).toContain(phrase);
+    }
+  });
+
   it("is deterministic, dateless, and long enough to cache", () => {
     expect(SYSTEM_PROMPT).not.toMatch(/\b20\d\d-\d\d-\d\d\b/);
     expect(SYSTEM_PROMPT.length).toBeGreaterThan(5000);
