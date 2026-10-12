@@ -11,16 +11,18 @@ from __future__ import annotations
 import json
 import sys
 
+from epichat.params.migrate import coerce_params
 from epichat.schema import SimParams
 
 from .builder import build_sim
 from .outputs import extract
 
 
-def run(params: SimParams) -> dict:
-    sim = build_sim(params)
+def run(params) -> dict:
+    p = coerce_params(params)
+    sim = build_sim(p)
     sim.run()
-    return extract(sim, params.n_agents)
+    return extract(sim, p.run.n_agents)
 
 
 def main(argv: list[str] | None = None) -> int:
