@@ -6,6 +6,7 @@ import type { MemoryKind, Stage } from "@/lib/enums";
 import type { Memory } from "@/lib/profile/about";
 import type { RepairRecord, SimClient, SimResult, SimStats } from "@/lib/sim/client";
 import type { SimParams } from "@/lib/sim/params";
+import type { PathChange } from "@/lib/sim/paths";
 
 export type WebSource = { title: string; url: string };
 
@@ -41,6 +42,8 @@ export type DiseasePayload = { kind: "disease"; canonical_name: string; display_
 export type ConfigPayload = {
   kind: "config";
   applied: Record<string, unknown>;
+  /** Spec 9.1: what this call changed, by path; absent on payloads stored before it existed, empty on a fresh scenario. */
+  changed?: PathChange[];
   approx_r0: number;
   config: { disease: string | null; disease_type: string; country: string | null; n_agents: number; sim_dur_years: number; dur_inf: number; dur_exp: number | null; interventions: string[] };
   warnings: string[];

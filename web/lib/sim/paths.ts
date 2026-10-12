@@ -42,3 +42,10 @@ export function diffParams(before: Obj, after: Obj): ParamChange[] {
   for (const key of Object.keys(now)) if (!(key in old)) changes.push({ field: key, from: null, to: now[key] });
   return changes;
 }
+
+/** A change by registry path: the config payload's `changed` and the run payload's `compare.changed` (spec 9.1, 11). */
+export type PathChange = { path: string; from: unknown; to: unknown };
+
+export function changedPaths(before: Obj, after: Obj): PathChange[] {
+  return diffParams(before, after).map((c) => ({ path: c.field, from: c.from, to: c.to }));
+}

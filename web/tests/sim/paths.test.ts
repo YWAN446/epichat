@@ -21,3 +21,14 @@ describe("dotted paths", () => {
     ]);
   });
 });
+
+describe("changedPaths", () => {
+  it("names each changed leaf by path", async () => {
+    const { changedPaths } = await import("@/lib/sim/paths");
+    expect(changedPaths({ a: { b: 1, c: "x" }, d: [1] }, { a: { b: 2, c: "x" }, d: [1, 2] })).toEqual([
+      { path: "a.b", from: 1, to: 2 },
+      { path: "d", from: [1], to: [1, 2] },
+    ]);
+    expect(changedPaths({ a: { b: 1 } }, { a: { b: 1 } })).toEqual([]);
+  });
+});

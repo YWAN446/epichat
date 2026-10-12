@@ -18,7 +18,12 @@ describe("tool registry", () => {
       expect(tool.description?.length).toBeGreaterThan(80);
     }
     const configure = TOOLS[0].input_schema as { properties: Record<string, { description: string }>; required?: string[] };
-    expect(Object.keys(configure.properties)).toHaveLength(17);
+    expect(Object.keys(configure.properties)).toHaveLength(20);
+    expect(Object.keys(configure.properties)).toEqual(["disease", "country_iso3", "model", "disease_type", "n_agents", "sim_dur_years", "r0", "dur_inf_days", "dur_exp_days", "dur_immune_days", "p_death", "p_asymp", "seed_fraction", "seed_count", "vaccine_coverage", "vaccine_start_day", "treatment_capacity", "seasonality_scale", "advanced", "start_new_scenario"]);
+    const advanced = configure.properties.advanced as unknown as { type: string[]; additionalProperties: boolean };
+    expect(advanced.type).toEqual(["object", "null"]);
+    expect(advanced.additionalProperties).toBe(true);
+    expect(TOOLS[0].description).toContain("describe_parameters");
     expect(configure.properties.vaccine_start_day.description).toBe("Day the vaccination campaign begins. 0 (the\ndefault) means pre-existing immunity at the start rather than\na campaign. Requires vaccine_coverage.");
     expect(configure.required ?? []).toEqual([]);
     expect((TOOLS[1].input_schema as { required: string[] }).required).toEqual(["disease_name"]);

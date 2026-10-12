@@ -61,7 +61,7 @@ describe("fetch_demographics", () => {
 
   it("holds the R0 across the network switch", async () => {
     const deps = makeDeps({ unWpp: [kenya[0], kenya[2], kenya[3]] });
-    const configured0 = JSON.parse((await configureSimulation({ disease: "measles", disease_type: "seir", dur_exp: 11, dur_inf: 8, r0: 15, n_agents: 5000 } as never, deps)).content);
+    const configured0 = JSON.parse((await configureSimulation({ disease: "measles", disease_type: "seir", dur_exp_days: 11, dur_inf_days: 8, r0: 15, n_agents: 5000 } as never, deps)).content);
     expect(configured0.approx_r0).toBe(15);
     const betaBefore = deps.scenario.params!.disease.beta;
     const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
@@ -73,7 +73,7 @@ describe("fetch_demographics", () => {
   });
 
   it("flags an out-of-range R0 after the fetch even without a switch", async () => {
-    const deps = await configured(makeDeps({ unWpp: [kenya[2], kenya[3]] }), { disease: "measles", r0: 15, dur_inf: 30 });
+    const deps = await configured(makeDeps({ unWpp: [kenya[2], kenya[3]] }), { disease: "measles", r0: 15, dur_inf_days: 30 });
     const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
     expect(out.warnings.some((w: string) => w.includes("outside the literature range"))).toBe(true);
   });
