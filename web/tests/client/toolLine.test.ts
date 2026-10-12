@@ -10,6 +10,10 @@ const CONFIG: ConfigPayload & { duration_ms: number } = {
 };
 
 describe("tool lines", () => {
+  it("reads the parameters payload like the other cards", () => {
+    expect(toolLine("describe_parameters", { kind: "parameters", model: "seir", disease: "measles", count: 31 }, true)).toEqual({ label: "📋 Parameter list", detail: "model: seir; disease: measles; count: 31", warn: false });
+  });
+
   it("labels the parameter list", () => {
     expect(toolLabel("describe_parameters")).toBe("📋 Parameter list");
     expect(statusLabel("describe_parameters")).toBe("Listing the parameters…");

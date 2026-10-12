@@ -56,5 +56,8 @@ export async function describeParameters(input: DescribeParametersArgs, deps: To
     ? `Parameters of the current ${model} scenario${disease ? ` (${disease})` : ""}: current values with their source (user, database, fetch, default, illustrative). ${INTERVENTIONS_NOTE}`
     : `No scenario is configured yet: these are the registry defaults for the ${model} model. Call configure_simulation to start one. ${INTERVENTIONS_NOTE}`;
   const interventions = params ? params.interventions.map((i) => i.type) : [];
-  return { content: JSON.stringify({ note, model, disease, interventions, parameters }) };
+  return {
+    content: JSON.stringify({ note, model, disease, interventions, parameters }),
+    payload: { kind: "parameters", model, disease, count: parameters.length },
+  };
 }

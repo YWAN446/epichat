@@ -14,6 +14,11 @@ const run = (duration_ms: number, ok = true): Block => ({
 const tool = (name: string, payload: Extract<Block, { kind: "tool_result" }>["payload"], ok = true): Block => ({ kind: "tool_result", id: "tu", name, ok, payload });
 
 describe("summarizeActivity", () => {
+  it("names a parameter list by its count, and a stored result without the payload by its label", () => {
+    expect(summarizeActivity([tool("describe_parameters", { kind: "parameters", model: "seir", disease: "measles", count: 31 })])).toBe("Listed 31 parameters");
+    expect(summarizeActivity([tool("describe_parameters", { kind: "tool_error", message: "{}" })])).toBe("Parameter list");
+  });
+
   it("names each step in order and counts the fetches, searches, and pages", () => {
     const blocks: Block[] = [
       tool("lookup_disease", { kind: "disease", canonical_name: "measles", display_name: "Measles", parameters: {} }),

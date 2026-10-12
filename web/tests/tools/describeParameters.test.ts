@@ -92,6 +92,15 @@ describe("describe_parameters", () => {
     expect(body.parameters.every((x) => x.db_range === null)).toBe(true);
   });
 
+  it("carries a small parameters payload for the card and the activity line", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles", model: "seir", dur_exp_days: 11 });
+    const out = await describeParameters({} as never, deps);
+    const body = JSON.parse(out.content) as Body;
+    expect(out.payload).toEqual({ kind: "parameters", model: "seir", disease: "measles", count: body.parameters.length });
+    expect((await describeParameters({ tier: "expert" } as never, makeDeps())).payload).toMatchObject({ kind: "parameters", model: "sir", disease: null, count: 4 });
+  });
+
   it("valueSources covers every set path", () => {
     const p = params({ disease_type: "sirs", dur_immune: 200, dur_inf: 10 });
     const sources = valueSources(p, { ...emptyScenario(), params: p }, null);

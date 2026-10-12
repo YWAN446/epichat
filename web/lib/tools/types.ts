@@ -96,7 +96,9 @@ export type RunPayload = {
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
 /** A remember call (profile spec, section 9). */
 export type MemoryPayload = { kind: "memory"; memory_id: string; memory_kind: MemoryKind; text: string; replaced: boolean };
-export type CardPayload = (DiseasePayload | ConfigPayload | DataPayload | RunPayload | ReportPayload | MemoryPayload | ToolErrorPayload) & { duration_ms?: number };
+/** A describe_parameters call (sim-parameters spec 9.2): the list itself is the tool's content for the model. */
+export type ParametersPayload = { kind: "parameters"; model: string; disease: string | null; count: number };
+export type CardPayload = (DiseasePayload | ConfigPayload | DataPayload | RunPayload | ReportPayload | MemoryPayload | ParametersPayload | ToolErrorPayload) & { duration_ms?: number };
 
 /** What a tool sends back: `content` for the model, `payload` for the card and the event store. */
 export type ToolOutcome = { content: string; isError?: boolean; payload?: CardPayload };
