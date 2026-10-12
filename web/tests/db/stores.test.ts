@@ -304,21 +304,22 @@ describe("memory store", () => {
 
 describe("the previous run", () => {
   const row = (id: string, scenario_id: string | null, turn_id: string, extra: Record<string, unknown> = {}) =>
-    ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id, effective_params: {}, stats: STATS, diagnostics: [], ...extra });
+    ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id, effective_params: {}, stats: STATS, stats_agents: STATS, pop_scale: 2, diagnostics: [], ...extra });
 
   it("is the newest successful run of the scenario or of this turn, with its diagnostics", async () => {
     const diagnostics = [{ id: "unfinished", severity: "warning", title: "t", evidence: {}, levers: [] }];
     const admin = fakeAdmin({ runs: [{ data: [row("run-3", null, "t9", { diagnostics }), row("run-2", "s0", "t0"), row("run-1", "s1", "t1")] }] });
     const previous = await supabaseRunStore(admin.client).latest("c1", "s1", "t9");
-    expect(previous).toMatchObject({ id: "run-3", diagnostics, stats: STATS });
+    expect(previous).toMatchObject({ id: "run-3", diagnostics, stats: STATS, statsAgents: STATS, popScale: 2 });
+    expect(callOn(admin.recorded, "runs", "select")).toEqual(["id, created_at, scenario_id, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics"]);
     expect(previous?.effectiveParams.run.n_agents).toBe(10000);
     expect(callOn(admin.recorded, "runs", "order")).toEqual(["created_at", { ascending: false }]);
     expect(callOn(admin.recorded, "runs", "is")).toEqual(["error", null]);
   });
 
   it("reads a row without diagnostics as having none, skips unusable params, and is null without a run", async () => {
-    const admin = fakeAdmin({ runs: [{ data: [row("run-2", "s1", "t2", { diagnostics: null }), row("run-1", "s1", "t1")] }] });
-    expect(await supabaseRunStore(admin.client).latest("c1", "s1", "t9")).toMatchObject({ id: "run-2", diagnostics: [] });
+    const admin = fakeAdmin({ runs: [{ data: [row("run-2", "s1", "t2", { diagnostics: null, pop_scale: null }), row("run-1", "s1", "t1")] }] });
+    expect(await supabaseRunStore(admin.client).latest("c1", "s1", "t9")).toMatchObject({ id: "run-2", diagnostics: [], popScale: 1 });
     const bad = fakeAdmin({ runs: [{ data: [row("run-2", "s1", "t2", { effective_params: { n_agents: -1 } }), row("run-1", "s1", "t1")] }] });
     expect((await supabaseRunStore(bad.client).latest("c1", "s1", "t9"))?.id).toBe("run-1");
     expect(await supabaseRunStore(fakeAdmin({ runs: [{ data: [row("run-1", "s1", "t1")] }] }).client).latest("c1", null, "t9")).toBeNull();

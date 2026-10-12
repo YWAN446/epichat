@@ -67,6 +67,8 @@ export type RunCompare = {
   previous_run_id: string;
   changed: PathChange[];
   stats_delta: { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number };
+  /** The population scale of each run; the delta is in today's scale, the previous run rescaled to it. */
+  pop_scale: { from: number; to: number };
 };
 export type RunPayload = {
   kind: "run";

@@ -534,7 +534,7 @@ describe("handleChat", () => {
     expect(finished[0].step_events[2]).toMatchObject({ tool: "run_simulation", stage: "run", meta: { run_id: "run-1", ids: "unfinished" } });
     expect(emitted[2]).toMatchObject({ type: "tool_result", payload: { kind: "run", diagnostics, compare: null } });
 
-    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ n_agents: 10000 }), stats: STATS, diagnostics };
+    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ n_agents: 10000 }), stats: STATS, statsAgents: STATS, popScale: 1, diagnostics };
     const option = setup(
       [{ message: message([toolUse("tu_3", "configure_simulation", { sim_dur_years: 2 })], "tool_use") }, { message: message([textBlock("Two years it is.")]) }],
       { history: HISTORY, scenario: { ...configured(), hasRun: true, stage: "interpret", stageReached: "interpret" }, previous },

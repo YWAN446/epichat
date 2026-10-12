@@ -21,7 +21,7 @@ export type ReportRun = {
 };
 
 /** The scenario's latest successful run, as the comparison and the option matching read it (spec 11). */
-export type PreviousRun = { id: string; effectiveParams: SimParams; stats: SimStats; diagnostics: Diagnostic[] };
+export type PreviousRun = { id: string; effectiveParams: SimParams; stats: SimStats; statsAgents: SimStats; popScale: number; diagnostics: Diagnostic[] };
 
 export interface RunStore {
   /** Insert the row and return its id. Throws when the database refuses; onRun swallows it. */
@@ -39,7 +39,10 @@ type ReportRunRow = {
   pop_scale: number | string | null; series: Record<string, number[]> | null; repairs: RepairRecord[] | null; warnings: string[] | null; data_sources: ResolvedField[] | null;
 };
 
-type PreviousRow = { id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: unknown; stats: SimStats; diagnostics: Diagnostic[] | null };
+type PreviousRow = {
+  id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: unknown; stats: SimStats; stats_agents: SimStats;
+  pop_scale: number | string | null; diagnostics: Diagnostic[] | null;
+};
 
 /** The stored scenario's runs, plus this turn's not-yet-linked ones; never an earlier turn's orphan when the scenario is new. */
 function belongs(row: { scenario_id: string | null; turn_id: string | null }, scenarioId: string | null, turnId: string): boolean {
@@ -135,7 +138,7 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
     async latest(conversationId, scenarioId, turnId) {
       const { data, error } = await admin
         .from("runs")
-        .select("id, created_at, scenario_id, turn_id, effective_params, stats, diagnostics")
+        .select("id, created_at, scenario_id, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics")
         .eq("conversation_id", conversationId)
         .is("error", null)
         .order("created_at", { ascending: false });
@@ -144,7 +147,10 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
         if (!belongs(row, scenarioId, turnId)) continue;
         const effectiveParams = coerceParams(row.effective_params);
         if (!effectiveParams) continue; // an unusable row is no comparison; the next older one may be
-        return { id: row.id, effectiveParams, stats: row.stats, diagnostics: Array.isArray(row.diagnostics) ? row.diagnostics : [] };
+        return {
+          id: row.id, effectiveParams, stats: row.stats, statsAgents: row.stats_agents, popScale: Number(row.pop_scale ?? 1),
+          diagnostics: Array.isArray(row.diagnostics) ? row.diagnostics : [],
+        };
       }
       return null;
     },

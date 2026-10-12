@@ -180,7 +180,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   if (scenario.hasRun && changed.length > 0) {
     // Spec 11: a lever is taken when the applied patch carries every one of its paths with its value.
     const previous = await deps.previousRun();
-    for (const match of matchedLevers(previous, changed)) deps.onOptionChosen(previous!.id, match.diagnosticId, match.patch);
+    for (const match of matchedLevers(previous, changed, params)) deps.onOptionChosen(previous!.id, match.diagnosticId, match.patch);
   }
   const config = configView(params, scenario.disease);
   return {

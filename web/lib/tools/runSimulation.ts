@@ -12,13 +12,19 @@ export type RunSimulationArgs = z.infer<typeof RunSimulationInput>;
 
 type Obj = Record<string, unknown>;
 
-/** Spec 11: what changed since the previous run, by path, and the difference in the headline numbers (population-scaled, like stats). */
-export function compareRuns(previous: PreviousRun, result: SimSuccess): RunCompare {
-  const delta = (key: keyof RunCompare["stats_delta"]) => result.stats[key] - previous.stats[key];
+/**
+ * Spec 11: what changed since the previous run, by path, and the difference in the headline numbers in today's
+ * population scale: the previous run's agent counts are rescaled to this run's scale, so a population fetched
+ * between the runs does not show up as millions of extra infections.
+ */
+export function compareRuns(previous: PreviousRun, result: SimSuccess, popScale: number): RunCompare {
+  const before = (key: keyof RunCompare["stats_delta"]) => (key === "peak_day" ? previous.statsAgents.peak_day : Math.round(previous.statsAgents[key] * popScale));
+  const delta = (key: keyof RunCompare["stats_delta"]) => result.stats[key] - before(key);
   return {
     previous_run_id: previous.id,
     changed: changedPaths(previous.effectiveParams as unknown as Obj, result.effective_params as unknown as Obj),
     stats_delta: { peak_infections: delta("peak_infections"), peak_day: delta("peak_day"), total_infected: delta("total_infected"), total_deaths: delta("total_deaths") },
+    pop_scale: { from: pyRound(previous.popScale, 2), to: pyRound(popScale, 2) },
   };
 }
 
@@ -54,7 +60,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   // The per-replicate stats travel; the per-day bands wait for the workspace follow-up that draws them.
   const replicates = result.replicates ? { n: result.replicates.n, seeds: result.replicates.seeds, representative: result.replicates.representative, stats: result.replicates.stats } : undefined;
   const diagnostics = result.diagnostics ?? [];
-  const compare = previous ? compareRuns(previous, result) : null;
+  const compare = previous ? compareRuns(previous, result, popScale) : null;
   const payload: RunPayload = {
     kind: "run",
     run_id: runId,

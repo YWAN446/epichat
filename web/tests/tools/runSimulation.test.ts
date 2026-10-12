@@ -99,18 +99,21 @@ describe("run_simulation: diagnostics and the comparison", () => {
   }];
 
   it("passes the diagnostics and the disease along, and compares with the previous run", async () => {
-    const previous = { id: "run-8", effectiveParams: params({ n_agents: 50000, dur_inf: 10 }), stats: { ...STATS, peak_infections: 800 * 4260, peak_day: 35, total_infected: 5000 * 4260, total_deaths: 10 * 4260 }, diagnostics: [] };
+    const agents = { ...STATS, peak_infections: 800, peak_day: 35, total_infected: 5000, total_deaths: 10 };
+    const previous = { id: "run-8", effectiveParams: params({ n_agents: 50000, dur_inf: 10 }), stats: { ...agents, peak_infections: 800 * 4260, total_infected: 5000 * 4260, total_deaths: 10 * 4260 }, statsAgents: agents, popScale: 4260, diagnostics: [] };
     const deps = makeDeps({ simulate: success({ diagnostics, effective_params: params({ n_agents: 50000, dur_inf: 8 }) }), previousRun: previous });
     await configureSimulation({ disease: "dengue", n_agents: 50000 } as never, deps);
+    deps.scenario.totalPopulation = 213_000_000;
     deps.scenario.hasRun = true;
     const out = await runSimulation({}, deps);
     const body = JSON.parse(out.content);
-    expect(deps.simulated).toEqual([{ popScale: 1, contextText: "", disease: "dengue" }]);
+    expect(deps.simulated).toEqual([{ popScale: 4260, contextText: "", disease: "dengue" }]);
     expect(body.diagnostics).toEqual(diagnostics);
     expect(body.compare).toEqual({
       previous_run_id: "run-8",
       changed: [{ path: "disease.dur_inf.mean_days", from: 10, to: 8 }],
       stats_delta: { peak_infections: 100 * 4260, peak_day: 5, total_infected: 1000 * 4260, total_deaths: 2 * 4260 },
+      pop_scale: { from: 4260, to: 4260 },
     });
     expect(out.payload).toMatchObject({ kind: "run", diagnostics, compare: { previous_run_id: "run-8" } });
   });
@@ -126,5 +129,17 @@ describe("run_simulation: diagnostics and the comparison", () => {
     await runSimulation({}, deps);
     expect(deps.previousReads).toBe(1);
     expect(JSON.parse((await runSimulation({}, deps)).content).compare).toBeNull(); // the store had no previous run
+  });
+
+  it("compares across a change of population scale by rescaling the previous run to today's scale", async () => {
+    const agents = { ...STATS, peak_infections: 800, peak_day: 35, total_infected: 5000, total_deaths: 10 };
+    const previous = { id: "run-8", effectiveParams: params({ n_agents: 50000 }), stats: agents, statsAgents: agents, popScale: 1, diagnostics: [] };
+    const deps = makeDeps({ simulate: success(), previousRun: previous });
+    await configureSimulation({ disease: "dengue", n_agents: 50000 } as never, deps);
+    deps.scenario.totalPopulation = 213_000_000; // fetched between the runs: scale 1 → 4260
+    deps.scenario.hasRun = true;
+    const body = JSON.parse((await runSimulation({}, deps)).content);
+    expect(body.compare.pop_scale).toEqual({ from: 1, to: 4260 });
+    expect(body.compare.stats_delta).toEqual({ peak_infections: 100 * 4260, peak_day: 5, total_infected: 1000 * 4260, total_deaths: 2 * 4260 });
   });
 });

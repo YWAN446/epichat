@@ -229,6 +229,7 @@ describe("configure_simulation records a taken option", () => {
   const lever = { patch: { "disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4 }, current: {}, direction: "change" as const, rationale: "r", basis: "rule" as const };
   const previous = () => ({
     id: "run-3", effectiveParams: params({}), stats: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 },
+    statsAgents: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 }, popScale: 1,
     diagnostics: [
       { id: "sharp_curve", severity: "info" as const, title: "t", evidence: {}, levers: [lever] },
       { id: "unfinished", severity: "warning" as const, title: "u", evidence: {}, levers: [{ ...lever, patch: { "run.sim_dur_years": 2 } }] },
@@ -259,5 +260,19 @@ describe("configure_simulation records a taken option", () => {
     await run(deps, { n_agents: 10000 }); // unchanged: nothing to match
     expect(deps.options).toEqual([]);
     expect(deps.previousReads).toBe(1);
+  });
+
+  it("matches a lever whose path already holds the suggested value, as long as one of its paths was applied now", async () => {
+    const seiar = { patch: { "disease.model": "seiar", "disease.p_asymp": 0.3, "disease.dur_exp.mean_days": 2 }, current: {}, direction: "change" as const, rationale: "r", basis: "disease_db" as const };
+    const seeds = { patch: { "disease.seed.mode": "count", "disease.seed.value": 10 }, current: {}, direction: "decrease" as const, rationale: "r", basis: "rule" as const };
+    const prev = { ...previous(), diagnostics: [{ id: "fatality_on_all_infections", severity: "info" as const, title: "f", evidence: {}, levers: [seiar] }, { id: "instant_peak", severity: "warning" as const, title: "i", evidence: {}, levers: [seeds] }] };
+    const deps = makeDeps({ previousRun: prev });
+    await run(deps, { disease: "influenza", p_death: 0.001, seed_count: 300 }); // p_asymp is already the default 0.3; the seed is already a count
+    deps.scenario.hasRun = true;
+    await run(deps, { advanced: { "disease.model": "seiar", "disease.p_asymp": 0.3, "disease.dur_exp.mean_days": 2 } });
+    await run(deps, { seed_count: 10 });
+    expect(deps.options.map((o) => o.diagnosticId)).toEqual(["fatality_on_all_infections", "instant_peak"]);
+    await run(deps, { n_agents: 20000 }); // every lever path already holds its value, but none was applied by this call
+    expect(deps.options).toHaveLength(2);
   });
 });

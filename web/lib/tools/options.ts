@@ -1,18 +1,24 @@
 import type { PreviousRun } from "@/lib/db/runs";
-import type { PathChange } from "@/lib/sim/paths";
+import type { SimParams } from "@/lib/sim/params";
+import { flattenParams, type PathChange } from "@/lib/sim/paths";
 import { near } from "./sources";
 
 export type MatchedLever = { diagnosticId: string; patch: Record<string, unknown> };
 
-/** Spec 11: a lever was taken when every path of its patch was applied with its value; the first matching lever per diagnostic. */
-export function matchedLevers(previous: PreviousRun | null, changed: PathChange[]): MatchedLever[] {
+/**
+ * Spec 11: a lever was taken when every path of its patch now holds the lever's value and at least one of them
+ * was applied by this call (a path that already held the value, such as a default, counts); the first matching
+ * lever per diagnostic.
+ */
+export function matchedLevers(previous: PreviousRun | null, changed: PathChange[], params: SimParams): MatchedLever[] {
   if (!previous || changed.length === 0) return [];
   const applied = new Map(changed.map((c) => [c.path, c.to]));
+  const current = flattenParams(params as unknown as Record<string, unknown>);
   const out: MatchedLever[] = [];
   for (const diagnostic of previous.diagnostics) {
     const lever = diagnostic.levers.find((l) => {
       const paths = Object.keys(l.patch);
-      return paths.length > 0 && paths.every((p) => applied.has(p) && near(applied.get(p), l.patch[p]));
+      return paths.some((p) => applied.has(p)) && paths.every((p) => near(applied.has(p) ? applied.get(p) : current[p], l.patch[p]));
     });
     if (lever) out.push({ diagnosticId: diagnostic.id, patch: lever.patch });
   }
