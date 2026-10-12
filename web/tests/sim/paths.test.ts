@@ -31,4 +31,10 @@ describe("changedPaths", () => {
     ]);
     expect(changedPaths({ a: { b: 1 } }, { a: { b: 1 } })).toEqual([]);
   });
+
+  it("treats a null leaf becoming an object, or an object becoming null, as the leaves' change only", async () => {
+    const { changedPaths } = await import("@/lib/sim/paths");
+    expect(changedPaths({ d: { e: null } }, { d: { e: { f: 1 } } })).toEqual([{ path: "d.e.f", from: null, to: 1 }]);
+    expect(changedPaths({ d: { e: { f: 1 } } }, { d: { e: null } })).toEqual([{ path: "d.e.f", from: 1, to: null }]);
+  });
 });

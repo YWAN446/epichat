@@ -150,7 +150,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     // After the core fields, so a path given both ways takes the patch's value (spec 19); checked whole before anything is written.
     const problem = applyAdvanced(base, input.advanced);
     if (problem) return errorOutcome(`CONFIG ERROR: ${problem}`);
-    applied.advanced = input.advanced;
+    Object.assign(applied, input.advanced); // flat, by path, so the chat line reads them like the fields
   }
 
   const validated = validateParams(base);

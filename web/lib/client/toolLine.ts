@@ -42,8 +42,8 @@ export function statusLabel(name: string): string {
 }
 
 const MAX_CHARS = 160;
-/** The card's own bookkeeping, never part of the line. */
-const HIDDEN = new Set(["kind", "duration_ms", "series"]);
+/** The card's own bookkeeping, never part of the line; `changed` is a list of objects the line could not read. */
+const HIDDEN = new Set(["kind", "duration_ms", "series", "changed"]);
 
 /** The persistent chat line for one tool call: Python's format_agent_tool_line over the payload's first four fields. */
 export function toolLine(name: string, payload: CardPayload | undefined, ok: boolean): { label: string; detail: string; warn: boolean } {

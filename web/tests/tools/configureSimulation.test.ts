@@ -133,6 +133,11 @@ describe("configure_simulation: the spec's field names, advanced and changed", (
     expect(out.applied).toEqual({ disease: "measles", model: "seir", dur_exp_days: 11, dur_inf_days: 8 });
     await run(deps, { disease_type: "sir" });
     expect(deps.scenario.params?.disease.model).toBe("sir");
+    const fresh = makeDeps();
+    await run(fresh, { disease: "measles" });
+    const switched = JSON.parse((await run(fresh, { model: "seir", dur_exp_days: 11 })).content);
+    expect(switched.changed).toEqual(expect.arrayContaining([{ path: "disease.model", from: "sir", to: "seir" }, { path: "disease.dur_exp.mean_days", from: null, to: 11 }]));
+    expect(switched.changed.some((c: { path: string }) => c.path === "disease.dur_exp")).toBe(false); // the latent period's creation is its leaves, not a null-to-null ghost
   });
 
   it("seeds by count or by fraction, never both, keeping the seeding day", async () => {
@@ -153,7 +158,7 @@ describe("configure_simulation: the spec's field names, advanced and changed", (
     const out = JSON.parse((await run(deps, { n_agents: 100000, advanced: { "disease.dur_inf.dist": "lognormal", "disease.dur_inf.sd_days": 2, "run.n_replicates": 3 } })).content);
     expect(deps.scenario.params?.disease.dur_inf).toEqual({ mean_days: 10, dist: "lognormal", sd_days: 2 });
     expect(deps.scenario.params?.run.n_replicates).toBe(3);
-    expect(out.applied.advanced).toEqual({ "disease.dur_inf.dist": "lognormal", "disease.dur_inf.sd_days": 2, "run.n_replicates": 3 });
+    expect(out.applied).toEqual({ n_agents: 100000, "disease.dur_inf.dist": "lognormal", "disease.dur_inf.sd_days": 2, "run.n_replicates": 3 }); // the patch's paths, flat, so the chat line reads them
     expect(out.changed).toEqual(expect.arrayContaining([
       { path: "run.n_agents", from: 50000, to: 100000 },
       { path: "disease.dur_inf.dist", from: "gamma", to: "lognormal" },

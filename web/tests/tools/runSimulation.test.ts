@@ -131,6 +131,13 @@ describe("run_simulation: diagnostics and the comparison", () => {
     expect(JSON.parse((await runSimulation({}, deps)).content).compare).toBeNull(); // the store had no previous run
   });
 
+  it("caps the disease name it sends at the service's 80 characters", async () => {
+    const deps = makeDeps({ simulate: success() });
+    await configureSimulation({ disease: "a".repeat(100) } as never, deps);
+    await runSimulation({}, deps);
+    expect(deps.simulated[0].disease).toHaveLength(80);
+  });
+
   it("compares across a change of population scale by rescaling the previous run to today's scale", async () => {
     const agents = { ...STATS, peak_infections: 800, peak_day: 35, total_infected: 5000, total_deaths: 10 };
     const previous = { id: "run-8", effectiveParams: params({ n_agents: 50000 }), stats: agents, statsAgents: agents, popScale: 1, diagnostics: [] };

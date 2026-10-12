@@ -34,12 +34,16 @@ export function setPath(obj: Obj, path: string, value: unknown): void {
 
 export type ParamChange = { field: string; from: unknown; to: unknown };
 
+/** A null leaf is an absent block (a latent period on sir, a seed not yet set): its turning into an object, or back, is its leaves' change only. */
 export function diffParams(before: Obj, after: Obj): ParamChange[] {
   const old = flattenParams(before);
   const now = flattenParams(after);
   const changes: ParamChange[] = [];
-  for (const key of Object.keys(old)) if (JSON.stringify(old[key]) !== JSON.stringify(now[key])) changes.push({ field: key, from: old[key], to: now[key] ?? null });
-  for (const key of Object.keys(now)) if (!(key in old)) changes.push({ field: key, from: null, to: now[key] });
+  for (const key of Object.keys(old)) {
+    if (!(key in now) && old[key] === null) continue;
+    if (JSON.stringify(old[key]) !== JSON.stringify(now[key])) changes.push({ field: key, from: old[key], to: now[key] ?? null });
+  }
+  for (const key of Object.keys(now)) if (!(key in old) && now[key] !== null) changes.push({ field: key, from: null, to: now[key] });
   return changes;
 }
 

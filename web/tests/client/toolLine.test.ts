@@ -6,7 +6,7 @@ import type { ConfigPayload } from "@/lib/tools/types";
 const CONFIG: ConfigPayload & { duration_ms: number } = {
   kind: "config", applied: { disease: "measles", r0: 12 }, approx_r0: 12.0,
   config: { disease: "measles", disease_type: "sir", country: "KEN", n_agents: 10000, sim_dur_years: 1, dur_inf: 8, dur_exp: null, interventions: [] },
-  warnings: ["r0 high"], new_scenario: false, duration_ms: 12,
+  warnings: ["r0 high"], new_scenario: false, duration_ms: 12, changed: [{ path: "run.n_agents", from: 10000, to: 20000 }],
 };
 
 describe("tool lines", () => {
@@ -31,6 +31,9 @@ describe("tool lines", () => {
       detail: "applied: disease: measles, r0: 12; approx_r0: 12; config: disease: measles, disease_type: sir, country: KEN; warnings: r0 high",
       warn: false,
     });
+    const advanced = { ...CONFIG, applied: { "run.n_replicates": 5 } };
+    expect(toolLine("configure_simulation", advanced, true).detail).toBe("applied: run.n_replicates: 5; approx_r0: 12; config: disease: measles, disease_type: sir, country: KEN; warnings: r0 high");
+    expect(toolLine("configure_simulation", CONFIG, true).detail).not.toContain("[object Object]");
   });
 
   it("cuts a long line as Python does (157 characters and an ellipsis) and marks an error", () => {

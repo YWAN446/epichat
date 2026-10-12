@@ -11,6 +11,8 @@ export const RunSimulationInput = z.strictObject({});
 export type RunSimulationArgs = z.infer<typeof RunSimulationInput>;
 
 type Obj = Record<string, unknown>;
+/** sim/main.py caps the request's disease name; a longer one would fail every run. */
+const DISEASE_NAME_MAX = 80;
 
 /**
  * Spec 11: what changed since the previous run, by path, and the difference in the headline numbers in today's
@@ -34,7 +36,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   if (!scenario.params) return errorOutcome("Call configure_simulation first to establish the simulation before running.");
   const params = scenario.params;
   const popScale = scenario.totalPopulation && params.run.n_agents > 0 ? scenario.totalPopulation / params.run.n_agents : 1.0;
-  const disease = scenario.disease ?? detectDisease(deps.contextText || "");
+  const disease = (scenario.disease ?? detectDisease(deps.contextText || ""))?.slice(0, DISEASE_NAME_MAX) ?? null;
   // Read before this run is inserted, so it is never its own previous run; the first run has none to read.
   const previous = scenario.hasRun ? await deps.previousRun() : null;
   const result = await deps.sim.simulate(params, popScale, deps.contextText, disease);

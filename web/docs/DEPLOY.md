@@ -433,13 +433,14 @@ Done after the sim-parameters phases 3 and 4 are pushed, with migration
    list call, and the reply names parameters with their current values and
    where each came from (database, default, …), not from memory.
 2. "Use five replicates." The panel's Parameters section shows "Replicates:
-   5" and the configured card's line carries `advanced`.
-3. "Seed 3% of the population and run it." After the run the reply says
-   the peak is the seeding itself and offers at most three options, one of
-   them keeping things as they are. Press the option that reduces the
-   seeds: the configure call that follows sets a seed count of 10, and the
-   next run's reply reports what changed against the previous run (the
-   seeds, the peak day) before interpreting.
+   5" and the configured card's line carries `run.n_replicates: 5`.
+3. "Run it." Measles with the default fatality ratio of 0 is outside the
+   literature range (0.5 to 6%), so the reply says so and offers at most
+   three options, one of them keeping things as they are. Press the option
+   that applies the database's fatality ratio (1.5%): the configure call
+   that follows sets `disease.p_death` to 0.015, and the next run's reply
+   reports what changed against the previous run (the fatality ratio, the
+   deaths) before interpreting.
 4. In the SQL editor:
 
        select kind, tool, meta from step_events
@@ -447,8 +448,8 @@ Done after the sim-parameters phases 3 and 4 are pushed, with migration
        select id, jsonb_array_length(diagnostics) from runs order by created_at desc limit 3;
 
    The first shows a `diagnostic_shown` row whose `ids` names
-   `instant_peak` and an `option_chosen` row carrying the patch; the second
-   shows the run rows with their diagnostics.
+   `cfr_out_of_range` and an `option_chosen` row carrying the patch; the
+   second shows the run rows with their diagnostics.
 5. Open a conversation from before this deploy and say "run it again": the
    run completes and the reply reports what changed against that earlier
    run (nothing, or the seeds), then interprets.
