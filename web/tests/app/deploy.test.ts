@@ -33,6 +33,8 @@ describe("deployment files", () => {
     expect(doc).not.toContain("Details panel");
     expect(doc).not.toContain("press Details");
     expect(doc).not.toContain("3.3.2");
+    expect(doc).toContain("schema v2");
+    expect(doc).toContain("n_replicates");
   });
 
   it("CI runs the web checks", () => {

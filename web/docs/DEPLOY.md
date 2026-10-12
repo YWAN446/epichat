@@ -459,6 +459,15 @@ the entry point the runner spawns). CI runs them on Python 3.12 as the `sim` job
 `SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
 `SIM_MAX_AGENT_YEARS` 500000, `SIM_SERIES_MAX_POINTS` 2000.
 
+**Parameters.** `/simulate` takes `params` in the v1 flat shape or in
+schema v2 (`docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
+section 6); a v1 body is migrated before validation, and `effective_params`
+in the answer is always v2. `run.n_replicates` (1 to 5) runs that many seeds
+in one child process; the answer's `replicates` block (agent units, bands
+thinned like the series) is `null` for one replicate. The agent-years cap
+counts `n_agents × sim_dur_years × n_replicates`. The web app migrates stored
+v1 rows on every read and writes v2; no database migration was needed.
+
 **First two-service deploy, verification.** Done on 2026-10-08: the
 build-time copy of the package was bundled and ran, so the fallback in step 1
 was not needed; the only surprise was the bundle size (see above).
