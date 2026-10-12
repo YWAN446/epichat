@@ -223,13 +223,16 @@ def _unfinished(run: _Run) -> Diagnostic | None:
 def _final_size_gap(run: _Run, unfinished: bool) -> Diagnostic | None:
     if not run.simple or unfinished or not run.n:
         return None
-    z = final_size(run.r_eff)
+    susceptible = 1 - run.params.disease.initial_immune_frac
+    z = final_size(run.r_eff)            # the share of the susceptibles the epidemic reaches
+    expected = susceptible * z           # the attack rate over everyone (section 19)
     attack = run.total / run.n
-    if abs(attack - z) <= FINAL_SIZE_GAP:
+    if abs(attack - expected) <= FINAL_SIZE_GAP:
         return None
     recheck = _r0_recheck(run)
     return Diagnostic("final_size_gap", "info", "The attack rate does not match the configured R0",
-                      {"attack_rate": round(attack, 3), "expected_attack_rate": round(z, 3), "r_eff": round(run.r_eff, 2)},
+                      {"attack_rate": round(attack, 3), "expected_attack_rate": round(expected, 3), "susceptible_share": round(susceptible, 3),
+                       "r_eff": round(run.r_eff, 2)},
                       [recheck] if recheck else [])
 
 

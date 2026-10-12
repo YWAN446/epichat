@@ -354,7 +354,7 @@ Definitions used below: `N = run.n_agents`; `T` = number of days; `peak = max(n_
 | `early_fadeout` | warning | `R_eff > 1`, `n_infectious[-1] == 0`, and `total_infected < 2 × seeds` | seed count to `max(5 × seeds, 10)`; `run.n_replicates` to 5; recheck `disease.r0` against the database |
 | `instant_peak` | warning | `t_peak <= 3` and `seeds / N >= 0.02` (above the realized noise of the 1% default) | `disease.seed` to count 10 |
 | `unfinished` | warning | model in sir, seir, seiar without demographics, and `n_infectious[-1] >= 0.05 × peak`; or any model with mean `new_infections` over the last `ceil(0.1 T)` days above the mean over the `ceil(0.1 T)` days before | `run.sim_dur_years` × 2, within bounds |
-| `final_size_gap` | info | simple run, not `unfinished`, and `abs(total_infected / N - z) > 0.15`, where `z` solves `z = 1 - exp(-R_eff × z)` | check `disease.r0` or `disease.beta`; with the exact R0 of section 7.4 this should not fire on a simple run, so a hit points to a configuration problem |
+| `final_size_gap` | info | simple run, not `unfinished`, and `abs(total_infected / N - s0 × z) > 0.15`, where `s0 = 1 - initial_immune_frac` and `z` solves `z = 1 - exp(-R_eff × z)` (the share of the susceptibles the epidemic reaches; `s0 × z` is the attack rate over everyone) | check `disease.r0` or `disease.beta`; with the exact R0 of section 7.4 this should not fire on a simple run, so a hit points to a configuration problem |
 | `sharp_curve` | info | every duration is `constant` and the number of days with `n_infectious >= peak / 2` is below `2 × dur_inf.mean_days` | `{ dur_inf.dist: "gamma", dur_inf.sd_days: sd }`, sd from section 7.3 or `0.3 × mean` labelled illustrative |
 | `cfr_out_of_range` | warning | disease known and `p_death` outside the database `fatality_rate` range | `disease.p_death` to the database typical value |
 | `fatality_on_all_infections` | info | model is not seiar, `p_death > 0`, and the database `asymptomatic_fraction` typical value is at least 0.2 | `disease.model` to seiar with the database `p_asymp`, so the CFR applies to symptomatic cases only |
@@ -608,7 +608,10 @@ this section wins.
   calibrated to the database R0, offered only when the disease is known and
   the configured R0 is more than 10% away from it (there is no `disease.r0`
   path). `final_size_gap` also stands down when `early_fadeout` fired, and
-  its only lever is that same beta recheck. `cfr_out_of_range` applies to
+  its only lever is that same beta recheck; it compares the attack rate over
+  everyone with `(1 − initial_immune_frac) × z`, since the final-size
+  equation in `R_eff` gives the share of the susceptibles, not of the
+  population (found in review). `cfr_out_of_range` applies to
   the models with deaths and fires for a `p_death` of 0 on a disease whose
   range starts above 0 (a measles run without deaths is worth a word).
   `fatality_on_all_infections` includes `disease.dur_exp.mean_days` from the

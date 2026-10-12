@@ -115,8 +115,12 @@ def test_final_size_gap_fires_on_a_simple_run_whose_attack_rate_misses_the_final
     assert "final_size_gap" not in ids(run(p, NORMAL, total=8600, seeds=100))
     assert "final_size_gap" not in ids(run(p, curve(800, 60, 200, tail=100), total=3000, seeds=100))      # unfinished instead
     assert "final_size_gap" not in ids(run(p, FADED, total=15, seeds=10))                                 # early_fadeout instead
-    immune = params(**{"disease.initial_immune_frac": 0.5})                                               # R_eff about 1.15, z about 0.25
-    assert "final_size_gap" not in ids(run(immune, curve(300, 60, 200), total=1800, seeds=100))
+    # With initial immunity the attack rate over everyone is s0 × z, z being the share of the susceptibles (section 19):
+    # R0 15 with 80% immune gives R_eff 3, z 0.94 and an expected attack rate of 0.19, not 0.94.
+    immune = params(**{"disease.beta": clamp_beta(calibrate_beta(p, 15)), "disease.initial_immune_frac": 0.8})
+    assert "final_size_gap" not in ids(run(immune, curve(300, 60, 200), total=1900, seeds=100))
+    gap = one(run(immune, curve(300, 60, 200), total=5000, seeds=100), "final_size_gap")
+    assert gap.evidence["expected_attack_rate"] == pytest.approx(0.188, abs=0.005) and gap.evidence["susceptible_share"] == pytest.approx(0.2)
     age = params(**{"network.network_type": "age_structured"})
     assert "final_size_gap" not in ids(run(age, NORMAL, total=3000, seeds=100))                          # not a simple run
 
@@ -239,3 +243,6 @@ def test_a_normal_run_raises_no_diagnostic():
     p = params(**{"run.n_agents": 2000})
     out = run_replicates(p)
     assert diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None) == []
+    immune = params(**{"run.n_agents": 2000, "disease.beta": clamp_beta(calibrate_beta(params(), 15)), "disease.initial_immune_frac": 0.8})
+    out = run_replicates(immune)
+    assert diagnose(immune, out["series"], out["stats"], None, out["stats"]["seeds"], None) == []
