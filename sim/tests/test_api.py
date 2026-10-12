@@ -207,3 +207,45 @@ def test_demographics_unknown_code_is_404(client, monkeypatch, tmp_path):
     r = client.get("/demographics/XXX", headers=AUTH)
     assert r.status_code == 404
     assert r.json() == {"ok": False, "error": {"kind": "not_found"}}
+
+
+def test_success_carries_diagnostics_computed_on_the_full_series(client, main, monkeypatch):
+    params = coerce_params(PARAMS)
+    monkeypatch.setattr(main, "simulate", _fake_simulate(_success(params)))
+    monkeypatch.setenv("SIM_SERIES_MAX_POINTS", "3")
+    body = client.post("/simulate", json={"params": PARAMS, "pop_scale": 100}, headers=AUTH).json()
+    assert [d["id"] for d in body["diagnostics"]] == ["unfinished", "sharp_curve"]
+    unfinished = body["diagnostics"][0]
+    assert unfinished["severity"] == "warning" and unfinished["evidence"] == {"last_infectious": 1.0, "peak": 4.0, "still_rising": False}
+    assert unfinished["levers"] == [{"patch": {"run.sim_dur_years": 0.2}, "current": {"run.sim_dur_years": 0.1}, "direction": "increase",
+                                     "rationale": "The epidemic was still going when the run ended; a longer run shows how it ends.", "basis": "rule"}]
+    # three of the five full days sit at or above half the peak; the thinned series the client gets has one
+    assert body["diagnostics"][1]["evidence"] == {"days_at_half_peak": 3, "dur_inf_mean_days": 10.0}
+    assert body["series"]["day"] == [0, 2, 4]
+
+
+def test_the_disease_reaches_the_diagnostics(client, main, monkeypatch):
+    fatal = {**PARAMS, "p_death": 0.2}
+    monkeypatch.setattr(main, "simulate", _fake_simulate(_success(coerce_params(fatal))))
+    with_disease = client.post("/simulate", json={"params": fatal, "disease": "measles"}, headers=AUTH).json()
+    cfr = next(d for d in with_disease["diagnostics"] if d["id"] == "cfr_out_of_range")
+    assert cfr["levers"][0]["basis"] == "disease_db" and cfr["levers"][0]["patch"] == {"disease.p_death": 0.015}
+    without = client.post("/simulate", json={"params": fatal}, headers=AUTH).json()
+    assert "cfr_out_of_range" not in [d["id"] for d in without["diagnostics"]]
+    assert client.post("/simulate", json={"params": PARAMS, "disease": "x" * 81}, headers=AUTH).status_code == 422
+
+
+def test_a_malformed_v1_body_is_422_not_500(client):
+    body = {"params": {**PARAMS, "interventions": [{"type": "vaccine", "coverage": 0.5, "start_day": "soon"}]}}
+    r = client.post("/simulate", json=body, headers=AUTH)
+    assert r.status_code == 422 and r.json()["error"]["kind"] == "invalid_params"
+    detail = r.json()["error"]["detail"]
+    assert detail[0]["loc"] == ["params"] and "soon" in detail[0]["msg"]
+
+
+def test_a_request_exactly_at_the_cap_is_accepted(client, main, monkeypatch):
+    """Pins the strict comparison (spec 19); a pin passes before any change, which is its point."""
+    monkeypatch.setenv("SIM_MAX_AGENT_YEARS", "1000")
+    at_cap = {**PARAMS, "n_agents": 1000, "sim_dur_years": 1.0}
+    monkeypatch.setattr(main, "simulate", _fake_simulate(_success(coerce_params(at_cap))))
+    assert client.post("/simulate", json={"params": at_cap}, headers=AUTH).status_code == 200

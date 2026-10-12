@@ -4,8 +4,8 @@ Private FastAPI app: accepts parameters in the v1 flat shape or schema v2
 (a v1 body is migrated before validation), runs Starsim through the package's
 builder in a child process (`python -m epichat.sim.run_params`), repairs
 parameters with the model when a run fails, and returns v2 effective
-parameters, stats, series and, for more than one replicate, the replicate
-block. Reachable from the web app only through the Vercel service binding
+parameters, stats, series, the replicate block for more than one replicate,
+and the diagnostics of spec section 10. Reachable from the web app only through the Vercel service binding
 plus a shared secret.
 """
 from __future__ import annotations
@@ -36,6 +36,7 @@ from pydantic import BaseModel, Field, ValidationError  # noqa: E402
 
 from epichat.data_loaders.demographics import get_demographics_for_sim  # noqa: E402
 from epichat.params.migrate import coerce_params  # noqa: E402
+from epichat.sim.diagnostics import as_dicts, diagnose, realized_seeds  # noqa: E402
 from series import scale_stats, scaled_bands, scaled_outcome, thin  # noqa: E402
 from service import agent_years, exceeds_cap, simulate  # noqa: E402
 from settings import Settings, load_settings  # noqa: E402
@@ -53,6 +54,7 @@ class SimulateRequest(BaseModel):
     params: dict                                     # v1 flat or schema v2; coerced in the route
     pop_scale: float = Field(default=1.0, ge=1.0, le=1e9)
     context_text: str = Field(default="", max_length=6000)
+    disease: str | None = Field(default=None, max_length=80)   # the scenario's disease, for the diagnostics' database checks
 
 
 def _error(status: int, kind: str, **extra) -> JSONResponse:
@@ -105,6 +107,9 @@ def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_b
         params = coerce_params(body.params)
     except ValidationError as exc:
         return _error(422, "invalid_params", detail=_validation_detail(exc.errors(), ("params",)))
+    except (TypeError, ValueError) as exc:
+        # A malformed v1 body fails inside the migration, before pydantic sees it; still the client's fault.
+        return _error(422, "invalid_params", detail=[{"loc": ["params"], "msg": f"{type(exc).__name__}: {exc}", "type": "value_error"}])
     if exceeds_cap(params, settings):
         requested = agent_years(params)
         return _error(
@@ -133,6 +138,9 @@ def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_b
         replicates = dict(outcome.replicates)
         replicates["stats"] = [scale_stats(s, body.pop_scale) for s in replicates.get("stats", [])]
         replicates["bands"] = scaled_bands(replicates.get("bands", {}), outcome.series["day"], body.pop_scale, settings.series_max_points)
+    # Spec 10: on the child's full series, in agent units, with the disease the web app named.
+    diagnostics = as_dicts(diagnose(outcome.effective_params, outcome.series, outcome.stats, outcome.replicates,
+                                    realized_seeds(outcome.stats, outcome.effective_params), body.disease))
     return {
         "ok": True,
         "effective_params": outcome.effective_params.model_dump(mode="json"),
@@ -141,6 +149,7 @@ def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_b
         "stats_agents": outcome.stats,
         "series": thin(series, settings.series_max_points),
         "replicates": replicates,
+        "diagnostics": diagnostics,
         "pop_scale": body.pop_scale,
         "repairs": outcome.repairs,
         "attempts": outcome.attempts,

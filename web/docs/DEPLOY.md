@@ -457,7 +457,7 @@ the entry point the runner spawns). CI runs them on Python 3.12 as the `sim` job
 
 **Settings** (all optional except the secret): `SIM_TIMEOUT_SECONDS` 120,
 `SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
-`SIM_MAX_AGENT_YEARS` 500000, `SIM_SERIES_MAX_POINTS` 2000.
+`SIM_MAX_AGENT_YEARS` 500000 (a request exactly at the cap is accepted), `SIM_SERIES_MAX_POINTS` 2000.
 
 **Parameters.** `/simulate` takes `params` in the v1 flat shape or in
 schema v2 (`docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
@@ -468,6 +468,12 @@ population like `stats`, bands thinned like the series) is `null` for one
 replicate. The agent-years cap
 counts `n_agents × sim_dur_years × n_replicates`. The web app migrates stored
 v1 rows on every read and writes v2; no database migration was needed.
+The request may also carry `disease` (the scenario's disease name, at most
+80 characters); the 200 answer then carries `diagnostics`: the list of
+section 10 of the same spec, computed on the child's full series in agent
+units (evidence and lever values alike), each with its levers, empty when
+nothing fired. A v1 body the migration cannot read (a non-numeric
+`start_day`, say) answers 422 like any other invalid body.
 
 **First two-service deploy, verification.** Done on 2026-10-08: the
 build-time copy of the package was bundled and ran, so the fallback in step 1
