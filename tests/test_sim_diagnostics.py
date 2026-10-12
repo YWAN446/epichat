@@ -1,0 +1,241 @@
+"""Spec 10: each rule fires on a constructed series and stays quiet on a normal run; suggested values respect the bounds and the database."""
+import json
+import math
+
+import pytest
+
+from epichat.params.r0 import approx_r0, calibrate_beta, clamp_beta
+from epichat.params.schema_v2 import SimParamsV2
+from epichat.sim import diagnostics as dx
+from epichat.sim.diagnostics import bounded, db_range, diagnose, final_size, illustrative_sd, realized_seeds
+
+N = 10000
+DAYS = 366
+GAMMA_10 = {"mean_days": 10, "dist": "gamma", "sd_days": 3}
+
+
+def params(**over) -> SimParamsV2:
+    """Default sir on 10k agents for a year with a gamma 10-day infectious period (R0 about 2.3), plus dotted-path overrides."""
+    body = {"disease": {"dur_inf": dict(GAMMA_10)}, "run": {"n_agents": N, "sim_dur_years": 1.0, "rand_seed": 1}}
+    for path, value in over.items():
+        node = body
+        parts = path.split(".")
+        for part in parts[:-1]:
+            node = node.setdefault(part, {})
+        node[parts[-1]] = value
+    return SimParamsV2.model_validate(body)
+
+
+def curve(peak: float, t_peak: int, width: int, tail: float = 0.0, days: int = DAYS) -> list[float]:
+    """A triangular epidemic: up to `peak` at `t_peak`, down over `width` days, then flat at `tail`."""
+    out = []
+    for t in range(days):
+        if t <= t_peak:
+            out.append(peak * t / max(t_peak, 1))
+        elif t <= t_peak + width:
+            out.append(max(tail, peak * (1 - (t - t_peak) / width)))
+        else:
+            out.append(tail)
+    return out
+
+
+def run(p: SimParamsV2, infectious: list[float], total: float, seeds: int, new: list[float] | None = None, replicates=None, disease=None):
+    series = {"day": list(range(len(infectious))), "n_infectious": infectious, "new_infections": new or [0.0] * len(infectious)}
+    stats = {"total_infected": total, "n_agents": p.run.n_agents, "seeds": seeds, "seeds_day0": seeds if p.disease.seed.day == 0 else 0}
+    return diagnose(p, series, stats, replicates, seeds, disease)
+
+
+def ids(found):
+    return [d.id for d in found]
+
+
+def one(found, wanted):
+    return next(d for d in found if d.id == wanted)
+
+
+FADED = [10.0, 4.0, 1.0] + [0.0] * (DAYS - 3)
+NORMAL = curve(800, 60, 200)           # ends at 0; 8600 of 10000 infected matches the final size of R0 2.3
+
+
+def test_early_fadeout_suggests_more_seeds_replicates_and_the_database_r0():
+    p = params()
+    found = run(p, FADED, total=15, seeds=10)
+    assert ids(found) == ["early_fadeout"]
+    d = found[0]
+    assert d.severity == "warning" and d.evidence["seeds"] == 10 and d.evidence["total_infected"] == 15 and d.evidence["r_eff"] > 1
+    assert [lever.patch for lever in d.levers] == [{"disease.seed.mode": "count", "disease.seed.value": 50}, {"run.n_replicates": 5}]
+    assert d.levers[0].basis == "rule" and d.levers[0].direction == "increase"
+    assert d.levers[0].current == {"disease.seed.mode": "fraction", "disease.seed.value": 0.01}
+    beta = one(run(p, FADED, total=15, seeds=10, disease="measles"), "early_fadeout").levers[2]
+    assert beta.basis == "disease_db" and beta.patch == {"disease.beta": clamp_beta(calibrate_beta(p, 15))}
+    assert "15" in beta.rationale and "measles" in beta.rationale and beta.current == {"disease.beta": p.disease.beta}
+    assert "early_fadeout" not in ids(run(p, NORMAL, total=8600, seeds=100))
+
+
+def test_early_fadeout_caps_the_seed_suggestion_at_the_agents_and_skips_a_matching_database_r0():
+    small = params(**{"run.n_agents": 30})
+    d = one(run(small, FADED, total=12, seeds=10), "early_fadeout")
+    assert d.levers[0].patch["disease.seed.value"] == 30
+    tuned = SimParamsV2.model_validate({**params().model_dump(), "disease": {**params().model_dump()["disease"], "beta": clamp_beta(calibrate_beta(params(), 15))}})
+    assert len(one(run(tuned, FADED, total=15, seeds=10, disease="measles"), "early_fadeout").levers) == 2
+
+
+def test_instant_peak_fires_above_two_percent_seeding_and_not_at_the_one_percent_default():
+    p = params()
+    found = run(p, [300.0, 320.0, 250.0] + curve(200, 20, 60)[3:], total=8600, seeds=300)
+    d = one(found, "instant_peak")
+    assert d.severity == "warning" and d.evidence == {"peak_day": 1, "seeds": 300, "seed_share": 0.03}
+    assert d.levers[0].patch == {"disease.seed.mode": "count", "disease.seed.value": 10} and d.levers[0].direction == "decrease"
+    quiet = run(p, [100.0, 110.0, 90.0] + curve(80, 20, 60)[3:], total=8600, seeds=100)
+    assert "instant_peak" not in ids(quiet)
+
+
+def test_unfinished_fires_on_a_tail_or_a_rising_incidence_and_doubles_the_duration():
+    p = params()
+    d = one(run(p, curve(500, 60, 200, tail=100), total=8600, seeds=100), "unfinished")
+    assert d.severity == "warning" and d.evidence == {"last_infectious": 100, "peak": 500, "still_rising": False}
+    assert d.levers[0].patch == {"run.sim_dur_years": 2.0} and d.levers[0].current == {"run.sim_dur_years": 1.0} and d.levers[0].direction == "increase"
+    sirs = params(**{"disease.model": "sirs", "disease.dur_immune": {"mean_days": 60}})
+    rising = one(run(sirs, NORMAL, total=8600, seeds=100, new=[1.0] * 300 + [5.0] * 66), "unfinished")
+    assert rising.evidence["still_rising"] is True
+    assert "unfinished" not in ids(run(sirs, NORMAL, total=8600, seeds=100, new=[5.0] * 300 + [1.0] * 66))
+    at_the_bound = params(**{"run.sim_dur_years": 20.0})
+    assert one(run(at_the_bound, curve(500, 60, 200, tail=100), total=8600, seeds=100), "unfinished").levers == []
+    assert "unfinished" not in ids(run(p, NORMAL, total=8600, seeds=100))
+
+
+def test_final_size_gap_fires_on_a_simple_run_whose_attack_rate_misses_the_final_size():
+    p = params()
+    z = final_size(approx_r0(p))
+    assert 0.8 < z < 0.9
+    d = one(run(p, NORMAL, total=3000, seeds=100), "final_size_gap")
+    assert d.severity == "info" and d.evidence["attack_rate"] == 0.3 and abs(d.evidence["expected_attack_rate"] - z) < 1e-3 and d.levers == []
+    recheck = one(run(p, NORMAL, total=3000, seeds=100, disease="measles"), "final_size_gap").levers[0]
+    assert recheck.patch == {"disease.beta": clamp_beta(calibrate_beta(p, 15))} and recheck.basis == "disease_db"
+    assert "final_size_gap" not in ids(run(p, NORMAL, total=8600, seeds=100))
+    assert "final_size_gap" not in ids(run(p, curve(800, 60, 200, tail=100), total=3000, seeds=100))      # unfinished instead
+    assert "final_size_gap" not in ids(run(p, FADED, total=15, seeds=10))                                 # early_fadeout instead
+    immune = params(**{"disease.initial_immune_frac": 0.5})                                               # R_eff about 1.15, z about 0.25
+    assert "final_size_gap" not in ids(run(immune, curve(300, 60, 200), total=1800, seeds=100))
+    age = params(**{"network.network_type": "age_structured"})
+    assert "final_size_gap" not in ids(run(age, NORMAL, total=3000, seeds=100))                          # not a simple run
+
+
+def test_final_size_is_the_fixed_point_and_zero_at_or_below_one():
+    assert final_size(0.9) == 0.0 and final_size(1.0) == 0.0
+    z = final_size(2.0)
+    assert abs(z - (1 - math.exp(-2.0 * z))) < 1e-9 and abs(z - 0.7968) < 1e-3
+
+
+def test_sharp_curve_fires_only_with_constant_periods_and_suggests_the_illustrative_sd():
+    constant = params(**{"disease.dur_inf": {"mean_days": 10}})
+    narrow = curve(800, 10, 6)                                   # 9 days at or above half the peak, below 2 × 10
+    d = one(run(constant, narrow, total=8600, seeds=100), "sharp_curve")
+    assert d.severity == "info" and d.evidence == {"days_at_half_peak": 9, "dur_inf_mean_days": 10}
+    assert d.levers[0].patch == {"disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 3.0} and d.levers[0].basis == "rule"
+    assert d.levers[0].current == {"disease.dur_inf.dist": "constant", "disease.dur_inf.sd_days": None}
+    flu = one(run(constant, narrow, total=8600, seeds=100, disease="influenza"), "sharp_curve")
+    assert flu.levers[0].patch["disease.dur_inf.sd_days"] == 0.5 and flu.levers[0].basis == "disease_db"   # 6–8 days: (8 − 6) / 4
+    assert "sharp_curve" not in ids(run(params(), narrow, total=8600, seeds=100))                             # gamma already
+    assert "sharp_curve" not in ids(run(constant, curve(800, 30, 10), total=8600, seeds=100))                # 21 days at half peak
+
+
+def test_cfr_out_of_range_needs_a_known_fatal_disease_and_a_model_with_deaths():
+    d = one(run(params(**{"disease.p_death": 0.2}), NORMAL, total=8600, seeds=100, disease="measles"), "cfr_out_of_range")
+    assert d.severity == "warning" and d.evidence == pytest.approx({"p_death": 0.2, "db_min": 0.005, "db_max": 0.06})
+    assert d.levers[0].patch == pytest.approx({"disease.p_death": 0.015}) and d.levers[0].direction == "decrease" and d.levers[0].basis == "disease_db"
+    assert "1.5%" in d.levers[0].rationale
+    assert "cfr_out_of_range" in ids(run(params(), NORMAL, total=8600, seeds=100, disease="measles"))        # 0 is below 0.5%
+    assert "cfr_out_of_range" not in ids(run(params(**{"disease.p_death": 0.01}), NORMAL, total=8600, seeds=100, disease="measles"))
+    sis = params(**{"disease.model": "sis"})
+    assert "cfr_out_of_range" not in ids(run(sis, curve(800, 60, 200, tail=300), total=8600, seeds=100, disease="measles"))
+    assert "cfr_out_of_range" not in ids(run(params(**{"disease.p_death": 0.2}), NORMAL, total=8600, seeds=100, disease="dengue"))   # no range
+    assert "cfr_out_of_range" not in ids(run(params(**{"disease.p_death": 0.2}), NORMAL, total=8600, seeds=100))
+
+
+def test_fatality_on_all_infections_offers_seiar_with_the_database_asymptomatic_share():
+    d = one(run(params(**{"disease.p_death": 0.001}), NORMAL, total=8600, seeds=100, disease="influenza"), "fatality_on_all_infections")
+    assert d.severity == "info" and d.evidence == {"p_death": 0.001, "db_asymptomatic_fraction": 0.3}
+    assert d.levers[0].patch == {"disease.model": "seiar", "disease.p_asymp": 0.3, "disease.dur_exp.mean_days": 2} and d.levers[0].basis == "disease_db"
+    assert d.levers[0].current == {"disease.model": "sir", "disease.p_asymp": 0.3, "disease.dur_exp.mean_days": None}
+    seir = params(**{"disease.model": "seir", "disease.dur_exp": {"mean_days": 2}, "disease.p_death": 0.001})
+    assert one(run(seir, NORMAL, total=8600, seeds=100, disease="influenza"), "fatality_on_all_infections").levers[0].patch == {"disease.model": "seiar", "disease.p_asymp": 0.3}
+    assert "fatality_on_all_infections" not in ids(run(params(), NORMAL, total=8600, seeds=100, disease="influenza"))                     # no deaths configured
+    assert "fatality_on_all_infections" not in ids(run(params(**{"disease.p_death": 0.01}), NORMAL, total=8600, seeds=100, disease="measles"))   # no asymptomatic share
+    seiar = params(**{"disease.model": "seiar", "disease.dur_exp": {"mean_days": 2}, "disease.p_death": 0.001})
+    assert "fatality_on_all_infections" not in ids(run(seiar, NORMAL, total=8600, seeds=100, disease="influenza"))
+
+
+def test_no_reinfection_when_immunity_outlasts_the_run():
+    sirs = params(**{"disease.model": "sirs", "disease.dur_immune": {"mean_days": 1825}})
+    d = one(run(sirs, NORMAL, total=8600, seeds=100), "no_reinfection")
+    assert d.severity == "info" and d.evidence == {"dur_immune_mean_days": 1825, "sim_days": 365}
+    assert d.levers[0].patch == {"run.sim_dur_years": 10} and d.levers[0].direction == "increase" and d.levers[0].basis == "rule"
+    forever = params(**{"disease.model": "sirs", "disease.dur_immune": {"mean_days": 36500}})
+    assert one(run(forever, NORMAL, total=8600, seeds=100), "no_reinfection").levers == []     # 200 years is past the 20-year bound
+    short = params(**{"disease.model": "sirs", "disease.dur_immune": {"mean_days": 180}})
+    assert "no_reinfection" not in ids(run(short, NORMAL, total=8600, seeds=100))
+
+
+def test_high_variance_reports_the_spread_and_the_faded_share():
+    p = params(**{"run.n_replicates": 3})
+    stats = lambda total: {"total_infected": total, "n_agents": N}      # noqa: E731
+    rep = {"n": 3, "seeds": [1, 2, 3], "representative": 2, "stats": [stats(50), stats(5000), stats(9000)], "bands": {}}
+    d = one(run(p, curve(500, 60, 200), total=8600, seeds=100, replicates=rep), "high_variance")
+    assert d.severity == "info" and d.levers == []
+    assert d.evidence["median_total_infected"] == 5000 and d.evidence["n_replicates"] == 3 and d.evidence["spread"] > 0.5
+    assert d.evidence["faded_out_share"] == pytest.approx(1 / 3, abs=0.01) and d.evidence["p10_total_infected"] < d.evidence["p90_total_infected"]
+    tight = {**rep, "stats": [stats(4900), stats(5000), stats(5100)]}
+    assert "high_variance" not in ids(run(p, curve(500, 60, 200), total=8600, seeds=100, replicates=tight))
+    assert "high_variance" not in ids(run(params(), curve(500, 60, 200), total=8600, seeds=100))
+
+
+def test_warnings_come_before_infos_and_the_dict_form_is_json_ready():
+    found = run(params(**{"disease.p_death": 0.2}), curve(800, 60, 200, tail=100), total=3000, seeds=100, disease="measles")
+    assert ids(found) == ["unfinished", "cfr_out_of_range"]            # the gap stands down when the run is unfinished
+    mixed = run(params(**{"disease.model": "sirs", "disease.dur_immune": {"mean_days": 1825}, "disease.p_death": 0.2}),
+                NORMAL, total=8600, seeds=100, disease="measles")
+    assert ids(mixed) == ["cfr_out_of_range", "no_reinfection"]        # warning first, then the info
+    as_json = dx.as_dicts(found)
+    assert as_json[0]["levers"][0]["patch"] == {"run.sim_dur_years": 2.0} and as_json[0]["severity"] == "warning"
+    json.dumps(as_json)
+
+
+def test_bounded_clamps_to_the_registry_and_names_the_database_range():
+    assert bounded("run.sim_dur_years", 50, None) == (20.0, "")
+    value, note = bounded("disease.p_death", 0.5, "measles")
+    assert value == pytest.approx(0.06) and "database range" in note
+    assert bounded("disease.p_death", 0.02, "measles") == (0.02, "")
+    assert bounded("run.n_replicates", 7.4, None) == (5, "")
+
+
+def test_database_ranges_come_back_in_simulation_units():
+    assert db_range("measles", "fatality_rate") == pytest.approx((0.005, 0.06, 0.015))
+    assert db_range("influenza", "asymptomatic_fraction") == pytest.approx((0.16, 0.85, 0.3))
+    assert db_range("influenza", "immunity_duration") == pytest.approx((1278, 2920, 1825))
+    assert db_range("dengue", "fatality_rate") is None and db_range(None, "r0") is None and db_range("not a disease", "r0") is None
+    assert illustrative_sd("infectious_days", 8, "measles") == (2.4, "rule")             # 8–8 is not a range
+    assert illustrative_sd("infectious_days", 7, "influenza") == (0.5, "disease_db")
+    assert illustrative_sd("incubation_days", 1, "measles") == (1.0, "disease_db")      # (21 − 7) / 4 capped at the mean
+
+
+def test_realized_seeds_prefers_the_stat_and_falls_back_sensibly():
+    p = params()
+    assert realized_seeds({"seeds": 7, "seeds_day0": 3}, p) == 7
+    assert realized_seeds({"seeds_day0": 3}, p) == 3
+    assert realized_seeds({}, p) == 100
+    delayed = params(**{"disease.seed": {"mode": "count", "value": 30, "day": 4}})
+    assert realized_seeds({"seeds_day0": 0}, delayed) == 30
+
+
+def test_the_thresholds_are_named_constants():
+    for name in ("FADEOUT_SEED_MULTIPLE", "INSTANT_PEAK_DAY", "INSTANT_PEAK_SEED_SHARE", "UNFINISHED_TAIL_SHARE", "UNFINISHED_WINDOW_SHARE",
+                 "FINAL_SIZE_GAP", "SHARP_CURVE_WIDTH_MULTIPLE", "FATALITY_ASYMP_SHARE", "HIGH_VARIANCE_SPREAD", "R0_RECHECK_TOLERANCE"):
+        assert isinstance(getattr(dx, name), (int, float)), name
+
+
+def test_a_normal_run_raises_no_diagnostic():
+    from epichat.sim.replicates import run_replicates
+    p = params(**{"run.n_agents": 2000})
+    out = run_replicates(p)
+    assert diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None) == []
