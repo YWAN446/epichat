@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import math
 
-COUNT_STATS = ("peak_infections", "total_infected", "total_deaths", "seeds_day0")
+COUNT_STATS = ("peak_infections", "total_infected", "total_deaths", "seeds_day0", "seeds")
 
 
 def stride_for(n_points: int, max_points: int) -> int:

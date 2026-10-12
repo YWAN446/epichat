@@ -87,3 +87,14 @@ def test_deaths_are_the_disease_deaths_and_all_causes_only_with_demographics():
     assert "cum_deaths_all" not in plain["series"] and plain["stats"]["total_deaths"] > 0
     cum = plain["series"]["cum_deaths"]
     assert all(b >= a for a, b in zip(cum, cum[1:]))
+
+
+def test_seeds_stat_counts_day_zero_and_delayed_seeds():
+    out, sim = run("sir")
+    assert out["stats"]["seeds"] == out["stats"]["seeds_day0"] == sim.seeds_day0
+    p = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 30, "day": 4}},
+                                    "run": {"n_agents": 500, "sim_dur_years": 10 / 365, "rand_seed": 1}})
+    delayed = build_sim(p)
+    delayed.run()
+    stats = extract(delayed, 500, delayed.seeds_day0, False)["stats"]
+    assert stats["seeds_day0"] == 0 and stats["seeds"] == 30

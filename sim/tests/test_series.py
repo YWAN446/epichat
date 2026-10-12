@@ -1,4 +1,4 @@
-from series import scale_counts, scaled_outcome, stats_from, stride_for, thin
+from series import scale_counts, scale_stats, scaled_outcome, stats_from, stride_for, thin
 
 
 def _series(n: int) -> dict:
@@ -85,3 +85,8 @@ def test_stats_from_reads_n_infectious_with_the_n_infected_fallback():
     renamed = dict(s)
     renamed["n_infectious"] = renamed.pop("n_infected")
     assert stats_from(renamed, 500) == stats_from(s, 500)
+
+
+def test_scale_stats_scales_the_seed_counts_and_leaves_days_alone():
+    scaled = scale_stats({"seeds": 3, "seeds_day0": 2, "peak_day": 7, "total_infected": 10}, 100)
+    assert scaled == {"seeds": 300, "seeds_day0": 200, "peak_day": 7, "total_infected": 1000}

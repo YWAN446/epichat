@@ -1,10 +1,13 @@
 """Series and stats from a finished sim, in the spec 8.6 shape. n_infected is
 still sent as an alias of n_infectious for one release (section 18); deaths are
-the disease's own, with the all-causes pair only when demographics are on."""
+the disease's own, with the all-causes pair only when demographics are on. The
+stats carry seeds_day0 and seeds (day 0 plus delayed), the latter for spec 10."""
 from __future__ import annotations
 
 import numpy as np
 import starsim as ss
+
+from .interventions import SeedInfections
 
 SERIES_KEYS = ("n_susceptible", "n_exposed", "n_infectious", "n_infected", "n_asymptomatic", "n_recovered",
                "new_infections", "cum_infections", "new_deaths", "cum_deaths", "new_deaths_all", "cum_deaths_all")
@@ -12,6 +15,12 @@ SERIES_KEYS = ("n_susceptible", "n_exposed", "n_infectious", "n_infected", "n_as
 
 def _values(res, key) -> list[float]:
     return [float(v) for v in res[key].values]
+
+
+def realized_seeds(sim: ss.Sim, seeds_day0: int) -> int:
+    """The day-0 seeds plus what a delayed SeedInfections infected: spec 10's `seeds`."""
+    delayed = sum(int(i.n_seeded) for i in sim.interventions.values() if isinstance(i, SeedInfections))
+    return int(seeds_day0) + delayed
 
 
 def extract(sim: ss.Sim, n_agents: int, seeds_day0: int, demographics_on: bool) -> dict:
@@ -48,5 +57,6 @@ def extract(sim: ss.Sim, n_agents: int, seeds_day0: int, demographics_on: bool) 
         "n_agents": int(n_agents),
         "sim_days": npts,
         "seeds_day0": int(seeds_day0),
+        "seeds": realized_seeds(sim, seeds_day0),
     }
     return {"stats": stats, "series": series}
