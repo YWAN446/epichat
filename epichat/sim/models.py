@@ -1,12 +1,13 @@
 """EpiChat's six compartmental models as thin subclasses of Starsim 3.7's
-SIR, SEIR and SIS (spec 7.1).
+SIR, SEIR and SIS (spec 7.1, phase 2 behaviour).
 
-Phase 0 reproduces the v1 templates: constant durations arrive from the
-builder, deaths are drawn for every infection (seiar included), asymptomatic
-agents lower rel_trans directly, and sis has neither immunity (the builder
-passes waning 0 and imm_boost 0) nor deaths. The one addition is the
+Every model carries `rel_trans_base`, which the TransmissibilityModifiers
+connector multiplies into `rel_trans` once per step (spec 8.4), and the
 `new_deaths_disease` result, which counts the deaths a disease requests so the
-service no longer subtracts background mortality.
+service never subtracts background mortality. SEIAR lowers the base, never
+`rel_trans`, for asymptomatic agents and draws `p_death` for symptomatic
+infections only (7.2: a case fatality ratio). SIS takes its waning and boost
+from the parameters (0 and 0 reproduce v1) and never draws deaths.
 """
 from __future__ import annotations
 
@@ -15,7 +16,12 @@ import starsim as ss
 
 
 class EpiChatDisease:
-    """Mixin for every EpiChat model: counts the deaths this disease requests."""
+    """Mixin for every EpiChat model: a transmissibility base state the
+    connector composes into rel_trans (spec 8.4), and a disease-death counter."""
+
+    def __init__(self, pars=None, **kwargs):
+        super().__init__(pars=pars, **kwargs)
+        self.define_states(ss.FloatArr("rel_trans_base", default=1.0, label="Base relative transmission"))
 
     def init_results(self):
         super().init_results()
@@ -88,7 +94,8 @@ class SEIRS(_Waning, SEIR):
 
 
 class SEIAR(SEIR):
-    """SEIR with an asymptomatic track: E -> I or A -> R; A transmits at rel_trans_asymp."""
+    """SEIR with an asymptomatic track: E -> I or A -> R; A transmits at rel_trans_asymp
+    (through rel_trans_base) and never dies of the disease (spec 7.2)."""
 
     def __init__(self, pars=None, p_asymp=None, rel_trans_asymp=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
@@ -103,21 +110,27 @@ class SEIAR(SEIR):
         )
 
     def set_progression(self, uids):
-        super().set_progression(uids)                 # phase 0: deaths drawn for every infection, as v1
-        self.asymp_track[uids] = self.pars.p_asymp.rvs(uids)
+        p = self.pars
+        asymp = p.p_asymp.rvs(uids)
+        self.asymp_track[uids] = asymp
+        dur_inf = p.dur_inf.rvs(uids)
+        will_die = p.p_death.rvs(uids) & ~asymp          # p_death is a case fatality ratio: symptomatic cases only
+        dead, rec = uids[will_die], uids[~will_die]
+        self.ti_dead[dead] = self.ti_infectious[dead] + dur_inf[will_die]
+        self.ti_recovered[rec] = self.ti_infectious[rec] + dur_inf[~will_die]
 
     def step_state(self):
         becoming = (self.exposed & (self.ti_infectious <= self.ti)).uids
         super().step_state()
         asymp = becoming[self.asymp_track[becoming]]
         self.asymptomatic[asymp] = True
-        self.rel_trans[asymp] = self.pars.rel_trans_asymp   # phase 0: direct, as v1; phase 2 moves to rel_trans_base
+        self.rel_trans_base[asymp] = self.pars.rel_trans_asymp
 
     def clear_infection(self, uids):
         super().clear_infection(uids)
         self.asymptomatic[uids] = False
         self.asymp_track[uids] = False
-        self.rel_trans[uids] = 1.0
+        self.rel_trans_base[uids] = 1.0
 
 
 MODELS: dict[str, type] = {"sir": SIR, "seir": SEIR, "sis": SIS, "sirs": SIRS, "seirs": SEIRS, "seiar": SEIAR}
