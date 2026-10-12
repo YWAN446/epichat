@@ -568,3 +568,71 @@ Rulings for the phases 1 and 2 plan:
   the web app reads `n_infectious` with `n_infected` as the fallback for stored
   runs. `total_deaths` counts disease deaths only; a run with demographics on
   gets a warning line saying so, from the web run tool, this release.
+
+## 19. Revision 2026-10-12 (b): phase 3 and 4 rulings
+
+Checked before planning phases 3 and 4, against the repository at `a697696`
+(phases 1 and 2 merged). Where this section and the sections above disagree,
+this section wins.
+
+- **Core field names** (9.1) are adopted as written: `model` (with
+  `disease_type` kept as an alias), `dur_inf_days`, `dur_exp_days`,
+  `dur_immune_days`, `seed_fraction`, `seed_count`. The old `dur_inf`,
+  `dur_exp`, `dur_immune` and `init_prev` leave the tool schema; the frozen
+  Python prompt never names them, so nothing the model reads changes.
+  `describe_parameters` is appended after `remember` in the tool list so the
+  cached prefix keeps its order.
+- **`advanced`** refuses `interventions[]` paths (interventions are set
+  through the vaccine, treatment and seasonality fields); a `requires`
+  partner is demanded when the value differs from the registry default and
+  the partner is neither in the patch nor already set; the patch is applied
+  after the core fields, so a path in both wins over the field. `changed`
+  is the diff against the scenario's previous parameters and empty on a
+  fresh scenario, whose `applied` and `config` already say what it is.
+- **`describe_parameters` derives the value source** instead of storing
+  provenance: `fetch` when a recorded data source carries the value,
+  `database` when the value is the database consensus typical (beta by the
+  R0 it implies), `illustrative` for a spread the configure tool computed,
+  `default` when the value is the registry default, `user` otherwise. A
+  user who types the database value or the default is told it is one; the
+  cost is one honest ambiguity, not a wrong attribution. Interventions are
+  reported by the configuration, not listed by the registry. The database
+  range travels in simulation units (fractions of 1, days).
+- **`diagnose` takes the disease name** as a sixth argument. The web app
+  sends the scenario's disease (or the one detected in the conversation) as
+  `disease` on the `/simulate` request; the service passes it on. `seeds`
+  is the child's new `stats.seeds` (the day-0 seeds plus what delayed
+  seeding infected). Evidence is in agent units, the units the levers are
+  in; the model has `stats_agents` beside `stats`.
+- **Rule refinements.** `early_fadeout`'s third lever is `disease.beta`
+  calibrated to the database R0, offered only when the disease is known and
+  the configured R0 is more than 10% away from it (there is no `disease.r0`
+  path). `final_size_gap` also stands down when `early_fadeout` fired, and
+  its only lever is that same beta recheck. `cfr_out_of_range` applies to
+  the models with deaths and fires for a `p_death` of 0 on a disease whose
+  range starts above 0 (a measles run without deaths is worth a word).
+  `fatality_on_all_infections` includes `disease.dur_exp.mean_days` from the
+  database incubation typical when the model has no latent period, and does
+  not fire when the database has none. `no_reinfection` suggests
+  `ceil(2 × dur_immune / 365)` years when that is within the 20-year bound,
+  else it only notes the window. `unfinished` doubles the duration within
+  the bound and offers no lever at 20 years. The list is ordered warnings
+  first, table order within.
+- **Options.** The suggested replies (`next` block, 80 characters) name the
+  change in plain words; the model applies the lever's whole patch through
+  `configure_simulation`, and `option_chosen` is matched on the applied
+  patch (every path of a lever present in `changed` with the lever's value),
+  one event per matched diagnostic. The previous run is read from the
+  `runs` table (the scenario's successful runs plus this turn's unlinked
+  ones, as the report does), so no scenario column is needed.
+- **Migration `0007_run_diagnostics.sql`** adds `runs.diagnostics jsonb not
+  null default '[]'` and the two step-event kinds to the `step_events`
+  check; `finish_turn` is unchanged. Runs stored before it read as having no
+  diagnostics.
+- **Carried from the phase 1 and 2 review.** The run panel and the report
+  appendix label effective parameters with the registry labels; a beta
+  clamped at 1000 adds a warning naming the R0 the run will have; the
+  agent-years cap keeps the strict comparison and the runbook says a request
+  exactly at the cap is accepted; a malformed v1 body answers 422.
+- **Thresholds** are module constants in `epichat/sim/diagnostics.py`, tuned
+  later from the recorded `diagnostic_shown` and `option_chosen` events.
