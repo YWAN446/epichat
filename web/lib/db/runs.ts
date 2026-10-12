@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ResolvedField } from "@/lib/data/types";
-import type { RepairRecord, SimStats } from "@/lib/sim/client";
+import type { Diagnostic, RepairRecord, SimStats } from "@/lib/sim/client";
 import { coerceParams, type SimParams } from "@/lib/sim/params";
 import type { RunRecord } from "@/lib/tools/types";
 
@@ -20,6 +20,9 @@ export type ReportRun = {
   dataSources: ResolvedField[];
 };
 
+/** The scenario's latest successful run, as the comparison and the option matching read it (spec 11). */
+export type PreviousRun = { id: string; effectiveParams: SimParams; stats: SimStats; diagnostics: Diagnostic[] };
+
 export interface RunStore {
   /** Insert the row and return its id. Throws when the database refuses; onRun swallows it. */
   insert(run: RunInsert): Promise<string>;
@@ -27,12 +30,21 @@ export interface RunStore {
   listForReport(conversationId: string, scenarioId: string | null, turnId: string): Promise<ReportRun[]>;
   /** The stored series of the given runs, by id; runs without one are left out (the share's snapshot). */
   seriesFor(ids: string[]): Promise<Map<string, Record<string, number[]>>>;
+  /** The newest successful run of the scenario (this turn's unlinked ones included), or null. Throws when the database refuses. */
+  latest(conversationId: string, scenarioId: string | null, turnId: string): Promise<PreviousRun | null>;
 }
 
 type ReportRunRow = {
   id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: unknown; stats: SimStats; stats_agents: SimStats;
   pop_scale: number | string | null; series: Record<string, number[]> | null; repairs: RepairRecord[] | null; warnings: string[] | null; data_sources: ResolvedField[] | null;
 };
+
+type PreviousRow = { id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: unknown; stats: SimStats; diagnostics: Diagnostic[] | null };
+
+/** The stored scenario's runs, plus this turn's not-yet-linked ones; never an earlier turn's orphan when the scenario is new. */
+function belongs(row: { scenario_id: string | null; turn_id: string | null }, scenarioId: string | null, turnId: string): boolean {
+  return (scenarioId !== null && row.scenario_id === scenarioId) || (row.scenario_id === null && row.turn_id === turnId);
+}
 
 /** The runs columns for one simulation, finished or failed. */
 export function runRow(run: RunInsert): Record<string, unknown> {
@@ -48,6 +60,7 @@ export function runRow(run: RunInsert): Record<string, unknown> {
     warnings: record.warnings,
     data_sources: record.dataSources,
     repairs: result.repairs,
+    diagnostics: result.ok ? (result.diagnostics ?? []) : [],
   };
   if (result.ok) {
     return {
@@ -89,8 +102,7 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
         .order("created_at", { ascending: true });
       if (error) throw new Error(`runs read failed: ${error.message}`);
       return ((data ?? []) as ReportRunRow[])
-        // The stored scenario's runs, plus this turn's not-yet-linked ones; never an earlier turn's orphan when the scenario is new.
-        .filter((row) => (scenarioId !== null && row.scenario_id === scenarioId) || (row.scenario_id === null && row.turn_id === turnId))
+        .filter((row) => belongs(row, scenarioId, turnId))
         .flatMap((row) => {
           // Stored rows may be v1; a row whose parameters no longer validate is left out of the report.
           const effectiveParams = coerceParams(row.effective_params);
@@ -119,6 +131,22 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
       if (error) throw new Error(`runs read failed: ${error.message}`);
       for (const row of (data ?? []) as { id: string; series: Record<string, number[]> | null }[]) if (row.series) out.set(row.id, row.series);
       return out;
+    },
+    async latest(conversationId, scenarioId, turnId) {
+      const { data, error } = await admin
+        .from("runs")
+        .select("id, created_at, scenario_id, turn_id, effective_params, stats, diagnostics")
+        .eq("conversation_id", conversationId)
+        .is("error", null)
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(`runs read failed: ${error.message}`);
+      for (const row of (data ?? []) as PreviousRow[]) {
+        if (!belongs(row, scenarioId, turnId)) continue;
+        const effectiveParams = coerceParams(row.effective_params);
+        if (!effectiveParams) continue; // an unusable row is no comparison; the next older one may be
+        return { id: row.id, effectiveParams, stats: row.stats, diagnostics: Array.isArray(row.diagnostics) ? row.diagnostics : [] };
+      }
+      return null;
     },
   };
 }

@@ -119,12 +119,14 @@ describe("run store", () => {
     expect(callOn(recorded, "runs", "insert")).toEqual([runRow(insert)]);
     expect(runRow({ ...insert, scenarioId: "s1" })).toMatchObject({
       conversation_id: CONVERSATION, user_id: USER, turn_id: TURN, scenario_id: "s1", params: params({ n_agents: 1000 }), pop_scale: 2.5,
-      stats: STATS, stats_agents: STATS, series: { day: [0] }, duration_ms: 900, sim_cold_start: true, error: null, warnings: ["w"], data_sources: [rf("birth_rate", 0.028)], repairs: [],
+      stats: STATS, stats_agents: STATS, series: { day: [0] }, duration_ms: 900, sim_cold_start: true, error: null, warnings: ["w"], data_sources: [rf("birth_rate", 0.028)], repairs: [], diagnostics: [],
     });
+    const diagnostics = [{ id: "unfinished", severity: "warning" as const, title: "t", evidence: {}, levers: [] }];
+    expect(runRow({ ...insert, record: { ...record, result: { ...success, diagnostics } } })).toMatchObject({ diagnostics });
     const failed = { ...record, result: { ok: false as const, status: 504, kind: "timeout" as const, detail: "The simulation timed out after 120 seconds.", repairs: [], attempts: 2, seconds: 120 } };
     expect(runRow({ ...insert, record: failed })).toMatchObject({
       effective_params: null, stats: null, stats_agents: null, series: null, duration_ms: null, sim_cold_start: null,
-      error: { kind: "timeout", detail: "The simulation timed out after 120 seconds.", status: 504, attempts: 2 },
+      error: { kind: "timeout", detail: "The simulation timed out after 120 seconds.", status: 504, attempts: 2 }, diagnostics: [],
     });
   });
 
@@ -297,5 +299,29 @@ describe("memory store", () => {
     const none = fakeAdmin({ memories: [{ data: [] }] });
     expect(await supabaseMemoryStore(none.client).evictOldestAgent(USER, NOW)).toBe(false);
     expect(none.recorded).toHaveLength(1);
+  });
+});
+
+describe("the previous run", () => {
+  const row = (id: string, scenario_id: string | null, turn_id: string, extra: Record<string, unknown> = {}) =>
+    ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id, effective_params: {}, stats: STATS, diagnostics: [], ...extra });
+
+  it("is the newest successful run of the scenario or of this turn, with its diagnostics", async () => {
+    const diagnostics = [{ id: "unfinished", severity: "warning", title: "t", evidence: {}, levers: [] }];
+    const admin = fakeAdmin({ runs: [{ data: [row("run-3", null, "t9", { diagnostics }), row("run-2", "s0", "t0"), row("run-1", "s1", "t1")] }] });
+    const previous = await supabaseRunStore(admin.client).latest("c1", "s1", "t9");
+    expect(previous).toMatchObject({ id: "run-3", diagnostics, stats: STATS });
+    expect(previous?.effectiveParams.run.n_agents).toBe(10000);
+    expect(callOn(admin.recorded, "runs", "order")).toEqual(["created_at", { ascending: false }]);
+    expect(callOn(admin.recorded, "runs", "is")).toEqual(["error", null]);
+  });
+
+  it("reads a row without diagnostics as having none, skips unusable params, and is null without a run", async () => {
+    const admin = fakeAdmin({ runs: [{ data: [row("run-2", "s1", "t2", { diagnostics: null }), row("run-1", "s1", "t1")] }] });
+    expect(await supabaseRunStore(admin.client).latest("c1", "s1", "t9")).toMatchObject({ id: "run-2", diagnostics: [] });
+    const bad = fakeAdmin({ runs: [{ data: [row("run-2", "s1", "t2", { effective_params: { n_agents: -1 } }), row("run-1", "s1", "t1")] }] });
+    expect((await supabaseRunStore(bad.client).latest("c1", "s1", "t9"))?.id).toBe("run-1");
+    expect(await supabaseRunStore(fakeAdmin({ runs: [{ data: [row("run-1", "s1", "t1")] }] }).client).latest("c1", null, "t9")).toBeNull();
+    await expect(supabaseRunStore(fakeAdmin({ runs: [{ data: null, error: { message: "down" } }] }).client).latest("c1", "s1", "t9")).rejects.toThrow(/down/);
   });
 });

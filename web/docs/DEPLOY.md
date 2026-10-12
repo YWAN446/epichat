@@ -31,6 +31,13 @@ creates projects or changes dashboard settings.
    every chat turn and every profile request fails on the new columns. The
    same deploy carries `content/consent.md` at `version: 2026-10-10`, so
    every participant passes the consent page and then the profile page once.
+   The sim-parameters work (phases 3 and 4) adds
+   `web/supabase/migrations/0007_run_diagnostics.sql` (the `runs.diagnostics`
+   column and two step-event kinds, `diagnostic_shown` and `option_chosen`);
+   run it after 0006, twice, before that code deploys, or every run row
+   insert fails on the missing column (the run still answers, with `run_id`
+   null and no comparison) and `finish_turn` rejects the two new step
+   events.
 3. Sign-in is by an emailed code only. The app has no page for a sign-in link
    to land on, so the emails must carry the code and no link.
    - Authentication > Sign In / Providers > Email: set "Email OTP Length" to

@@ -144,3 +144,15 @@ describe("sessions", () => {
     expect(closed[0].ended).toBe(true);
   });
 });
+
+describe("runs", () => {
+  it("stores diagnostics, an empty list by default", async () => {
+    const { rows } = await db.query<{ diagnostics: unknown }>(
+      "insert into runs (user_id, params, diagnostics) values ($1, '{}'::jsonb, $2::jsonb) returning diagnostics",
+      [ALICE, JSON.stringify([{ id: "unfinished", severity: "warning", title: "t", evidence: {}, levers: [] }])],
+    );
+    expect(rows[0].diagnostics).toEqual([{ id: "unfinished", severity: "warning", title: "t", evidence: {}, levers: [] }]);
+    const { rows: plain } = await db.query<{ diagnostics: unknown }>("insert into runs (user_id, params) values ($1, '{}'::jsonb) returning diagnostics", [ALICE]);
+    expect(plain[0].diagnostics).toEqual([]);
+  });
+});

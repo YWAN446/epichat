@@ -10,6 +10,15 @@ import type { SimParams } from "./params";
 export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number; seeds_day0?: number };
 /** Spec 8.7: the service's replicate block, scaled to the population like stats, bands thinned like the series. */
 export type Replicates = { n: number; seeds: number[]; representative: number; stats: SimStats[]; bands: Record<string, { p10: number[]; p90: number[] }> };
+/** Spec 10: one suggested change, a patch of registry paths applied together. */
+export type Lever = {
+  patch: Record<string, unknown>;
+  current: Record<string, unknown>;
+  direction: "increase" | "decrease" | "change";
+  rationale: string;
+  basis: "disease_db" | "rule" | "user";
+};
+export type Diagnostic = { id: string; severity: "info" | "warning"; title: string; evidence: Record<string, unknown>; levers: Lever[] };
 export type RepairRecord = {
   attempt: number;
   error: string;
@@ -31,6 +40,8 @@ export type SimSuccess = {
   cold_start: boolean;
   starsim_version: string;
   replicates?: Replicates | null;
+  /** Spec 10, in agent units; absent from answers of a service older than phase 4. */
+  diagnostics?: Diagnostic[];
 };
 export type SimFailureKind = "invalid_params" | "too_large" | "execution_failed" | "timeout" | "unauthorized" | "misconfigured" | "not_configured" | "unavailable";
 export type SimFailure = { ok: false; status: number; kind: SimFailureKind; detail: string; repairs: RepairRecord[]; attempts: number | null; seconds?: number };
@@ -41,7 +52,8 @@ export type Demographics = { birth_rate: number; death_rate: number; source: str
 export type ExportResult = { ok: true; bytes: Uint8Array; contentType: string } | { ok: false; status: number; kind: SimFailureKind; detail: string };
 
 export type SimClient = {
-  simulate(params: SimParams, popScale: number, contextText: string): Promise<SimResult>;
+  /** `disease` is the scenario's disease name, for the service's database checks (spec 19). */
+  simulate(params: SimParams, popScale: number, contextText: string, disease?: string | null): Promise<SimResult>;
   demographicsFallback(iso3: string): Promise<Demographics | null>;
   /** Word or PDF for a report document (report spec, section 12). */
   export(format: "docx" | "pdf", document: ReportDocument): Promise<ExportResult>;
@@ -76,14 +88,14 @@ export function createSimClient(opts: { baseUrl: string; secret: string; fetchIm
   const headers = { "content-type": "application/json", authorization: `Bearer ${opts.secret}` };
 
   return {
-    async simulate(params, popScale, contextText) {
+    async simulate(params, popScale, contextText, disease) {
       if (!base) return failure(0, "not_configured", "The simulation service address is not configured.");
       let response: Response;
       try {
         response = await fetchImpl(`${base}/simulate`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ params, pop_scale: popScale, context_text: contextText }),
+          body: JSON.stringify({ params, pop_scale: popScale, context_text: contextText, disease: disease ?? null }),
           signal: AbortSignal.timeout(timeoutMs),
         });
       } catch (error) {

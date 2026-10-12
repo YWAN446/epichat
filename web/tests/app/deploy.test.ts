@@ -35,6 +35,8 @@ describe("deployment files", () => {
     expect(doc).not.toContain("3.3.2");
     expect(doc).toContain("schema v2");
     expect(doc).toContain("n_replicates");
+    expect(doc).toContain("0007_run_diagnostics.sql");
+    expect(doc).toContain("carries `diagnostics`");
   });
 
   it("CI runs the web checks", () => {

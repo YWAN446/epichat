@@ -17,19 +17,21 @@ function answering(status: number, body: unknown, capture: { url?: string; init?
 const SUCCESS = {
   ok: true, effective_params: { ...PARAMS }, population: 1000, stats: { peak_infections: 9, peak_day: 3, total_infected: 40, total_deaths: 0, n_agents: 1000, sim_days: 37 },
   stats_agents: { peak_infections: 9, peak_day: 3, total_infected: 40, total_deaths: 0, n_agents: 1000, sim_days: 37 },
-  series: { day: [0, 1], n_infected: [10, 9] }, pop_scale: 1, repairs: [], attempts: 1, duration_ms: 4000, cold_start: true, starsim_version: "3.3.2",
+  series: { day: [0, 1], n_infected: [10, 9] }, pop_scale: 1, repairs: [], attempts: 1, duration_ms: 4000, cold_start: true, starsim_version: "3.3.2", diagnostics: [],
 };
 
 describe("sim client", () => {
-  it("posts the request with the secret and returns the body on success", async () => {
+  it("posts the request with the secret and the disease, and returns the body on success", async () => {
     const capture: { url?: string; init?: RequestInit } = {};
     const client = createSimClient({ baseUrl: "http://sim.internal", secret: "s3", fetchImpl: answering(200, SUCCESS, capture) });
-    const result = await client.simulate(PARAMS, 2419.6, "measles in Kenya");
+    const result = await client.simulate(PARAMS, 2419.6, "measles in Kenya", "measles");
     expect(result).toEqual(SUCCESS);
     expect(capture.url).toBe("http://sim.internal/simulate");
     expect((capture.init?.headers as Record<string, string>).authorization).toBe("Bearer s3");
-    expect(JSON.parse(capture.init?.body as string)).toEqual({ params: PARAMS, pop_scale: 2419.6, context_text: "measles in Kenya" });
+    expect(JSON.parse(capture.init?.body as string)).toEqual({ params: PARAMS, pop_scale: 2419.6, context_text: "measles in Kenya", disease: "measles" });
     expect(capture.init?.signal).toBeInstanceOf(AbortSignal);
+    await client.simulate(PARAMS, 1, "");
+    expect(JSON.parse(capture.init?.body as string).disease).toBeNull();
   });
 
   it("maps each error body to a failure the tool can read", async () => {

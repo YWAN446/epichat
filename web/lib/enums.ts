@@ -85,6 +85,8 @@ export const SERVER_EVENT_KINDS = [
   "memory_updated",
   "memory_removed",
   "memory_toggled",
+  "diagnostic_shown",
+  "option_chosen",
 ] as const;
 
 /** Step events the browser reports through /api/event. */
