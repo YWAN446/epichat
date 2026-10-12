@@ -36,7 +36,7 @@ from pydantic import BaseModel, Field, ValidationError  # noqa: E402
 
 from epichat.data_loaders.demographics import get_demographics_for_sim  # noqa: E402
 from epichat.params.migrate import coerce_params  # noqa: E402
-from series import scaled_outcome, thin, thin_bands  # noqa: E402
+from series import scale_stats, scaled_bands, scaled_outcome, thin  # noqa: E402
 from service import agent_years, exceeds_cap, simulate  # noqa: E402
 from settings import Settings, load_settings  # noqa: E402
 import report_render as render  # noqa: E402
@@ -129,9 +129,10 @@ def simulate_route(body: SimulateRequest, settings: Settings = Depends(require_b
     stats, series = scaled_outcome(outcome.stats, outcome.series, body.pop_scale)
     replicates = None
     if outcome.replicates:
-        # Agent units, like stats_agents; the bands are thinned on the same stride as the series.
+        # Scaled to the population like stats and series; the bands are thinned on the series' stride.
         replicates = dict(outcome.replicates)
-        replicates["bands"] = thin_bands(replicates.get("bands", {}), outcome.series["day"], settings.series_max_points)
+        replicates["stats"] = [scale_stats(s, body.pop_scale) for s in replicates.get("stats", [])]
+        replicates["bands"] = scaled_bands(replicates.get("bands", {}), outcome.series["day"], body.pop_scale, settings.series_max_points)
     return {
         "ok": True,
         "effective_params": outcome.effective_params.model_dump(mode="json"),

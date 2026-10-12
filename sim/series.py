@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import math
 
-COUNT_STATS = ("peak_infections", "total_infected", "total_deaths")
+COUNT_STATS = ("peak_infections", "total_infected", "total_deaths", "seeds_day0")
 
 
 def stride_for(n_points: int, max_points: int) -> int:
@@ -43,10 +43,16 @@ def stats_from(series: dict[str, list], n_agents: int) -> dict:
     }
 
 
-def scaled_outcome(stats: dict, series: dict[str, list], pop_scale: float) -> tuple[dict, dict]:
-    scaled_stats = dict(stats)
+def scale_stats(stats: dict, pop_scale: float) -> dict:
+    scaled = dict(stats)
     for key in COUNT_STATS:
-        scaled_stats[key] = int(round(stats[key] * pop_scale))
+        if key in stats:
+            scaled[key] = int(round(stats[key] * pop_scale))
+    return scaled
+
+
+def scaled_outcome(stats: dict, series: dict[str, list], pop_scale: float) -> tuple[dict, dict]:
+    scaled_stats = scale_stats(stats, pop_scale)
     scaled_series = {
         key: (list(values) if key == "day" else scale_counts(values, pop_scale))
         for key, values in series.items()
@@ -54,10 +60,10 @@ def scaled_outcome(stats: dict, series: dict[str, list], pop_scale: float) -> tu
     return scaled_stats, scaled_series
 
 
-def thin_bands(bands: dict, day: list, max_points: int) -> dict:
-    """The replicate bands thinned on the same stride as the series."""
+def scaled_bands(bands: dict, day: list, pop_scale: float, max_points: int) -> dict:
+    """The replicate bands scaled like the series and thinned on the same stride."""
     out = {}
     for key, band in bands.items():
-        thinned = thin({"day": day, "p10": band["p10"], "p90": band["p90"]}, max_points)
+        thinned = thin({"day": day, "p10": scale_counts(band["p10"], pop_scale), "p90": scale_counts(band["p90"], pop_scale)}, max_points)
         out[key] = {"p10": thinned["p10"], "p90": thinned["p90"]}
     return out

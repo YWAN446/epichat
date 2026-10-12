@@ -151,7 +151,7 @@ def test_too_large_counts_replicates(client, monkeypatch):
     assert "n_replicates" in r.json()["error"]["detail"]
 
 
-def test_replicates_are_returned_in_agent_units_with_thinned_bands(client, main, monkeypatch):
+def test_replicates_are_scaled_like_the_stats_and_thinned_like_the_series(client, main, monkeypatch):
     params = coerce_params({**V2, "run": {**V2["run"], "n_replicates": 2}})
     outcome = _success(params)
     outcome.replicates = {"n": 2, "seeds": [1, 2], "representative": 2, "stats": [outcome.stats] * 2,
@@ -159,8 +159,9 @@ def test_replicates_are_returned_in_agent_units_with_thinned_bands(client, main,
     monkeypatch.setattr(main, "simulate", _fake_simulate(outcome))
     monkeypatch.setenv("SIM_SERIES_MAX_POINTS", "3")
     body = client.post("/simulate", json={"params": PARAMS, "pop_scale": 100}, headers=AUTH).json()
-    assert body["replicates"]["n"] == 2 and body["replicates"]["stats"][0]["total_infected"] == 11      # agents, not people
-    assert body["replicates"]["bands"]["n_infectious"]["p10"] == [1.0, 3.0, 1.0]                        # thinned like the series
+    assert body["replicates"]["n"] == 2 and body["replicates"]["stats"][0]["total_infected"] == 1100    # people, like stats
+    assert body["replicates"]["stats"][0]["seeds_day0"] == 100 and body["stats"]["seeds_day0"] == 100
+    assert body["replicates"]["bands"]["n_infectious"]["p10"] == [100, 300, 100]                         # scaled, thinned like the series
 
 
 def test_context_text_is_capped(client):
