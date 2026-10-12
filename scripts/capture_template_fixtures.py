@@ -3,7 +3,7 @@
 Run this ONCE before changing the templates, and again only when a template
 change is meant to become the new baseline for the CLI and the Streamlit app:
 
-    py -3.10 scripts/capture_template_fixtures.py
+    py -3.12 scripts/capture_template_fixtures.py
 """
 import sys
 from pathlib import Path

@@ -10,7 +10,7 @@ Three values are deliberately imported without numbers, marked
 status="under_review" with a note, because they would mislead a student if
 simulated. See docs/annie-param-review-2026-09.md.
 
-Run once:  py -3.10 scripts/port_annie_parameters.py
+Run once:  py -3.12 scripts/port_annie_parameters.py
 """
 from __future__ import annotations
 

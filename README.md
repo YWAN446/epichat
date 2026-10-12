@@ -62,10 +62,10 @@ parameter carries a `unit`, a `consensus` (`min` / `max` / `typical`, each a
 number or `null`), and a list of `estimates` with full citations.
 
     # see what is filled in, held back, or missing
-    py -3.10 scripts/param_coverage.py
+    py -3.12 scripts/param_coverage.py
 
     # validate your edit before pushing
-    py -3.10 -m pytest tests/test_disease_parameters.py -q
+    py -3.12 -m pytest tests/test_disease_parameters.py -q
 
 Branch from `main`. A value that is disputed or not yet checked goes in with
 `null` consensus numbers plus `"status": "under_review"` and a

@@ -2,7 +2,7 @@
 the agent's system prompt for the web app. Python stays the source of truth; the TypeScript side reads
 these files and never re-derives summaries or range text.
 
-    py -3.10 scripts/export_web_data.py          # writes web/data/
+    py -3.12 scripts/export_web_data.py          # writes web/data/
 """
 from __future__ import annotations
 

@@ -26,11 +26,13 @@ describe("deployment files", () => {
       "0005_shares.sql", "/api/shares", "/s/", "Share verification", "version: 2026-10-09",
       "0006_profile_memory.sql", "/api/profile", "/api/memories", "Profile verification", "version: 2026-10-10",
       "## 6h. Dashboard verification", "Contact support", "Consent form", "Homepage", '"section": "parameters"',
+      "starsim==3.7.2", "python -m epichat.sim.run_params", "py -3.12 -m venv .venv",
     ]) {
       expect(doc).toContain(phrase);
     }
     expect(doc).not.toContain("Details panel");
     expect(doc).not.toContain("press Details");
+    expect(doc).not.toContain("3.3.2");
   });
 
   it("CI runs the web checks", () => {

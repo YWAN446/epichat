@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "sync-data": "py -3.10 ../scripts/export_web_data.py && py -3.10 ../scripts/export_parity_fixtures.py"
+    "sync-data": "py -3.12 ../scripts/export_web_data.py && py -3.12 ../scripts/export_parity_fixtures.py"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",

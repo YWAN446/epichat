@@ -2,7 +2,7 @@
 on a few hundred seeded parameter sets, literature warnings on seeded
 arguments, and the three adapters' row mapping on recorded responses.
 
-    py -3.10 scripts/export_parity_fixtures.py   # writes web/tests/fixtures/
+    py -3.12 scripts/export_parity_fixtures.py   # writes web/tests/fixtures/
 """
 from __future__ import annotations
 

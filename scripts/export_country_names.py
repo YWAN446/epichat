@@ -1,7 +1,7 @@
 """Export ISO3 -> English location name from the UN Population Data Portal
 for the web app's details panel (the configuration stores codes such as KEN).
 
-    py -3.10 scripts/export_country_names.py    # writes web/data/country_names.json
+    py -3.12 scripts/export_country_names.py    # writes web/data/country_names.json
 
 Needs UN_API_KEY in the root .env, like scripts/export_un_locations.py.
 """

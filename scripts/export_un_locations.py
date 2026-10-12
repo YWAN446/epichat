@@ -2,7 +2,7 @@
 web app, so the serverless adapter never has to download it at start-up.
 Needs UN_API_KEY in the environment or the root .env.
 
-    py -3.10 scripts/export_un_locations.py
+    py -3.12 scripts/export_un_locations.py
 """
 from __future__ import annotations
 

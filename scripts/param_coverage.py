@@ -1,6 +1,6 @@
 """Print a disease x parameter coverage grid for the parameter database.
 
-    py -3.10 scripts/param_coverage.py
+    py -3.12 scripts/param_coverage.py
 
 Legend:
   ok       numeric consensus the simulation can use

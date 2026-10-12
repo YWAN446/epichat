@@ -6,7 +6,7 @@ estimates sit beside "r0" inside "parameters" instead of inside it, so
 _flatten_param would be handed a list and raise as soon as default_variant
 named that variant.
 
-Run once:  py -3.10 scripts/normalize_parameters.py
+Run once:  py -3.12 scripts/normalize_parameters.py
 """
 from __future__ import annotations
 
