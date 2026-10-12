@@ -26,10 +26,18 @@ def test_writes_stats_and_series_for_valid_params(tmp_path):
     assert len(payload["series"]["day"]) == 11 and payload["series"]["cum_infections"][-1] >= 0
 
 
-def test_null_seed_runs(tmp_path):
-    completed, out_path = run_child({**SMALL, "rand_seed": None}, tmp_path)
-    assert completed.returncode == 0, completed.stderr
-    assert json.loads(out_path.read_text(encoding="utf-8"))["stats"]["sim_days"] == 11
+def test_null_seed_runs_and_is_reproducible(tmp_path):
+    params = {**SMALL, "rand_seed": None, "network_type": "age_structured",
+              "age_pct_under18": 30.0, "age_pct_18_64": 60.0, "age_pct_over65": 10.0,
+              "interventions": [{"type": "vaccine", "coverage": 0.3, "start_day": 0}]}
+    (tmp_path / "a").mkdir(); (tmp_path / "b").mkdir()
+    first, out1 = run_child(params, tmp_path / "a")
+    second, out2 = run_child(params, tmp_path / "b")
+    assert first.returncode == 0, first.stderr
+    assert second.returncode == 0, second.stderr
+    p1, p2 = json.loads(out1.read_text(encoding="utf-8")), json.loads(out2.read_text(encoding="utf-8"))
+    assert p1["stats"]["sim_days"] == 11
+    assert p1 == p2
 
 
 def test_invalid_params_fail_with_the_field_on_stderr(tmp_path):

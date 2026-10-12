@@ -83,12 +83,12 @@ def build_network(params: SimParams):
     return ss.RandomNet(n_contacts=params.n_contacts, beta=params.network_beta)
 
 
-def _move_to_immune(sim: ss.Sim, coverage: float, seed: int | None) -> None:
+def _move_to_immune(sim: ss.Sim, coverage: float, seed: int) -> None:
     """v1's day-0 vaccine: coverage × susceptibles become immune before the run."""
     disease = sim.diseases[0]
     susceptible = np.asarray(disease.susceptible.uids)
     n_vax = int(coverage * len(susceptible))
-    rng = np.random.default_rng(seed) if seed is not None else np.random.default_rng()
+    rng = np.random.default_rng(seed)
     chosen = ss.uids(rng.choice(susceptible, size=n_vax, replace=False)) if n_vax > 0 else ss.uids()
     if hasattr(disease, "recovered"):
         disease.susceptible[chosen] = False
@@ -98,13 +98,13 @@ def _move_to_immune(sim: ss.Sim, coverage: float, seed: int | None) -> None:
         disease.rel_sus[chosen] = 0.0
 
 
-def _assign_ages(sim: ss.Sim, params: SimParams, seed: int | None) -> None:
+def _assign_ages(sim: ss.Sim, params: SimParams, seed: int) -> None:
     """v1's age assignment: uniform ages within each share, shuffled."""
     n = len(sim.people)
     n_children = round(params.age_pct_under18 / 100 * n)
     n_elderly = round(params.age_pct_over65 / 100 * n)
     n_adults = max(0, n - n_children - n_elderly)
-    rng = np.random.default_rng(seed + 1) if seed is not None else np.random.default_rng()
+    rng = np.random.default_rng(seed + 1)
     ages = np.concatenate([rng.uniform(0, 18, n_children), rng.uniform(18, 65, n_adults), rng.uniform(65, 95, n_elderly)])
     rng.shuffle(ages)
     sim.people.age[:] = ages[:n]
@@ -134,8 +134,11 @@ def build_sim(params: SimParams, seed: int | None = None) -> ss.Sim:
                  interventions=interventions or None, connectors=connectors or None,
                  start=ss.days(0), dur=ss.days(sim_days(params.sim_dur_years)), dt=ss.days(1), verbose=0, **seed_kw)
     sim.init()
+    # the numpy generators below follow the seed Starsim actually uses (its default when rand_seed
+    # is null), so a null-seed scenario reproduces on every random path, not only the network
+    effective_seed = int(sim.pars.rand_seed)
     if vaccine and vaccine.start_day <= 0:
-        _move_to_immune(sim, vaccine.coverage or 0.0, rand_seed)
+        _move_to_immune(sim, vaccine.coverage or 0.0, effective_seed)
     if params.network_type == "age_structured" and params.age_pct_under18 is not None:
-        _assign_ages(sim, params, rand_seed)
+        _assign_ages(sim, params, effective_seed)
     return sim

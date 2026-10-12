@@ -139,3 +139,16 @@ def test_demographics_modules_carry_the_rates_per_thousand():
     assert str(sim.demographics.deaths.pars.death_rate) == str(ss.peryear(8.0))
     assert sim.demographics.births.pars.rate_units == 1e-3
     sim.run()
+
+
+def test_null_seed_is_reproducible_on_every_random_path():
+    # Starsim falls back to seed 1 when rand_seed is null; the numpy generators behind the
+    # age assignment and the day-0 vaccine move must follow the same effective seed
+    p = params(rand_seed=None, n_agents=600, network_type="age_structured",
+               age_pct_under18=30.0, age_pct_18_64=60.0, age_pct_over65=10.0,
+               interventions=[{"type": "vaccine", "coverage": 0.3, "start_day": 0}])
+    a, b = build_sim(p), build_sim(p)
+    assert np.array_equal(np.asarray(a.people.age.values), np.asarray(b.people.age.values))
+    assert np.array_equal(np.asarray(a.diseases[0].recovered.uids), np.asarray(b.diseases[0].recovered.uids))
+    a.run(); b.run()
+    assert list(a.results.sir.cum_infections.values) == list(b.results.sir.cum_infections.values)
