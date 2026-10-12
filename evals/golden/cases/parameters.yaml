@@ -1,0 +1,42 @@
+# The two cases of the sim-parameters spec (2026-10-09, section 1), written
+# for the harness that will drive the deployed web agent (sub-project 5).
+# The Python agent this harness drives has neither describe_parameters nor
+# run diagnostics, so both are pending (section 17): loaded, listed in the
+# report, never run. Until then web/tests/chat/handleChat.test.ts ("golden
+# flows") plays both scripts against the web handler with a scripted model.
+- id: parameters-describe
+  category: parameters
+  critical: false
+  pending: api-harness
+  pending_note: "describe_parameters is a web tool (spec 9.2); the Python agent has none."
+  turns:
+    - "Model measles in Kenya."
+    - "What can I change?"
+  checks:
+    tool_called: [configure_simulation, describe_parameters]
+    config:
+      disease: measles
+      country: KEN
+    judge:
+      - "Lists disease parameters of the active model with their current values"
+      - "Says where at least one value came from: the database, a default, a fetch, or the user"
+      - "Does not say that any listed parameter cannot be changed"
+
+- id: parameters-diagnostic-rerun
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "The diagnostics and the comparison come from the simulation service (spec 10, 11), which the Python agent does not call."
+  turns:
+    - "Model measles in Kenya with 20000 agents, one initial infection, R0 1.2 and no deaths."
+    - "Yes."
+    - "Yes, run it."
+    - "Take the first option and rerun."
+  checks:
+    tool_called: [run_simulation]
+    ran_simulation: true
+    judge:
+      - "After the first run, says the outbreak died out early (or names the diagnostic) rather than interpreting a non-epidemic as a result"
+      - "Offers at most three options, one of them keeping the configuration as it is"
+      - "After the second run, reports what changed against the previous run before interpreting it"
