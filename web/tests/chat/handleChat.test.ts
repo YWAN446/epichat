@@ -318,7 +318,7 @@ describe("handleChat", () => {
     expect((payload.events[1] as { payload: { duration_ms?: number } }).payload.duration_ms).toBe(1000);
     expect(payload.messages).toHaveLength(4);
     expect(payload.scenario).toMatchObject({ id: null, seq: 1, disease: "measles", stage: "configure", stage_reached: "configure", has_run: false });
-    expect((payload.scenario.params as { n_agents: number }).n_agents).toBeGreaterThan(0);
+    expect((payload.scenario.params as { run: { n_agents: number } }).run.n_agents).toBeGreaterThan(0);
     expect(payload.turn).toMatchObject({ stage_before: "understand", stage_after: "configure", input_tokens: 200, output_tokens: 40 });
     expect(payload.step_events.map((e) => [e.kind, e.tool, e.stage])).toEqual([
       ["conversation_started", null, "understand"], ["tool_called", "configure_simulation", "understand"], ["stage_reached", null, "configure"], ["turn", null, "configure"],

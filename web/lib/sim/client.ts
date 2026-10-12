@@ -7,7 +7,9 @@ import type { FetchLike } from "@/lib/data/types";
 import type { ReportDocument } from "@/lib/report/document";
 import type { SimParams } from "./params";
 
-export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number };
+export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number; seeds_day0?: number };
+/** Spec 8.7: the service's replicate block, in agent units, bands thinned like the series. */
+export type Replicates = { n: number; seeds: number[]; representative: number; stats: SimStats[]; bands: Record<string, { p10: number[]; p90: number[] }> };
 export type RepairRecord = {
   attempt: number;
   error: string;
@@ -28,6 +30,7 @@ export type SimSuccess = {
   duration_ms: number;
   cold_start: boolean;
   starsim_version: string;
+  replicates?: Replicates | null;
 };
 export type SimFailureKind = "invalid_params" | "too_large" | "execution_failed" | "timeout" | "unauthorized" | "misconfigured" | "not_configured" | "unavailable";
 export type SimFailure = { ok: false; status: number; kind: SimFailureKind; detail: string; repairs: RepairRecord[]; attempts: number | null; seconds?: number };

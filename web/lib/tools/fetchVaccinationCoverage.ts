@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { detectDisease } from "@/lib/disease/db";
 import { getVaccine, validateParams } from "@/lib/sim/params";
-import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources, upsertIntervention } from "./shared";
+import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources } from "./shared";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 export const FetchVaccinationCoverageInput = z.strictObject({ country_iso3: z.string(), disease: z.string() });
@@ -17,7 +17,7 @@ export const GHO_CODES: Record<string, string[]> = {
   meningococcal: ["MENGA"],
 };
 
-/** Ported from epichat/agent.py fetch_vaccination_coverage. */
+/** Ported from epichat/agent.py fetch_vaccination_coverage. Routine coverage is pre-existing immunity at the start (spec 6.1): disease.initial_immune_frac, not a campaign. */
 export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageArgs, deps: ToolDeps): Promise<ToolOutcome> {
   const scenario = deps.scenario;
   if (!scenario.params) return errorOutcome(NEEDS_CONFIG);
@@ -30,12 +30,9 @@ export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageAr
     if (fields.length === 0) return errorOutcome(`FETCH ERROR: no vaccination data returned for ${iso3}`);
     const applied: Record<string, unknown> = Object.fromEntries(fields.map((f) => [f.field, f.value]));
     const cov = fields.find((f) => f.field.endsWith("_coverage"));
-    if (cov && !getVaccine(scenario.params)) {
-      const coverage = Math.min(1, Number(cov.value) / 100);
-      const validated = validateParams({
-        ...scenario.params,
-        interventions: upsertIntervention(scenario.params.interventions as unknown as Record<string, unknown>[], "vaccine", { coverage, start_day: 0 }),
-      });
+    if (cov && !getVaccine(scenario.params) && scenario.params.disease.initial_immune_frac === 0) {
+      const coverage = Math.min(0.99, Number(cov.value) / 100);
+      const validated = validateParams({ ...scenario.params, disease: { ...scenario.params.disease, initial_immune_frac: coverage } });
       if (!validated.ok) throw new Error(validated.error);
       scenario.params = validated.params;
       applied.applied_vaccine_coverage = coverage;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { pyRound } from "@/lib/sim/pyformat";
-import { errorOutcome, paramWarnings } from "./shared";
+import { errorOutcome, paramWarnings, runNotes } from "./shared";
 import type { RunPayload, ToolDeps, ToolOutcome } from "./types";
 
 export const RunSimulationInput = z.strictObject({});
@@ -11,9 +11,9 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   const scenario = deps.scenario;
   if (!scenario.params) return errorOutcome("Call configure_simulation first to establish the simulation before running.");
   const params = scenario.params;
-  const popScale = scenario.totalPopulation && params.n_agents > 0 ? scenario.totalPopulation / params.n_agents : 1.0;
+  const popScale = scenario.totalPopulation && params.run.n_agents > 0 ? scenario.totalPopulation / params.run.n_agents : 1.0;
   const result = await deps.sim.simulate(params, popScale, deps.contextText);
-  const warnings = paramWarnings(scenario, params, deps.contextText);
+  const warnings = [...paramWarnings(scenario, params, deps.contextText), ...runNotes(params)];
   const dataSources = [...scenario.dataSources];
   const runId = await deps.onRun({ params, popScale, result, warnings, dataSources });
 
@@ -27,11 +27,13 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   scenario.hasRun = true;
   scenario.reportCurrent = false; // the report, if any, no longer covers this run
   const agents = result.stats_agents;
-  const n = agents.n_agents || params.n_agents || 1;
+  const n = agents.n_agents || params.run.n_agents || 1;
   // Agent counts: the scaled total over the real population is the same ratio.
   const attack_rate_pct = pyRound((agents.total_infected / n) * 100, 1);
   const pop_scale = pyRound(popScale, 2);
   const sources = dataSources.map((f) => ({ field: f.field, value: f.value, citation: f.citation }));
+  // The per-replicate stats travel; the per-day bands wait for the workspace follow-up that draws them.
+  const replicates = result.replicates ? { n: result.replicates.n, seeds: result.replicates.seeds, representative: result.replicates.representative, stats: result.replicates.stats } : undefined;
   const payload: RunPayload = {
     kind: "run",
     run_id: runId,
@@ -47,11 +49,12 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
     duration_ms: result.duration_ms,
     cold_start: result.cold_start,
     series: result.series,
+    ...(replicates ? { replicates } : {}),
   };
   return {
     content: JSON.stringify({
       stats: result.stats, attack_rate_pct, pop_scale, effective_params: result.effective_params,
-      warnings, repairs: result.repairs, data_sources: sources,
+      warnings, repairs: result.repairs, data_sources: sources, ...(replicates ? { replicates } : {}),
     }),
     payload,
   };

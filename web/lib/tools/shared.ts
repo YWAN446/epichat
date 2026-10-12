@@ -15,16 +15,24 @@ export function upsertIntervention(list: Record<string, unknown>[], kind: string
   return [...list.filter((i) => i.type !== kind), { type: kind, ...fields }];
 }
 
-/** epichat/agent.py _param_warnings */
+/** epichat/agent.py _param_warnings, on schema v2 */
 export function paramWarnings(scenario: Scenario, params: SimParams, contextText: string): string[] {
   const disease = scenario.disease ?? detectDisease(contextText || "");
   if (!disease) return [];
-  return checkParams(disease, approxR0(params), params.dur_inf, params.dur_exp, {
-    pDeath: params.p_death || null,
-    nContacts: params.n_contacts,
-    durImmune: params.dur_immune,
-    pAsymp: params.disease_type === "seiar" ? params.p_asymp : null,
+  const d = params.disease;
+  return checkParams(disease, approxR0(params), d.dur_inf.mean_days, d.dur_exp?.mean_days ?? null, {
+    pDeath: d.p_death || null,
+    nContacts: params.network.n_contacts,
+    durImmune: d.dur_immune?.mean_days ?? null,
+    pAsymp: d.model === "seiar" ? d.p_asymp : null,
   });
+}
+
+/** Notes about how a run is read, beside the literature warnings (spec 8.6: deaths are disease deaths only). */
+export function runNotes(params: SimParams): string[] {
+  return params.demographics.use_demographics
+    ? ["Deaths in this run count disease deaths only; deaths from the background death rate are reported separately as cum_deaths_all."]
+    : [];
 }
 
 export function errorOutcome(message: string): ToolOutcome {

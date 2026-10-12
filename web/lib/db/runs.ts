@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ResolvedField } from "@/lib/data/types";
 import type { RepairRecord, SimStats } from "@/lib/sim/client";
-import type { SimParams } from "@/lib/sim/params";
+import { coerceParams, type SimParams } from "@/lib/sim/params";
 import type { RunRecord } from "@/lib/tools/types";
 
 export type RunInsert = { conversationId: string; userId: string; turnId: string; scenarioId: string | null; record: RunRecord };
@@ -30,7 +30,7 @@ export interface RunStore {
 }
 
 type ReportRunRow = {
-  id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: SimParams; stats: SimStats; stats_agents: SimStats;
+  id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: unknown; stats: SimStats; stats_agents: SimStats;
   pop_scale: number | string | null; series: Record<string, number[]> | null; repairs: RepairRecord[] | null; warnings: string[] | null; data_sources: ResolvedField[] | null;
 };
 
@@ -91,18 +91,26 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
       return ((data ?? []) as ReportRunRow[])
         // The stored scenario's runs, plus this turn's not-yet-linked ones; never an earlier turn's orphan when the scenario is new.
         .filter((row) => (scenarioId !== null && row.scenario_id === scenarioId) || (row.scenario_id === null && row.turn_id === turnId))
-        .map((row) => ({
-          id: row.id,
-          createdAt: row.created_at,
-          effectiveParams: row.effective_params,
-          stats: row.stats,
-          statsAgents: row.stats_agents,
-          popScale: Number(row.pop_scale ?? 1),
-          series: row.series ?? null,
-          repairs: row.repairs ?? [],
-          warnings: row.warnings ?? [],
-          dataSources: row.data_sources ?? [],
-        }));
+        .flatMap((row) => {
+          // Stored rows may be v1; a row whose parameters no longer validate is left out of the report.
+          const effectiveParams = coerceParams(row.effective_params);
+          if (!effectiveParams) {
+            console.error(`run ${row.id} has unusable effective_params`);
+            return [];
+          }
+          return [{
+            id: row.id,
+            createdAt: row.created_at,
+            effectiveParams,
+            stats: row.stats,
+            statsAgents: row.stats_agents,
+            popScale: Number(row.pop_scale ?? 1),
+            series: row.series ?? null,
+            repairs: row.repairs ?? [],
+            warnings: row.warnings ?? [],
+            dataSources: row.data_sources ?? [],
+          }];
+        });
     },
     async seriesFor(ids) {
       const out = new Map<string, Record<string, number[]>>();

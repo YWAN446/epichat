@@ -10,7 +10,7 @@ function success(over: Partial<SimSuccess> = {}): SimSuccess {
   return {
     ok: true, effective_params: params({ n_agents: 50000 }), population: 213_000_000,
     stats: { ...STATS, peak_infections: 900 * 4260, total_infected: 6000 * 4260, total_deaths: 12 * 4260 },
-    stats_agents: STATS, series: { day: [0, 1], n_infected: [500, 600] }, pop_scale: 4260, repairs: [], attempts: 1,
+    stats_agents: STATS, series: { day: [0, 1], n_infectious: [500, 600], n_infected: [500, 600] }, pop_scale: 4260, repairs: [], attempts: 1,
     duration_ms: 7000, cold_start: false, starsim_version: "3.3.2", ...over,
   };
 }
@@ -68,6 +68,19 @@ describe("run_simulation", () => {
     const capped = makeDeps({ simulate: { ok: false, status: 422, kind: "too_large", detail: "n_agents × sim_dur_years = 2,000,000 exceeds the cap of 500,000 agent-years; reduce n_agents or sim_dur_years", repairs: [], attempts: null } });
     await configureSimulation({ disease: "dengue" } as never, capped);
     expect((await runSimulation({}, capped)).content).toBe("SIMULATION ERROR: n_agents × sim_dur_years = 2,000,000 exceeds the cap of 500,000 agent-years; reduce n_agents or sim_dur_years");
+  });
+
+  it("warns that deaths count the disease only when demographics are on, and summarizes replicates without the bands", async () => {
+    const replicates = { n: 3, seeds: [1, 2, 3], representative: 2, stats: [STATS, STATS, STATS], bands: { n_infectious: { p10: [1, 2], p90: [3, 4] }, cum_infections: { p10: [1, 2], p90: [3, 4] } } };
+    const deps = makeDeps({ simulate: success({ replicates }) });
+    await configureSimulation({ disease: "dengue", country_iso3: "KEN" } as never, deps);
+    deps.scenario.params = params({ ...deps.scenario.params, demographics: { ...deps.scenario.params!.demographics, use_demographics: true } });
+    const out = await runSimulation({}, deps);
+    const body = JSON.parse(out.content);
+    expect(body.warnings).toContain("Deaths in this run count disease deaths only; deaths from the background death rate are reported separately as cum_deaths_all.");
+    expect(body.replicates).toEqual({ n: 3, seeds: [1, 2, 3], representative: 2, stats: [STATS, STATS, STATS] });
+    expect(out.payload).toMatchObject({ kind: "run", replicates: { n: 3 } });
+    expect((out.payload as { replicates?: { bands?: unknown } }).replicates?.bands).toBeUndefined();
   });
 
   it("requires configuration and tolerates a failed run insert", async () => {

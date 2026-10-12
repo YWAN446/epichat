@@ -4,7 +4,8 @@
  * Values are formatted the way the Python app prints them (lib/sim/pyformat).
  */
 import names from "@/data/country_names.json";
-import { approxR0, type SimParams } from "@/lib/sim/params";
+import { approxR0, type Duration, type Seed, type SimParams } from "@/lib/sim/params";
+import { getPath } from "@/lib/sim/paths";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
 import type { ConfigPayload, DataPayload } from "@/lib/tools/types";
 
@@ -81,31 +82,65 @@ export function scenarioRows(c: ConfigPayload["config"], diseaseName: string): [
   ];
 }
 
+/** "8 days", or "8 days, gamma (sd 2.4)" for a distributed period. */
+export function durationText(d: Duration): string {
+  const mean = formatQuantity(d.mean_days, "days");
+  return d.dist === "constant" ? mean : `${mean}, ${d.dist} (sd ${fmtValue(d.sd_days ?? 0)})`;
+}
+
+/** "1%", "20 agents", "20 agents on day 5". */
+export function seedText(s: Seed): string {
+  const size = s.mode === "count" ? `${commaInt(s.value)} agents` : formatQuantity(s.value, "fraction");
+  return s.day > 0 ? `${size} on day ${fmtValue(s.day)}` : size;
+}
+
 /**
  * The scenario's current parameters as label and value pairs for the panel's
  * Parameters section: what the next run uses, in words with units. Rows a
  * model or a data step does not bring are left out.
  */
 export function parameterRows(p: SimParams): [string, string][] {
-  const asymptomatic = p.disease_type === "seiar";
-  const ages = p.age_pct_under18 !== null && p.age_pct_18_64 !== null && p.age_pct_over65 !== null;
+  const d = p.disease;
+  const g = p.demographics;
+  const asymptomatic = d.model === "seiar";
+  const ages = g.age_pct_under18 !== null && g.age_pct_18_64 !== null && g.age_pct_over65 !== null;
+  const row = (label: string, value: string): [string, string][] => [[label, value]];
   return [
     ["R₀ (approx.)", approxR0(p).toFixed(1)],
-    ["Transmission rate (β)", fmtValue(p.beta)],
-    ["Contacts per day", fmtValue(p.n_contacts)],
-    ["Contact network", p.network_type.replace(/_/g, "-")],
-    ["Initial prevalence", formatQuantity(p.init_prev, "fraction")],
-    ["Infectious period", formatQuantity(p.dur_inf, "days")],
-    ...(p.dur_exp !== null ? ([["Exposed period", formatQuantity(p.dur_exp, "days")]] as [string, string][]) : []),
-    ...(p.dur_immune !== null ? ([["Immunity duration", formatQuantity(p.dur_immune, "days")]] as [string, string][]) : []),
-    ["Death probability", formatQuantity(p.p_death, "fraction")],
-    ...(asymptomatic ? ([["Asymptomatic share", formatQuantity(p.p_asymp, "fraction")], ["Asymptomatic transmission", `${formatQuantity(p.rel_trans_asymp, "fraction")} of symptomatic`]] as [string, string][]) : []),
-    ["Agents", commaInt(p.n_agents)],
-    ["Duration", formatQuantity(p.sim_dur_years, "years")],
-    ["Births and deaths", p.use_demographics ? `${fmtValue(p.birth_rate)} and ${fmtValue(p.death_rate)} per 1,000 per year` : "not modelled"],
-    ...(ages ? ([["Age structure", ageStructure({ "0-17": p.age_pct_under18, "18-64": p.age_pct_18_64, "65+": p.age_pct_over65 })]] as [string, string][]) : []),
-    ...(p.rand_seed !== null ? ([["Random seed", fmtValue(p.rand_seed)]] as [string, string][]) : []),
+    ["Transmission rate (β)", fmtValue(d.beta)],
+    ["Contacts per day", fmtValue(p.network.n_contacts)],
+    ["Contact network", p.network.network_type.replace(/_/g, "-")],
+    ["Initial infections", seedText(d.seed)],
+    ...(d.initial_immune_frac > 0 ? row("Initially immune", formatQuantity(d.initial_immune_frac, "fraction")) : []),
+    ["Infectious period", durationText(d.dur_inf)],
+    ...(d.dur_exp ? row("Exposed period", durationText(d.dur_exp)) : []),
+    ...(d.dur_immune ? row("Immunity duration", durationText(d.dur_immune)) : []),
+    ...(d.model === "sis" && d.sis_waning > 0 ? row("Immunity waning", `${fmtValue(d.sis_waning)} per year`) : []),
+    ...(d.model !== "sis" ? row("Death probability", formatQuantity(d.p_death, "fraction")) : []),
+    ...(asymptomatic ? [...row("Asymptomatic share", formatQuantity(d.p_asymp, "fraction")), ...row("Asymptomatic transmission", `${formatQuantity(d.rel_trans_asymp, "fraction")} of symptomatic`)] : []),
+    ["Agents", commaInt(p.run.n_agents)],
+    ["Duration", formatQuantity(p.run.sim_dur_years, "years")],
+    ...(p.run.n_replicates > 1 ? row("Replicates", fmtValue(p.run.n_replicates)) : []),
+    ["Births and deaths", g.use_demographics ? `${fmtValue(g.birth_rate)} and ${fmtValue(g.death_rate)} per 1,000 per year` : "not modelled"],
+    ...(ages ? row("Age structure", ageStructure({ "0-17": g.age_pct_under18!, "18-64": g.age_pct_18_64!, "65+": g.age_pct_over65! })) : []),
+    ...(p.run.rand_seed !== null ? row("Random seed", fmtValue(p.run.rand_seed)) : []),
   ];
+}
+
+/** The v2 paths a run's effective parameters are listed by, in the runs panel and the report appendix. */
+export const EFFECTIVE_PARAM_PATHS = [
+  "disease.model", "run.n_agents", "run.sim_dur_years", "disease.beta", "network.n_contacts", "network.network_type",
+  "disease.seed.value", "disease.seed.mode", "disease.dur_inf.mean_days", "disease.dur_inf.dist", "disease.dur_exp.mean_days",
+  "disease.dur_immune.mean_days", "disease.p_death", "disease.initial_immune_frac", "demographics.use_demographics",
+  "demographics.birth_rate", "demographics.death_rate", "run.n_replicates", "run.rand_seed",
+] as const;
+
+export function effectiveParameterRows(p: SimParams): [string, string][] {
+  const obj = p as unknown as Record<string, unknown>;
+  return EFFECTIVE_PARAM_PATHS.flatMap((path) => {
+    const value = getPath(obj, path);
+    return value === null || value === undefined ? [] : [[path, fmtValue(value)] as [string, string]];
+  });
 }
 
 /** One line per intervention: "Vaccination: 72% coverage from day 60", "Treatment: 100% coverage, capacity 252 agents", "Seasonality: amplitude 0.3, shift 0". */

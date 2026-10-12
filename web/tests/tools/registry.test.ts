@@ -60,7 +60,7 @@ describe("tool registry", () => {
     const out = await executeTool("configure_simulation", { disease: "measles", n_agents: null, r0: null, vaccine_coverage: null }, deps);
     expect(out.isError).toBeUndefined();
     expect(JSON.parse(out.content).applied).toEqual({ disease: "measles" });
-    expect(deps.scenario.params?.n_agents).toBe(10000);
+    expect(deps.scenario.params?.run.n_agents).toBe(10000);
   });
 
   it("stamps the payload with the tool's duration", async () => {

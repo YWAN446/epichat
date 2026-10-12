@@ -30,33 +30,40 @@ export async function fetchDemographics(input: FetchDemographicsArgs, deps: Tool
 
     const before = scenario.params;
     const r0Before = approxR0(before);
-    const base: Record<string, unknown> = { ...before };
+    const base = structuredClone(before) as unknown as Record<string, unknown>;
+    const network = base.network as Record<string, unknown>;
+    const demographics = base.demographics as Record<string, unknown>;
     const applied: Record<string, unknown> = {};
     for (const f of fields) {
       if (f.field === "age_distribution_pct" && isRecord(f.value)) {
-        base.network_type = "age_structured";
-        base.age_pct_under18 = f.value["0-17"];
-        base.age_pct_18_64 = f.value["18-64"];
-        base.age_pct_over65 = f.value["65+"];
+        network.network_type = "age_structured";
+        demographics.age_pct_under18 = f.value["0-17"];
+        demographics.age_pct_18_64 = f.value["18-64"];
+        demographics.age_pct_over65 = f.value["65+"];
         applied.age_structure_pct = f.value;
       } else if (f.field === "total_population") {
         scenario.totalPopulation = Math.trunc(Number(f.value));
         applied.total_population = scenario.totalPopulation;
       } else if (f.field === "birth_rate" || f.field === "death_rate") {
-        base[f.field] = f.value;
-        base.use_demographics = true;
+        demographics[f.field] = f.value;
+        demographics.use_demographics = true;
         applied[f.field] = f.value;
       }
     }
-    base.country = iso3;
+    demographics.country = iso3;
     const validated = validateParams(base);
     if (!validated.ok) throw new Error(validated.error);
     let params = validated.params;
-    if (params.network_type !== before.network_type) {
-      // The network switch changes what R0 a beta implies; hold the R0 the user confirmed.
-      params = recalibrateBeta(params, r0Before, before);
-      applied.network_type = params.network_type;
-      applied.beta_recalibrated_to_hold_r0 = pyRound(r0Before, 2);
+    if (params.network.network_type !== before.network.network_type) {
+      // The network switch changes what R0 a beta implies; hold the R0 the user confirmed when the new network can carry it.
+      const held = recalibrateBeta(params, r0Before, before);
+      if (held.disease.beta !== params.disease.beta) {
+        params = held;
+        applied.beta_recalibrated_to_hold_r0 = pyRound(r0Before, 2);
+      } else {
+        applied.r0_unreachable_on_new_network = pyRound(r0Before, 2);
+      }
+      applied.network_type = params.network.network_type;
     }
     scenario.params = params;
     scenario.countryIso3 = iso3;

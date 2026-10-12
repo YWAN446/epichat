@@ -75,6 +75,8 @@ export type RunPayload = {
   cold_start: boolean;
   /** Only on the live stream event; stored without it (the runs row keeps it). */
   series?: Record<string, number[]>;
+  /** Per-replicate stats when run.n_replicates > 1 (spec 8.7); the bands wait for the workspace follow-up. */
+  replicates?: { n: number; seeds: number[]; representative: number; stats: SimStats[] };
 };
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
 /** A remember call (profile spec, section 9). */

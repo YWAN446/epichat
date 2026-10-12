@@ -20,7 +20,7 @@ export async function fetchHealthSystem(input: FetchHealthSystemArgs, deps: Tool
     const applied: Record<string, unknown> = Object.fromEntries(fields.map((f) => [f.field, f.value]));
     const cap = fields.find((f) => f.field === "treatment_capacity");
     if (cap && getTreatment(scenario.params)) {
-      const capacity = Math.max(1, pyRound((Number(cap.value) * scenario.params.n_agents) / 1000, 0));
+      const capacity = Math.max(1, pyRound((Number(cap.value) * scenario.params.run.n_agents) / 1000, 0));
       const validated = validateParams({
         ...scenario.params,
         interventions: scenario.params.interventions.map((i) => (i.type === "treatment" ? { ...i, capacity } : i)),

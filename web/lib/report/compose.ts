@@ -3,11 +3,12 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { EFFECTIVE_PARAM_PATHS, SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
 import { DOCUMENT_VERSION, SECTION_HEADINGS, figureLine, narrativeBlocks, type ReportBlock, type ReportDocument, type ReportNarrative, type ReportSection, type SectionId } from "@/lib/report/document";
 import { approxR0 } from "@/lib/sim/params";
+import { getPath } from "@/lib/sim/paths";
 import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { configView } from "@/lib/tools/configView";
 import type { DiseasePayload, Scenario } from "@/lib/tools/types";
@@ -26,8 +27,6 @@ export type ComposeInput = {
   starsimVersion: string | null;
 };
 
-const PARAM_KEYS = ["disease_type", "n_agents", "sim_dur_years", "beta", "n_contacts", "init_prev", "dur_inf", "dur_exp", "dur_immune", "p_death", "network_type", "birth_rate", "death_rate", "use_demographics", "rand_seed"] as const;
-
 type Intervention = { type?: string; coverage?: number; capacity?: number };
 
 function diseaseName(scenario: Scenario, literature: DiseasePayload | null): string {
@@ -40,13 +39,19 @@ function diseaseName(scenario: Scenario, literature: DiseasePayload | null): str
 /** "Measles in Kenya, SIR model, 1 year". */
 export function scenarioTitle(scenario: Scenario, name: string): string {
   const where = scenario.countryIso3 ? ` in ${countryName(scenario.countryIso3)}` : "";
-  const model = scenario.params ? `, ${scenario.params.disease_type.toUpperCase()} model` : "";
-  const years = scenario.params ? `, ${formatQuantity(scenario.params.sim_dur_years, "years")}` : "";
+  const model = scenario.params ? `, ${scenario.params.disease.model.toUpperCase()} model` : "";
+  const years = scenario.params ? `, ${formatQuantity(scenario.params.run.sim_dur_years, "years")}` : "";
   return `${name}${where}${model}${years}`;
 }
 
 function intervention(run: ReportRun, type: string): Intervention | undefined {
   return (run.effectiveParams.interventions as Intervention[] | undefined)?.find((i) => i.type === type);
+}
+
+/** A day-0 vaccine is stored as initial immunity (spec 6.1); the label reads it as coverage. */
+function immunity(run: ReportRun): number | undefined {
+  const frac = run.effectiveParams.disease?.initial_immune_frac ?? 0;
+  return frac > 0 ? frac : undefined;
 }
 
 /** "Run 1", then "Run 2, vaccine coverage 90%" when something a reader cares about changed from the previous run. */
@@ -56,8 +61,8 @@ export function runLabels(runs: ReportRun[]): string[] {
     if (i === 0) return base;
     const prev = runs[i - 1];
     const changes: string[] = [];
-    const cov = intervention(run, "vaccine")?.coverage;
-    const prevCov = intervention(prev, "vaccine")?.coverage;
+    const cov = intervention(run, "vaccine")?.coverage ?? immunity(run);
+    const prevCov = intervention(prev, "vaccine")?.coverage ?? immunity(prev);
     if (typeof cov === "number" && cov !== prevCov) changes.push(`vaccine coverage ${formatQuantity(cov, "fraction")}`);
     else if (cov === undefined && typeof prevCov === "number") changes.push("no vaccine");
     const cap = intervention(run, "treatment")?.capacity;
@@ -66,14 +71,15 @@ export function runLabels(runs: ReportRun[]): string[] {
     else if (cap === undefined && typeof prevCap === "number") changes.push("no treatment");
     const r0 = pyRound(approxR0(run.effectiveParams), 1);
     if (r0 !== pyRound(approxR0(prev.effectiveParams), 1)) changes.push(`R₀ ${r0}`);
-    if (run.effectiveParams.n_agents !== prev.effectiveParams.n_agents) changes.push(`${commaInt(run.effectiveParams.n_agents)} agents`);
+    if (run.effectiveParams.run.n_agents !== prev.effectiveParams.run.n_agents) changes.push(`${commaInt(run.effectiveParams.run.n_agents)} agents`);
     return changes.length > 0 ? `${base}, ${changes.join(", ")}` : base;
   });
 }
 
 const attackRate = (run: ReportRun): string => `${pyRound((run.statsAgents.total_infected / (run.statsAgents.n_agents || 1)) * 100, 1).toFixed(1)}%`;
 
-const hasCurve = (run: ReportRun): boolean => Array.isArray(run.series?.day) && Array.isArray(run.series?.n_infected);
+const curve = (run: ReportRun): number[] | undefined => run.series?.n_infectious ?? run.series?.n_infected;
+const hasCurve = (run: ReportRun): boolean => Array.isArray(run.series?.day) && Array.isArray(curve(run));
 
 function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
   const blocks: ReportBlock[] = [
@@ -84,7 +90,7 @@ function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
       rows: runs.map((run, i) => [labels[i], `Day ${run.stats.peak_day}`, commaInt(run.stats.peak_infections), attackRate(run), commaInt(run.stats.total_deaths ?? 0)]),
     },
   ];
-  const lines = runs.flatMap((run, i) => (hasCurve(run) ? [figureLine(labels[i], run.series!.day, run.series!.n_infected)] : []));
+  const lines = runs.flatMap((run, i) => (hasCurve(run) ? [figureLine(labels[i], run.series!.day, curve(run)!)] : []));
   if (lines.length > 0) blocks.push({ kind: "figure", id: "infected", caption: "People infected over time, every run", xLabel: "Day", yLabel: "People infected", lines });
   runs.forEach((run, i) => {
     if (!hasCurve(run)) blocks.push({ kind: "note", text: `${labels[i]}'s curve is not available.` });
@@ -127,8 +133,9 @@ function modelled(scenario: Scenario, name: string): ReportBlock[] {
 function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayload | null, starsimVersion: string | null): ReportBlock[] {
   const blocks: ReportBlock[] = [];
   if (runs.length > 0) {
-    const present = PARAM_KEYS.filter((key) => runs.some((run) => (run.effectiveParams as Record<string, unknown>)[key] !== undefined));
-    blocks.push({ kind: "table", caption: "Effective parameters", columns: ["Parameter", ...labels], rows: present.map((key) => [key, ...runs.map((run) => fmtValue((run.effectiveParams as Record<string, unknown>)[key]))]) });
+    const at = (run: ReportRun, path: string) => getPath(run.effectiveParams as unknown as Record<string, unknown>, path);
+    const present = EFFECTIVE_PARAM_PATHS.filter((path) => runs.some((run) => at(run, path) !== undefined && at(run, path) !== null));
+    blocks.push({ kind: "table", caption: "Effective parameters", columns: ["Parameter", ...labels], rows: present.map((path) => [path, ...runs.map((run) => fmtValue(at(run, path) ?? null))]) });
     const repairs = runs.flatMap((run, i) => run.repairs.map((r) => [labels[i], String(r.attempt), r.error, (r.changes ?? []).map((c) => `${c.field}: ${fmtValue(c.from)} → ${fmtValue(c.to)}`).join("; ")]));
     if (repairs.length > 0) blocks.push({ kind: "table", caption: "Repairs", columns: ["Run", "Attempt", "Error", "Changes"], rows: repairs });
   }

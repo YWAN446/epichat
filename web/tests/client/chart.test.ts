@@ -4,10 +4,11 @@ import { compact, linePath, nearestIndex, niceTicks, seriesFor, thinPoints } fro
 
 describe("chart math", () => {
   it("maps each view to the lines the series has", () => {
-    const series = { day: [0, 1, 2], n_susceptible: [9, 8, 7], n_infected: [1, 2, 3], n_recovered: [0, 0, 0], new_infections: [1, 1, 1], cum_infections: [1, 2, 3], cum_deaths: [0, 0, 1] };
-    expect(seriesFor("infected", series).map((l) => l.key)).toEqual(["n_infected"]);
-    expect(seriesFor("compartments", series).map((l) => l.key)).toEqual(["n_susceptible", "n_infected", "n_recovered"]);
-    expect(seriesFor("compartments", { ...series, n_exposed: [0, 1, 0] }).map((l) => l.key)).toEqual(["n_susceptible", "n_exposed", "n_infected", "n_recovered"]);
+    const series = { day: [0, 1, 2], n_susceptible: [9, 8, 7], n_infectious: [1, 2, 3], n_infected: [1, 2, 3], n_recovered: [0, 0, 0], new_infections: [1, 1, 1], cum_infections: [1, 2, 3], cum_deaths: [0, 0, 1] };
+    expect(seriesFor("infected", series).map((l) => l.key)).toEqual(["n_infectious"]);
+    expect(seriesFor("compartments", series).map((l) => l.key)).toEqual(["n_susceptible", "n_infectious", "n_recovered"]);
+    expect(seriesFor("compartments", { ...series, n_exposed: [0, 1, 0] }).map((l) => l.key)).toEqual(["n_susceptible", "n_exposed", "n_infectious", "n_recovered"]);
+    expect(seriesFor("infected", { day: [0], n_infected: [1] })).toEqual([{ key: "n_infectious", label: "Currently infected", color: "var(--color-accent)", values: [1] }]); // stored runs keep the old key
     expect(seriesFor("incidence", series)[0]).toMatchObject({ key: "new_infections", label: "New infections per day", values: [1, 1, 1] });
     expect(seriesFor("cumulative", series)[0].key).toBe("cum_infections");
     expect(seriesFor("deaths", series)[0]).toMatchObject({ key: "cum_deaths", label: "Cumulative disease deaths" });

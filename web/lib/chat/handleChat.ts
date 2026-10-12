@@ -190,7 +190,7 @@ export async function handleChat(
       // A run is a fact: counted and inserted as soon as it finishes, whatever the turn does later.
       for (const repair of record.result.repairs) if (repair.usage) repairCost += repairCostUsd(repair.usage);
       if (record.result.ok) {
-        step("run_completed", { tool: "run_simulation", meta: { duration_ms: record.result.duration_ms, cold_start: record.result.cold_start, n_agents: record.params.n_agents, sim_dur_years: record.params.sim_dur_years, repairs: record.result.repairs.length } });
+        step("run_completed", { tool: "run_simulation", meta: { duration_ms: record.result.duration_ms, cold_start: record.result.cold_start, n_agents: record.params.run.n_agents, sim_dur_years: record.params.run.sim_dur_years, repairs: record.result.repairs.length } });
       } else {
         step("run_failed", { tool: "run_simulation", meta: { kind: record.result.kind, repairs: record.result.repairs.length } });
       }

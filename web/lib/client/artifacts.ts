@@ -5,7 +5,7 @@
  */
 import type { Block } from "@/lib/chat/events";
 import type { ReportPayload } from "@/lib/report/document";
-import type { SimParams } from "@/lib/sim/params";
+import { coerceParams, type SimParams } from "@/lib/sim/params";
 import type { ConfigPayload, DataPayload, DiseasePayload, RunPayload } from "@/lib/tools/types";
 import { toolLabel, toolLine } from "./toolLine";
 
@@ -69,17 +69,19 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
       if (payload.kind === "disease") out.disease = payload;
       else if (payload.kind === "config") {
         out.config = payload;
-        out.params = payload.params ?? null;
+        out.params = coerceParams(payload.params ?? null);
         if (payload.new_scenario) {
           out.data = [];
           out.report = null;
         }
       } else if (payload.kind === "data") {
         out.data.push(payload);
-        if (payload.params) out.params = payload.params;
+        const p = coerceParams(payload.params ?? null);
+        if (p) out.params = p;
       } else if (payload.kind === "run") {
-        out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload });
-        out.params = payload.effective_params;
+        const effective = coerceParams(payload.effective_params);
+        out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload: effective ? { ...payload, effective_params: effective } : payload });
+        if (effective) out.params = effective;
       }
       else if (payload.kind === "report") out.report = payload;
       else if (payload.kind === "memory") out.memoryWrites += 1;

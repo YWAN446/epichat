@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatDuration } from "@/lib/client/activity";
+import { effectiveParameterRows } from "@/lib/client/format";
 import type { RunArtifact } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
 import { CHART_VIEWS } from "@/lib/enums";
@@ -10,7 +11,6 @@ import { Chart } from "../Chart";
 import { StatTiles, useRunSeries } from "../RunSummary";
 
 const VIEW_LABELS: Record<(typeof CHART_VIEWS)[number], string> = { compartments: "Compartments", incidence: "Incidence", cumulative: "Cumulative", deaths: "Disease deaths" };
-const PARAM_KEYS = ["beta", "n_contacts", "init_prev", "dur_inf", "dur_exp", "dur_immune", "p_death", "sim_dur_years", "n_agents"] as const;
 
 type Props = { runs: RunArtifact[]; onChartView: (view: ChartView, turnId: string) => void };
 
@@ -51,10 +51,10 @@ function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact;
           <details>
             <summary className="cursor-pointer text-xs font-semibold tracking-wide text-ink-faint uppercase">Effective parameters</summary>
             <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs">
-              {PARAM_KEYS.filter((key) => p.effective_params[key] !== null && p.effective_params[key] !== undefined).map((key) => (
+              {effectiveParameterRows(p.effective_params).map(([key, value]) => (
                 <div key={key} className="contents">
                   <dt className="text-ink-faint">{key}</dt>
-                  <dd>{fmtValue(p.effective_params[key])}</dd>
+                  <dd>{value}</dd>
                 </div>
               ))}
               {p.effective_params.interventions.length > 0 && (

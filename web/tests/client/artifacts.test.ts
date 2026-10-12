@@ -77,7 +77,7 @@ describe("deriveArtifacts and the parameters", () => {
     ];
     expect(deriveArtifacts(turns.slice(0, 1)).params).toEqual(P1);
     expect(deriveArtifacts(turns.slice(0, 2)).params).toEqual(P2);
-    expect(deriveArtifacts(turns.slice(0, 3)).params?.n_agents).toBe(9000);
+    expect(deriveArtifacts(turns.slice(0, 3)).params?.run.n_agents).toBe(9000);
     expect(deriveArtifacts(turns).params).toEqual(P1);
   });
 
@@ -91,6 +91,11 @@ describe("deriveArtifacts and the parameters", () => {
     expect(deriveArtifacts(ran).params).toEqual(RUN.effective_params);
     expect(deriveArtifacts([...ran, { id: "t4", blocks: [result("fetch_demographics", DATA)] }]).params).toEqual(RUN.effective_params);
     expect(deriveArtifacts([...ran, { id: "t4", blocks: [result("configure_simulation", CONFIG(true))] }]).params).toBeNull();
+  });
+
+  it("migrates a v1 payload stored before schema v2 on read", () => {
+    const stored = [{ id: "t0", blocks: [result("configure_simulation", { ...CONFIG(true), params: { disease_type: "sir", beta: 5, n_agents: 123 } as never })] }];
+    expect(deriveArtifacts(stored).params?.run.n_agents).toBe(123);
   });
 });
 

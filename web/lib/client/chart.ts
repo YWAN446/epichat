@@ -4,16 +4,17 @@ import type { CHART_VIEWS } from "@/lib/enums";
 export type ChartView = "infected" | (typeof CHART_VIEWS)[number];
 export type Series = Record<string, number[]>;
 export type Line = { key: string; label: string; color: string; values: number[] };
+type LineSpec = { key: string; label: string; color: string; alt?: string };
 export type Point = { x: number; y: number };
 
 const ACCENT = "var(--color-accent)";
 const INK = "var(--color-ink)";
-const LINES: Record<ChartView, { key: string; label: string; color: string }[]> = {
-  infected: [{ key: "n_infected", label: "Currently infected", color: ACCENT }],
+const LINES: Record<ChartView, LineSpec[]> = {
+  infected: [{ key: "n_infectious", alt: "n_infected", label: "Currently infected", color: ACCENT }],
   compartments: [
     { key: "n_susceptible", label: "Susceptible", color: "var(--color-ink-soft)" },
     { key: "n_exposed", label: "Exposed", color: "var(--color-warn)" },
-    { key: "n_infected", label: "Infectious", color: ACCENT },
+    { key: "n_infectious", alt: "n_infected", label: "Infectious", color: ACCENT },
     { key: "n_recovered", label: "Recovered", color: "#3a7d5a" },
   ],
   incidence: [{ key: "new_infections", label: "New infections per day", color: ACCENT }],
@@ -21,9 +22,14 @@ const LINES: Record<ChartView, { key: string; label: string; color: string }[]> 
   deaths: [{ key: "cum_deaths", label: "Cumulative disease deaths", color: INK }],
 };
 
-/** The view's lines that the series actually has, in display order. */
+const present = (values: unknown): values is number[] => Array.isArray(values) && values.length > 0;
+
+/** The view's lines that the series actually has, in display order; a stored run's n_infected still draws the n_infectious line. */
 export function seriesFor(view: ChartView, series: Series): Line[] {
-  return LINES[view].filter((line) => Array.isArray(series[line.key]) && series[line.key].length > 0).map((line) => ({ ...line, values: series[line.key] }));
+  return LINES[view].flatMap((line) => {
+    const values = present(series[line.key]) ? series[line.key] : line.alt && present(series[line.alt]) ? series[line.alt] : null;
+    return values ? [{ key: line.key, label: line.label, color: line.color, values }] : [];
+  });
 }
 
 /** At most `max` evenly strided points, always ending on the last one. */

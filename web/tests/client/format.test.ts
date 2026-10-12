@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows, scenarioRows } from "@/lib/client/format";
+import { configurationRows, countryName, describeField, effectiveParameterRows, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows, scenarioRows } from "@/lib/client/format";
+import { approxR0 } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
 
 describe("country names", () => {
@@ -81,11 +82,11 @@ describe("parameter rows", () => {
   it("writes the current parameters in words with units, R₀ first", () => {
     const p = params({ disease_type: "seir", beta: 171.09375, n_contacts: 4, init_prev: 0.01, dur_inf: 8, dur_exp: 11, p_death: 0.001, n_agents: 10000, sim_dur_years: 1 });
     expect(parameterRows(p)).toEqual([
-      ["R₀ (approx.)", "15.0"],
+      ["R₀ (approx.)", approxR0(p).toFixed(1)],
       ["Transmission rate (β)", "171.1"],
       ["Contacts per day", "4"],
       ["Contact network", "random"],
-      ["Initial prevalence", "1%"],
+      ["Initial infections", "1%"],
       ["Infectious period", "8 days"],
       ["Exposed period", "11 days"],
       ["Death probability", "0.1%"],
@@ -108,6 +109,8 @@ describe("parameter rows", () => {
     expect(rows).toContainEqual(["Age structure", "0–17: 39%, 18–64: 58%, 65+: 4%"]);
     expect(rows).toContainEqual(["Random seed", "42"]);
     expect(parameterRows(params({ disease_type: "sir" })).map(([label]) => label)).not.toContain("Asymptomatic share");
+    const v2 = params({ schema_version: 2, disease: { dur_inf: { mean_days: 8, dist: "gamma", sd_days: 2.4 }, seed: { mode: "count", value: 20, day: 5 }, initial_immune_frac: 0.4 }, run: { n_replicates: 3 } });
+    expect(parameterRows(v2)).toEqual(expect.arrayContaining([["Infectious period", "8 days, gamma (sd 2.4)"], ["Initial infections", "20 agents on day 5"], ["Initially immune", "40%"], ["Replicates", "3"]]));
   });
 
   it("writes each intervention as one line", () => {
@@ -116,11 +119,21 @@ describe("parameter rows", () => {
       "Treatment: 100% coverage, capacity 252 agents",
       "Seasonality: amplitude 0.3, shift 0",
     ]);
-    expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.5 }, { type: "treatment", coverage: 0.8 }] }))).toEqual([
-      "Vaccination: 50% coverage from the start",
-      "Treatment: 80% coverage, no capacity limit",
-    ]);
+    // a vaccine from the start is initial immunity (spec 6.1): a Parameters row, not an intervention line
+    const fromStart = params({ interventions: [{ type: "vaccine", coverage: 0.5 }, { type: "treatment", coverage: 0.8 }] });
+    expect(interventionLines(fromStart)).toEqual(["Treatment: 80% coverage, no capacity limit"]);
+    expect(parameterRows(fromStart)).toContainEqual(["Initially immune", "50%"]);
     expect(interventionLines(params({}))).toEqual([]);
+  });
+});
+
+describe("effective parameter rows", () => {
+  it("lists the v2 paths a run used, skipping unset ones", () => {
+    const rows = effectiveParameterRows(params({ disease_type: "seir", dur_exp: 11, rand_seed: 4 }));
+    expect(rows).toContainEqual(["disease.model", "seir"]);
+    expect(rows).toContainEqual(["disease.dur_exp.mean_days", "11"]);
+    expect(rows).toContainEqual(["run.rand_seed", "4"]);
+    expect(rows.map(([k]) => k)).not.toContain("disease.dur_immune.mean_days");
   });
 });
 

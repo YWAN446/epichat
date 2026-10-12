@@ -60,7 +60,7 @@ describe("composeReport", () => {
     const appendix = section("appendix");
     expect(appendix.blocks[0]).toMatchObject({ kind: "table", caption: "Effective parameters", columns: ["Parameter", "Run 1", "Run 2, vaccine coverage 90%", "Run 3, no vaccine"] });
     if (appendix.blocks[0].kind !== "table") throw new Error("table");
-    expect(appendix.blocks[0].rows.find((r) => r[0] === "n_agents")).toEqual(["n_agents", "10,000", "10,000", "10,000"]);
+    expect(appendix.blocks[0].rows.find((r) => r[0] === "run.n_agents")).toEqual(["run.n_agents", "10,000", "10,000", "10,000"]);
     const literature = appendix.blocks.find((b) => b.kind === "table" && b.caption === "Literature parameters");
     expect(literature).toBeDefined();
     if (!literature || literature.kind !== "table") throw new Error("table");

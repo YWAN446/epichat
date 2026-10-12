@@ -24,12 +24,12 @@ describe("fetch_demographics", () => {
     const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", n_agents: 50000 });
     const out = JSON.parse((await fetchDemographics({ country_iso3: "ken" }, deps)).content);
     const p = deps.scenario.params!;
-    expect(p.age_pct_under18).toBe(38.6);
-    expect(p.network_type).toBe("age_structured");
+    expect(p.demographics.age_pct_under18).toBe(38.6);
+    expect(p.network.network_type).toBe("age_structured");
     expect(deps.scenario.totalPopulation).toBe(213_000_000);
-    expect(p.birth_rate).toBe(12.3);
-    expect(p.use_demographics).toBe(true);
-    expect(p.country).toBe("KEN");
+    expect(p.demographics.birth_rate).toBe(12.3);
+    expect(p.demographics.use_demographics).toBe(true);
+    expect(p.demographics.country).toBe("KEN");
     expect(deps.scenario.dataSources).toHaveLength(4);
     expect(out.citations[0]).toContain("UN WPP");
     expect(out.applied.total_population).toBe(213_000_000);
@@ -39,7 +39,7 @@ describe("fetch_demographics", () => {
   it("falls back to the sim service when the UN call returns nothing", async () => {
     const deps = await configured(makeDeps({ unWpp: [], fallback: { birth_rate: 27.3, death_rate: 7.2, source: "UN WPP 2024 — KEN (2022)" } }), { disease: "dengue" });
     const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
-    expect(deps.scenario.params?.birth_rate).toBe(27.3);
+    expect(deps.scenario.params?.demographics.birth_rate).toBe(27.3);
     expect(JSON.parse(out.content).citations).toEqual(["UN WPP 2024 — KEN (2022)", "UN WPP 2024 — KEN (2022)"]);
     expect(out.payload).toMatchObject({ kind: "data", source: "sim_fallback", iso3: "KEN" });
   });
@@ -63,10 +63,10 @@ describe("fetch_demographics", () => {
     const deps = makeDeps({ unWpp: [kenya[0], kenya[2], kenya[3]] });
     const configured0 = JSON.parse((await configureSimulation({ disease: "measles", disease_type: "seir", dur_exp: 11, dur_inf: 8, r0: 15, n_agents: 5000 } as never, deps)).content);
     expect(configured0.approx_r0).toBe(15);
-    const betaBefore = deps.scenario.params!.beta;
+    const betaBefore = deps.scenario.params!.disease.beta;
     const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
-    expect(deps.scenario.params!.network_type).toBe("age_structured");
-    expect(deps.scenario.params!.beta).not.toBe(betaBefore);
+    expect(deps.scenario.params!.network.network_type).toBe("age_structured");
+    expect(deps.scenario.params!.disease.beta).not.toBe(betaBefore);
     expect(out.approx_r0).toBe(15);
     expect(out.applied.beta_recalibrated_to_hold_r0).toBe(15);
     expect(out.warnings).toEqual([]);
@@ -80,11 +80,11 @@ describe("fetch_demographics", () => {
 
   it("applies partial fields without switching the network", async () => {
     const deps = await configured(makeDeps({ unWpp: [kenya[2], kenya[3]] }), { disease: "dengue", r0: 3 });
-    const beta = deps.scenario.params!.beta;
+    const beta = deps.scenario.params!.disease.beta;
     const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
-    expect(deps.scenario.params!.network_type).toBe("random");
-    expect(deps.scenario.params!.beta).toBe(beta);
-    expect(deps.scenario.params!.use_demographics).toBe(true);
+    expect(deps.scenario.params!.network.network_type).toBe("random");
+    expect(deps.scenario.params!.disease.beta).toBe(beta);
+    expect(deps.scenario.params!.demographics.use_demographics).toBe(true);
     expect(out.applied).toEqual({ birth_rate: 12.3, death_rate: 7.1 });
     expect(deps.scenario.totalPopulation).toBeNull();
   });
@@ -93,7 +93,7 @@ describe("fetch_demographics", () => {
     const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", n_agents: 50000 });
     const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
     expect(out.payload).toMatchObject({ kind: "data", params: deps.scenario.params });
-    expect((out.payload as { params: { network_type: string } }).params.network_type).toBe("age_structured");
+    expect((out.payload as { params: { network: { network_type: string } } }).params.network.network_type).toBe("age_structured");
     expect(JSON.parse(out.content).params).toBeUndefined();
   });
 
@@ -147,12 +147,13 @@ describe("fetch_vaccination_coverage", () => {
   it("adds a vaccine intervention once", async () => {
     const deps = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")] }), { disease: "measles" });
     const first = JSON.parse((await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps)).content);
-    expect(getVaccine(deps.scenario.params!)).toMatchObject({ coverage: 0.88, start_day: 0 });
+    expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.88); // routine coverage is pre-existing immunity at the start
+    expect(getVaccine(deps.scenario.params!)).toBeNull();
     expect(first.applied).toEqual({ mcv1_coverage: 88, applied_vaccine_coverage: 0.88 });
     expect(deps.queries[0]).toEqual({ source: "who_gho", indicatorCodes: ["WHS8_110", "MCV2"], locationCode: "KEN" });
     const second = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
-    expect(deps.scenario.params!.interventions.filter((i) => i.type === "vaccine")).toHaveLength(1);
-    expect(second.payload).toMatchObject({ kind: "data", params: { interventions: [{ type: "vaccine", coverage: 0.88 }] } });
+    expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.88);
+    expect(second.payload).toMatchObject({ kind: "data", params: { disease: { initial_immune_frac: 0.88 } } });
   });
 
   it("says when no indicator exists and when the adapter fails", async () => {
