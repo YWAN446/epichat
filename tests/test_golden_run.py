@@ -63,20 +63,9 @@ def test_report_notes_a_newly_fixed_case(tmp_path):
 
 def test_a_pending_case_loads_with_its_marker_and_is_left_out_of_the_run(tmp_path):
     (tmp_path / "a.yaml").write_text(
-        "- id: a
-  category: x
-  turns: ['hi']
-  checks: {}
-"
-        "- id: p
-  category: parameters
-  critical: true
-  pending: api-harness
-"
-        "  pending_note: needs the web agent
-  turns: ['hi']
-  checks: {}
-",
+        "- id: a\n  category: x\n  turns: ['hi']\n  checks: {}\n"
+        "- id: p\n  category: parameters\n  critical: true\n  pending: api-harness\n"
+        "  pending_note: needs the web agent\n  turns: ['hi']\n  checks: {}\n",
         encoding="utf-8")
     cases = load_cases(tmp_path)
     assert [c["id"] for c in cases] == ["a", "p"] and cases[1]["pending"] == "api-harness"
@@ -93,5 +82,4 @@ def test_report_lists_pending_cases_without_scoring_them(tmp_path):
     assert "## Pending" in text and "**p** (api-harness) — needs the web agent" in text
     assert "Regression" not in text and "1/1 cases passing" in text
     bare = write_report(tmp_path, scored, baseline={}, usage={}, pending=[{"id": "q", "pending": "api-harness"}]).read_text(encoding="utf-8")
-    assert "**q** (api-harness)
-" in bare
+    assert "**q** (api-harness)\n" in bare
