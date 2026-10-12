@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  DEFAULT_BETA, approxR0, calibrateBeta, clampBeta, getVaccine, recalibrateBeta, spectralRadius3, validateParams,
+  CONTACT_SPECTRAL_RADIUS, DEFAULT_BETA, R0UnreachableError, approxR0, calibrateBeta, clampBeta, effectiveDays, getVaccine, maxR0,
+  migrateV1, recalibrateBeta, simDays, spectralRadius3, validateParams, withR0,
 } from "@/lib/sim/params";
 
 function must(input: unknown) {
@@ -10,89 +11,124 @@ function must(input: unknown) {
   return r.params;
 }
 
-describe("SimParams validation", () => {
+describe("SimParams v2 validation", () => {
   it("fills every default like pydantic", () => {
-    const p = must({ beta: DEFAULT_BETA });
-    expect(p).toMatchObject({
-      disease_type: "sir", n_agents: 10000, n_contacts: 4, network_type: "random", network_beta: 1, beta: 22.8125,
-      init_prev: 0.01, dur_inf: 10, dur_exp: null, dur_immune: null, p_death: 0, p_asymp: 0.3, rel_trans_asymp: 0.5,
-      sim_dur_years: 1, interventions: [], rand_seed: null, use_demographics: false, birth_rate: 20, death_rate: 10,
-      age_pct_under18: null, age_pct_18_64: null, age_pct_over65: null, country: null, auto_demographics: true,
-      demographics_year: 2022, demographics_source: null,
+    const p = must({ schema_version: 2 });
+    expect(p).toEqual({
+      schema_version: 2,
+      disease: {
+        model: "sir", beta: DEFAULT_BETA, dur_exp: null, dur_inf: { mean_days: 10, dist: "constant", sd_days: null }, dur_immune: null,
+        p_death: 0, p_asymp: 0.3, rel_trans_asymp: 0.5, sis_waning: 0, sis_imm_boost: 0, seed: { mode: "fraction", value: 0.01, day: 0 }, initial_immune_frac: 0,
+      },
+      network: { network_type: "random", n_contacts: 4, network_beta: 1 },
+      demographics: {
+        use_demographics: false, birth_rate: 20, death_rate: 10, age_pct_under18: null, age_pct_18_64: null, age_pct_over65: null,
+        country: null, auto_demographics: true, demographics_year: 2022, demographics_source: null,
+      },
+      interventions: [],
+      run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1 },
     });
+    expect(must({})).toEqual(must({ schema_version: 2 })); // a v1 row with nothing in it migrates to the same defaults
   });
 
-  it("requires beta and enforces the bounds", () => {
-    expect(validateParams({})).toEqual({ ok: false, error: expect.stringContaining("beta") });
-    expect(validateParams({ beta: 1, n_agents: -5 }).ok).toBe(false);
-    expect(validateParams({ beta: 1, n_agents: 5 }).ok).toBe(false);
-    expect(validateParams({ beta: 1, n_agents: 1_000_001 }).ok).toBe(false);
-    expect(validateParams({ beta: 0 }).ok).toBe(false);
-    expect(validateParams({ beta: 1, init_prev: 1 }).ok).toBe(false);
-    expect(validateParams({ beta: 1, sim_dur_years: 21 }).ok).toBe(false);
-    expect(validateParams({ beta: 1, disease_type: "sirv" }).ok).toBe(false);
-  });
-
-  it("names the field in the error text like pydantic", () => {
-    const r = validateParams({ beta: 1, n_agents: -5 });
+  it("enforces registry bounds and names the dotted path like pydantic", () => {
+    const r = validateParams({ schema_version: 2, run: { n_agents: -5 } });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toMatch(/^1 validation error for SimParams\nn_agents\n  /);
+    if (!r.ok) expect(r.error).toMatch(/^1 validation error for SimParams\nrun\.n_agents\n  /);
+    expect(validateParams({ schema_version: 2, disease: { beta: 0.0001 } }).ok).toBe(false);
+    expect(validateParams({ schema_version: 2, disease: { dur_inf: { mean_days: 400 } } })).toEqual({ ok: false, error: expect.stringContaining("disease.dur_inf.mean_days must be between 0.5 and 365 days") });
+    expect(validateParams({ schema_version: 2, run: { n_replicates: 6 } }).ok).toBe(false);
+    expect(validateParams({ schema_version: 2, disease: { model: "sirv" } }).ok).toBe(false);
   });
 
-  it("applies the two model validators with pydantic's messages", () => {
-    const ages = validateParams({ beta: 1, age_pct_under18: 50, age_pct_18_64: 50, age_pct_over65: 10 });
-    expect(ages.ok).toBe(false);
-    if (!ages.ok) expect(ages.error).toContain("age_pct fields must sum to 100 (got 110.0)");
-    const seir = validateParams({ beta: 1, disease_type: "seir" });
-    expect(seir.ok).toBe(false);
-    if (!seir.ok) expect(seir.error).toContain("dur_exp is required when disease_type is 'seir', 'seirs', or 'seiar'");
-    const sirs = validateParams({ beta: 1, disease_type: "sirs" });
-    if (!sirs.ok) expect(sirs.error).toContain("dur_immune is required when disease_type is 'sirs' or 'seirs'");
-    expect(validateParams({ beta: 1, age_pct_under18: 30, age_pct_18_64: 60.5, age_pct_over65: 10 }).ok).toBe(true);
+  it("applies the duration, seed and model validators", () => {
+    expect(validateParams({ schema_version: 2, disease: { dur_inf: { mean_days: 10, dist: "gamma" } } })).toEqual({ ok: false, error: expect.stringContaining("sd_days is required when dist is 'gamma'") });
+    expect(validateParams({ schema_version: 2, disease: { dur_inf: { mean_days: 10, dist: "gamma", sd_days: 25 } } }).ok).toBe(false);
+    expect(validateParams({ schema_version: 2, disease: { seed: { value: 1 } } })).toEqual({ ok: false, error: expect.stringContaining("between 0 and 1") });
+    expect(validateParams({ schema_version: 2, disease: { seed: { mode: "count", value: 2.5 } } })).toEqual({ ok: false, error: expect.stringContaining("integer count") });
+    expect(validateParams({ schema_version: 2, disease: { seed: { mode: "count", value: 500 } }, run: { n_agents: 100 } })).toEqual({ ok: false, error: expect.stringContaining("disease.seed.value (500) must not exceed run.n_agents (100)") });
+    expect(validateParams({ schema_version: 2, disease: { seed: { value: 0.01, day: 400 } }, run: { sim_dur_years: 0.5 } })).toEqual({ ok: false, error: expect.stringContaining("disease.seed.day (400) must be within the simulation (182 days)") });
+    expect(validateParams({ schema_version: 2, disease: { model: "seir" } })).toEqual({ ok: false, error: expect.stringContaining("disease.dur_exp is required when disease.model is 'seir', 'seirs', or 'seiar'") });
+    expect(validateParams({ schema_version: 2, disease: { model: "sirs" } })).toEqual({ ok: false, error: expect.stringContaining("disease.dur_immune is required") });
+    expect(validateParams({ schema_version: 2, disease: { beta: 1000 }, network: { network_beta: 10 } })).toEqual({ ok: false, error: expect.stringContaining("network.network_beta") });
   });
 
-  it("normalizes the country code and intervention aliases, and coerces capacity", () => {
-    expect(must({ beta: 1, country: " bra " }).country).toBe("BRA");
-    expect(must({ beta: 1, country: "Brazil" }).country).toBeNull();
-    const p = must({ beta: 1, interventions: [{ type: "vaccination", coverage: 0.5 }, { type: "treat", capacity: 20.4 }, { type: "seasonal" }] });
-    expect(p.interventions.map((i) => i.type)).toEqual(["vaccine", "treatment", "seasonality"]);
-    expect(p.interventions[1].capacity).toBe(20);
-    expect(p.interventions[0]).toEqual({ type: "vaccine", coverage: 0.5, start_day: 0, capacity: null, scale: 0.2, shift: 0 });
-    expect(getVaccine(p)?.coverage).toBe(0.5);
+  it("normalizes a day-0 vaccine into initial immunity", () => {
+    const p = must({ schema_version: 2, interventions: [{ type: "vaccination", coverage: 0.6, start_day: 0 }, { type: "treatment", capacity: 5 }] });
+    expect(p.disease.initial_immune_frac).toBe(0.6);
+    expect(p.interventions.map((i) => i.type)).toEqual(["treatment"]);
+    expect(must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 1 }] }).disease.initial_immune_frac).toBe(0.99);
+    expect(getVaccine(must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 0.6, start_day: 30 }] }))).toMatchObject({ coverage: 0.6, start_day: 30 });
+    expect(validateParams({ schema_version: 2, disease: { initial_immune_frac: 0.3 }, interventions: [{ type: "vaccine", coverage: 0.6 }] })).toEqual({ ok: false, error: expect.stringContaining("initial_immune_frac") });
+  });
+
+  it("keeps the v1 demographics rules", () => {
+    expect(validateParams({ schema_version: 2, demographics: { age_pct_under18: 10, age_pct_18_64: 10, age_pct_over65: 10 } })).toEqual({ ok: false, error: expect.stringContaining("age_pct fields must sum to 100 (got 30.0)") });
+    expect(must({ schema_version: 2, demographics: { country: " ken " } }).demographics.country).toBe("KEN");
+    expect(must({ schema_version: 2, demographics: { country: "Brazil" } }).demographics.country).toBeNull();
+    expect(simDays(1)).toBe(365);
+    expect(simDays(0.5)).toBe(182);
+  });
+});
+
+describe("migration from v1", () => {
+  it("migrates a flat row to constant durations and a fraction seed", () => {
+    const p = must({ disease_type: "seirs", beta: 12.5, dur_inf: 7, dur_exp: 4, dur_immune: 90, init_prev: 0.02, n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, p_death: 0.1 });
+    expect(p.disease).toMatchObject({ model: "seirs", beta: 12.5, dur_inf: { mean_days: 7, dist: "constant", sd_days: null }, p_death: 0.1, seed: { mode: "fraction", value: 0.02, day: 0 } });
+    expect(p.run).toEqual({ n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, n_replicates: 1 });
+  });
+
+  it("folds a day-0 vaccine into initial immunity and keeps later campaigns", () => {
+    const out = migrateV1({ disease_type: "sir", beta: 1, interventions: [{ type: "vaccine", coverage: 0.4, start_day: 0 }], country: "KEN" });
+    expect(out).toMatchObject({ schema_version: 2, disease: { initial_immune_frac: 0.4 }, interventions: [], demographics: { country: "KEN" }, network: {}, run: {} });
+    expect(must({ beta: 5, interventions: [{ type: "vaccine", coverage: 0.6, start_day: 60 }] }).interventions).toHaveLength(1);
+    expect(must({ beta: 5, interventions: [{ type: "vaccination", coverage: 1, start_day: 0 }] }).disease.initial_immune_frac).toBe(0.99);
+  });
+
+  it("rejects a v1 row that is not usable", () => {
+    expect(validateParams({ beta: "not a number" }).ok).toBe(false);
   });
 });
 
 describe("R0 math", () => {
-  it("matches the Python reference values", () => {
-    expect(approxR0(must({ beta: DEFAULT_BETA }))).toBeCloseTo(2.5, 12);
-    expect(approxR0(must({ beta: DEFAULT_BETA, network_type: "age_structured", age_pct_under18: 38.6, age_pct_18_64: 57.6, age_pct_over65: 3.8 }))).toBeCloseTo(3.54004728034979, 9);
-    expect(approxR0(must({ beta: DEFAULT_BETA, network_type: "age_structured" }))).toBeCloseTo(6.8767640174459785, 9);
-    expect(approxR0(must({ beta: DEFAULT_BETA, disease_type: "seiar", dur_exp: 3, p_asymp: 0.4, rel_trans_asymp: 0.5 }))).toBeCloseTo(2.0, 12);
+  it("uses the exact per-contact probability and effective days", () => {
+    const p = must({ schema_version: 2 });
+    expect(effectiveDays(p.disease)).toBe(9);
+    expect(approxR0(p)).toBeCloseTo(4 * (1 - Math.exp(-DEFAULT_BETA / 365)) * 9, 12);
+    expect(maxR0(p)).toBe(36);
+    expect(effectiveDays(must({ schema_version: 2, disease: { dur_inf: { mean_days: 10, dist: "gamma", sd_days: 4 } } }).disease)).toBe(9.5);
+    expect(effectiveDays(must({ schema_version: 2, disease: { model: "seir", dur_exp: { mean_days: 5 }, dur_inf: { mean_days: 10, dist: "gamma", sd_days: 4 } } }).disease)).toBe(10.5);
+    expect(effectiveDays(must({ schema_version: 2, disease: { dur_inf: { mean_days: 0.5 } } }).disease)).toBe(0);
   });
 
-  it("calibrates beta to a target R0 and clamps and rounds like the agent", () => {
-    const m = must({ beta: 1, dur_inf: 8 });
-    expect(clampBeta(calibrateBeta(m, 15))).toBe(171.09375);
-    expect(clampBeta(1e9)).toBe(1000);
-    expect(clampBeta(1e-9)).toBe(0.001);
-    expect(clampBeta(0.47222222222)).toBe(0.472222);
+  it("calibrates, clamps and rounds, and refuses an unreachable R0 naming the levers", () => {
+    const p = must({ schema_version: 2 });
+    expect(approxR0(withR0(p, 15))).toBeCloseTo(15, 6);
+    expect(clampBeta(0.00001)).toBe(0.001);
+    expect(clampBeta(12.3456789)).toBe(12.345679);
+    const small = must({ schema_version: 2, network: { n_contacts: 2 }, disease: { dur_inf: { mean_days: 3 } } });
+    expect(() => calibrateBeta(small, 4)).toThrow(R0UnreachableError);
+    expect(() => calibrateBeta(small, 4)).toThrow(expect.objectContaining({ target: 4, maximum: 4, levers: ["network.n_contacts", "disease.dur_inf.mean_days"] }));
+    const aged = must({ schema_version: 2, network: { network_type: "age_structured" }, disease: { dur_inf: { mean_days: 1 } } });
+    expect(() => calibrateBeta(aged, 1)).toThrow(expect.objectContaining({ maximum: 0, levers: ["network.network_beta", "disease.dur_inf.mean_days"] }));
   });
 
-  it("recalibrates after a network switch to hold the R0, and recovers a changed beta's intent", () => {
-    const before = must({ beta: 171.09375, disease_type: "seir", dur_exp: 11, dur_inf: 8 });
-    expect(approxR0(before)).toBeCloseTo(15, 9);
-    const after = must({ ...before, network_type: "age_structured", age_pct_under18: 38.6, age_pct_18_64: 57.6, age_pct_over65: 3.8, use_demographics: true, birth_rate: 27.3, death_rate: 7.2, country: "KEN" });
-    const rec = recalibrateBeta(after, approxR0(before), before);
-    expect(rec.beta).toBe(120.827306);
-    expect(approxR0(rec)).toBeCloseTo(15, 2);
-    const changed = must({ ...before, beta: 2 });
-    const rec2 = recalibrateBeta(changed, approxR0(before), before);
-    expect(rec2.beta).toBe(2);
-    expect(approxR0(rec2)).toBeCloseTo(0.1753, 4);
+  it("ignores age shares and n_contacts on the age-structured network", () => {
+    const base = must({ schema_version: 2, network: { network_type: "age_structured", n_contacts: 4 } });
+    const shares = must({ schema_version: 2, network: { network_type: "age_structured", n_contacts: 40 }, demographics: { age_pct_under18: 38.6, age_pct_18_64: 57.6, age_pct_over65: 3.8 } });
+    expect(CONTACT_SPECTRAL_RADIUS).toBeCloseTo(11.0028224279, 9);
+    expect(approxR0(base)).toBeCloseTo(CONTACT_SPECTRAL_RADIUS * (1 - Math.exp(-DEFAULT_BETA / 365)) * 9, 9);
+    expect(approxR0(shares)).toBeCloseTo(approxR0(base), 12);
+    expect(spectralRadius3([[2, 0, 0], [0, 1, 0], [0, 0, 0.5]])).toBeCloseTo(2, 12);
   });
 
-  it("finds the dominant eigenvalue of the contact matrix to machine precision", () => {
-    expect(spectralRadius3([[7, 2.5, 0.5], [2.5, 9, 1.5], [0.5, 1.5, 3.5]])).toBeCloseTo(6.8767640174459785 / (DEFAULT_BETA * 10 / 365), 10);
-    expect(spectralRadius3([[2, 0, 0], [0, 1, 0], [0, 0, 1]])).toBeCloseTo(2, 12);
+  it("recalibrates after a network switch to hold the R0, and keeps beta when the R0 is unreachable", () => {
+    const before = withR0(must({ schema_version: 2 }), 3);
+    const switched = must({ ...before, network: { ...before.network, network_type: "age_structured" } });
+    expect(approxR0(recalibrateBeta(switched, 3, before))).toBeCloseTo(3, 6);
+    const raised = must({ ...before, disease: { ...before.disease, beta: 54.4 } });
+    expect(approxR0(recalibrateBeta(raised, 3, before))).toBeCloseTo(4 * (1 - Math.exp(-54.4 / 365)) * 9, 6);
+    const stuck = must({ schema_version: 2, network: { n_contacts: 1 }, disease: { dur_inf: { mean_days: 2 } } });
+    expect(recalibrateBeta(stuck, 3, before).disease.beta).toBe(stuck.disease.beta);
   });
 });

@@ -1,0 +1,1010 @@
+{
+ "version": 1,
+ "params": [
+  {
+   "path": "disease.model",
+   "module": "disease",
+   "label": "Model",
+   "description": "Which compartments the disease has: sir, seir (latent period), sis (no lasting immunity), sirs and seirs (immunity wanes), seiar (an asymptomatic track).",
+   "kind": "enum",
+   "unit": null,
+   "default": "sir",
+   "bounds": null,
+   "choices": [
+    "sir",
+    "seir",
+    "sis",
+    "sirs",
+    "seirs",
+    "seiar"
+   ],
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.SIR, ss.SEIR, ss.SIS and the EpiChat subclasses in epichat/sim/models.py",
+   "affects": [
+    "timing",
+    "peak",
+    "final_size",
+    "deaths",
+    "duration",
+    "endemicity",
+    "stochasticity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.beta",
+   "module": "disease",
+   "label": "Transmission rate",
+   "description": "Per-contact transmission rate per year; the configure tool sets it from R0. Starsim turns it into a daily probability 1 - exp(-beta / 365).",
+   "kind": "number",
+   "unit": "per year",
+   "default": 22.8125,
+   "bounds": [
+    0.001,
+    1000.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "disease.pars.beta = ss.peryear(beta)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.dur_exp.mean_days",
+   "module": "disease",
+   "label": "Latent period (mean)",
+   "description": "Days between infection and becoming infectious. Required for seir, seirs and seiar; the database incubation period is the usual source.",
+   "kind": "number",
+   "unit": "days",
+   "default": null,
+   "bounds": [
+    0.1,
+    60.0
+   ],
+   "choices": null,
+   "models": [
+    "seir",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "core",
+   "db_field": "incubation_days",
+   "starsim_target": "ss.SEIR(dur_exp=...)",
+   "affects": [
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.dur_exp.dist",
+   "module": "disease",
+   "label": "Latent period (distribution)",
+   "description": "How the period varies between people: constant (everyone the same), gamma or lognormal (needs sd_days). Migrated scenarios are constant; new scenarios use gamma with an illustrative sd.",
+   "kind": "enum",
+   "unit": null,
+   "default": "constant",
+   "bounds": null,
+   "choices": [
+    "constant",
+    "lognormal",
+    "gamma"
+   ],
+   "models": [
+    "seir",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.SEIR(dur_exp=...)",
+   "affects": [
+    "timing"
+   ],
+   "requires": [
+    "disease.dur_exp.sd_days"
+   ]
+  },
+  {
+   "path": "disease.dur_exp.sd_days",
+   "module": "disease",
+   "label": "Latent period (sd)",
+   "description": "Standard deviation of the period between people, in days; at most twice the mean. Realized periods are about half a day longer than configured because transitions happen on whole days.",
+   "kind": "number",
+   "unit": "days",
+   "default": null,
+   "bounds": [
+    0.01,
+    120.0
+   ],
+   "choices": null,
+   "models": [
+    "seir",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.SEIR(dur_exp=...)",
+   "affects": [
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.dur_inf.mean_days",
+   "module": "disease",
+   "label": "Infectious period (mean)",
+   "description": "Days an infected person transmits. The database infectious period is the usual source.",
+   "kind": "number",
+   "unit": "days",
+   "default": 10.0,
+   "bounds": [
+    0.5,
+    365.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": "infectious_days",
+   "starsim_target": "ss.SIR(dur_inf=...)",
+   "affects": [
+    "peak",
+    "final_size",
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.dur_inf.dist",
+   "module": "disease",
+   "label": "Infectious period (distribution)",
+   "description": "How the period varies between people: constant (everyone the same), gamma or lognormal (needs sd_days). Migrated scenarios are constant; new scenarios use gamma with an illustrative sd.",
+   "kind": "enum",
+   "unit": null,
+   "default": "constant",
+   "bounds": null,
+   "choices": [
+    "constant",
+    "lognormal",
+    "gamma"
+   ],
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.SIR(dur_inf=...)",
+   "affects": [
+    "peak",
+    "final_size",
+    "timing"
+   ],
+   "requires": [
+    "disease.dur_inf.sd_days"
+   ]
+  },
+  {
+   "path": "disease.dur_inf.sd_days",
+   "module": "disease",
+   "label": "Infectious period (sd)",
+   "description": "Standard deviation of the period between people, in days; at most twice the mean. Realized periods are about half a day longer than configured because transitions happen on whole days.",
+   "kind": "number",
+   "unit": "days",
+   "default": null,
+   "bounds": [
+    0.01,
+    730.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.SIR(dur_inf=...)",
+   "affects": [
+    "peak",
+    "final_size",
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.dur_immune.mean_days",
+   "module": "disease",
+   "label": "Immunity duration (mean)",
+   "description": "Days of immunity after recovery before a person can be infected again. Required for sirs and seirs.",
+   "kind": "number",
+   "unit": "days",
+   "default": null,
+   "bounds": [
+    7.0,
+    36500.0
+   ],
+   "choices": null,
+   "models": [
+    "sirs",
+    "seirs"
+   ],
+   "tier": "core",
+   "db_field": "immunity_duration",
+   "starsim_target": "EpiChat SIRS/SEIRS dur_immune",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.dur_immune.dist",
+   "module": "disease",
+   "label": "Immunity duration (distribution)",
+   "description": "How the period varies between people: constant (everyone the same), gamma or lognormal (needs sd_days). Migrated scenarios are constant; new scenarios use gamma with an illustrative sd.",
+   "kind": "enum",
+   "unit": null,
+   "default": "constant",
+   "bounds": null,
+   "choices": [
+    "constant",
+    "lognormal",
+    "gamma"
+   ],
+   "models": [
+    "sirs",
+    "seirs"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "EpiChat SIRS/SEIRS dur_immune",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": [
+    "disease.dur_immune.sd_days"
+   ]
+  },
+  {
+   "path": "disease.dur_immune.sd_days",
+   "module": "disease",
+   "label": "Immunity duration (sd)",
+   "description": "Standard deviation of the period between people, in days; at most twice the mean. Realized periods are about half a day longer than configured because transitions happen on whole days.",
+   "kind": "number",
+   "unit": "days",
+   "default": null,
+   "bounds": [
+    0.1,
+    73000.0
+   ],
+   "choices": null,
+   "models": [
+    "sirs",
+    "seirs"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "EpiChat SIRS/SEIRS dur_immune",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.p_death",
+   "module": "disease",
+   "label": "Case fatality ratio",
+   "description": "Share of cases that die at the end of the infectious period. In seiar only symptomatic infections are cases; in the other models every infection is, so a surveillance CFR overstates deaths for diseases with many mild or unreported infections. Surveillance CFRs also carry their own biases.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "sir",
+    "seir",
+    "sirs",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "core",
+   "db_field": "fatality_rate",
+   "starsim_target": "ss.bernoulli(p=p_death) drawn at infection",
+   "affects": [
+    "deaths"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.p_asymp",
+   "module": "disease",
+   "label": "Asymptomatic share",
+   "description": "Share of infections that never show symptoms; they still transmit, at rel_trans_asymp of a symptomatic case, and never die of the disease.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": 0.3,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "seiar"
+   ],
+   "tier": "core",
+   "db_field": "asymptomatic_fraction",
+   "starsim_target": "SEIAR p_asymp = ss.bernoulli(p=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.rel_trans_asymp",
+   "module": "disease",
+   "label": "Asymptomatic transmissibility",
+   "description": "Transmissibility of an asymptomatic infection relative to a symptomatic one.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": 0.5,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "SEIAR rel_trans_base for asymptomatic agents",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.sis_waning",
+   "module": "disease",
+   "label": "Immunity waning (sis)",
+   "description": "Rate per year at which immunity after an sis infection decays; 0 reproduces the classic SIS with no immunity.",
+   "kind": "number",
+   "unit": "per year",
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    52.0
+   ],
+   "choices": null,
+   "models": [
+    "sis"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.SIS(waning=ss.peryear(...))",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.sis_imm_boost",
+   "module": "disease",
+   "label": "Immunity boost (sis)",
+   "description": "How much immunity an sis infection adds (0 to 1); 0 means none.",
+   "kind": "number",
+   "unit": null,
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "sis"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.SIS(imm_boost=...)",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.seed.mode",
+   "module": "disease",
+   "label": "Seeding mode",
+   "description": "fraction: each agent starts infected with probability value; count: exactly value agents start infected.",
+   "kind": "enum",
+   "unit": null,
+   "default": "fraction",
+   "bounds": null,
+   "choices": [
+    "fraction",
+    "count"
+   ],
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "init_prev = ss.bernoulli or ss.choose_n",
+   "affects": [
+    "stochasticity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.seed.value",
+   "module": "disease",
+   "label": "Seed size",
+   "description": "A fraction between 0 and 1 (mode fraction) or a whole number of agents from 1 to n_agents (mode count).",
+   "kind": "number",
+   "unit": null,
+   "default": 0.01,
+   "bounds": [
+    0.0,
+    1000000.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "init_prev, or SeedInfections when day > 0",
+   "affects": [
+    "timing",
+    "stochasticity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.seed.day",
+   "module": "disease",
+   "label": "Seeding day",
+   "description": "Day the seed infections happen; 0 means at the start.",
+   "kind": "integer",
+   "unit": "days",
+   "default": 0,
+   "bounds": [
+    0,
+    7300
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "SeedInfections intervention",
+   "affects": [
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.initial_immune_frac",
+   "module": "disease",
+   "label": "Initially immune",
+   "description": "Share of the non-seeded population that starts immune (a past epidemic or a vaccination campaign before day 0). In sirs and seirs this immunity wanes like everyone else's; in sis at sis_waning.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    0.99
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "InitialImmunity intervention",
+   "affects": [
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.network_type",
+   "module": "network",
+   "label": "Contact network",
+   "description": "random: everyone has n_contacts random contacts; age_structured: three age groups mixing by a POLYMOD-like matrix.",
+   "kind": "enum",
+   "unit": null,
+   "default": "random",
+   "bounds": null,
+   "choices": [
+    "random",
+    "age_structured"
+   ],
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.RandomNet or ss.MixingPools",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.n_contacts",
+   "module": "network",
+   "label": "Contacts per day",
+   "description": "Mean number of contacts per person per day on the random network.",
+   "kind": "integer",
+   "unit": "per day",
+   "default": 4,
+   "bounds": [
+    1,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": "average_contacts_daily",
+   "starsim_target": "ss.RandomNet(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.network_beta",
+   "module": "network",
+   "label": "Network transmission multiplier",
+   "description": "Multiplies the per-contact probability on the network; 1 leaves beta as it is.",
+   "kind": "number",
+   "unit": null,
+   "default": 1.0,
+   "bounds": [
+    0.01,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.RandomNet(beta=...) or the mixing matrix scale",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.use_demographics",
+   "module": "demographics",
+   "label": "Births and deaths",
+   "description": "Whether people are born and die of other causes during the run.",
+   "kind": "bool",
+   "unit": null,
+   "default": false,
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.Births and ss.Deaths",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.birth_rate",
+   "module": "demographics",
+   "label": "Birth rate",
+   "description": "Births per 1,000 people per year.",
+   "kind": "number",
+   "unit": "per 1,000 per year",
+   "default": 20.0,
+   "bounds": [
+    0.1,
+    1000.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.Births(birth_rate=ss.peryear(...))",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.death_rate",
+   "module": "demographics",
+   "label": "Death rate",
+   "description": "Deaths from other causes per 1,000 people per year.",
+   "kind": "number",
+   "unit": "per 1,000 per year",
+   "default": 10.0,
+   "bounds": [
+    0.1,
+    1000.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.Deaths(death_rate=ss.peryear(...))",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.age_pct_under18",
+   "module": "demographics",
+   "label": "Share under 18",
+   "description": "Percent of the population aged 0 to 17; with the other two shares it assigns ages on the age-structured network.",
+   "kind": "number",
+   "unit": "percent",
+   "default": null,
+   "bounds": [
+    0.0,
+    100.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "age assignment after sim.init()",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.age_pct_18_64",
+   "module": "demographics",
+   "label": "Share 18 to 64",
+   "description": "Percent of the population aged 18 to 64.",
+   "kind": "number",
+   "unit": "percent",
+   "default": null,
+   "bounds": [
+    0.0,
+    100.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "age assignment after sim.init()",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.age_pct_over65",
+   "module": "demographics",
+   "label": "Share 65 and over",
+   "description": "Percent of the population aged 65 or more.",
+   "kind": "number",
+   "unit": "percent",
+   "default": null,
+   "bounds": [
+    0.0,
+    100.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "age assignment after sim.init()",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.country",
+   "module": "demographics",
+   "label": "Country",
+   "description": "ISO3 code of the country whose demographics are used.",
+   "kind": "string",
+   "unit": null,
+   "default": null,
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "resolve_demographics",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.auto_demographics",
+   "module": "demographics",
+   "label": "Fill demographics from the country",
+   "description": "Whether the service fills birth and death rates and contacts from country data when they are still at their defaults.",
+   "kind": "bool",
+   "unit": null,
+   "default": true,
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "expert",
+   "db_field": null,
+   "starsim_target": "resolve_demographics",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.demographics_year",
+   "module": "demographics",
+   "label": "Demographics year",
+   "description": "Year of the country data used.",
+   "kind": "integer",
+   "unit": "year",
+   "default": 2022,
+   "bounds": [
+    1950,
+    2100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "expert",
+   "db_field": null,
+   "starsim_target": "resolve_demographics",
+   "affects": [
+    "endemicity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "demographics.demographics_source",
+   "module": "demographics",
+   "label": "Demographics source",
+   "description": "Where the filled demographics came from.",
+   "kind": "string",
+   "unit": null,
+   "default": null,
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "expert",
+   "db_field": null,
+   "starsim_target": "resolve_demographics",
+   "affects": [],
+   "requires": []
+  },
+  {
+   "path": "interventions[].type",
+   "module": "interventions",
+   "label": "Intervention type",
+   "description": "vaccine (a routine campaign from start_day), treatment (daily capacity-limited recovery), seasonality (a yearly cycle in transmission).",
+   "kind": "enum",
+   "unit": null,
+   "default": null,
+   "bounds": null,
+   "choices": [
+    "vaccine",
+    "treatment",
+    "seasonality"
+   ],
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.routine_vx, SimpleTreatment, TransmissibilityModifiers",
+   "affects": [
+    "peak",
+    "final_size",
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].coverage",
+   "module": "interventions",
+   "label": "Coverage",
+   "description": "Vaccine: yearly probability each susceptible person is vaccinated; treatment: share of infectious people treated each day.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": null,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.routine_vx(prob=...) or SimpleTreatment(prob=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].start_day",
+   "module": "interventions",
+   "label": "Start day",
+   "description": "Day the intervention begins. A vaccine starting on day 0 is stored as disease.initial_immune_frac instead.",
+   "kind": "integer",
+   "unit": "days",
+   "default": 0,
+   "bounds": [
+    0,
+    7300
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.routine_vx(start_year=start_day / 365)",
+   "affects": [
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].capacity",
+   "module": "interventions",
+   "label": "Treatment capacity",
+   "description": "Most people treated per day.",
+   "kind": "integer",
+   "unit": "agents per day",
+   "default": null,
+   "bounds": [
+    1,
+    1000000
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "SimpleTreatment(max_capacity=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].scale",
+   "module": "interventions",
+   "label": "Seasonal amplitude",
+   "description": "Size of the yearly cycle: 0.2 means transmission moves between 80% and 120% of beta.",
+   "kind": "number",
+   "unit": null,
+   "default": 0.2,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "TransmissibilityModifiers",
+   "affects": [
+    "timing",
+    "peak"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].shift",
+   "module": "interventions",
+   "label": "Seasonal shift",
+   "description": "Fraction of a year by which the cycle is shifted.",
+   "kind": "number",
+   "unit": null,
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "TransmissibilityModifiers",
+   "affects": [
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.n_agents",
+   "module": "run",
+   "label": "Agents",
+   "description": "Number of simulated people; results scale to the real population.",
+   "kind": "integer",
+   "unit": null,
+   "default": 10000,
+   "bounds": [
+    10,
+    1000000
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.Sim(n_agents=...)",
+   "affects": [
+    "stochasticity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.sim_dur_years",
+   "module": "run",
+   "label": "Duration",
+   "description": "Length of the run in years.",
+   "kind": "number",
+   "unit": "years",
+   "default": 1.0,
+   "bounds": [
+    0.01,
+    20.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.Sim(dur=ss.days(round(365 * years)))",
+   "affects": [
+    "duration"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.n_replicates",
+   "module": "run",
+   "label": "Replicates",
+   "description": "How many seeds to run; the result shows the median run with 10 to 90% bands.",
+   "kind": "integer",
+   "unit": null,
+   "default": 1,
+   "bounds": [
+    1,
+    5
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "run_replicates",
+   "affects": [
+    "stochasticity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.rand_seed",
+   "module": "run",
+   "label": "Random seed",
+   "description": "Seed of the first replicate; unset means 1.",
+   "kind": "integer",
+   "unit": null,
+   "default": null,
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "expert",
+   "db_field": null,
+   "starsim_target": "ss.Sim(rand_seed=...)",
+   "affects": [
+    "stochasticity"
+   ],
+   "requires": []
+  }
+ ]
+}

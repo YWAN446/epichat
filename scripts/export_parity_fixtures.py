@@ -1,6 +1,7 @@
-"""Export the parity fixture the TypeScript tests pin themselves to: R0 math
-on a few hundred seeded parameter sets, literature warnings on seeded
-arguments, and the three adapters' row mapping on recorded responses.
+"""Export the parity fixture the TypeScript tests pin themselves to: the exact
+R0 math on a few hundred seeded v2 parameter sets, the v1 migration on a fixed
+set of v1 rows, literature warnings on seeded arguments, and the three
+adapters' row mapping on recorded responses.
 
     py -3.12 scripts/export_parity_fixtures.py   # writes web/tests/fixtures/
 """
@@ -19,9 +20,13 @@ from epichat.adapters.un_wpp import UNWPPAdapter  # noqa: E402
 from epichat.adapters.wb_data360 import WorldBankData360Adapter  # noqa: E402
 from epichat.adapters.who_gho import WHOGHOAdapter  # noqa: E402
 from epichat.disease_db import check_params, load_db  # noqa: E402
-from epichat.parser import _calibrate_beta, recalibrate_beta  # noqa: E402
+from epichat.params import r0  # noqa: E402
+from epichat.params.migrate import coerce_params  # noqa: E402
+from epichat.params.schema_v2 import SimParamsV2  # noqa: E402
 from epichat.resolver import DataQuery, ResolvedField  # noqa: E402
-from epichat.schema import SimParams  # noqa: E402
+
+sys.path.insert(0, str(ROOT / "tests"))
+from template_cases import cases as template_cases  # noqa: E402
 
 SEED = 20261008
 TYPES = ["sir", "seir", "sis", "sirs", "seirs", "seiar"]
@@ -90,33 +95,49 @@ def field_json(f: ResolvedField) -> dict:
             "alternatives": [field_json(a) for a in f.alternatives]}
 
 
-def random_params(rng: random.Random) -> SimParams | None:
-    disease_type = rng.choice(TYPES)
+LATENT = ("seir", "seirs", "seiar")
+WANING = ("sirs", "seirs")
+
+
+def random_duration(rng: random.Random, mean: float) -> dict:
+    dist = rng.choice(["constant", "constant", "gamma", "lognormal"])
+    sd = None if dist == "constant" else round(mean * rng.uniform(0.1, 0.6), 2)
+    return {"mean_days": mean, "dist": dist, "sd_days": sd}
+
+
+def random_params(rng: random.Random) -> SimParamsV2 | None:
+    model = rng.choice(TYPES)
     network_type = rng.choice(["random", "age_structured"])
-    base = {
-        "disease_type": disease_type,
-        "network_type": network_type,
-        "n_agents": rng.choice([1000, 5000, 10000, 50000]),
-        "n_contacts": rng.randint(1, 30),
-        "network_beta": rng.choice([1.0, 0.5, 2.0]),
+    disease = {
+        "model": model,
         "beta": round(rng.uniform(0.05, 300.0), 4),
-        "dur_inf": round(rng.uniform(1.0, 30.0), 2),
+        "dur_inf": random_duration(rng, round(rng.uniform(1.0, 30.0), 2)),
         "p_death": round(rng.choice([0.0, 0.001, 0.01, 0.1]), 3),
     }
-    if disease_type in ("seir", "seirs", "seiar"):
-        base["dur_exp"] = round(rng.uniform(1.0, 21.0), 2)
-    if disease_type in ("sirs", "seirs"):
-        base["dur_immune"] = round(rng.uniform(30.0, 2000.0), 1)
-    if disease_type == "seiar":
-        base["p_asymp"] = round(rng.uniform(0.0, 1.0), 2)
-        base["rel_trans_asymp"] = round(rng.uniform(0.0, 1.0), 2)
+    if model in LATENT:
+        disease["dur_exp"] = random_duration(rng, round(rng.uniform(1.0, 21.0), 2))
+    if model in WANING:
+        disease["dur_immune"] = random_duration(rng, round(rng.uniform(30.0, 2000.0), 1))
+    if model == "seiar":
+        disease["p_asymp"] = round(rng.uniform(0.0, 1.0), 2)
+        disease["rel_trans_asymp"] = round(rng.uniform(0.0, 1.0), 2)
+    network = {"network_type": network_type, "n_contacts": rng.randint(1, 30), "network_beta": rng.choice([1.0, 0.5, 2.0])}
+    demographics = {}
     if network_type == "age_structured" and rng.random() < 0.7:
         under = round(rng.uniform(10.0, 45.0), 1)
         over = round(rng.uniform(2.0, 20.0), 1)
-        base.update({"age_pct_under18": under, "age_pct_over65": over, "age_pct_18_64": round(100.0 - under - over, 1)})
+        demographics = {"age_pct_under18": under, "age_pct_over65": over, "age_pct_18_64": round(100.0 - under - over, 1)}
+    run = {"n_agents": rng.choice([1000, 5000, 10000, 50000])}
     try:
-        return SimParams.model_validate(base)
+        return SimParamsV2.model_validate({"schema_version": 2, "disease": disease, "network": network, "demographics": demographics, "run": run})
     except Exception:
+        return None
+
+
+def _calibrate(p: SimParamsV2, target: float):
+    try:
+        return r0.clamp_beta(r0.calibrate_beta(p, target))
+    except r0.R0Unreachable:
         return None
 
 
@@ -126,28 +147,53 @@ def params_cases(rng: random.Random) -> list[dict]:
         p = random_params(rng)
         if p is None:
             continue
-        calibrate = []
-        for target in (1.5, 3.0, 15.0):
-            beta = max(0.001, min(1000.0, _calibrate_beta(p, target)))
-            calibrate.append({"target_r0": target, "beta": round(beta, 6)})
-        # approx_r0 comes from numpy's eigvals, whose last bits differ between
-        # BLAS builds (Windows vs Linux CI). Nine decimals is far below the
-        # TypeScript test's 1e-6 tolerance and stable across platforms; the
-        # recalibration takes the same rounded value so both sides compute
-        # from identical inputs.
-        r0 = round(p.approx_r0(), 9)
+        # approx_r0 on the age-structured network uses numpy's eigvals, whose last bits differ between
+        # BLAS builds; nine decimals is far below the TypeScript test's 1e-6 tolerance.
+        approx = round(r0.approx_r0(p), 9)
         recalibrate = []
-        switched = dict(p.model_dump())
-        if p.network_type == "random":
-            switched.update({"network_type": "age_structured", "age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8})
+        switched = p.model_dump()
+        if p.network.network_type == "random":
+            switched["network"]["network_type"] = "age_structured"
+            switched["demographics"].update({"age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8})
         else:
-            switched.update({"network_type": "random"})
-        for after_input in (switched, {**p.model_dump(), "beta": round(p.beta * 1.7, 4)}):
-            after = SimParams.model_validate(after_input)
-            rec = recalibrate_beta(after, r0, p)
-            recalibrate.append({"r0_before": r0, "before": p.model_dump(), "after_input": after.model_dump(), "beta": rec.beta})
-        cases.append({"input": p.model_dump(), "approx_r0": r0, "calibrate": calibrate, "recalibrate": recalibrate})
+            switched["network"]["network_type"] = "random"
+        raised = p.model_dump()
+        raised["disease"]["beta"] = round(p.disease.beta * 1.7, 4)
+        for after_input in (switched, raised):
+            try:
+                after = SimParamsV2.model_validate(after_input)
+            except Exception:
+                continue
+            rec = r0.recalibrate_beta(after, approx, p)
+            recalibrate.append({"r0_before": approx, "before": p.model_dump(mode="json"), "after_input": after.model_dump(mode="json"), "beta": rec.disease.beta})
+        cases.append({
+            "input": p.model_dump(mode="json"), "approx_r0": approx, "max_r0": round(r0.max_r0(p), 9),
+            "calibrate": [{"target_r0": t, "beta": _calibrate(p, t)} for t in (1.5, 3.0, 15.0)],
+            "recalibrate": recalibrate,
+        })
     return cases
+
+
+MIGRATION_INPUTS: list[dict] = [
+    {"beta": 22.8125},
+    {"disease_type": "sir", "beta": 10.0, "dur_inf": 7, "init_prev": 0.02, "n_agents": 5000, "sim_dur_years": 0.5, "rand_seed": 3,
+     "p_death": 0.01, "n_contacts": 6, "network_beta": 0.5},
+    {"disease_type": "seir", "beta": 171.09375, "dur_exp": 11, "dur_inf": 8, "country": "KEN", "network_type": "age_structured",
+     "age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8, "use_demographics": True, "birth_rate": 28.1,
+     "death_rate": 7.9, "demographics_source": "UN WPP 2024"},
+    {"disease_type": "sis", "beta": 5.0, "interventions": [{"type": "vaccine", "coverage": 0.4, "start_day": 0}]},
+    {"disease_type": "sirs", "beta": 5.0, "dur_immune": 180,
+     "interventions": [{"type": "vaccination", "coverage": 1.0}, {"type": "treatment", "coverage": 0.5, "capacity": 20.4, "start_day": 3}]},
+    {"disease_type": "seirs", "beta": 5.0, "dur_exp": 4, "dur_immune": 90,
+     "interventions": [{"type": "vaccine", "coverage": 0.6, "start_day": 60}, {"type": "seasonal", "scale": 0.3, "shift": 0.1}]},
+    {"disease_type": "seiar", "beta": 5.0, "dur_exp": 4, "p_asymp": 0.4, "rel_trans_asymp": 0.3,
+     "interventions": [{"type": "vaccine", "coverage": 0.2, "start_day": 0}, {"type": "vaccine", "coverage": 0.7, "start_day": 30}]},
+]
+
+
+def migration_cases() -> list[dict]:
+    inputs = MIGRATION_INPUTS + [case.model_dump() for case in template_cases().values()]
+    return [{"input": v1, "expected": coerce_params(v1).model_dump(mode="json")} for v1 in inputs]
 
 
 def warning_cases(rng: random.Random) -> list[dict]:
@@ -219,7 +265,7 @@ def main(web_dir: Path = ROOT / "web") -> None:
     (fixtures / "adapters").mkdir(parents=True, exist_ok=True)
     for name, text in ADAPTER_FILES.items():
         (fixtures / "adapters" / name).write_text(text, encoding="utf-8", newline="")
-    payload = {"version": 1, "params": params_cases(rng), "warnings": warning_cases(rng), "adapters": adapter_cases()}
+    payload = {"version": 2, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
     (fixtures / "parity.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
 

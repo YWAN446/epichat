@@ -1,5 +1,5 @@
-"""Export the disease database, pre-flattened, its literature references, and
-the agent's system prompt for the web app. Python stays the source of truth; the TypeScript side reads
+"""Export the disease database, pre-flattened, its literature references, the
+parameter registry and the agent's system prompt for the web app. Python stays the source of truth; the TypeScript side reads
 these files and never re-derives summaries or range text.
 
     py -3.12 scripts/export_web_data.py          # writes web/data/
@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from epichat.agent import _SYSTEM  # noqa: E402
 from epichat.disease_db import _range_of, _rich_param, load_db, parameter_summary  # noqa: E402
+from epichat.params.registry import export as export_registry  # noqa: E402
 
 PARAMS = ("r0", "incubation_days", "infectious_days", "fatality_rate",
           "average_contacts_daily", "immunity_duration", "asymptomatic_fraction")
@@ -83,8 +84,9 @@ def main(web_dir: Path = ROOT / "web") -> None:
     write_json(web_dir / "data" / "disease_db.json", disease_db_payload())
     write_json(web_dir / "data" / "disease_refs.json", references_payload())
     write_json(web_dir / "data" / "system_prompt.json", {"system": _SYSTEM})
+    write_json(web_dir / "data" / "param_registry.json", export_registry())
 
 
 if __name__ == "__main__":
     main()
-    print("wrote web/data/disease_db.json, web/data/disease_refs.json, and web/data/system_prompt.json")
+    print("wrote web/data/disease_db.json, disease_refs.json, system_prompt.json and param_registry.json")
