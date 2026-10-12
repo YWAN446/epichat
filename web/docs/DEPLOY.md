@@ -423,6 +423,36 @@ pushed. No migration. One browser at desktop width and one phone.
    six sections, Parameters included, with the literature table at the top
    of Data and no reference buttons.
 
+## 6i. Parameters verification
+
+Done after the sim-parameters phases 3 and 4 are pushed, with migration
+0007 applied first (section 1.2). One browser; a phone is enough.
+
+1. New conversation: "Model measles in Kenya for a year." Configure as
+   usual, then ask "What can I change?": the activity shows a Parameter
+   list call, and the reply names parameters with their current values and
+   where each came from (database, default, …), not from memory.
+2. "Use five replicates." The panel's Parameters section shows "Replicates:
+   5" and the configured card's line carries `advanced`.
+3. "Seed 3% of the population and run it." After the run the reply says
+   the peak is the seeding itself and offers at most three options, one of
+   them keeping things as they are. Press the option that reduces the
+   seeds: the configure call that follows sets a seed count of 10, and the
+   next run's reply reports what changed against the previous run (the
+   seeds, the peak day) before interpreting.
+4. In the SQL editor:
+
+       select kind, tool, meta from step_events
+       where kind in ('diagnostic_shown', 'option_chosen') order by at desc limit 5;
+       select id, jsonb_array_length(diagnostics) from runs order by created_at desc limit 3;
+
+   The first shows a `diagnostic_shown` row whose `ids` names
+   `instant_peak` and an `option_chosen` row carrying the patch; the second
+   shows the run rows with their diagnostics.
+5. Open a conversation from before this deploy and say "run it again": the
+   run completes and the reply reports what changed against that earlier
+   run (nothing, or the seeds), then interprets.
+
 ## 7. Simulation service (`sim/`)
 
 The second Vercel service. Private: no rewrite reaches it; the web app calls

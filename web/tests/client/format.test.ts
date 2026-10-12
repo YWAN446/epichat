@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { configurationRows, countryName, describeField, effectiveParameterRows, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows, scenarioRows } from "@/lib/client/format";
+import { configurationRows, countryName, describeField, effectiveParameterLabel, effectiveParameterRows, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows, scenarioRows } from "@/lib/client/format";
 import { approxR0 } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
 
@@ -124,16 +124,22 @@ describe("parameter rows", () => {
     expect(interventionLines(fromStart)).toEqual(["Treatment: 80% coverage, no capacity limit"]);
     expect(parameterRows(fromStart)).toContainEqual(["Initially immune", "50%"]);
     expect(interventionLines(params({}))).toEqual([]);
+    expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.8, start_day: 60 }] }))).toEqual(["Vaccination: 80% coverage from day 60"]);
+    expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.5, start_day: 0 }] }))).toEqual([]); // day 0 is initial immunity, never a line
   });
 });
 
 describe("effective parameter rows", () => {
-  it("lists the v2 paths a run used, skipping unset ones", () => {
+  it("lists the v2 paths a run used by their registry labels, skipping unset ones", () => {
     const rows = effectiveParameterRows(params({ disease_type: "seir", dur_exp: 11, rand_seed: 4 }));
-    expect(rows).toContainEqual(["disease.model", "seir"]);
-    expect(rows).toContainEqual(["disease.dur_exp.mean_days", "11"]);
-    expect(rows).toContainEqual(["run.rand_seed", "4"]);
-    expect(rows.map(([k]) => k)).not.toContain("disease.dur_immune.mean_days");
+    expect(rows).toContainEqual(["Model", "seir"]);
+    expect(rows).toContainEqual(["Latent period (mean)", "11"]);
+    expect(rows).toContainEqual(["Random seed", "4"]);
+    expect(rows).toContainEqual(["Agents", "10,000"]);
+    expect(rows.map(([k]) => k)).not.toContain("Immunity duration (mean)");
+    expect(rows.map(([k]) => k)).not.toContain("disease.model");
+    expect(effectiveParameterLabel("disease.p_death")).toBe("Case fatality ratio");
+    expect(effectiveParameterLabel("not.a.path")).toBe("not.a.path");
   });
 });
 

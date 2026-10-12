@@ -6,6 +6,7 @@
 import names from "@/data/country_names.json";
 import { approxR0, type Duration, type Seed, type SimParams } from "@/lib/sim/params";
 import { getPath } from "@/lib/sim/paths";
+import { specFor } from "@/lib/sim/registry";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
 import type { ConfigPayload, DataPayload } from "@/lib/tools/types";
 
@@ -135,11 +136,16 @@ export const EFFECTIVE_PARAM_PATHS = [
   "demographics.birth_rate", "demographics.death_rate", "run.n_replicates", "run.rand_seed",
 ] as const;
 
+/** The registry's label for a v2 path, or the path itself for one the registry does not know. */
+export function effectiveParameterLabel(path: string): string {
+  return specFor(path)?.label ?? path;
+}
+
 export function effectiveParameterRows(p: SimParams): [string, string][] {
   const obj = p as unknown as Record<string, unknown>;
   return EFFECTIVE_PARAM_PATHS.flatMap((path) => {
     const value = getPath(obj, path);
-    return value === null || value === undefined ? [] : [[path, fmtValue(value)] as [string, string]];
+    return value === null || value === undefined ? [] : [[effectiveParameterLabel(path), fmtValue(value)] as [string, string]];
   });
 }
 
@@ -147,7 +153,8 @@ export function effectiveParameterRows(p: SimParams): [string, string][] {
 export function interventionLines(p: SimParams): string[] {
   return p.interventions.map((i) => {
     const coverage = i.coverage === null ? "coverage not set" : `${formatQuantity(i.coverage, "fraction")} coverage`;
-    if (i.type === "vaccine") return `Vaccination: ${coverage} from ${i.start_day > 0 ? `day ${fmtValue(i.start_day)}` : "the start"}`;
+    // A day-0 vaccine is disease.initial_immune_frac after validation (spec 18), so a listed vaccine always has a start day.
+    if (i.type === "vaccine") return `Vaccination: ${coverage} from day ${fmtValue(i.start_day)}`;
     if (i.type === "treatment") return `Treatment: ${coverage}, ${i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} agents`}`;
     return `Seasonality: amplitude ${fmtValue(i.scale)}, shift ${fmtValue(i.shift)}`;
   });

@@ -6,7 +6,7 @@ export type DurationName = "dur_exp" | "dur_inf" | "dur_immune";
 const DB_FIELD: Record<DurationName, string> = { dur_exp: "incubation_days", dur_inf: "infectious_days", dur_immune: "immunity_duration" };
 const DAYS_PER_UNIT: Record<string, number> = { days: 1, weeks: 7, months: 30.44, years: 365.25 };
 
-/** Spec 7.3: (max − min) / 4 from the database consensus range when the disease is known and min < max, else 0.3 × mean. Capped at the mean so the gamma stays valid (section 18). The sd is an illustrative assumption either way. */
+/** Spec 7.3: (max − min) / 4 from the database consensus range when the disease is known and min < max, else 0.3 × mean. Capped at the mean so the spread stays sensible (the schema allows up to twice the mean). The sd is an illustrative assumption either way. */
 export function illustrativeSd(name: DurationName, mean: number, disease: string | null): number {
   const flat = disease ? (lookup(disease)?.flat[DB_FIELD[name]] ?? null) : null;
   let sd = 0.3 * mean;

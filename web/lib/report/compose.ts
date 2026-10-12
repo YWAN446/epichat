@@ -3,7 +3,7 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { EFFECTIVE_PARAM_PATHS, SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { EFFECTIVE_PARAM_PATHS, SOURCE_LABELS, configurationRows, countryName, describeField, effectiveParameterLabel, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
 import { DOCUMENT_VERSION, SECTION_HEADINGS, figureLine, narrativeBlocks, type ReportBlock, type ReportDocument, type ReportNarrative, type ReportSection, type SectionId } from "@/lib/report/document";
@@ -135,7 +135,7 @@ function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayloa
   if (runs.length > 0) {
     const at = (run: ReportRun, path: string) => getPath(run.effectiveParams as unknown as Record<string, unknown>, path);
     const present = EFFECTIVE_PARAM_PATHS.filter((path) => runs.some((run) => at(run, path) !== undefined && at(run, path) !== null));
-    blocks.push({ kind: "table", caption: "Effective parameters", columns: ["Parameter", ...labels], rows: present.map((path) => [path, ...runs.map((run) => fmtValue(at(run, path) ?? null))]) });
+    blocks.push({ kind: "table", caption: "Effective parameters", columns: ["Parameter", ...labels], rows: present.map((path) => [effectiveParameterLabel(path), ...runs.map((run) => fmtValue(at(run, path) ?? null))]) });
     const repairs = runs.flatMap((run, i) => run.repairs.map((r) => [labels[i], String(r.attempt), r.error, (r.changes ?? []).map((c) => `${c.field}: ${fmtValue(c.from)} → ${fmtValue(c.to)}`).join("; ")]));
     if (repairs.length > 0) blocks.push({ kind: "table", caption: "Repairs", columns: ["Run", "Attempt", "Error", "Changes"], rows: repairs });
   }
