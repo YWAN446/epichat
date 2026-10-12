@@ -10,6 +10,11 @@ const CONFIG: ConfigPayload & { duration_ms: number } = {
 };
 
 describe("tool lines", () => {
+  it("labels the parameter list", () => {
+    expect(toolLabel("describe_parameters")).toBe("📋 Parameter list");
+    expect(statusLabel("describe_parameters")).toBe("Listing the parameters…");
+  });
+
   it("carries the Python labels", () => {
     expect(TOOL_LABELS.configure_simulation).toBe("⚙️ Configured simulation");
     expect(TOOL_LABELS.run_simulation).toBe("▶️ Simulation");

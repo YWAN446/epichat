@@ -218,7 +218,7 @@ describe("handleChat", () => {
     expect(requests[0].messages).toEqual([userMessage]);
     expect(requests[0].system).toEqual(systemBlocks());
     expect((requests[0].tools as { name: string }[]).map((tool) => tool.name)).toEqual([
-      "configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "remember", "web_search", "web_fetch",
+      "configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "remember", "describe_parameters", "web_search", "web_fetch",
     ]);
     expect(emitted).toEqual([
       { type: "text", delta: "Sure." },

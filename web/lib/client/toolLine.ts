@@ -11,6 +11,7 @@ export const TOOL_LABELS: Record<string, string> = {
   run_simulation: "▶️ Simulation",
   write_report: "📝 Report",
   remember: "🧠 Memory",
+  describe_parameters: "📋 Parameter list",
   web_search: "🔎 Web search",
   web_fetch: "📄 Read page",
 };
@@ -25,6 +26,7 @@ export const TOOL_STATUS: Record<string, string> = {
   run_simulation: "Running the simulation — this usually takes 1–2 minutes…",
   write_report: "Writing the report…",
   remember: "Remembering…",
+  describe_parameters: "Listing the parameters…",
   web_search: "Searching the web…",
   web_fetch: "Reading the page…",
 };

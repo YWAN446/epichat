@@ -5,13 +5,17 @@ import { TOOLS, executeTool } from "@/lib/tools";
 import { makeDeps } from "./helpers";
 
 describe("tool registry", () => {
-  it("declares the eight tools in the agent's order with streaming on and no extra properties", () => {
-    expect(TOOLS.map((t) => t.name)).toEqual(["configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "remember"]);
+  it("declares the nine tools in the agent's order with streaming on and no extra properties", () => {
+    expect(TOOLS.map((t) => t.name)).toEqual(["configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "remember", "describe_parameters"]);
     expect((TOOLS[6].input_schema as { required: string[] }).required).toEqual(["summary", "meaning", "limitations", "next_steps"]);
     const remember = TOOLS[7].input_schema as { required: string[]; properties: { kind: { enum: string[] }; replaces: { type: string[] } } };
     expect(remember.required).toEqual(["kind", "text"]);
     expect(remember.properties.kind.enum).toEqual([...MEMORY_KINDS]);
     expect(remember.properties.replaces.type).toEqual(["string", "null"]);
+    const describe = TOOLS[8].input_schema as { required: string[]; properties: { module: { enum: unknown[] }; tier: { enum: unknown[] } } };
+    expect(describe.required).toEqual([]);
+    expect(describe.properties.module.enum).toEqual(["disease", "network", "demographics", "interventions", "run", null]);
+    expect(describe.properties.tier.enum).toEqual(["core", "advanced", "expert", null]);
     for (const tool of TOOLS) {
       expect(tool.eager_input_streaming).toBe(true);
       expect(tool.input_schema.additionalProperties).toBe(false);

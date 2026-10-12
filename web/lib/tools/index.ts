@@ -2,6 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod";
 import { MEMORY_KINDS } from "@/lib/enums";
 import { ConfigureSimulationInput, configureSimulation } from "./configureSimulation";
+import { DescribeParametersInput, MODULES, TIERS, describeParameters } from "./describeParameters";
 import { FetchDemographicsInput, fetchDemographics } from "./fetchDemographics";
 import { FetchHealthSystemInput, fetchHealthSystem } from "./fetchHealthSystem";
 import { FetchVaccinationCoverageInput, fetchVaccinationCoverage } from "./fetchVaccinationCoverage";
@@ -151,6 +152,21 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: "describe_parameters",
+    description:
+      "List the simulation parameters of the current model (or the defaults before a scenario exists): for each one its path, label, meaning, unit, bounds, current value and where that value came from (user, database, fetch, default, illustrative), what it affects, and the literature range when the disease is known. Call it when the user asks what can be changed or what a parameter means, or when a diagnostic names a parameter, instead of answering from memory. Every path it lists can be set through configure_simulation's fields or its advanced patch.",
+    eager_input_streaming: true,
+    input_schema: {
+      type: "object",
+      properties: {
+        module: { type: ["string", "null"], enum: [...MODULES, null], description: "Only this module: disease, network, demographics, interventions, or run." },
+        tier: { type: ["string", "null"], enum: [...TIERS, null], description: "Only this tier: core, advanced, or expert." },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+  },
 ];
 
 type Entry = { schema: z.ZodType; run: (input: never, deps: ToolDeps) => Promise<ToolOutcome> };
@@ -164,6 +180,7 @@ const REGISTRY: Record<string, Entry> = {
   run_simulation: { schema: RunSimulationInput, run: runSimulation },
   write_report: { schema: WriteReportInput, run: writeReport },
   remember: { schema: RememberInput, run: remember },
+  describe_parameters: { schema: DescribeParametersInput, run: describeParameters },
 };
 
 const FAILED = "This tool failed. Tell the user this part is temporarily unavailable.";
