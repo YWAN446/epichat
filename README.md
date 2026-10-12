@@ -93,6 +93,50 @@ PDF export now renders Chinese, Japanese, and Korean characters correctly via Re
 
 ---
 
+## Web agent: parameters, diagnostics and options (2026)
+
+The web app (`web/`, Next.js on Vercel) and its simulation service (`sim/`,
+FastAPI running Starsim 3.7 through `epichat/sim/`) replace the templates
+above for the usability study. Their parameters are the sim-parameters
+design, `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`;
+the runbook is `web/docs/DEPLOY.md`.
+
+- **One registry.** Every parameter is described once in
+  `epichat/params/registry.py` (path, label, unit, bounds, default, the
+  models it applies to, the database field it comes from). The pydantic
+  schema v2 (`epichat/params/schema_v2.py`) and the zod schema
+  (`web/lib/sim/params.ts`) take their bounds and defaults from it, and
+  `scripts/export_web_data.py` writes it to `web/data/param_registry.json`.
+- **Schema v2** nests the parameters by module: `disease` (model, beta,
+  durations as mean, distribution and sd, case fatality ratio, seeding,
+  initial immunity), `network`, `demographics`, `interventions`, `run`
+  (agents, years, replicates, seed). Stored v1 rows migrate on read.
+- **The agent's tools.** `configure_simulation` takes the common fields
+  (`model`, `r0`, `dur_inf_days`, `dur_exp_days`, `dur_immune_days`,
+  `p_death`, `seed_fraction` or `seed_count`, the interventions) and an
+  `advanced` patch keyed by registry path for everything else, applied
+  together and validated once; a failure names the path. `describe_parameters`
+  lists the registry for the current model with each value's source: the
+  user, the database, a fetch, a default, or an illustrative assumption.
+- **Diagnostics.** After every run the service runs `epichat/sim/diagnostics.py`
+  on the full series: `early_fadeout`, `instant_peak`, `unfinished`,
+  `final_size_gap`, `sharp_curve`, `cfr_out_of_range`,
+  `fatality_on_all_infections`, `no_reinfection`, `high_variance`. Each
+  carries levers (a patch of paths with suggested values, clamped to the
+  registry and the literature range). The agent offers at most three as
+  suggested replies, applies the chosen one, reruns, and reports what changed
+  against the previous run.
+- **Recording.** Runs keep their diagnostics (`runs.diagnostics`, migration
+  `web/supabase/migrations/0007_run_diagnostics.sql`); the step events
+  `diagnostic_shown` and `option_chosen` say which fired and which were taken,
+  so the thresholds (named constants at the top of the diagnostics module)
+  can be tuned from the pilot.
+
+The CLI, the Streamlit app and the templates below still use the v1 flat
+parameters; the web app accepts both shapes and writes v2.
+
+---
+
 ## Input Types
 
 EpiChat accepts four kinds of input — the enrichment layer classifies and handles each automatically.
@@ -254,6 +298,12 @@ distributions (`data_loaders/households.py`), and OWID calibration data
 
 ## Parameters Reference
 
+The tables below are the v1 flat shape, as the CLI and the Streamlit app read
+it and as `/simulate` still accepts it. The web agent's parameters are schema
+v2, generated from the registry (`web/data/param_registry.json` lists every
+path with its label, unit, bounds and default); see the web-agent section
+above.
+
 ### Core Disease Parameters
 
 | Parameter | Type | Range | Default | Description |
@@ -387,6 +437,8 @@ epichat/
 ├── ROADMAP.md               # Planned data integrations and future features
 ├── epichat/
 │   ├── schema.py            # Pydantic models: SimParams + OutbreakContext
+│   ├── params/              # Registry, schema v2, migration, exact R0 (web agent)
+│   ├── sim/                 # Starsim 3.7 models, builder, outputs, diagnostics (web agent)
 │   ├── enricher.py          # Input enrichment: query/report/URL/search → OutbreakContext
 │   ├── parser.py            # NL + OutbreakContext → SimParams (Claude API)
 │   │                        #   incl. beta calibration for age-structured networks
@@ -419,6 +471,9 @@ epichat/
 │   ├── seirs.py.j2          # SEIRS (latent + waning) template
 │   ├── seiar.py.j2          # SEIAR (asymptomatic track) template
 │   └── sis.py.j2            # SIS (no immunity) template
+├── sim/                     # The simulation service (FastAPI) the web app calls
+├── web/                     # The web app (Next.js); web/docs/DEPLOY.md is its runbook
+├── evals/golden/            # The golden set; cases/parameters.yaml is pending the API harness
 └── tests/
     ├── test_queries.json              # Benchmark queries
     ├── test_parser.py                 # Automated accuracy tests
