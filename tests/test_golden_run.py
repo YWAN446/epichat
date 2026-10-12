@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from evals.golden.run import load_cases, score_case, write_report
+from evals.golden.run import load_cases, score_case, split_pending, write_report
 
 
 def _case(**kwargs):
@@ -59,3 +59,39 @@ def test_report_notes_a_newly_fixed_case(tmp_path):
     text = write_report(tmp_path, scored, baseline={"c1": False},
                         usage={}).read_text(encoding="utf-8")
     assert "Newly passing" in text
+
+
+def test_a_pending_case_loads_with_its_marker_and_is_left_out_of_the_run(tmp_path):
+    (tmp_path / "a.yaml").write_text(
+        "- id: a
+  category: x
+  turns: ['hi']
+  checks: {}
+"
+        "- id: p
+  category: parameters
+  critical: true
+  pending: api-harness
+"
+        "  pending_note: needs the web agent
+  turns: ['hi']
+  checks: {}
+",
+        encoding="utf-8")
+    cases = load_cases(tmp_path)
+    assert [c["id"] for c in cases] == ["a", "p"] and cases[1]["pending"] == "api-harness"
+    runnable, pending = split_pending(cases)
+    assert [c["id"] for c in runnable] == ["a"] and [c["id"] for c in pending] == ["p"]
+    # Selecting only a pending case (--case) runs nothing and is not "no cases matched".
+    assert split_pending([cases[1]]) == ([], [cases[1]])
+
+
+def test_report_lists_pending_cases_without_scoring_them(tmp_path):
+    scored = [{"id": "a", "category": "x", "critical": False, "passed": True, "pass_rate": 1.0, "failures": []}]
+    pending = [{"id": "p", "category": "parameters", "critical": True, "pending": "api-harness", "pending_note": "needs the web agent"}]
+    text = write_report(tmp_path, scored, baseline={"p": True}, usage={}, pending=pending).read_text(encoding="utf-8")
+    assert "## Pending" in text and "**p** (api-harness) — needs the web agent" in text
+    assert "Regression" not in text and "1/1 cases passing" in text
+    bare = write_report(tmp_path, scored, baseline={}, usage={}, pending=[{"id": "q", "pending": "api-harness"}]).read_text(encoding="utf-8")
+    assert "**q** (api-harness)
+" in bare

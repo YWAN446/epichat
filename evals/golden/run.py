@@ -45,6 +45,14 @@ def load_cases(directory: Path) -> list[dict]:
     return cases
 
 
+def split_pending(cases: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Cases marked `pending: <harness>` are written for a harness this runner is not
+    (spec 2026-10-09, section 17): loaded and listed in the report, never run or scored."""
+    runnable = [c for c in cases if not c.get("pending")]
+    pending = [c for c in cases if c.get("pending")]
+    return runnable, pending
+
+
 def run_once(case: dict, judge_model: str) -> dict:
     """One repeat of one case: deterministic checks, then the judge."""
     trace = run_case(case)
@@ -88,7 +96,7 @@ def _cost(usage: dict) -> float:
 
 
 def write_report(out_dir: Path, scored: list[dict], baseline: dict,
-                 usage: dict, declined: dict | None = None) -> Path:
+                 usage: dict, declined: dict | None = None, pending: list[dict] | None = None) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     lines = [f"# Golden set — {_dt.datetime.now():%Y-%m-%d %H:%M}", ""]
     total, passing = len(scored), sum(1 for s in scored if s["passed"])
@@ -100,6 +108,14 @@ def write_report(out_dir: Path, scored: list[dict], baseline: dict,
     for category in sorted({s["category"] for s in scored}):
         rows = [s for s in scored if s["category"] == category]
         lines.append(f"| {category} | {sum(1 for r in rows if r['passed'])} | {len(rows)} |")
+
+    if pending:
+        lines += ["", "## Pending", "",
+                  "Written for a harness this runner is not (the `pending` key names it); "
+                  "loaded and listed, not run and not scored:", ""]
+        for case in pending:
+            note = case.get("pending_note")
+            lines.append(f"- **{case['id']}** ({case['pending']})" + (f" — {note}" if note else ""))
 
     if declined:
         lines += ["", "## Judge declined", "",
@@ -149,7 +165,10 @@ def main() -> None:
         cases = [c for c in cases if c["category"] == args.category]
     if args.case:
         cases = [c for c in cases if c["id"] == args.case]
-    if not cases:
+    cases, pending = split_pending(cases)
+    for case in pending:
+        print(f"[pending] {case['id']} ({case['pending']})", flush=True)
+    if not cases and not pending:
         raise SystemExit("no cases matched")
 
     baseline = json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else {}
@@ -182,7 +201,7 @@ def main() -> None:
             print(f"    {'PASS' if outcome['passed'] else 'FAIL'} "
                   f"({outcome['pass_rate']:.0%})", flush=True)
 
-    report = write_report(out_dir, scored, baseline, usage, declined_by_case)
+    report = write_report(out_dir, scored, baseline, usage, declined_by_case, pending)
     print(f"\n{report}")
     if args.update_baseline:
         # Merge into the existing baseline rather than overwriting it: a

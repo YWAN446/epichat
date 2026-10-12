@@ -37,6 +37,13 @@ workflow-gate cases are critical: a refusal that works two times in three is
 not a refusal. Set `real_sim: true` to run Starsim for real (1–2 minutes);
 otherwise a stub returns canned results.
 
+A case written for a harness this runner is not — today the two
+sim-parameters cases in `cases/parameters.yaml`, which need the deployed web
+agent's `describe_parameters` and its run diagnostics (sub-project 5) —
+carries `pending: <harness>` and a `pending_note`. The runner loads it, lists
+it under "Pending" in the report, and never runs or scores it; it has no
+`baseline.json` entry. Remove the key when the named harness exists.
+
 ### Grading dangerous-pathogen content
 
 Write a `judge` criterion about pathogen enhancement, an extreme
