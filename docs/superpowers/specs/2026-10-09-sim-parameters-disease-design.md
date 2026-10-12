@@ -476,3 +476,89 @@ Where this section and the sections above disagree, this section wins.
 - **Plans.** Four implementation plans: phase 0; phases 1 and 2; phases 3
   and 4; phase 5. Each is merged to `main` locally and pushed by the owner,
   so each phase ships on its own as section 12 requires.
+
+## 18. Revision 2026-10-12: the age-structured network, and phase 1 and 2 rulings
+
+The phase 1 investigation of section 7.4 was done before the phases 1 and 2
+plan, on Starsim 3.7.2 (`ss.MixingPools` source read; 18 runs of 50k agents
+through the phase 0 builder, SIR, constant 10-day infectious period, 0.1%
+seeding, R0 1.5, 2.5 and 4, with and without age shares). Findings:
+
+- **Orientation.** `n_contacts[i][j]` is source group `i` to destination
+  group `j`: the mean number of effective contacts a destination agent in `j`
+  has with the source group `i`. Each pool draws every agent's `eff_contacts`
+  once, at initialization, from `Poisson(C[i][j] × network_beta)`; the draw
+  is fixed for the run.
+- **The `rel_trans` mean.** `Infection.infect` masks `rel_trans` to infectious
+  agents before any route sees it, so the pool's `mean(rel_trans[src])` is the
+  source group's infectious prevalence weighted by `rel_trans`. The SEIAR
+  reduction therefore enters the pool exactly, as `asymp_factor` in 7.4.
+- **Ages assigned after `sim.init()` reach the groups.** `ss.AgeGroup`
+  recomputes its members from `sim.people.age` on every step (cached per
+  step) and the pools' `step()` runs before transmission, so the builder's
+  age assignment takes effect from day 0; group sizes matched the shares
+  exactly. Without age shares Starsim's default ages are uniform on 0 to 60,
+  so the elderly group is empty; the demographics spec owns that.
+- **Why the attack rates looked equal.** At the default beta (R0 about 6 on
+  this network) every group ends near 100%. At R0 1.5 to 4 the groups differ
+  as the matrix's column sums say (children 47%, adults 58%, elderly 21% at
+  R0 1.5).
+- **The next-generation matrix.** Per day, a destination agent in `j` is
+  infected through pool `i → j` with probability
+  `p × network_beta × C[i][j] × I_i / N_i` in expectation, `p = 1 − exp(−beta / 365)`.
+  Over an infectious period of `D_eff` days (7.4) one infectious agent in `i`
+  therefore causes `K[j][i] = p × network_beta × C[i][j] × (N_j / N_i) × D_eff × asymp_factor`
+  infections in `j`. `K` is similar to `C^T`, so
+
+  ```
+  R0 (age-structured) = rho(C) × network_beta × p × D_eff × asymp_factor,   rho(C) = 11.0028224279
+  ```
+
+  independent of the age shares and of `n_contacts`. The population
+  weighting in the v1 formula (`C[i][j] × pop[j]`) is dropped; `calibrateBeta`
+  inverts this form with the same unreachable-R0 rule as the random network.
+  `approx_r0` on this network is exact from phase 1 on, so the
+  `approximate: true` marker of 7.4 is not needed.
+- **Per-group final sizes.** Because each agent's contacts are a fixed
+  Poisson draw, the group attack rates follow the heterogeneous final-size
+  system `z_j = 1 − exp(−network_beta × Σ_i C[i][j] × (1 − exp(−a × z_i)))`
+  with `a = p × D_eff × asymp_factor`, not the homogeneous one. At 50k agents
+  the simulated group attack rates, averaged over three seeds, were within
+  1.5 percentage points of that solution at every R0 (the homogeneous
+  solution overstates them by up to 7 points). The per-group test of section
+  13 is therefore: for R0 1.5, 2.5 and 4 with age shares 38.6 / 57.6 / 3.8,
+  each group's attack rate averaged over three seeds is within 0.03 of the
+  heterogeneous solution.
+
+Rulings for the phases 1 and 2 plan:
+
+- **R0 calibration tests seed 0.1%** (`Seed(mode="count", value=50)` at
+  50k agents) instead of the three seeds of section 13: with three seeds an
+  R0 of 1.5 fades out about 30% of the time. The implied R0 includes the
+  seeds either way.
+- **A vaccine with `start_day == 0` is normalized on validation** in both
+  languages: it becomes `disease.initial_immune_frac = coverage` and leaves
+  `interventions`, exactly as the migration rule does, so the two never
+  coexist. When both are given and differ, validation fails naming both
+  paths. The configure tool and the WHO coverage tool write
+  `initial_immune_frac` directly for a day-0 vaccine.
+- **Gamma defaults apply when a duration is created**, not when an existing
+  one's mean changes: the configure tool creates a `Duration` as gamma with
+  the 7.3 sd; a later change to its mean keeps the distribution and
+  recomputes the sd by the same rule; `constant` stays constant. Migrated
+  durations are constant and stay so.
+- **`beta` keeps the v1 unit and bounds** (`0.001` to `1000` per year). The
+  TypeScript `SimParams` type becomes the v2 shape and `validateParams`
+  accepts v1 or v2, migrating v1, so every stored row reads as v2.
+- **The service's `/simulate` takes `params` as either shape** and answers
+  422 with the same `invalid_params` detail list for both. `effective_params`,
+  repair diffs (`field` is now a dotted v2 path), and the run row are v2.
+- **The exact R0 lives in `epichat/params/r0.py`** for v2; the v1 functions in
+  `schema.py` and `parser.py` stay as they are for the frozen Python agent and
+  its tests. The demographics rescale for the service moves to
+  `epichat/params/resolve.py` (v2) and the repair loop to
+  `epichat/params/repair.py` (v2, same prompt, v2 schema).
+- **Series keys from phase 2** are the 8.6 set; `n_infected` is still sent and
+  the web app reads `n_infectious` with `n_infected` as the fallback for stored
+  runs. `total_deaths` counts disease deaths only; a run with demographics on
+  gets a warning line saying so, from the web run tool, this release.

@@ -452,8 +452,8 @@ CI runs them on 3.12 too. Both requirement files pin `starsim==3.7.2`.
 `npx vercel dev` from the root runs both with the binding injected.
 
 **Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 40 s;
-four real Starsim runs through `python -m epichat.sim.run_params`, the child
-process the runner spawns). CI runs them on Python 3.12 as the `sim` job.
+ten child processes run real Starsim through `python -m epichat.sim.run_params`,
+the entry point the runner spawns). CI runs them on Python 3.12 as the `sim` job.
 
 **Settings** (all optional except the secret): `SIM_TIMEOUT_SECONDS` 120,
 `SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
@@ -480,20 +480,18 @@ was not needed; the only surprise was the bundle size (see above).
 5. Record the numbers below from step 4; the Usage page's Active CPU
    reading is the owner's to note alongside them.
 
-| Measured on Vercel, 2026-10-08 (iad1, Hobby, 2 GB) | Value |
+| Measured on Vercel, 2026-10-12, Starsim 3.7.2 through the builder (iad1, Hobby, 2 GB) | Value |
 |---|---|
-| Cold health check through the binding (no run) | 4.9 s wall |
-| Cold start, 10k agents, 1 year | 12.3 s (`duration_ms` 12257) |
-| Warm, 10k agents, 1 year | 6.8 s (`duration_ms` 6755) |
-| Warm, 100k agents, 1 year | 18.2 s (`duration_ms` 18224) |
+| Cold start, 10k agents, 1 year | `duration_ms` 7736 |
+| Warm, 10k agents, 1 year | `duration_ms` 3980 |
+| Warm, 100k agents, 1 year | `duration_ms` 8871 |
 
-Re-measure this table after the first Starsim 3.7.2 deploy (steps 4 and 5
-above); the local numbers below are from the new pipeline.
-
-The warm 10k run is about 4.5× the local CPU time (the child process
-re-imports Starsim, about 3 s on Vercel, plus a slower vCPU); 100k agents is
-about 1.7× local. Both are within the per-attempt timeout with room to spare,
-and 100k agents for 5 years (60 s locally) should still fit.
+The template pipeline on Starsim 3.3 (2026-10-08) measured 12257, 6755 and
+18224 ms for the same three runs, so the builder is about 1.7× faster for 10k
+agents and 2× faster for 100k. The warm 10k run is about 1.5× the local wall
+time (the child process re-imports Starsim on a slower vCPU); both runs are
+well within the per-attempt timeout, and 100k agents for 5 years (about 25 s
+locally) still fits.
 
 Local baseline (Python 3.12, Starsim 3.7.2 through `run_params`, one core,
 2026-10-11): child import 2.0 s; 10k agents 1 year 2.6 s wall (2.9 s with a
