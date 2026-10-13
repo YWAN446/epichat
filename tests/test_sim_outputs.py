@@ -145,6 +145,31 @@ def test_a_measurement_carries_its_standard_error_and_the_edge_cases_hold():
     assert measured_r0(sim) is None and measure_r0(sim, count_day0=False) is None             # no day-0 seeds
 
 
+def test_initial_immunity_is_not_depletion():
+    # review I1: agents immune from the start are not susceptibles the epidemic used up; the measured value reads the effective
+    # reproduction number there (5.8's reference), and a day-0 vaccine at full efficacy is that same initial immunity
+    from epichat.params.r0 import with_r0
+    from epichat.sim.outputs import measure_r0, measured_r0
+
+    def live(seed: int, **extra):
+        body = {"disease": {"dur_inf": {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, "seed": {"mode": "count", "value": 150}},
+                "run": {"n_agents": 20000, "sim_dur_years": 60 / 365, "rand_seed": seed}}
+        body["disease"].update(extra.pop("disease", {}))
+        body.update(extra)
+        sim = build_sim(with_r0(SimParamsV2.model_validate(body), 2.5), seed=seed)
+        sim.run()
+        return sim
+
+    plain = [measured_r0(live(s)) for s in (1, 2, 3)]
+    immune = [measured_r0(live(s, disease={"initial_immune_frac": 0.3})) for s in (1, 2, 3)]
+    vaccinated = [measured_r0(live(s, interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 0}])) for s in (1, 2, 3)]
+    assert all(v is not None for v in plain + immune + vaccinated), (plain, immune, vaccinated)      # it was withheld: the weight read 1.55
+    assert measure_r0(live(1, disease={"initial_immune_frac": 0.3}), count_day0=False).weight < 1.1
+    # on the same random seeds the immune share is all that differs: the estimate scales by the share left susceptible
+    assert sum(immune) / sum(plain) == pytest.approx(0.7, rel=0.06) and sum(vaccinated) / sum(plain) == pytest.approx(0.5, rel=0.08), (plain, immune, vaccinated)
+    assert abs(sum(immune) / 3 - 1.75) / 1.75 < 0.15                                                 # and it is the effective reproduction number
+
+
 def test_measured_r0_is_unknown_on_the_age_structured_network():
     # Starsim's MixingPools record no per-agent sources (−999999 for every secondary infection), so the seeds' secondary infections cannot be counted
     from epichat.sim.outputs import measured_r0

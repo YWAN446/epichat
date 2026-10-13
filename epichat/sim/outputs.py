@@ -49,6 +49,9 @@ class Measurement:
 def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
     """Part 2, 5.6 as amended: for each day-0 seed, the infections it caused in its first infectious episode (before it was infected
     again), each weighted by alive / susceptible at the step before, which corrects the depletion of susceptibles to first order.
+    The weight is scaled by the share of the non-seed agents that was susceptible before anything spread, so agents immune from the
+    start (initial_immune_frac: recovered in the SIR family) are not counted as depletion: with initial immunity the estimate reads
+    the effective reproduction number, as 5.8's reference does.
     count_day0 False leaves out what the seeds transmitted on step 0: a seed is infectious from step 0, an ordinary case from the step
     after its infection, so a seed transmits on one more step. True counts everything (the pilot keeps its seeds quiet on step 0).
     None without day-0 seeds or on a network that records no per-agent sources (the age-structured MixingPools)."""
@@ -76,7 +79,9 @@ def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
     name = list(sim.diseases.keys())[0]
     susceptible = np.asarray(sim.results[name]["n_susceptible"].values, dtype=float)
     alive = np.asarray(sim.results["n_alive"].values, dtype=float)
-    weights = alive[when] / np.maximum(susceptible[when], 1.0)
+    spread = np.asarray(sim.results[name]["new_infections"].values, dtype=float)
+    start = min(1.0, (susceptible[0] + spread[0]) / max(alive[0] - len(seeds), 1.0))     # susceptible before step 0's transmission
+    weights = start * alive[when] / np.maximum(susceptible[when], 1.0)
     per_seed = np.bincount(index, weights=weights, minlength=len(seeds))
     se = float(per_seed.std(ddof=1) / math.sqrt(len(seeds))) if len(seeds) > 1 else 0.0
     return Measurement(float(per_seed.mean()), se, int(len(seeds)), float(weights.mean()) if len(weights) else 1.0)
