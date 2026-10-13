@@ -1,6 +1,7 @@
 # EpiChat Simulation Parameters, Part 2 Follow-up: Limits on Spread, Suggested Interventions, the Parameters Section and Chosen References (Design)
 
-Date: 2026-10-13. Status: draft for the owner's review.
+Date: 2026-10-13. Status: confirmed by the owner on 2026-10-13 (the proposals of
+section 17 included); phase A shipped, with the amendments marked "as shipped".
 Builds on Part 1, `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
 and Part 2, `docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md`
 (phases 2A to 2D shipped on 2026-10-13). Where this document and either part
@@ -144,6 +145,15 @@ multiplier's mean is 1.
 The rule lives in `needs_calibration` (the service). `r0_is_approximate`, the
 web mirror and the panel's R0 label are unchanged.
 
+As shipped. The pilot this rule calls is the first-generation experiment of
+`docs/superpowers/plans/2026-10-13-pilot-measured-r0.md`, merged before this
+phase: the version that shipped with Part 2 mis-measured R0 and could not have
+carried the rule. A measles-like scenario (R0 12, 4 contacts, an 8-day period)
+has a per-contact probability of 0.40; with a coefficient of variation of 1
+its loss is e^(−2.5), 8.2%; the pilot raised beta in two corrections and a
+fresh seed measured 11.55. For a coefficient of 1 the loss is exactly
+e^(−1/q), which the tests check.
+
 ### 4.4 The expected final size
 
 With gamma-distributed susceptibility the final-size equation has a closed
@@ -159,6 +169,13 @@ form, `z = 1 − (1 + cv² R z)^(−1/cv²)`, which tends to the homogeneous
 `final_size(r)` in the diagnostics becomes `final_size(r, cv)` with this
 form, so `final_size_gap` compares a run with the size its own configuration
 predicts and does not fire on every run with variation.
+
+As shipped, measured in the product at 50,000 agents and R0 2.5: 89.7%
+infected with no variation and 60.7% with a coefficient of variation of 1,
+against 89.3% and 60.0%. The multiplier's mean and coefficient of variation
+read 1.002 and 0.497, 1.003 and 0.995, 1.001 and 1.997 for 0.5, 1 and 2. A
+calibrated run's R0 in the diagnostics is the calibration's target, since its
+beta is no longer the formula's.
 
 ### 4.5 Source, agent rule, user path
 
@@ -212,15 +229,17 @@ Once per step, where the connector already composes transmissibility:
 
 ### 5.3 What it does, and what it cannot do
 
-A deterministic sketch outside the product (R0 2.5, 10-day infectious period,
-0.5% seeded):
+As shipped, measured in the product (R0 2.5, 10,000 agents, a gamma infectious
+period of 10 days, 50 seeds; the draft's table was a deterministic sketch with
+a flatter baseline):
 
 | Response | Peak infectious | Infected by 1 year | By 2 years |
 |---|---|---|---|
-| None | 24% | 90% | 90% |
-| Up to 40%, half at 2% infectious | 11% | 72% | 72% |
-| Up to 60%, half at 1% | 4.5% | 57% | 61% |
-| Up to 80%, half at 0.5% | 1.2% | 33% | 46% |
+| None | 39% | 89% | 89% |
+| Up to 40%, half at 2% infectious | 18% | 70% | 70% |
+| Up to 50%, half at 1% (the value the agent offers) | 10% | 58% | 58% |
+| Up to 60%, half at 1% | 6.7% | 56% | 59% |
+| Up to 80%, half at 0.5% | 2.1% | 35% | 48%, still spreading |
 
 The response flattens the peak, stretches the epidemic and removes the
 overshoot. Because it relaxes as cases fall, the long-run total drifts toward
@@ -271,7 +290,11 @@ who knows both R0 and the real attack rate can keep R0.
 
 - The search of Part 2 (the current value first, doubling or halving until the
   target is bracketed, geometric midpoints, at most eight runs) is unchanged
-  but reads its direction from the lever. A lever at 0 starts at 0.5.
+  but reads its direction from the lever. A lever at 0 starts at 0.5. As
+  shipped: a lever whose lower bound is 0 takes arithmetic midpoints and, when
+  halved below 0.02, goes to 0; a run that faded out means such a lever is too
+  high. In the tests' scenario (R0 about 2.3) a variation of 0.875 gives 61%
+  infected in four runs and a response of up to 30% gives 70% in three.
 - `behavior_response.scale` needs a behaviour-response entry in the scenario;
   without one the validator says so.
 - `peak_day` with either new lever is refused with a message naming the two
@@ -500,7 +523,9 @@ data-sources table lists it as a literature reference.
 
 - Registry version 5: `disease.rel_sus_cv`; `interventions[].half_prevalence`
   and `interventions[].memory_days`; the type `behavior_response`; two more
-  choices of `run.fit.lever`; the `networks` field on every parameter.
+  choices of `run.fit.lever`; the `networks` field on every parameter. All of
+  it shipped in phase A, `networks` included, so the version moves once;
+  phase C reads `networks`.
 - Parity fixture version 6: the generator draws the variation, the
   behaviour-response entry and the new fit levers.
 - `schema_version` stays 2. Every new leaf has a default; stored scenarios
@@ -657,9 +682,9 @@ look:
    variation for every scenario, which changes every baseline result and
    rests on a value no database field supports yet.
 2. **The illustrative values (decision 7).** A coefficient of variation of 1
-   takes R0 2.5 from 89% to 60% infected; in the sketch of 5.3 a response of
-   up to 50% with its half-point at 1% takes the peak from 24% to about 7%
-   infectious and the total from 90% to 63%.
+   takes R0 2.5 from 89% to 60% infected; measured in the product (5.3) a
+   response of up to 50% with its half-point at 1% takes the peak from 39% to
+   10% infectious and the total from 89% to 58%.
 3. **The response as an intervention entry (decision 5).** It appears in the
    panel's Interventions list, not in the Disease or Contact network group.
 4. **`well_mixed` on every network (7.6).** The diagnostic will now fire on

@@ -184,6 +184,21 @@ registry, schema v2, the exact R0, diagnostics and options) and
   size. The service searches the transmission rate (or the network
   multiplier) in at most eight runs and reports `stats.fit`; the report shows
   the target and what the search reached.
+- **Limits on spread.** Without an intervention an epidemic reaches the share
+  the final-size equation gives for its R0 on every network (89% at R0 2.5):
+  the only brake is the depletion of susceptibles. Two mechanisms limit it
+  without a dated measure, both off by default and both illustrative
+  assumptions the agent offers and names
+  (`docs/superpowers/specs/2026-10-13-limits-suggestions-parameters-design.md`).
+  `disease.rel_sus_cv` gives each agent a personal susceptibility multiplier
+  with mean 1 and that coefficient of variation: the most susceptible are
+  infected first, so the epidemic ends smaller at the same R0 (60% at a
+  coefficient of 1). A `behavior_response` entry makes transmission fall as
+  the share infectious rises and recover as it falls: it flattens the peak
+  and removes the overshoot, and because it relaxes it cannot take the total
+  far below the herd immunity threshold. The fit can move either one instead
+  of beta (`lever: disease.rel_sus_cv` or `behavior_response.scale`), which
+  matches a known attack rate while R0 stays where it was set.
 - **Diagnostics, continued.** `well_mixed` (a random-network run that a
   hybrid scenario would describe better) and `r0_gap` (the measured R0 far
   from the configured one) join the list above.

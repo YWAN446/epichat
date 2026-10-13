@@ -113,3 +113,14 @@ def test_the_readme_states_part_2_as_the_code_runs_it():
     assert not Intervention(type="vaccine", coverage=0.5, start_day=0, age_min=5, age_max=18).is_day0_immunity()
     assert not Intervention(type="vaccine", coverage=0.5, start_day=0, protection_days=90).is_day0_immunity()
     assert "ages, a protection duration or all-or-nothing protection" in interventions
+
+
+def test_the_readme_describes_the_limits_on_spread():
+    web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
+    for phrase in ("Limits on spread", "rel_sus_cv", "behavior_response", "herd immunity threshold", "off by default",
+                   "docs/superpowers/specs/2026-10-13-limits-suggestions-parameters-design.md"):
+        assert phrase in web, phrase
+    # the README's own claim about what limits an epidemic matches the diagnostics' closed form
+    from epichat.sim.diagnostics import final_size
+    assert round(final_size(2.5) * 100) == 89 and round(final_size(2.5, 1.0) * 100) == 60
+    assert "89%" in web and "60%" in web
