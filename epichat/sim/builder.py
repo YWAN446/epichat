@@ -25,12 +25,13 @@ from epichat.params.schema_v2 import Duration, Seed, SimParamsV2, sim_days
 
 from .connectors import TransmissionModifiers
 from .demographics import AgedPeople, YearlyBirths
-from .interventions import InitialImmunity, SeedInfections, SimpleTreatment
+from .interventions import ContactReduction, InitialImmunity, SeedInfections, SimpleTreatment, TreatmentDelivery, VaccineDelivery
 from .models import MODELS
-from .products import Vaccine
+from .products import Treatment, Vaccine
 
 __all__ = ["CONTACT_MATRIX", "LATENT_MODELS", "WANING_MODELS", "SimpleTreatment", "sim_days", "resolve_seed", "age_groups",
-           "to_dist", "seed_dist", "disease_kwargs", "build_network", "build_people", "build_demographics", "build_interventions", "build_sim"]
+           "to_dist", "seed_dist", "disease_kwargs", "build_network", "build_people", "build_demographics", "age_eligibility", "vaccine_delivery",
+           "build_interventions", "build_sim"]
 
 
 def resolve_seed(params: SimParamsV2, seed: int | None) -> int:
@@ -109,6 +110,46 @@ def build_network(params: SimParamsV2):
     return ss.RandomNet(n_contacts=contacts, dur=ss.days(n.contact_duration_days), beta=n.network_beta)
 
 
+def age_eligibility(age_min: int | None, age_max: int | None):
+    """Starsim's eligibility callable: the alive agents inside the age range (None means everyone, Starsim's default)."""
+    if age_min is None and age_max is None:
+        return None
+
+    def eligible(sim):
+        age = np.asarray(sim.people.age)
+        keep = np.asarray(sim.people.alive, dtype=bool).copy()
+        if age_min is not None:
+            keep &= age >= age_min
+        if age_max is not None:
+            keep &= age < age_max
+        return ss.uids(np.flatnonzero(keep))
+
+    return eligible
+
+
+def vaccine_delivery(entry, run_days: int):
+    """Part 2, 7.1: a v1-shaped routine vaccine (full efficacy, no window, no ages, no waning) keeps Starsim's routine_vx, whose yearly
+    probability the parity baseline pins; every other entry runs through VaccineDelivery with a per-day probability over its window:
+    routine coverage is a yearly probability (1 − (1 − c)^(1/365) a day), a campaign reaches its coverage uniformly over the window
+    (1 − (1 − c)^(1/days)). A day-0 vaccine with efficacy below 1 (never folded into initial immunity) is a one-day campaign at day 0."""
+    coverage = entry.coverage or 0.0
+    v1_shaped = (entry.kind == "routine" and entry.end_day is None and entry.efficacy >= 1.0 and entry.leaky
+                 and entry.age_min is None and entry.age_max is None and entry.protection_days is None)
+    if v1_shaped:
+        return ss.routine_vx(product=Vaccine(efficacy=1.0), prob=coverage, start_year=entry.start_day / 365)
+    kind, end_day = entry.kind, entry.end_day
+    if entry.start_day == 0 and entry.efficacy < 1.0 and end_day is None and kind == "routine":
+        kind, end_day = "campaign", 0
+    end_day = run_days if end_day is None else min(end_day, run_days)
+    product = Vaccine(efficacy=entry.efficacy, leaky=entry.leaky, protection_days=entry.protection_days)
+    if kind == "campaign":
+        days = max(1, end_day - entry.start_day + 1)
+        prob = 1 - (1 - coverage) ** (1 / days)
+    else:
+        prob = 1 - (1 - coverage) ** (1 / 365)
+    return VaccineDelivery(product, prob, entry.start_day, end_day, age_eligibility(entry.age_min, entry.age_max))
+
+
 def build_interventions(params: SimParamsV2) -> list:
     d = params.disease
     out = []
@@ -116,11 +157,18 @@ def build_interventions(params: SimParamsV2) -> list:
         out.append(SeedInfections(day=d.seed.day, mode=d.seed.mode, value=d.seed.value))
     if d.initial_immune_frac > 0:
         out.append(InitialImmunity(frac=d.initial_immune_frac))
+    run_days = sim_days(params.run.sim_dur_years)
     for i in params.interventions:
-        if i.type == "treatment":
+        if i.type == "treatment" and i.is_v1_treatment():
             out.append(SimpleTreatment(prob=i.coverage if i.coverage is not None else 1.0, max_capacity=i.capacity, start_day=i.start_day))
-        elif i.type == "vaccine" and i.start_day > 0:       # a day-0 vaccine was normalized into initial_immune_frac
-            out.append(ss.routine_vx(product=Vaccine(efficacy=1.0), prob=i.coverage or 0.0, start_year=i.start_day / 365))
+        elif i.type == "treatment":
+            out.append(TreatmentDelivery(Treatment(efficacy=i.efficacy), prob=i.coverage if i.coverage is not None else 1.0, max_capacity=i.capacity,
+                                         start_day=i.start_day, end_day=i.end_day, delay_days=i.delay_days, rel_trans_treated=i.rel_trans_treated,
+                                         symptomatic_only=i.symptomatic_only))
+        elif i.type == "vaccine":
+            out.append(vaccine_delivery(i, run_days))
+        elif i.type == "contact_reduction":
+            out.append(ContactReduction(layer=i.layer, scale=i.scale, start_day=i.start_day, end_day=i.end_day))
     return out
 
 
@@ -169,7 +217,8 @@ def build_sim(params, seed: int | None = None) -> ss.Sim:
     name = params.disease.model
     disease = MODELS[name](**disease_kwargs(params))
     seasonality = next((i for i in params.interventions if i.type == "seasonality"), None)
-    connector = TransmissionModifiers(name, seasonality.scale if seasonality else 0.0, seasonality.shift if seasonality else 0.0)
+    reductions = [(i.start_day, i.end_day, i.scale) for i in params.interventions if i.type == "transmission_reduction"]
+    connector = TransmissionModifiers(name, seasonality.scale if seasonality else 0.0, seasonality.shift if seasonality else 0.0, reductions)
     rand_seed = resolve_seed(params, seed)
     n = params.run.n_agents
     sim = ss.Sim(n_agents=n, people=build_people(params, n, rand_seed), networks=build_network(params), diseases=disease,

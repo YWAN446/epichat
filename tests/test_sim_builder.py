@@ -359,3 +359,17 @@ def test_every_sim_logs_its_infections():
     sim.run()
     log = sim.analyzers["infection_log"].logs["sir"]        # Starsim moves each disease's log to the analyzer when the run finalizes
     assert log is not None and len(log) >= 10
+
+
+def test_routine_vaccines_end_on_their_end_day_and_campaigns_use_a_per_day_probability():
+    from epichat.schema import Intervention
+    from epichat.sim.builder import vaccine_delivery
+    from epichat.sim.interventions import VaccineDelivery
+    v1 = vaccine_delivery(Intervention(type="vaccine", coverage=0.5, start_day=30), run_days=365)
+    assert isinstance(v1, ss.routine_vx) and float(v1.prob[0]) == 0.5 and v1.start_year == pytest.approx(30 / 365)      # the v1 shape keeps Starsim's delivery
+    routine = vaccine_delivery(Intervention(type="vaccine", coverage=0.5, start_day=30, end_day=120), run_days=365)
+    assert isinstance(routine, VaccineDelivery) and routine.prob == pytest.approx(1 - 0.5 ** (1 / 365)) and (routine.start_day, routine.end_day) == (30, 120)
+    campaign = vaccine_delivery(Intervention(type="vaccine", kind="campaign", coverage=0.6, start_day=10, end_day=19), run_days=365)
+    assert isinstance(campaign, VaccineDelivery) and campaign.prob == pytest.approx(1 - (1 - 0.6) ** (1 / 10))
+    whole_run = vaccine_delivery(Intervention(type="vaccine", kind="campaign", coverage=0.6, start_day=0), run_days=100)
+    assert whole_run.prob == pytest.approx(1 - (1 - 0.6) ** (1 / 101)) and whole_run.end_day == 100

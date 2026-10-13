@@ -29,10 +29,16 @@ class EpiChatDisease:
             ss.FloatArr("rel_trans_base", default=1.0, label="Base relative transmission"),
             ss.FloatArr("rel_sus_base", default=1.0, label="Base relative susceptibility"),
             ss.FloatArr("vaccine_protection", default=1.0, label="Susceptibility left by vaccination"),
+            ss.FloatArr("vaccine_expires", default=np.inf, label="Step the vaccine's protection ends"),
+            ss.FloatArr("treatment_factor", default=1.0, label="Transmissibility while waiting for treatment"),
         )
 
     def compose_rel_sus(self):
         """Part 2, 4.2: rel_sus = rel_sus_base (from the agents' ages) × vaccine protection × (1 − SIS immunity)."""
+        expired = np.asarray(self.vaccine_expires.raw) <= self.ti          # Part 2, 7.1: waning restores the susceptibility
+        if expired.any():
+            self.vaccine_protection.raw[expired] = 1.0
+            self.vaccine_expires.raw[expired] = np.inf
         age = np.asarray(self.sim.people.age)
         children, adults, elderly = self.pars.rel_sus_age
         base = np.select([age < 18, age < 65], [children, adults], default=elderly)

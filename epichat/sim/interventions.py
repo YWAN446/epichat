@@ -1,5 +1,6 @@
-"""EpiChat interventions (spec 8.3 and 8.5): delayed seeding, initial
-immunity, and the v1 capacity-limited treatment. Seeding and immunity draw
+"""EpiChat interventions (spec 8.3 and 8.5; Part 2, 7.1): delayed seeding, initial
+immunity, the v1 capacity-limited treatment (kept for v1-shaped entries), the
+treatment delivery with a delay and a queue, and the contact reduction. Seeding and immunity draw
 from Starsim distributions, so they are reproducible under common random
 numbers; the treatment keeps its v1 numpy draw until the interventions spec
 revises it. ss.Sim copies its inputs: read these objects back through
@@ -84,3 +85,126 @@ class InitialImmunity(ss.Intervention):
             disease.immunity[chosen] = 1.0
             disease.rel_sus[chosen] = 0.0       # protected from this step on, before the next composition
         self.n_immunised = int(len(chosen))
+
+
+class VaccineDelivery(ss.Intervention):
+    """Part 2, 7.1: vaccinates the eligible agents with a per-day probability from start_day to end_day (inclusive) with the EpiChat
+    product. Starsim's routine_vx cannot end on a day (its end_year covers a whole year of daily steps), so windows and campaigns
+    use this; a v1-shaped routine vaccine keeps routine_vx for the parity baseline."""
+
+    def __init__(self, product, prob: float, start_day: int, end_day: int | None, eligibility=None):
+        super().__init__()
+        self.product = product
+        self.prob = float(prob)
+        self.start_day, self.end_day = int(start_day), end_day
+        self.eligibility = eligibility
+        self.accepts = ss.bernoulli(p=self.prob)
+        self.define_states(ss.BoolArr("vaccinated", default=False), ss.FloatArr("ti_vaccinated"), ss.FloatArr("n_doses", default=0))
+
+    def init_pre(self, sim):
+        super().init_pre(sim)
+        self.product.init_pre(sim)
+
+    def step(self):
+        if self.ti < self.start_day or (self.end_day is not None and self.ti > self.end_day):
+            return
+        eligible = self.eligibility(self.sim) if self.eligibility is not None else self.sim.people.auids
+        accept = self.accepts.filter(eligible)
+        if len(accept):
+            self.product.administer(self.sim.people, accept)
+            self.vaccinated[accept] = True
+            self.ti_vaccinated[accept] = self.ti
+            self.n_doses[accept] += 1
+
+
+class TreatmentDelivery(ss.Intervention):
+    """Part 2, 7.1: from start_day to end_day, infectious agents (symptomatic ones only when asked) that became infectious at least
+    delay_days ago accept treatment with probability prob each day and queue; while queued their transmissibility is rel_trans_treated;
+    up to max_capacity a day leave the queue and get the product. Each agent is treated at most once."""
+
+    def __init__(self, product, prob: float = 1.0, max_capacity: int | None = None, start_day: int = 0, end_day: int | None = None,
+                 delay_days: int = 0, rel_trans_treated: float = 1.0, symptomatic_only: bool = False):
+        super().__init__()
+        self.product = product
+        self.accepts = ss.bernoulli(p=float(prob))
+        self.max_capacity = max_capacity
+        self.start_day, self.end_day, self.delay_days = int(start_day), end_day, int(delay_days)
+        self.rel_trans_treated = float(rel_trans_treated)
+        self.symptomatic_only = bool(symptomatic_only)
+        self.define_states(ss.BoolArr("queued", default=False), ss.BoolArr("treated", default=False))
+        self.queue: list[int] = []
+
+    def init_pre(self, sim):
+        super().init_pre(sim)
+        self.product.init_pre(sim)
+
+    def step(self):
+        if self.ti < self.start_day or (self.end_day is not None and self.ti > self.end_day):
+            return
+        disease = self.sim.diseases[0]
+        since = disease.ti_infectious if hasattr(disease, "ti_infectious") else disease.ti_infected   # seir family: ti_infectious
+        waited = np.asarray(since.raw) <= self.ti - self.delay_days
+        eligible = np.asarray(disease.infectious.raw) & ~np.asarray(self.queued.raw) & ~np.asarray(self.treated.raw) & waited
+        if self.symptomatic_only and hasattr(disease, "asymptomatic"):
+            eligible &= ~np.asarray(disease.asymptomatic.raw)
+        newly = self.accepts.filter(ss.uids(np.flatnonzero(eligible)))
+        if len(newly):
+            self.queued[newly] = True
+            disease.treatment_factor[newly] = self.rel_trans_treated
+            self.queue += [int(u) for u in newly]
+        infectious_now = np.asarray(disease.infectious.raw)
+        dropped = [u for u in self.queue if not infectious_now[u]]            # recovered while waiting: out of the queue
+        if dropped:
+            disease.treatment_factor[ss.uids(dropped)] = 1.0
+            self.queued[ss.uids(dropped)] = False
+            self.queue = [u for u in self.queue if infectious_now[u]]
+        n = len(self.queue) if self.max_capacity is None else min(len(self.queue), int(self.max_capacity))
+        if n:
+            now = ss.uids(self.queue[:n])
+            self.queue = self.queue[n:]
+            self.product.administer(now)
+            self.queued[now] = False
+            self.treated[now] = True
+
+
+class ContactReduction(ss.Intervention):
+    """Part 2, 7.1: scales a network layer's transmissibility (every edge's beta, the pars.beta new edges take, and each mixing pool's
+    beta) by 1 − scale from start_day to end_day, restoring the stored values after."""
+
+    LAYERS = {"household": "h", "school": "s", "work": "w", "community": "c"}
+
+    def __init__(self, layer: str = "all", scale: float = 0.0, start_day: int = 0, end_day: int | None = None):
+        super().__init__()
+        self.layer, self.scale, self.start_day, self.end_day = layer, float(scale), int(start_day), end_day
+        self.active = False
+        self.base: dict = {}
+
+    def targets(self):
+        nets = self.sim.networks
+        if self.layer == "all":
+            return list(nets.values())
+        key = self.LAYERS[self.layer]
+        return [nets[key]] if key in nets else []
+
+    def apply(self, factor: float):
+        for net in self.targets():
+            if isinstance(net, ss.MixingPools):
+                for k, pool in enumerate(net.pools):
+                    base = self.base.setdefault(f"{net.name}:{k}", float(pool.pars.beta))
+                    pool.pars.beta = base * factor
+            else:
+                base = self.base.setdefault(net.name, (float(net.pars.beta), np.array(net.edges.beta, copy=True)))
+                net.pars.beta = base[0] * factor                                   # new edges (dynamic networks remake them)
+                if len(base[1]) == len(net.edges.beta):
+                    net.edges.beta[:] = base[1] * factor                            # the edges that exist (static layers keep them)
+                else:
+                    net.edges.beta[:] = base[0] * factor
+
+    def step(self):
+        inside = self.start_day <= self.ti and (self.end_day is None or self.ti <= self.end_day)
+        if inside and not self.active:
+            self.apply(1.0 - self.scale)
+            self.active = True
+        elif not inside and self.active:
+            self.apply(1.0)
+            self.active = False
