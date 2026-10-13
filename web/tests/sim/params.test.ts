@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ageRangeShare, ageShares, approxR0, calibrateBeta, contactRows, hybridContacts, r0IsApproximate, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, perContactProb, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
+import { ageRangeShare, ageShares, approxR0, calibrateBeta, contactRows, hybridContacts, isV1Treatment, r0IsApproximate, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, perContactProb, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
 
 function must(input: unknown) {
   const r = validateParams(input);
@@ -29,7 +29,7 @@ describe("SimParams v2 validation", () => {
         country: null, auto_demographics: true, demographics_year: 2022, demographics_source: null, age_source: "default",
       },
       interventions: [],
-      run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1, calibrate_r0: true },
+      run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1, calibrate_r0: true, fit: null },
     });
     expect(must({})).toEqual(must({ schema_version: 2 })); // a v1 row with nothing in it migrates to the same defaults
   });
@@ -78,7 +78,7 @@ describe("migration from v1", () => {
   it("migrates a flat row to constant durations and a fraction seed", () => {
     const p = must({ disease_type: "seirs", beta: 12.5, dur_inf: 7, dur_exp: 4, dur_immune: 90, init_prev: 0.02, n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, p_death: 0.1 });
     expect(p.disease).toMatchObject({ model: "seirs", beta: 12.5, dur_inf: { mean_days: 7, dist: "constant", sd_days: null }, p_death: 0.1, seed: { mode: "fraction", value: 0.02, day: 0 } });
-    expect(p.run).toEqual({ n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, n_replicates: 1, calibrate_r0: true });
+    expect(p.run).toEqual({ n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, n_replicates: 1, calibrate_r0: true, fit: null });
   });
 
   it("folds a day-0 vaccine into initial immunity and keeps later campaigns", () => {
@@ -194,5 +194,29 @@ describe("susceptibility and fatality by age, presymptomatic transmissibility", 
     const p = must({ schema_version: 2, disease: { model: "seiar", dur_exp: { mean_days: 5, dist: "gamma", sd_days: 2 }, dur_inf: { mean_days: 10, dist: "gamma", sd_days: 4 }, p_asymp: 0.8, rel_trans_asymp: 0, rel_trans_exposed: 1 } });
     expect(effectiveDays(p.disease)).toBeCloseTo(10 * 0.2 + 4.5, 9);
     expect(approxR0(p)).toBeCloseTo(p.network.n_contacts * perContactProb(p.disease.beta) * 6.5, 9);
+  });
+});
+
+describe("interventions and the fit (Part 2, section 7)", () => {
+  it("fills the entry defaults, keeps the day-0 fold at full efficacy only and checks the layer and the window", () => {
+    const p = must({ schema_version: 2, network: { network_type: "hybrid" }, interventions: [
+      { type: "vaccine", coverage: 0.5, start_day: 30 }, { type: "treatment", coverage: 0.8, capacity: 20 },
+      { type: "contact_reduction", layer: "school", scale: 0, start_day: 30, end_day: 72 }, { type: "transmission_reduction", scale: 0.3, end_day: 90 },
+      { type: "seasonality", scale: 0.2, peak_day: 91 }] });
+    expect(p.interventions[0]).toMatchObject({ kind: "routine", end_day: null, efficacy: 1, leaky: true, age_min: null, age_max: null, protection_days: null });
+    expect(p.interventions[1]).toMatchObject({ delay_days: 0, rel_trans_treated: 1, symptomatic_only: false, efficacy: 1 });
+    expect(p.interventions[2]).toMatchObject({ layer: "school", scale: 0, start_day: 30, end_day: 72 });
+    expect(p.interventions[4].shift).toBeCloseTo(91 / 365, 9);
+    expect(isV1Treatment(p.interventions[1])).toBe(true);
+    expect(must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 0.4, start_day: 0 }] })).toMatchObject({ disease: { initial_immune_frac: 0.4 }, interventions: [] });
+    const leaky = must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 0.4, start_day: 0, efficacy: 0.6 }] });
+    expect(leaky.disease.initial_immune_frac).toBe(0);
+    expect(leaky.interventions[0]).toMatchObject({ efficacy: 0.6, start_day: 0 });
+    expect(validateParams({ schema_version: 2, interventions: [{ type: "contact_reduction", layer: "school", scale: 0.5 }] })).toEqual({ ok: false, error: expect.stringContaining("layer school needs the hybrid network") });
+    expect(validateParams({ schema_version: 2, interventions: [{ type: "transmission_reduction", scale: 0.5, start_day: 40, end_day: 10 }] })).toEqual({ ok: false, error: expect.stringContaining("end_day") });
+    expect(must({ schema_version: 2, run: { fit: { target: "attack_rate", value: 0.3 } } }).run.fit).toEqual({ target: "attack_rate", value: 0.3, lever: "disease.beta" });
+    expect(validateParams({ schema_version: 2, run: { fit: { target: "attack_rate", value: 1.5 } } })).toEqual({ ok: false, error: expect.stringContaining("fraction") });
+    expect(must({ schema_version: 2 }).run.fit).toBeNull();
+    expect(must({ schema_version: 2, interventions: [{ type: "school_closure", layer: "school", scale: 0 }], network: { network_type: "hybrid" } }).interventions[0].type).toBe("contact_reduction");
   });
 });

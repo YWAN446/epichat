@@ -21,7 +21,7 @@ function calibrateOrNull(p: ReturnType<typeof must>, target: number): number | n
 
 describe("parity with the Python package", () => {
   it("has enough cases", () => {
-    expect(parity.version).toBe(4);
+    expect(parity.version).toBe(5);
     expect(parity.params.length).toBeGreaterThanOrEqual(200);
     expect(parity.migration.length).toBeGreaterThanOrEqual(12);
     expect(parity.warnings.length).toBeGreaterThanOrEqual(300);
@@ -34,6 +34,7 @@ describe("parity with the Python package", () => {
       expect(maxR0(p)).toBeCloseTo(c.max_r0, 6);
       expect(weightedCfr(p)).toBeCloseTo((c as { weighted_cfr: number }).weighted_cfr, 6);
       expect(r0IsApproximate(p)).toBe((c as { approximate: boolean }).approximate);
+      expect(p.interventions.length).toBe((c as { n_interventions: number }).n_interventions);
       for (const k of c.calibrate) {
         const beta = calibrateOrNull(p, k.target_r0);
         if (k.beta === null) expect(beta).toBeNull();

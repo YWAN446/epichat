@@ -4,9 +4,9 @@ import { PARAM_REGISTRY, REGISTRY_VERSION, applicableSpecs, boundsOf, defaultOf,
 
 describe("the exported parameter registry", () => {
   it("loads in registry order with the version", () => {
-    expect(REGISTRY_VERSION).toBe(3);
+    expect(REGISTRY_VERSION).toBe(4);
     expect(PARAM_REGISTRY[0].path).toBe("disease.model");
-    expect(PARAM_REGISTRY.at(-1)?.path).toBe("run.calibrate_r0");
+    expect(PARAM_REGISTRY.at(-1)?.path).toBe("run.fit.lever");
     expect(PARAM_REGISTRY.length).toBeGreaterThanOrEqual(60);
   });
 

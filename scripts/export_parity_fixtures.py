@@ -148,8 +148,32 @@ def random_params(rng: random.Random) -> SimParamsV2 | None:
         demographics = {"age_pct_under18": under, "age_pct_over65": over, "age_pct_18_64": round(100.0 - under - over, 1),
                         "age_source": rng.choice(["default", "shares", "un_wpp"])}
     run = {"n_agents": rng.choice([1000, 5000, 10000, 50000]), "calibrate_r0": rng.random() < 0.8}
+    if rng.random() < 0.3:
+        target = rng.choice(["attack_rate", "peak_day", "peak_infections"])
+        value = {"attack_rate": round(rng.uniform(0.05, 0.9), 2), "peak_day": rng.randint(10, 300), "peak_infections": rng.randint(10, 5000)}[target]
+        run["fit"] = {"target": target, "value": value, "lever": rng.choice(["disease.beta", "network.network_beta"])}
+    interventions = []
+    if rng.random() < 0.6:
+        for _ in range(rng.randint(1, 3)):
+            kind = rng.choice(["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"])
+            if kind == "vaccine":
+                interventions.append({"type": "vaccine", "coverage": round(rng.uniform(0.1, 0.95), 2), "start_day": rng.choice([0, 0, 30, 120]),
+                                      "efficacy": rng.choice([1.0, 1.0, 0.6, 0.9]), "kind": rng.choice(["routine", "campaign"]),
+                                      "protection_days": rng.choice([None, None, 180])})
+            elif kind == "treatment":
+                interventions.append({"type": "treatment", "coverage": round(rng.uniform(0.1, 1.0), 2), "capacity": rng.choice([None, 20, 200]),
+                                      "delay_days": rng.choice([0, 0, 2]), "efficacy": rng.choice([1.0, 0.7]), "rel_trans_treated": rng.choice([1.0, 0.5])})
+            elif kind == "seasonality":
+                interventions.append({"type": "seasonality", "scale": round(rng.uniform(0, 0.5), 2)})
+            elif kind == "contact_reduction":
+                interventions.append({"type": "contact_reduction", "layer": rng.choice(["all", "school", "community"]) if network_type == "hybrid" else "all",
+                                      "scale": round(rng.uniform(0, 1), 2), "start_day": 30, "end_day": rng.choice([None, 72])})
+            else:
+                interventions.append({"type": "transmission_reduction", "scale": round(rng.uniform(0, 0.8), 2), "start_day": rng.choice([0, 14]),
+                                      "end_day": rng.choice([None, 90])})
     try:
-        return SimParamsV2.model_validate({"schema_version": 2, "disease": disease, "network": network, "demographics": demographics, "run": run})
+        return SimParamsV2.model_validate({"schema_version": 2, "disease": disease, "network": network, "demographics": demographics,
+                                           "interventions": interventions, "run": run})
     except Exception:
         return None
 
@@ -192,6 +216,7 @@ def params_cases(rng: random.Random) -> list[dict]:
             "input": p.model_dump(mode="json"), "approx_r0": approx, "max_r0": round(r0.max_r0(p), 9),
             "weighted_cfr": round(r0.weighted_cfr(p), 9),
             "approximate": r0.r0_is_approximate(p),
+            "n_interventions": len(p.interventions),
             "calibrate": [{"target_r0": t, "beta": _calibrate(p, t)} for t in (1.5, 3.0, 15.0)],
             "recalibrate": recalibrate,
         })
@@ -289,7 +314,7 @@ def main(web_dir: Path = ROOT / "web") -> None:
     (fixtures / "adapters").mkdir(parents=True, exist_ok=True)
     for name, text in ADAPTER_FILES.items():
         (fixtures / "adapters" / name).write_text(text, encoding="utf-8", newline="")
-    payload = {"version": 4, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
+    payload = {"version": 5, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
     (fixtures / "parity.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
 

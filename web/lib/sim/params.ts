@@ -18,7 +18,10 @@ export const WANING_MODELS: readonly DiseaseType[] = ["sirs", "seirs"];
 export const NETWORK_TYPES = ["random", "age_structured", "hybrid"] as const;
 export const CONTACTS_DISTS = ["constant", "poisson"] as const;
 export const AGE_SOURCES = ["default", "shares", "un_wpp"] as const;
-export const INTERVENTION_TYPES = ["vaccine", "treatment", "seasonality"] as const;
+export const INTERVENTION_TYPES = ["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"] as const;
+export const LAYERS = ["all", "household", "school", "work", "community"] as const;
+export const FIT_TARGETS = ["attack_rate", "peak_day", "peak_infections"] as const;
+export const FIT_LEVERS = ["disease.beta", "network.network_beta"] as const;
 export const DISTS = ["constant", "lognormal", "gamma"] as const;
 
 const TYPE_ALIASES: Record<string, string> = {
@@ -27,6 +30,11 @@ const TYPE_ALIASES: Record<string, string> = {
   treat: "treatment",
   treatment_intervention: "treatment",
   seasonal: "seasonality",
+  school_closure: "contact_reduction",
+  distancing: "contact_reduction",
+  "contact-reduction": "contact_reduction",
+  masks: "transmission_reduction",
+  "transmission-reduction": "transmission_reduction",
 };
 
 const nullable = <T extends z.ZodTypeAny>(inner: T) => inner.nullable().default(null);
@@ -43,17 +51,59 @@ export function simDays(years: number): number {
   return Math.max(1, pyRound(365 * years, 0));
 }
 
-export const InterventionSchema = z.object({
-  type: z.preprocess((v) => (typeof v === "string" ? (TYPE_ALIASES[v.toLowerCase()] ?? v) : v), z.enum(INTERVENTION_TYPES)),
-  coverage: nullable(z.number().min(0).max(1)),
-  start_day: z.number().int().min(0).default(0),
-  capacity: nullable(
-    z.preprocess((v) => (typeof v === "number" && !Number.isInteger(v) ? Math.round(v) : v), z.number().int().min(1)),
-  ),
-  scale: z.number().min(0).max(1).default(0.2),
-  shift: z.number().min(0).max(1).default(0),
-});
+export const InterventionSchema = z.preprocess(
+  (v) => {
+    // peak_day is an input alias of shift (a day of the year)
+    if (typeof v === "object" && v !== null && "peak_day" in v) {
+      const { peak_day, ...rest } = v as Record<string, unknown>;
+      return peak_day === null || peak_day === undefined || "shift" in rest ? rest : { ...rest, shift: (Number(peak_day) / 365) % 1 };
+    }
+    return v;
+  },
+  z
+    .object({
+      type: z.preprocess((v) => (typeof v === "string" ? (TYPE_ALIASES[v.toLowerCase()] ?? v) : v), z.enum(INTERVENTION_TYPES)),
+      coverage: nullable(z.number().min(0).max(1)),
+      start_day: z.number().int().min(0).default(0),
+      end_day: nullable(z.number().int().min(0)),
+      efficacy: z.number().min(0).max(1).default(1),
+      kind: z.enum(["routine", "campaign"]).default("routine"),
+      leaky: z.boolean().default(true),
+      age_min: nullable(z.number().int().min(0).max(120)),
+      age_max: nullable(z.number().int().min(0).max(120)),
+      protection_days: nullable(z.number().int().min(1)),
+      capacity: nullable(
+        z.preprocess((v) => (typeof v === "number" && !Number.isInteger(v) ? Math.round(v) : v), z.number().int().min(1)),
+      ),
+      delay_days: z.number().int().min(0).max(365).default(0),
+      rel_trans_treated: z.number().min(0).max(1).default(1),
+      symptomatic_only: z.boolean().default(false),
+      scale: z.number().min(0).max(1).default(0.2),
+      shift: z.number().min(0).max(1).default(0),
+      layer: z.enum(LAYERS).default("all"),
+    })
+    .superRefine((i, ctx) => {
+      if (i.end_day !== null && i.end_day < i.start_day) issue(ctx, "interventions[].end_day must not be before start_day");
+      if (i.age_min !== null && i.age_max !== null && i.age_min >= i.age_max) issue(ctx, "interventions[].age_min must be below age_max");
+    }),
+);
 export type Intervention = z.infer<typeof InterventionSchema>;
+/** Part 1 section 18 and Part 2 7.1: a day-0 vaccine at full efficacy is disease.initial_immune_frac. */
+export const isDay0Immunity = (i: Intervention): boolean => i.type === "vaccine" && i.start_day <= 0 && i.efficacy >= 1;
+/** A treatment entry the v1 SimpleTreatment can run (the parity baseline depends on it). */
+export const isV1Treatment = (i: Intervention): boolean =>
+  i.type === "treatment" && i.delay_days === 0 && i.efficacy >= 1 && i.rel_trans_treated >= 1 && !i.symptomatic_only && i.end_day === null;
+export const FitSchema = z
+  .object({
+    target: z.enum(FIT_TARGETS),
+    value: z.number().gt(0),
+    lever: z.enum(FIT_LEVERS).default("disease.beta"),
+  })
+  .superRefine((f, ctx) => {
+    if (f.target === "attack_rate" && f.value > 1) issue(ctx, "run.fit.value is a fraction for attack_rate");
+    if (f.target === "peak_day" && f.value < 1) issue(ctx, "run.fit.value is a day for peak_day");
+  });
+export type Fit = z.infer<typeof FitSchema>;
 
 export const DurationSchema = z
   .object({
@@ -209,10 +259,11 @@ export const RunSchema = z.object({
   sim_dur_years: withDefault("run.sim_dur_years"),
   rand_seed: nullable(z.number().int()),
   calibrate_r0: z.boolean().default(true),
+  fit: nullable(FitSchema),
   n_replicates: withDefault("run.n_replicates", true),
 });
 
-const isDayZeroVaccine = (i: { type: string; start_day: number }) => i.type === "vaccine" && i.start_day <= 0;
+const isDayZeroVaccine = (i: Intervention) => isDay0Immunity(i);
 
 export const SimParamsSchema = z
   .object({
@@ -234,6 +285,11 @@ export const SimParamsSchema = z
       const coverage = Math.min(day0[day0.length - 1].coverage ?? 0, 0.99);
       if (p.disease.initial_immune_frac > 0 && Math.abs(p.disease.initial_immune_frac - coverage) > 1e-9) {
         issue(ctx, "a vaccine with start_day 0 and disease.initial_immune_frac were both given with different values; set one of them");
+      }
+    }
+    if (p.network.network_type !== "hybrid") {
+      for (const i of p.interventions) {
+        if (i.type === "contact_reduction" && i.layer !== "all") issue(ctx, `interventions[].layer ${i.layer} needs the hybrid network; the ${p.network.network_type} network has no layers, use all`);
       }
     }
   })
