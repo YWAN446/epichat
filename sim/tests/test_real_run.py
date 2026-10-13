@@ -83,14 +83,25 @@ def test_two_replicates_run_for_real(client):
 
 
 def test_hybrid_run_calibrates_beta_and_reports_the_measured_r0(client):
+    from epichat.params.r0 import with_r0
+    from epichat.params.schema_v2 import SimParamsV2
     params = {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 30}}, "network": {"network_type": "hybrid"},
               "run": {"n_agents": 3000, "sim_dur_years": 90 / 365, "rand_seed": 1}}
-    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    moderate = with_r0(SimParamsV2.model_validate(params), 2.5).model_dump(mode="json")
+    r = client.post("/simulate", json={"params": moderate, "pop_scale": 1}, headers=AUTH)
     assert r.status_code == 200, r.text
     body = r.json()
-    assert isinstance(body["stats"]["r0_measured"], float) and body["stats"]["r0_calibration"]["corrections"] <= 3
+    calibration = body["stats"]["r0_calibration"]
+    assert isinstance(body["stats"]["r0_measured"], float) and calibration["corrections"] <= 3
+    assert set(calibration) == {"target", "measured", "se", "corrections", "reached"} and calibration["target"] == 2.5
     assert body["effective_params"]["network"]["network_type"] == "hybrid"
     assert body["stats"]["r0_measured"] == body["stats_agents"]["r0_measured"]          # a ratio: never scaled
+    # the default beta is an R0 near 11 on the hybrid network: with 1% seeded the population is exhausted while the seeds are still
+    # infectious, so the live run's measured R0 is withheld; the pilot, in which only the seeds transmit, still measures and reports
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    high = r.json()["stats"]
+    assert high["r0_measured"] is None and isinstance(high["r0_calibration"]["measured"], float) and high["r0_calibration"]["target"] > 8
 
 
 def test_a_fitted_run_reports_the_fit_and_the_fitted_beta(client):
