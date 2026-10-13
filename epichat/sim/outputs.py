@@ -133,4 +133,8 @@ def extract(sim: ss.Sim, n_agents: int, seeds_day0: int, demographics_on: bool) 
         "seeds": realized_seeds(sim, seeds_day0),
     }
     stats["r0_measured"] = measured_r0(sim)          # Part 2, 5.6; a ratio, never scaled
+    response = next((c for c in sim.connectors.values() if getattr(c, "behavior", None) is not None), None)
+    if response is not None and response.behavior_factors:              # follow-up spec 5.2: the strongest reduction and its day
+        factors = np.asarray(response.behavior_factors, dtype=float)
+        stats["behavior"] = {"min_factor": round(float(factors.min()), 4), "min_day": int(factors.argmin())}
     return {"stats": stats, "series": series}

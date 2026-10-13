@@ -380,6 +380,8 @@ def _r0_reference(run: _Run) -> float | None:
     for i in p.interventions:
         if i.type == "treatment" and i.start_day <= p.disease.dur_inf.mean_days:
             return None
+        if i.type == "behavior_response" and i.start_day <= p.disease.dur_inf.mean_days:
+            return None                         # follow-up spec 5.4: the response is already lowering what the seeds pass on
     reference = run.r_eff
     for i in p.interventions:
         if i.type == "seasonality":

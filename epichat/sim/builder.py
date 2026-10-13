@@ -220,8 +220,11 @@ def build_sim(params, seed: int | None = None, first_generation: bool = False) -
     disease = MODELS[name](**disease_kwargs(params))
     seasonality = next((i for i in params.interventions if i.type == "seasonality"), None)
     reductions = [(i.start_day, i.end_day, i.scale) for i in params.interventions if i.type == "transmission_reduction"]
+    response = next((i for i in params.interventions if i.type == "behavior_response"), None)        # follow-up spec 5.1: one entry at most
+    behavior = None if response is None else dict(scale=response.scale, half_prevalence=response.half_prevalence,
+                                                  memory_days=response.memory_days, start_day=response.start_day, end_day=response.end_day)
     connector = TransmissionModifiers(name, seasonality.scale if seasonality else 0.0, seasonality.shift if seasonality else 0.0, reductions,
-                                      first_generation=first_generation)
+                                      first_generation=first_generation, behavior=behavior)
     rand_seed = resolve_seed(params, seed)
     n = params.run.n_agents
     sim = ss.Sim(n_agents=n, people=build_people(params, n, rand_seed), networks=build_network(params), diseases=disease,

@@ -5,7 +5,9 @@ the numeric day axis (year fraction ti / 365). The susceptibility composition (r
 protection × SIS immunity) lives in the disease's own step_state, so it holds with or without this
 connector; phase 2C adds the transmission-reduction factor here. With first_generation (the R0 pilot,
 Part 2 5.7 as amended) only the day-0 seeds transmit, and not on step 0: each then transmits on exactly
-the steps an ordinary case would, and nothing spreads beyond the seeds' own infections."""
+the steps an ordinary case would, and nothing spreads beyond the seeds' own infections. With a behaviour
+response (follow-up spec 5.2) one more factor follows the share of living agents infectious: it falls as
+that share rises and returns to 1 as it falls."""
 from __future__ import annotations
 
 import math
@@ -16,9 +18,12 @@ import starsim as ss
 
 class TransmissionModifiers(ss.Connector):
     def __init__(self, disease: str, seasonality_scale: float = 0.0, seasonality_shift: float = 0.0, reductions=(),
-                 first_generation: bool = False):
+                 first_generation: bool = False, behavior: dict | None = None):
         super().__init__()
         self.disease_name = disease
+        self.behavior = None if behavior is None else dict(behavior)     # scale, half_prevalence, memory_days, start_day, end_day
+        self.shares: list[float] = []                                    # the share infectious as each step begins
+        self.behavior_factors: list[float] = []
         self.first_generation = bool(first_generation)
         self.seed_uids = None
         self.scale = float(seasonality_scale)
@@ -32,11 +37,28 @@ class TransmissionModifiers(ss.Connector):
         frac_year = (ti / 365.0) % 1.0
         return max(0.0, 1.0 + self.scale * math.cos(2 * math.pi * (frac_year - self.shift)))
 
+    def behavior_factor(self) -> float:
+        """Follow-up spec 5.2: 1 − scale × P / (half_prevalence + P), P the mean share of living agents infectious over the last
+        memory_days steps, today included; 1 outside the window, and with nobody alive the share is 0."""
+        b = self.behavior
+        disease = self.sim.diseases[self.disease_name]
+        alive = len(self.sim.people.auids)
+        self.shares.append(float(disease.infectious.count()) / alive if alive > 0 else 0.0)
+        if self.ti < b["start_day"] or (b["end_day"] is not None and self.ti > b["end_day"]):
+            return 1.0
+        recent = self.shares[-int(b["memory_days"]):]
+        mean = sum(recent) / len(recent)
+        return 1.0 - b["scale"] * mean / (b["half_prevalence"] + mean)
+
     def factor(self) -> float:
         f = self.seasonal(self.ti)
         for start, end, scale in self.reductions:           # Part 2, 7.1: transmission reductions over their windows
             if start <= self.ti and (end is None or self.ti <= end):
                 f *= 1.0 - scale
+        if self.behavior is not None:
+            response = self.behavior_factor()
+            self.behavior_factors.append(response)
+            f *= response
         return f
 
     def step(self):

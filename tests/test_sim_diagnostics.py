@@ -330,3 +330,13 @@ def test_a_calibrated_runs_r0_is_its_target():
     p = params(**{"network.network_type": "hybrid"})
     found = run(p, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.0, "r0_calibration": {"target": 3.3, "measured": 3.2, "se": 0.1, "corrections": 1, "reached": True}})
     assert one(found, "r0_gap").evidence["approx_r0"] == 3.3
+
+
+def test_r0_gap_stands_down_while_a_behaviour_response_is_engaged_from_the_start():
+    # follow-up spec 5.4: with the default seeding the response is already lowering transmission on day 0, so the seeds pass on less
+    low = {"r0_measured": 1.2}
+    assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra=low))
+    engaged = params(**{"interventions": [{"type": "behavior_response", "scale": 0.5}]})
+    assert "r0_gap" not in ids(run(engaged, NORMAL, total=8600, seeds=500, stats_extra=low))
+    later = params(**{"interventions": [{"type": "behavior_response", "scale": 0.5, "start_day": 60}]})
+    assert "r0_gap" in ids(run(later, NORMAL, total=8600, seeds=500, stats_extra=low))               # the seeds had finished before it began
