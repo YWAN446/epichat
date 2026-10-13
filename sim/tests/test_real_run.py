@@ -80,3 +80,14 @@ def test_two_replicates_run_for_real(client):
     assert rep["seeds"] == [1, 2] and len(rep["stats"]) == 2 and rep["representative"] in (1, 2)
     assert len(rep["bands"]["cum_infections"]["p90"]) == len(body["series"]["day"]) == 31
     assert body["stats"]["total_infected"] == min(s["total_infected"] for s in rep["stats"])
+
+
+def test_hybrid_run_calibrates_beta_and_reports_the_measured_r0(client):
+    params = {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 30}}, "network": {"network_type": "hybrid"},
+              "run": {"n_agents": 3000, "sim_dur_years": 90 / 365, "rand_seed": 1}}
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert isinstance(body["stats"]["r0_measured"], float) and body["stats"]["r0_calibration"]["corrections"] <= 3
+    assert body["effective_params"]["network"]["network_type"] == "hybrid"
+    assert body["stats"]["r0_measured"] == body["stats_agents"]["r0_measured"]          # a ratio: never scaled
