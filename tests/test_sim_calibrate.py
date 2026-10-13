@@ -73,3 +73,14 @@ def test_run_replicates_reports_the_calibration_and_the_corrected_beta():
     assert payload["effective_params"]["network"]["network_type"] == "hybrid" and "r0_measured" in payload["stats"]
     plain = run_replicates(SimParamsV2.model_validate({"run": {"n_agents": 1000, "sim_dur_years": 30 / 365, "rand_seed": 1}}))
     assert "r0_calibration" not in plain["stats"] and plain["effective_params"]["disease"]["beta"] == SimParamsV2().disease.beta
+
+
+def test_the_final_size_is_close_on_every_network_at_the_same_measured_r0():
+    # the review's measurement: with beta held to the same measured R0, Covasim's hybrid layers (20/16/20 static contacts plus households)
+    # are effectively well mixed, so the product must not promise a lower final size from the network alone
+    def attack(network: str) -> float:
+        p = r0.with_r0(SimParamsV2.model_validate({"network": {"network_type": network}, "demographics": SHARES,
+                                                   "run": {"n_agents": 10000, "rand_seed": 1}}), 2.5)
+        out = run_replicates(p)
+        return out["stats"]["total_infected"] / 10000
+    assert abs(attack("hybrid") - attack("random")) < 0.03

@@ -339,7 +339,9 @@ def _high_variance(run: _Run) -> Diagnostic | None:
 
 
 def _well_mixed(run: _Run) -> Diagnostic | None:
-    """Part 2, 5.8: on the random network nearly everyone is eventually infected; offer the hybrid network and lasting contacts."""
+    """Part 2, 5.8: on the random network nearly everyone is eventually infected; offer the hybrid network as the structure interventions
+    act on, without promising a lower final size (at the same measured R0 the hybrid network's final size is close to the random one's;
+    the review of 2B measured 0.886 against 0.893 at R0 2.5)."""
     p = run.params
     if p.network.network_type != "random" or run.r_eff < WELL_MIXED_R_EFF or run.n <= 0:
         return None
@@ -348,10 +350,9 @@ def _well_mixed(run: _Run) -> Diagnostic | None:
         return None
     levers = [Lever({"network.network_type": "hybrid"}, {"network.network_type": "random"}, "change",
                     "On the random network everyone meets fresh contacts every day, so nearly every susceptible is eventually infected. "
-                    "With the households, schools, workplaces and community of the hybrid network, contacts are limited and repeated and "
-                    "the final size is lower.", "rule"),
-              Lever({"network.contact_duration_days": 7}, {"network.contact_duration_days": p.network.contact_duration_days}, "increase",
-                    "Contacts that last a week instead of a day slow the spread by local depletion.", "rule")]
+                    "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same "
+                    "measured R0 its final size is close to the random network's, so fewer infections need a lower R0, interventions, or "
+                    "far fewer community, school and workplace contacts.", "rule")]
     return Diagnostic("well_mixed", "info", "Nearly everyone was infected: the random network mixes the whole population every day",
                       {"attack_rate": round(attack, 3), "r_eff": round(run.r_eff, 2)}, levers)
 
@@ -363,14 +364,32 @@ def r0_gap_threshold(reference: float, seeds: int) -> float:
     return max(R0_GAP, R0_GAP_SIGMAS * math.sqrt(reference / seeds) / reference)
 
 
+def _r0_reference(run: _Run) -> float | None:
+    """What the day-0 seeds should have passed on: the calibration's target on a calibrated run; else R_eff times the day-0 seasonal
+    factor (1 + scale × cos(2π shift)); None when a treatment starting within the first infectious period cuts their transmission."""
+    p = run.params
+    calibration = run.stats.get("r0_calibration")
+    if calibration is not None and calibration.get("target"):
+        return float(calibration["target"])
+    for i in p.interventions:
+        if i.type == "treatment" and i.start_day <= p.disease.dur_inf.mean_days:
+            return None
+    reference = run.r_eff
+    for i in p.interventions:
+        if i.type == "seasonality":
+            reference *= max(0.0, 1.0 + i.scale * math.cos(2 * math.pi * i.shift))
+    return reference
+
+
 def _r0_gap(run: _Run) -> Diagnostic | None:
-    """Part 2, 5.8: the measured R0 (the seeds' secondary infections, so R_eff when some agents start immune) differs from the
-    configured one; levers only on the exact networks (the Part 1 recheck)."""
+    """Part 2, 5.8: the measured R0 (the seeds' secondary infections) differs from what the configuration implies for them (R_eff, the
+    day-0 seasonal factor, or the calibration's target); levers only on the exact networks (the Part 1 recheck)."""
     measured = run.stats.get("r0_measured")
-    if measured is None or run.r_eff <= 0:
+    reference = _r0_reference(run)
+    if measured is None or reference is None or reference <= 0:
         return None
-    threshold = r0_gap_threshold(run.r_eff, run.seeds)
-    if abs(float(measured) - run.r_eff) / run.r_eff <= threshold:
+    threshold = r0_gap_threshold(reference, run.seeds)
+    if abs(float(measured) - reference) / reference <= threshold:
         return None
     calibrated = run.stats.get("r0_calibration") is not None
     levers = []
@@ -379,8 +398,8 @@ def _r0_gap(run: _Run) -> Diagnostic | None:
         if lever is not None:
             levers.append(lever)
     return Diagnostic("r0_gap", "info", "The measured R0 differs from the configured one",
-                      {"approx_r0": round(run.r0, 2), "r_eff": round(run.r_eff, 2), "r0_measured": round(float(measured), 2),
-                       "threshold": round(threshold, 2), "calibrated": calibrated}, levers)
+                      {"approx_r0": round(run.r0, 2), "r_eff": round(run.r_eff, 2), "reference": round(reference, 2),
+                       "r0_measured": round(float(measured), 2), "threshold": round(threshold, 2), "calibrated": calibrated}, levers)
 
 
 def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | None, seeds: int,

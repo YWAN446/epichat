@@ -689,7 +689,7 @@
    "path": "network.network_type",
    "module": "network",
    "label": "Contact network",
-   "description": "random: everyone has n_contacts fresh random contacts a day, which overstates the final size; age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's Prem 2021 matrix after fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, with limited, repeated contacts.",
+   "description": "random: everyone has n_contacts fresh random contacts a day; age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's Prem 2021 matrix after fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, the structure layer interventions act on. At the same R0 the final size is close on every network.",
    "kind": "enum",
    "unit": null,
    "default": "random",

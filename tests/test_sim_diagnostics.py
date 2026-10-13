@@ -265,8 +265,8 @@ def test_cfr_out_of_range_reads_the_population_weighted_fatality():
 def test_well_mixed_fires_on_a_random_network_run_that_infected_nearly_everyone():
     d = one(run(params(), NORMAL, total=8600, seeds=100), "well_mixed")             # R0 2.3, attack rate 0.86 on the random network
     assert d.severity == "info" and d.evidence == {"attack_rate": 0.86, "r_eff": pytest.approx(dx.approx_r0(params()), abs=0.01)}
-    assert [l.patch for l in d.levers] == [{"network.network_type": "hybrid"}, {"network.contact_duration_days": 7}]
-    assert d.levers[0].basis == "rule" and "repeated" in d.levers[0].rationale
+    assert [l.patch for l in d.levers] == [{"network.network_type": "hybrid"}]                 # no 7-day lever: it moved the attack rate by a point
+    assert d.levers[0].basis == "rule" and "same measured R0" in d.levers[0].rationale and "final size is lower" not in d.levers[0].rationale
     assert "well_mixed" not in ids(run(params(**{"network.network_type": "hybrid"}), NORMAL, total=8600, seeds=100))
     assert "well_mixed" not in ids(run(params(), NORMAL, total=6000, seeds=100))                       # attack rate 0.6
     assert "well_mixed" not in ids(run(params(**{"disease.initial_immune_frac": 0.3}), NORMAL, total=8600, seeds=100))   # R_eff 1.6
@@ -289,3 +289,17 @@ def test_r0_gap_fires_on_a_mismatch_beyond_the_noise_and_stands_down_when_calibr
     assert one(calibrated, "r0_gap").levers == [] and one(calibrated, "r0_gap").evidence["calibrated"] is True
     off = run(params(**{"network.network_type": "hybrid", "run.calibrate_r0": False}), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.2})
     assert one(off, "r0_gap").levers == []
+
+
+def test_r0_gap_accounts_for_the_day_zero_seasonal_factor_the_calibration_target_and_a_day_zero_treatment():
+    approx = dx.approx_r0(params())
+    seasonal = params(**{"interventions": [{"type": "seasonality", "scale": 0.3}]})               # day 0 sits at the peak: transmission × 1.3
+    assert "r0_gap" not in ids(run(seasonal, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 1.3}))
+    assert "r0_gap" in ids(run(seasonal, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.6}))
+    assert one(run(seasonal, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.6}), "r0_gap").evidence["reference"] == pytest.approx(approx * 1.3, abs=0.01)
+    hybrid = params(**{"network.network_type": "hybrid"})
+    calibrated = run(hybrid, NORMAL, total=8600, seeds=500,
+                     stats_extra={"r0_measured": 2.45, "r0_calibration": {"target": 2.5, "measured": 2.45, "corrections": 1}})
+    assert "r0_gap" not in ids(calibrated)                                                           # the reference is the target the user set, not the formula at the corrected beta
+    treated = params(**{"interventions": [{"type": "treatment", "coverage": 1.0, "start_day": 0}]})
+    assert "r0_gap" not in ids(run(treated, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.5}))   # treatment cuts the seeds' transmission

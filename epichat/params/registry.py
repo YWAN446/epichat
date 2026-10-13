@@ -130,10 +130,11 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("disease.initial_immune_frac", "disease", "Initially immune", "Share of the non-seeded population that starts immune (a past "
               "epidemic or a vaccination campaign before day 0). In sirs and seirs this immunity wanes like everyone else's; in sis at "
               "sis_waning.", "number", "fraction", 0.0, (0.0, 0.99), None, (), "advanced", None, "InitialImmunity intervention", ("final_size",)),
-    ParamSpec("network.network_type", "network", "Contact network", "random: everyone has n_contacts fresh random contacts a day, which "
-              "overstates the final size; age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's "
-              "Prem 2021 matrix after fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, with limited, "
-              "repeated contacts.", "enum", None, "random", None, ("random", "age_structured", "hybrid"), (), "core", None,
+    ParamSpec("network.network_type", "network", "Contact network", "random: everyone has n_contacts fresh random contacts a day; "
+              "age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's Prem 2021 matrix after "
+              "fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, the structure layer interventions "
+              "act on. At the same R0 the final size is close on every network.", "enum", None, "random", None,
+              ("random", "age_structured", "hybrid"), (), "core", None,
               "ss.RandomNet, ss.MixingPools or ss.HybridNet", ("peak", "final_size")),
     ParamSpec("network.n_contacts", "network", "Contacts per day", "Mean number of contacts per person per day on the random network; "
               "no effect on the age-structured and hybrid networks.", "integer", "per day", 4, (1, 100), None, (), "core", "average_contacts_daily",

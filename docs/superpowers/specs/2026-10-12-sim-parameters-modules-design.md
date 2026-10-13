@@ -180,8 +180,13 @@ core field of `configure_simulation` (today it is set only by
 with households, schools or workplaces, or that asks why so many were
 infected, is a hybrid scenario; a national scenario with fetched demographics
 is age-structured; a quick comparison or a classroom example stays random,
-and the agent says in one sentence that random mixing overstates the final
-size.
+and the agent says in one sentence that the random network has no households
+or schools to act on. At the same R0 the final size is close on every network
+(the review of 2B measured 0.886 on the hybrid network against 0.893 on the
+random one at R0 2.5 with Covasim's layer sizes): the networks differ in who
+meets whom, which layer interventions act on, and in how a beta translates
+into an R0; the agent never promises that a network switch alone lowers the
+final size.
 
 ### 5.2 Random
 
@@ -304,8 +309,8 @@ Two new rules in `epichat/sim/diagnostics.py`, thresholds as named constants:
 
 | id | Severity | Trigger | Levers |
 |---|---|---|---|
-| `well_mixed` | info | random network, no contact reduction, `R_eff ≥ 2`, attack rate above 0.7 | `network.network_type` to `hybrid` (rationale: with limited, repeated contacts the final size is lower than under daily random mixing); `network.contact_duration_days` to 7 |
-| `r0_gap` | info | `r0_measured` is not null and differs from R_eff (`approx_r0 × (1 − initial_immune_frac)`, what the seeds can infect) by more than 25%, or by more than three standard errors of the measured mean (`3 × sqrt(R_eff / seeds) / R_eff`) when that is larger | none when the run was calibrated by measurement (5.7, the gap is closed by construction) or the user switched the calibration off (the measured value is quoted); on the exact networks, the beta recheck of Part 1 |
+| `well_mixed` | info | random network, no contact reduction, `R_eff ≥ 2`, attack rate above 0.7 | `network.network_type` to `hybrid` (rationale: the hybrid network makes households, schools and workplaces explicit so interventions can act on them; at the same measured R0 its final size is close to the random network's, so fewer infections need a lower R0, interventions, or far fewer contacts). The 7-day contact duration is not offered: it moved the attack rate by a point. |
+| `r0_gap` | info | `r0_measured` is not null and differs from its reference by more than 25%, or by more than three standard errors of the measured mean (`3 × sqrt(ref / seeds) / ref`) when that is larger; the reference is the calibration's target on a calibrated run, else R_eff (`approx_r0 × (1 − initial_immune_frac)`) times the day-0 seasonal factor (`1 + scale × cos(2π shift)`); the rule stands down when a treatment starts within the first infectious period | none when the run was calibrated by measurement (5.7, the gap is closed by construction) or the user switched the calibration off (the measured value is quoted); on the exact networks, the beta recheck of Part 1 |
 
 ### 5.9 Agent and user
 
