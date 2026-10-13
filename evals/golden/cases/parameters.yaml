@@ -40,3 +40,49 @@
       - "After the first run, says the outbreak died out early (the early_fadeout diagnostic) rather than interpreting a non-epidemic as a result"
       - "Offers at most three options, one of them keeping the configuration as it is"
       - "After the second run, reports what changed against the previous run before interpreting it"
+
+# The two cases of the sim-parameters Part 2 spec (2026-10-12, section 13),
+# written for the same harness: a school closure on the hybrid network, and
+# "why were so many infected?" leading to the hybrid option (Part 2, 5.1).
+- id: parameters-school-closure
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "The hybrid network, the structured interventions field and the comparison come from the web agent and the simulation service (Part 2, 5.4 and 7.4); the Python agent has neither."
+  turns:
+    - "Model seasonal influenza in a town of 50,000 people with households, schools and workplaces, for six months."
+    - "Yes, run it."
+    - "Now close the schools from day 30 for six weeks and run it again."
+  checks:
+    tool_called: [configure_simulation, run_simulation]
+    ran_simulation: true
+    config:
+      disease: influenza
+      network_type: hybrid
+    judge:
+      - "Chooses the hybrid network for a setting with households, schools and workplaces, and says so"
+      - "Represents the closure as a contact_reduction on the school layer at scale 1 from day 30 to day 72 (six weeks), not as a change to R0 or to n_contacts"
+      - "Says the closure's effect size is an illustrative assumption (the database carries no school-closure effect)"
+      - "After the second run, reports what changed against the first run (the peak, the total infected) before interpreting the closure's effect"
+
+- id: parameters-why-so-many-infected
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "The hybrid option is a web-agent rule (Part 2, 5.1): the random network is the default, and the agent offers the hybrid network when asked why so many were infected."
+  turns:
+    - "Model measles in Kenya for a year with 20,000 agents."
+    - "Yes, run it."
+    - "Why were so many infected?"
+  checks:
+    tool_called: [run_simulation]
+    ran_simulation: true
+    config:
+      disease: measles
+      country: KEN
+    judge:
+      - "Explains that on the random network everyone meets fresh contacts every day, so at this R0 nearly every susceptible is eventually infected"
+      - "Offers the hybrid network (households, schools, workplaces, community) as an option, as the structure that school closures and distancing act on"
+      - "Does not promise that switching the network alone lowers the final size (at the same R0 the final size is close on every network)"
