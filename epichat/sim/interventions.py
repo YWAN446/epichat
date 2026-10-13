@@ -99,7 +99,8 @@ class VaccineDelivery(ss.Intervention):
         self.start_day, self.end_day = int(start_day), end_day
         self.eligibility = eligibility
         self.accepts = ss.bernoulli(p=self.prob)
-        self.define_states(ss.BoolArr("vaccinated", default=False), ss.FloatArr("ti_vaccinated"), ss.FloatArr("n_doses", default=0))
+        self.define_states(ss.BoolArr("vaccinated", default=False), ss.FloatArr("ti_vaccinated"), ss.FloatArr("n_doses", default=0),
+                           ss.FloatArr("protected_until", default=np.inf))
 
     def init_pre(self, sim):
         super().init_pre(sim)
@@ -108,13 +109,19 @@ class VaccineDelivery(ss.Intervention):
     def step(self):
         if self.ti < self.start_day or (self.end_day is not None and self.ti > self.end_day):
             return
-        eligible = self.eligibility(self.sim) if self.eligibility is not None else self.sim.people.auids
+        eligible = ss.uids(self.eligibility(self.sim) if self.eligibility is not None else self.sim.people.auids)
+        if len(eligible):
+            # a dose is not repeated while the last one protects (review I3): coverage × efficacy is what an all-or-nothing window reaches
+            covered = np.asarray(self.vaccinated.raw)[eligible] & (np.asarray(self.protected_until.raw)[eligible] > self.ti)
+            eligible = eligible[~covered]
         accept = self.accepts.filter(eligible)
         if len(accept):
             self.product.administer(self.sim.people, accept)
             self.vaccinated[accept] = True
             self.ti_vaccinated[accept] = self.ti
             self.n_doses[accept] += 1
+            days = getattr(self.product, "protection_days", None)
+            self.protected_until[accept] = np.inf if days is None else self.ti + days
 
 
 class TreatmentDelivery(ss.Intervention):
@@ -139,7 +146,14 @@ class TreatmentDelivery(ss.Intervention):
         self.product.init_pre(sim)
 
     def step(self):
-        if self.ti < self.start_day or (self.end_day is not None and self.ti > self.end_day):
+        if self.ti < self.start_day:
+            return
+        if self.end_day is not None and self.ti > self.end_day:
+            if self.queue:                                                           # the window closed: nobody keeps the waiting factor (review I5)
+                left = ss.uids(self.queue)
+                self.sim.diseases[0].treatment_factor[left] = 1.0
+                self.queued[left] = False
+                self.queue = []
             return
         disease = self.sim.diseases[0]
         since = disease.ti_infectious if hasattr(disease, "ti_infectious") else disease.ti_infected   # seir family: ti_infectious
@@ -169,42 +183,55 @@ class TreatmentDelivery(ss.Intervention):
 
 class ContactReduction(ss.Intervention):
     """Part 2, 7.1: scales a network layer's transmissibility (every edge's beta, the pars.beta new edges take, and each mixing pool's
-    beta) by 1 − scale from start_day to end_day, restoring the stored values after."""
+    beta) by 1 − scale from start_day to end_day. Several reductions compose (review I2): the first one in the sim applies, each step,
+    the product of every active reduction's factor to each network, from the betas captured before any applied, so a reduction that
+    ends restores only its own share and the layers hold their original values after the last window."""
 
     LAYERS = {"household": "h", "school": "s", "work": "w", "community": "c"}
 
     def __init__(self, layer: str = "all", scale: float = 0.0, start_day: int = 0, end_day: int | None = None):
         super().__init__()
         self.layer, self.scale, self.start_day, self.end_day = layer, float(scale), int(start_day), end_day
-        self.active = False
-        self.base: dict = {}
+        self.base: dict | None = None
+        self.applied: dict = {}
 
-    def targets(self):
-        nets = self.sim.networks
-        if self.layer == "all":
-            return list(nets.values())
-        key = self.LAYERS[self.layer]
-        return [nets[key]] if key in nets else []
+    def inside(self, ti: int) -> bool:
+        return self.start_day <= ti and (self.end_day is None or ti <= self.end_day)
 
-    def apply(self, factor: float):
-        for net in self.targets():
+    def covers(self, name: str) -> bool:
+        return self.layer == "all" or self.LAYERS[self.layer] == name
+
+    def capture(self):
+        self.base = {}
+        for name, net in self.sim.networks.items():
             if isinstance(net, ss.MixingPools):
-                for k, pool in enumerate(net.pools):
-                    base = self.base.setdefault(f"{net.name}:{k}", float(pool.pars.beta))
-                    pool.pars.beta = base * factor
+                self.base[name] = [float(pool.pars.beta) for pool in net.pools]
             else:
-                base = self.base.setdefault(net.name, (float(net.pars.beta), np.array(net.edges.beta, copy=True)))
-                net.pars.beta = base[0] * factor                                   # new edges (dynamic networks remake them)
-                if len(base[1]) == len(net.edges.beta):
-                    net.edges.beta[:] = base[1] * factor                            # the edges that exist (static layers keep them)
-                else:
-                    net.edges.beta[:] = base[0] * factor
+                self.base[name] = (float(net.pars.beta), np.array(net.edges.beta, copy=True))
+
+    def set_factor(self, name: str, net, factor: float):
+        base = self.base[name]
+        if isinstance(net, ss.MixingPools):
+            for pool, b in zip(net.pools, base):
+                pool.pars.beta = b * factor
+        else:
+            net.pars.beta = base[0] * factor                                       # new edges (dynamic networks remake them)
+            if len(base[1]) == len(net.edges.beta):
+                net.edges.beta[:] = base[1] * factor                                # the edges that exist (static layers keep them)
+            else:
+                net.edges.beta[:] = base[0] * factor
 
     def step(self):
-        inside = self.start_day <= self.ti and (self.end_day is None or self.ti <= self.end_day)
-        if inside and not self.active:
-            self.apply(1.0 - self.scale)
-            self.active = True
-        elif not inside and self.active:
-            self.apply(1.0)
-            self.active = False
+        reductions = [i for i in self.sim.interventions.values() if isinstance(i, ContactReduction)]
+        if reductions[0] is not self:
+            return                                                                 # the first reduction applies for all of them
+        if self.base is None:
+            self.capture()
+        for name, net in self.sim.networks.items():
+            factor = 1.0
+            for r in reductions:
+                if r.inside(self.ti) and r.covers(name):
+                    factor *= 1.0 - r.scale
+            if self.applied.get(name, 1.0) != factor:
+                self.set_factor(name, net, factor)
+                self.applied[name] = factor

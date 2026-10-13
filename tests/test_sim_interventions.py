@@ -224,3 +224,84 @@ def test_a_v1_shaped_treatment_still_runs_through_simple_treatment():
     assert any(isinstance(i, SimpleTreatment) for i in build_sim(p).interventions.values())
     rich = SimParamsV2.model_validate({"interventions": [{"type": "treatment", "coverage": 0.5, "capacity": 20, "start_day": 3, "delay_days": 1}], "run": {"n_agents": 500, "sim_dur_years": 5 / 365}})
     assert not any(isinstance(i, SimpleTreatment) for i in build_sim(rich).interventions.values())
+
+
+# The review's findings on the 2C branch (C1, I2, I3, I5): each test reproduces the finding.
+def test_vaccination_by_age_stays_on_the_right_agents_after_deaths():
+    # review C1: deaths leave Starsim's active uids, so an eligibility built on the compact view returns positions, not uids
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({"disease": {"beta": 0.001, "p_death": 0.5, "dur_inf": {"mean_days": 2}, "seed": {"mode": "count", "value": 1500}},
+                                    "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 1.0, "start_day": 10, "end_day": 10, "age_min": 5, "age_max": 18}],
+                                    "demographics": {"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0},
+                                    "run": {"n_agents": 3000, "sim_dur_years": 15 / 365, "rand_seed": 1}})
+    sim = build_sim(p)
+    sim.run()
+    age = np.asarray(sim.people.age.raw)
+    alive = np.asarray(sim.people.alive.raw, dtype=bool)
+    assert 400 < (~alive).sum() < 1100                                                        # the deaths happened before the campaign
+    protected = np.asarray(sim.diseases[0].vaccine_protection.raw) == 0.0
+    in_range = (age >= 5) & (age < 18)
+    assert protected[alive & in_range].mean() > 0.99
+    assert not protected[alive & ~in_range].any() and not protected[~alive].any()
+
+
+def test_overlapping_contact_reductions_compose_and_restore_in_order():
+    # review I2: a reduction that starts while another is active must not snapshot the reduced beta as its base
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "network": {"network_type": "hybrid"},
+                                    "demographics": {"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0},
+                                    "interventions": [{"type": "contact_reduction", "layer": "all", "scale": 0.5, "start_day": 10, "end_day": 40},
+                                                      {"type": "contact_reduction", "layer": "school", "scale": 1.0, "start_day": 30, "end_day": 72}],
+                                    "run": {"n_agents": 1000, "sim_dur_years": 100 / 365, "rand_seed": 1}})
+    sim = build_sim(p)
+    base = {k: float(net.pars.beta) for k, net in sim.networks.items()}
+    edges = {k: np.array(net.edges.beta, copy=True) for k, net in sim.networks.items()}
+    seen = {}
+    for day in range(100):
+        sim.run_one_step()
+        if day in (5, 20, 35, 50, 80):
+            seen[day] = {k: float(net.pars.beta) / base[k] for k, net in sim.networks.items()}
+    assert seen[5] == {k: 1.0 for k in base} and seen[80] == {k: 1.0 for k in base}
+    assert seen[20] == {k: 0.5 for k in base}
+    assert seen[35] == {"h": 0.5, "s": 0.0, "w": 0.5, "c": 0.5}
+    assert seen[50] == {"h": 1.0, "s": 0.0, "w": 1.0, "c": 1.0}                                   # the school stays closed when the other reduction ends
+    assert np.allclose(np.asarray(sim.networks["s"].edges.beta), edges["s"])                      # and reopens with its original edge betas
+
+
+def test_a_window_doses_each_agent_once_until_its_protection_ends():
+    # review I3: an all-or-nothing campaign redrawn daily protected more than coverage × efficacy; a dose is not repeated while it protects
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    allornothing = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 0.8, "start_day": 0, "end_day": 9, "efficacy": 0.5, "leaky": False}],
+                                               "run": {"n_agents": 4000, "sim_dur_years": 12 / 365, "rand_seed": 1}})
+    sim = build_sim(allornothing)
+    sim.run()
+    vx = next(i for i in sim.interventions.values() if hasattr(i, "n_doses"))
+    doses = np.asarray(vx.n_doses)
+    assert doses.max() == 1 and abs((doses > 0).mean() - 0.8) < 0.03
+    protected = np.asarray(sim.diseases[0].vaccine_protection) == 0.0
+    assert abs(protected.mean() - 0.4) < 0.03
+    waning = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "coverage": 1.0, "start_day": 0, "end_day": 11, "protection_days": 5}],
+                                         "run": {"n_agents": 500, "sim_dur_years": 12 / 365, "rand_seed": 1}})
+    sim = build_sim(waning)
+    sim.run()
+    vx = next(i for i in sim.interventions.values() if hasattr(i, "n_doses"))
+    assert np.all(np.asarray(vx.n_doses) == 3)                                                     # days 0, 5 and 10: again once the protection ends
+
+
+def test_a_treatment_window_closing_releases_the_queue():
+    # review I5: agents still queued when the window closes kept the waiting factor for the rest of the run
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({"disease": {"model": "sis", "beta": 0.001, "dur_inf": {"mean_days": 30}, "seed": {"mode": "count", "value": 300}},
+                                    "interventions": [{"type": "treatment", "coverage": 1.0, "capacity": 5, "end_day": 3, "rel_trans_treated": 0.5}],
+                                    "run": {"n_agents": 1000, "sim_dur_years": 10 / 365, "rand_seed": 1}})
+    sim = build_sim(p)
+    sim.run()
+    d = sim.diseases[0]
+    delivery = next(i for i in sim.interventions.values() if hasattr(i, "queued"))
+    assert 15 <= int(delivery.treated.count()) <= 20                                             # five a day while the window was open
+    assert delivery.queue == [] and not np.asarray(delivery.queued).any()
+    assert np.allclose(np.asarray(d.treatment_factor), 1.0)
