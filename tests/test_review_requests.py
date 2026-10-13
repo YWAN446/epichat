@@ -30,3 +30,9 @@ def test_the_markdown_lists_requests_first_then_the_table_and_the_bundled_checks
     assert text.startswith("# Data review requests")
     assert "## Requested fields" in text and "## Coverage by disease" in text and "## Bundled tables" in text
     assert "| measles |" in text and "vaccine_efficacy" in text
+
+
+def test_the_committed_review_list_is_what_the_script_renders_today():
+    # Part 2, section 11: regenerated whenever the database or the registry changes; this test is the reminder.
+    committed = (ROOT / "docs" / "data-review-requests.md").read_text(encoding="utf-8").replace("\r\n", "\n")
+    assert committed == render(review_table()), "run: .venv/Scripts/python.exe scripts/review_requests.py --write docs/data-review-requests.md"
