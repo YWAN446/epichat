@@ -19,7 +19,7 @@ def test_durations_become_constant_and_seed_keeps_init_prev():
     assert p.disease.dur_inf.model_dump() == {"mean_days": 7.0, "dist": "constant", "sd_days": None}
     assert p.disease.dur_exp.mean_days == 4.0 and p.disease.dur_immune.mean_days == 90.0
     assert p.disease.seed.model_dump() == {"mode": "fraction", "value": 0.02, "day": 0}
-    assert p.run.model_dump() == {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 9, "n_replicates": 1, "calibrate_r0": True}
+    assert p.run.model_dump() == {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 9, "n_replicates": 1, "calibrate_r0": True, "fit": None}
     assert p.disease.p_death == 0.1 and p.disease.sis_waning == 0.0 and p.disease.initial_immune_frac == 0.0
 
 
@@ -70,3 +70,8 @@ def test_migrate_v1_is_a_pure_dict_transform():
     out = migrate_v1({"disease_type": "sir", "beta": 1.0, "interventions": [{"type": "vaccine", "coverage": 0.4, "start_day": 0}], "country": "KEN"})
     assert out["schema_version"] == 2 and out["disease"]["initial_immune_frac"] == 0.4 and out["interventions"] == []
     assert out["demographics"] == {"country": "KEN"} and out["network"] == {} and out["run"] == {}
+
+
+def test_v1_day_zero_vaccine_still_folds_into_initial_immunity():
+    p = coerce_params({"disease_type": "sir", "beta": 1.0, "interventions": [{"type": "vaccine", "coverage": 0.4, "start_day": 0}]})
+    assert p.disease.initial_immune_frac == 0.4 and p.interventions == []

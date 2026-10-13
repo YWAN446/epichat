@@ -7,22 +7,64 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Intervention(BaseModel):
-    type: Literal["vaccine", "treatment", "seasonality"]
+    type: Literal["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"]
     # vaccine / treatment
     coverage: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     start_day: int = Field(default=0, ge=0)
+    end_day: Optional[int] = Field(default=None, ge=0)           # null: the run's end (Part 2, 7.1)
+    efficacy: float = Field(default=1.0, ge=0.0, le=1.0)
+    # vaccine
+    kind: Literal["routine", "campaign"] = "routine"
+    leaky: bool = True
+    age_min: Optional[int] = Field(default=None, ge=0, le=120)
+    age_max: Optional[int] = Field(default=None, ge=0, le=120)
+    protection_days: Optional[int] = Field(default=None, ge=1)
     # treatment
     capacity: Optional[int] = Field(default=None, ge=1)
-    # seasonality
+    delay_days: int = Field(default=0, ge=0)
+    rel_trans_treated: float = Field(default=1.0, ge=0.0, le=1.0)
+    symptomatic_only: bool = False
+    # seasonality and the reductions
     scale: float = Field(default=0.2, ge=0.0, le=1.0)
     shift: float = Field(default=0.0, ge=0.0, le=1.0)
+    # contact reduction
+    layer: Literal["all", "household", "school", "work", "community"] = "all"
+
+    @model_validator(mode="before")
+    @classmethod
+    def peak_day_is_an_alias_of_shift(cls, data):
+        if isinstance(data, dict) and "peak_day" in data:
+            data = dict(data)
+            peak = data.pop("peak_day")
+            if peak is not None and "shift" not in data:
+                data["shift"] = (float(peak) / 365.0) % 1.0
+        return data
+
+    @model_validator(mode="after")
+    def check_window_and_ages(self) -> "Intervention":
+        if self.end_day is not None and self.end_day < self.start_day:
+            raise ValueError("interventions[].end_day must not be before start_day")
+        if self.age_min is not None and self.age_max is not None and self.age_min >= self.age_max:
+            raise ValueError("interventions[].age_min must be below age_max")
+        return self
+
+    def is_day0_immunity(self) -> bool:
+        """Part 1 section 18 and Part 2 7.1: a day-0 vaccine at full efficacy is disease.initial_immune_frac."""
+        return self.type == "vaccine" and self.start_day <= 0 and self.efficacy >= 1.0
+
+    def is_v1_treatment(self) -> bool:
+        """A treatment entry the v1 SimpleTreatment can run (the parity baseline depends on it)."""
+        return (self.type == "treatment" and self.delay_days == 0 and self.efficacy >= 1.0 and self.rel_trans_treated >= 1.0
+                and not self.symptomatic_only and self.end_day is None)
 
     @field_validator("type", mode="before")
     @classmethod
     def normalize_type(cls, v):
         _aliases = {"vaccination": "vaccine", "vaccinate": "vaccine",
                     "treat": "treatment", "treatment_intervention": "treatment",
-                    "seasonal": "seasonality"}
+                    "seasonal": "seasonality",
+                    "school_closure": "contact_reduction", "distancing": "contact_reduction", "contact-reduction": "contact_reduction",
+                    "masks": "transmission_reduction", "transmission-reduction": "transmission_reduction"}
         return _aliases.get(str(v).lower(), v)
 
     @field_validator("capacity", mode="before")

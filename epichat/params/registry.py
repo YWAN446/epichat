@@ -216,9 +216,12 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "60), shares (uniform ages within the three shares) or un_wpp (the country's single-year age pyramid, bundled from UN WPP 2024).",
               "enum", None, "default", None, ("default", "shares", "un_wpp"), (), "expert", None, "ss.People(age_data=...)",
               ("peak", "final_size", "deaths")),
-    ParamSpec("interventions[].type", "interventions", "Intervention type", "vaccine (a routine campaign from start_day), treatment "
-              "(daily capacity-limited recovery), seasonality (a yearly cycle in transmission).", "enum", None, None, None,
-              ("vaccine", "treatment", "seasonality"), (), "core", None, "ss.routine_vx, SimpleTreatment, TransmissibilityModifiers", ("peak", "final_size", "timing")),
+    ParamSpec("interventions[].type", "interventions", "Intervention type", "vaccine (routine or campaign, with efficacy, age range and "
+              "waning), treatment (capacity-limited, with a delay and an efficacy), seasonality (a yearly cycle in transmission), "
+              "contact_reduction (a layer's contacts scaled over a window: school closure, distancing), transmission_reduction (every "
+              "contact's transmissibility scaled over a window: masks).", "enum", None, None, None,
+              ("vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"), (), "core", None,
+              "ss.routine_vx, TreatmentDelivery, TransmissionModifiers, ContactReduction", ("peak", "final_size", "timing")),
     ParamSpec("interventions[].coverage", "interventions", "Coverage", "Vaccine: yearly probability each susceptible person is vaccinated; "
               "treatment: share of infectious people treated each day.", "number", "fraction", None, (0.0, 1.0), None, (), "core", None,
               "ss.routine_vx(prob=...) or SimpleTreatment(prob=...)", ("peak", "final_size")),
@@ -227,10 +230,39 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "ss.routine_vx(start_year=start_day / 365)", ("timing",)),
     ParamSpec("interventions[].capacity", "interventions", "Treatment capacity", "Most people treated per day.", "integer", "agents per day",
               None, (1, 1_000_000), None, (), "core", None, "SimpleTreatment(max_capacity=...)", ("peak", "final_size")),
-    ParamSpec("interventions[].scale", "interventions", "Seasonal amplitude", "Size of the yearly cycle: 0.2 means transmission moves "
-              "between 80% and 120% of beta.", "number", None, 0.2, (0.0, 1.0), None, (), "core", None, "TransmissibilityModifiers", ("timing", "peak")),
+    ParamSpec("interventions[].scale", "interventions", "Scale", "Seasonality: size of the yearly cycle (0.2 means transmission moves "
+              "between 80% and 120% of beta); contact_reduction and transmission_reduction: the fraction removed over the window (0.3 "
+              "keeps 70%; 1 removes everything).", "number", None, 0.2, (0.0, 1.0), None, (), "core", None,
+              "TransmissionModifiers or ContactReduction", ("timing", "peak", "final_size")),
     ParamSpec("interventions[].shift", "interventions", "Seasonal shift", "Fraction of a year by which the cycle is shifted.", "number",
               None, 0.0, (0.0, 1.0), None, (), "advanced", None, "TransmissibilityModifiers", ("timing",)),
+    ParamSpec("interventions[].end_day", "interventions", "End day", "Day the intervention ends; unset means the run's end.", "integer",
+              "days", None, (0, 7300), None, (), "core", None, "ss.routine_vx(end_year=...), the window of a reduction", ("timing",)),
+    ParamSpec("interventions[].kind", "interventions", "Vaccine delivery", "routine: coverage is the yearly probability each eligible "
+              "person is vaccinated; campaign: the coverage is reached uniformly over the window.", "enum", None, "routine", None,
+              ("routine", "campaign"), (), "advanced", None, "ss.routine_vx(prob=..., annual_prob=...)", ("timing", "final_size")),
+    ParamSpec("interventions[].efficacy", "interventions", "Efficacy", "Vaccine: protection against infection, 1 means full; treatment: "
+              "the share of treated cases cured. Illustrative unless the database carries it.", "number", "fraction", 1.0, (0.0, 1.0),
+              None, (), "advanced", None, "Vaccine(efficacy=...) or Treatment(efficacy=...)", ("final_size", "peak")),
+    ParamSpec("interventions[].leaky", "interventions", "Leaky protection", "true: every recipient keeps 1 - efficacy of their "
+              "susceptibility; false: a share efficacy of recipients is fully protected.", "bool", None, True, None, None, (), "expert",
+              None, "Vaccine(leaky=...)", ("final_size",)),
+    ParamSpec("interventions[].age_min", "interventions", "Vaccine age, from", "Youngest age vaccinated; unset means everyone.", "integer",
+              "years", None, (0, 120), None, (), "advanced", None, "ss.routine_vx(eligibility=...)", ("final_size",)),
+    ParamSpec("interventions[].age_max", "interventions", "Vaccine age, to", "Age at which vaccination stops (excluded); unset means "
+              "everyone.", "integer", "years", None, (0, 120), None, (), "advanced", None, "ss.routine_vx(eligibility=...)", ("final_size",)),
+    ParamSpec("interventions[].protection_days", "interventions", "Protection duration", "Days the vaccine's protection lasts; unset means "
+              "permanent.", "integer", "days", None, (1, 36500), None, (), "advanced", None, "Vaccine(protection_days=...)", ("final_size",)),
+    ParamSpec("interventions[].delay_days", "interventions", "Treatment delay", "Days after becoming infectious before treatment can "
+              "start.", "integer", "days", 0, (0, 365), None, (), "advanced", None, "TreatmentDelivery(delay_days=...)", ("peak", "final_size")),
+    ParamSpec("interventions[].rel_trans_treated", "interventions", "Transmissibility while waiting", "Relative transmissibility of an "
+              "agent waiting for treatment (0.5 halves it).", "number", "multiplier", 1.0, (0.0, 1.0), None, (), "advanced", None,
+              "TreatmentDelivery(rel_trans_treated=...)", ("peak", "final_size")),
+    ParamSpec("interventions[].symptomatic_only", "interventions", "Treat symptomatic only", "seiar: leave asymptomatic agents untreated.",
+              "bool", None, False, None, None, ("seiar",), "advanced", None, "TreatmentDelivery(symptomatic_only=...)", ("final_size",)),
+    ParamSpec("interventions[].layer", "interventions", "Layer", "Which hybrid layer a contact reduction scales: household, school, work, "
+              "community, or all; the random and age-structured networks take all only.", "enum", None, "all", None,
+              ("all", "household", "school", "work", "community"), (), "core", None, "ContactReduction(layer=...)", ("peak", "final_size")),
     ParamSpec("run.n_agents", "run", "Agents", "Number of simulated people; results scale to the real population.", "integer", None, 10000,
               (10, 1_000_000), None, (), "core", None, "ss.Sim(n_agents=...)", ("stochasticity",)),
     ParamSpec("run.sim_dur_years", "run", "Duration", "Length of the run in years.", "number", "years", 1.0, (0.01, 20.0), None, (), "core",
@@ -243,6 +275,14 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "formula is approximate: a short pilot run measures the seeds' secondary infections and corrects beta until the measured R0 is "
               "within 5% of the target, at most three times. Off, the formula's beta runs as it is.", "bool", None, True, None, None, (),
               "advanced", None, "epichat.sim.calibrate", ("peak", "final_size")),
+    ParamSpec("run.fit.target", "run", "Fit target", "The outcome the run is fitted to: attack_rate (share infected), peak_day or "
+              "peak_infections (in agents).", "enum", None, None, None, ("attack_rate", "peak_day", "peak_infections"), (), "advanced",
+              None, "epichat.sim.fit", ("peak", "final_size", "timing")),
+    ParamSpec("run.fit.value", "run", "Fit value", "The value to reach: a fraction for attack_rate, a day for peak_day, agents for "
+              "peak_infections.", "number", None, None, (0.0, 1_000_000.0), None, (), "advanced", None, "epichat.sim.fit",
+              ("peak", "final_size", "timing")),
+    ParamSpec("run.fit.lever", "run", "Fit lever", "The parameter the fit moves within its bounds: disease.beta or network.network_beta.",
+              "enum", None, "disease.beta", None, ("disease.beta", "network.network_beta"), (), "advanced", None, "epichat.sim.fit", ("peak",)),
 ])
 
 REGISTRY_BY_PATH: dict[str, ParamSpec] = {s.path: s for s in REGISTRY}
@@ -257,4 +297,4 @@ def applicable(model: str) -> tuple[ParamSpec, ...]:
 
 
 def export() -> dict:
-    return {"version": 3, "params": [s.as_dict() for s in REGISTRY]}
+    return {"version": 4, "params": [s.as_dict() for s in REGISTRY]}

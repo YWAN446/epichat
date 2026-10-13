@@ -1,5 +1,5 @@
 {
- "version": 3,
+ "version": 4,
  "params": [
   {
    "path": "disease.model",
@@ -1534,7 +1534,7 @@
    "path": "interventions[].type",
    "module": "interventions",
    "label": "Intervention type",
-   "description": "vaccine (a routine campaign from start_day), treatment (daily capacity-limited recovery), seasonality (a yearly cycle in transmission).",
+   "description": "vaccine (routine or campaign, with efficacy, age range and waning), treatment (capacity-limited, with a delay and an efficacy), seasonality (a yearly cycle in transmission), contact_reduction (a layer's contacts scaled over a window: school closure, distancing), transmission_reduction (every contact's transmissibility scaled over a window: masks).",
    "kind": "enum",
    "unit": null,
    "default": null,
@@ -1542,12 +1542,14 @@
    "choices": [
     "vaccine",
     "treatment",
-    "seasonality"
+    "seasonality",
+    "contact_reduction",
+    "transmission_reduction"
    ],
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.routine_vx, SimpleTreatment, TransmissibilityModifiers",
+   "starsim_target": "ss.routine_vx, TreatmentDelivery, TransmissionModifiers, ContactReduction",
    "affects": [
     "peak",
     "final_size",
@@ -1626,8 +1628,8 @@
   {
    "path": "interventions[].scale",
    "module": "interventions",
-   "label": "Seasonal amplitude",
-   "description": "Size of the yearly cycle: 0.2 means transmission moves between 80% and 120% of beta.",
+   "label": "Scale",
+   "description": "Seasonality: size of the yearly cycle (0.2 means transmission moves between 80% and 120% of beta); contact_reduction and transmission_reduction: the fraction removed over the window (0.3 keeps 70%; 1 removes everything).",
    "kind": "number",
    "unit": null,
    "default": 0.2,
@@ -1639,10 +1641,11 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "TransmissibilityModifiers",
+   "starsim_target": "TransmissionModifiers or ContactReduction",
    "affects": [
     "timing",
-    "peak"
+    "peak",
+    "final_size"
    ],
    "requires": []
   },
@@ -1665,6 +1668,252 @@
    "starsim_target": "TransmissibilityModifiers",
    "affects": [
     "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].end_day",
+   "module": "interventions",
+   "label": "End day",
+   "description": "Day the intervention ends; unset means the run's end.",
+   "kind": "integer",
+   "unit": "days",
+   "default": null,
+   "bounds": [
+    0,
+    7300
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.routine_vx(end_year=...), the window of a reduction",
+   "affects": [
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].kind",
+   "module": "interventions",
+   "label": "Vaccine delivery",
+   "description": "routine: coverage is the yearly probability each eligible person is vaccinated; campaign: the coverage is reached uniformly over the window.",
+   "kind": "enum",
+   "unit": null,
+   "default": "routine",
+   "bounds": null,
+   "choices": [
+    "routine",
+    "campaign"
+   ],
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.routine_vx(prob=..., annual_prob=...)",
+   "affects": [
+    "timing",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].efficacy",
+   "module": "interventions",
+   "label": "Efficacy",
+   "description": "Vaccine: protection against infection, 1 means full; treatment: the share of treated cases cured. Illustrative unless the database carries it.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": 1.0,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "Vaccine(efficacy=...) or Treatment(efficacy=...)",
+   "affects": [
+    "final_size",
+    "peak"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].leaky",
+   "module": "interventions",
+   "label": "Leaky protection",
+   "description": "true: every recipient keeps 1 - efficacy of their susceptibility; false: a share efficacy of recipients is fully protected.",
+   "kind": "bool",
+   "unit": null,
+   "default": true,
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "expert",
+   "db_field": null,
+   "starsim_target": "Vaccine(leaky=...)",
+   "affects": [
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].age_min",
+   "module": "interventions",
+   "label": "Vaccine age, from",
+   "description": "Youngest age vaccinated; unset means everyone.",
+   "kind": "integer",
+   "unit": "years",
+   "default": null,
+   "bounds": [
+    0,
+    120
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.routine_vx(eligibility=...)",
+   "affects": [
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].age_max",
+   "module": "interventions",
+   "label": "Vaccine age, to",
+   "description": "Age at which vaccination stops (excluded); unset means everyone.",
+   "kind": "integer",
+   "unit": "years",
+   "default": null,
+   "bounds": [
+    0,
+    120
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.routine_vx(eligibility=...)",
+   "affects": [
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].protection_days",
+   "module": "interventions",
+   "label": "Protection duration",
+   "description": "Days the vaccine's protection lasts; unset means permanent.",
+   "kind": "integer",
+   "unit": "days",
+   "default": null,
+   "bounds": [
+    1,
+    36500
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "Vaccine(protection_days=...)",
+   "affects": [
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].delay_days",
+   "module": "interventions",
+   "label": "Treatment delay",
+   "description": "Days after becoming infectious before treatment can start.",
+   "kind": "integer",
+   "unit": "days",
+   "default": 0,
+   "bounds": [
+    0,
+    365
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "TreatmentDelivery(delay_days=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].rel_trans_treated",
+   "module": "interventions",
+   "label": "Transmissibility while waiting",
+   "description": "Relative transmissibility of an agent waiting for treatment (0.5 halves it).",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 1.0,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "TreatmentDelivery(rel_trans_treated=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].symptomatic_only",
+   "module": "interventions",
+   "label": "Treat symptomatic only",
+   "description": "seiar: leave asymptomatic agents untreated.",
+   "kind": "bool",
+   "unit": null,
+   "default": false,
+   "bounds": null,
+   "choices": null,
+   "models": [
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "TreatmentDelivery(symptomatic_only=...)",
+   "affects": [
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "interventions[].layer",
+   "module": "interventions",
+   "label": "Layer",
+   "description": "Which hybrid layer a contact reduction scales: household, school, work, community, or all; the random and age-structured networks take all only.",
+   "kind": "enum",
+   "unit": null,
+   "default": "all",
+   "bounds": null,
+   "choices": [
+    "all",
+    "household",
+    "school",
+    "work",
+    "community"
+   ],
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ContactReduction(layer=...)",
+   "affects": [
+    "peak",
+    "final_size"
    ],
    "requires": []
   },
@@ -1770,6 +2019,77 @@
    "affects": [
     "peak",
     "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.fit.target",
+   "module": "run",
+   "label": "Fit target",
+   "description": "The outcome the run is fitted to: attack_rate (share infected), peak_day or peak_infections (in agents).",
+   "kind": "enum",
+   "unit": null,
+   "default": null,
+   "bounds": null,
+   "choices": [
+    "attack_rate",
+    "peak_day",
+    "peak_infections"
+   ],
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "epichat.sim.fit",
+   "affects": [
+    "peak",
+    "final_size",
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.fit.value",
+   "module": "run",
+   "label": "Fit value",
+   "description": "The value to reach: a fraction for attack_rate, a day for peak_day, agents for peak_infections.",
+   "kind": "number",
+   "unit": null,
+   "default": null,
+   "bounds": [
+    0.0,
+    1000000.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "epichat.sim.fit",
+   "affects": [
+    "peak",
+    "final_size",
+    "timing"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.fit.lever",
+   "module": "run",
+   "label": "Fit lever",
+   "description": "The parameter the fit moves within its bounds: disease.beta or network.network_beta.",
+   "kind": "enum",
+   "unit": null,
+   "default": "disease.beta",
+   "bounds": null,
+   "choices": [
+    "disease.beta",
+    "network.network_beta"
+   ],
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "epichat.sim.fit",
+   "affects": [
+    "peak"
    ],
    "requires": []
   }

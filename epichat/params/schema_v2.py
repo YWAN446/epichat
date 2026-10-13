@@ -214,12 +214,28 @@ class DemographicsParams(BaseModel):
         return v if len(v) == 3 and v.isalpha() else None
 
 
+class Fit(BaseModel):
+    """Part 2, 7.7: one outcome the participant knows, reached by moving one lever."""
+    target: Literal["attack_rate", "peak_day", "peak_infections"]
+    value: float = Field(gt=0.0)
+    lever: Literal["disease.beta", "network.network_beta"] = "disease.beta"
+
+    @model_validator(mode="after")
+    def check_value(self) -> "Fit":
+        if self.target == "attack_rate" and self.value > 1.0:
+            raise ValueError("run.fit.value is a fraction for attack_rate")
+        if self.target == "peak_day" and self.value < 1:
+            raise ValueError("run.fit.value is a day for peak_day")
+        return self
+
+
 class RunParams(BaseModel):
     n_agents: int = _field("run.n_agents")
     sim_dur_years: float = _field("run.sim_dur_years")
     rand_seed: Optional[int] = None
     n_replicates: int = _field("run.n_replicates")
     calibrate_r0: bool = True
+    fit: Optional[Fit] = None
 
 
 class SimParamsV2(BaseModel):
@@ -240,11 +256,16 @@ class SimParamsV2(BaseModel):
             raise ValueError(f"disease.seed.day ({seed.day}) must be within the simulation ({days} days)")
         if self.network.network_beta * (1 - math.exp(-self.disease.beta / 365.0)) > 1.0:
             raise ValueError("network.network_beta × (1 - exp(-disease.beta / 365)) must not exceed 1: lower network.network_beta or disease.beta")
-        day0 = [i for i in self.interventions if i.type == "vaccine" and i.start_day <= 0]
+        day0 = [i for i in self.interventions if i.is_day0_immunity()]          # Part 2, 7.1: at full efficacy only
         if day0:
             coverage = min(day0[-1].coverage or 0.0, 0.99)
             if self.disease.initial_immune_frac > 0 and abs(self.disease.initial_immune_frac - coverage) > 1e-9:
                 raise ValueError("a vaccine with start_day 0 and disease.initial_immune_frac were both given with different values; set one of them")
             self.disease.initial_immune_frac = coverage
-            self.interventions = [i for i in self.interventions if not (i.type == "vaccine" and i.start_day <= 0)]
+            self.interventions = [i for i in self.interventions if not i.is_day0_immunity()]
+        if self.network.network_type != "hybrid":
+            for i in self.interventions:
+                if i.type == "contact_reduction" and i.layer != "all":
+                    raise ValueError(f"interventions[].layer {i.layer} needs the hybrid network; the {self.network.network_type} network has "
+                                     "no layers, use all")
         return self

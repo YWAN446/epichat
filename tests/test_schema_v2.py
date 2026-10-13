@@ -24,11 +24,11 @@ def test_defaults_match_the_registry_on_every_leaf():
 
 def test_every_leaf_has_exactly_one_param_spec():
     full = v2(disease={"model": "seirs", "dur_exp": {"mean_days": 3}, "dur_immune": {"mean_days": 90}},
-              interventions=[{"type": "treatment", "capacity": 5}]).model_dump()
+              interventions=[{"type": "treatment", "capacity": 5}], run={"fit": {"target": "attack_rate", "value": 0.3}}).model_dump()
     leaves = {p for p in paths.flatten(full) if not p.startswith("interventions")} - {"schema_version"}
     registered = {p for p in REGISTRY_BY_PATH if not p.startswith("interventions[]")}
     assert leaves == registered
-    assert {p.split(".", 1)[1] for p in REGISTRY_BY_PATH if p.startswith("interventions[]")} == {"type", "coverage", "start_day", "capacity", "scale", "shift"}
+    assert {p.split(".", 1)[1] for p in REGISTRY_BY_PATH if p.startswith("interventions[]")} == {"type", "coverage", "start_day", "capacity", "scale", "shift", "end_day", "kind", "efficacy", "leaky", "age_min", "age_max", "protection_days", "delay_days", "rel_trans_treated", "symptomatic_only", "layer"}
 
 
 def test_bounds_come_from_the_registry():
@@ -163,3 +163,52 @@ def test_network_bounds_and_age_ranges_are_checked():
         v2(network={"network_type": "cluster"})
     with pytest.raises(ValidationError):
         v2(demographics={"age_source": "census"})
+
+
+def test_intervention_entries_gain_their_fields_with_defaults():
+    p = v2(interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 30}, {"type": "treatment", "coverage": 0.8, "capacity": 20},
+                          {"type": "contact_reduction", "layer": "school", "scale": 0.0, "start_day": 30, "end_day": 72},
+                          {"type": "transmission_reduction", "scale": 0.3, "start_day": 0, "end_day": 90},
+                          {"type": "seasonality", "scale": 0.2, "peak_day": 365 // 4}],
+           network={"network_type": "hybrid"})
+    vaccine, treatment, closure, masks, season = p.interventions
+    assert (vaccine.kind, vaccine.end_day, vaccine.efficacy, vaccine.leaky, vaccine.age_min, vaccine.age_max, vaccine.protection_days) == ("routine", None, 1.0, True, None, None, None)
+    assert (treatment.delay_days, treatment.rel_trans_treated, treatment.symptomatic_only, treatment.efficacy) == (0, 1.0, False, 1.0)
+    assert treatment.is_v1_treatment() and not v2(interventions=[{"type": "treatment", "delay_days": 2}]).interventions[0].is_v1_treatment()
+    assert (closure.layer, closure.scale, closure.start_day, closure.end_day) == ("school", 0.0, 30, 72)
+    assert (masks.scale, masks.end_day) == (0.3, 90)
+    assert season.shift == pytest.approx((365 // 4) / 365)
+    assert p.run.fit is None
+
+
+def test_a_day_zero_vaccine_folds_into_initial_immunity_only_at_full_efficacy():
+    folded = v2(interventions=[{"type": "vaccine", "coverage": 0.4, "start_day": 0}])
+    assert folded.disease.initial_immune_frac == 0.4 and folded.interventions == []
+    leaky = v2(interventions=[{"type": "vaccine", "coverage": 0.4, "start_day": 0, "efficacy": 0.6}])
+    assert leaky.disease.initial_immune_frac == 0.0 and leaky.interventions[0].efficacy == 0.6 and leaky.interventions[0].start_day == 0
+    assert not leaky.interventions[0].is_day0_immunity()
+
+
+def test_layers_belong_to_the_hybrid_network_and_windows_are_ordered():
+    with pytest.raises(ValidationError, match="layer"):
+        v2(interventions=[{"type": "contact_reduction", "layer": "school", "scale": 0.5}])          # random network has no school layer
+    v2(interventions=[{"type": "contact_reduction", "layer": "all", "scale": 0.5}])
+    with pytest.raises(ValidationError, match="end_day"):
+        v2(interventions=[{"type": "transmission_reduction", "scale": 0.5, "start_day": 40, "end_day": 10}])
+    with pytest.raises(ValidationError):
+        v2(interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 1, "efficacy": 1.5}])
+    with pytest.raises(ValidationError):
+        v2(interventions=[{"type": "contact_reduction", "layer": "roads", "scale": 0.5}], network={"network_type": "hybrid"})
+
+
+def test_the_fit_validates_its_target_value_and_lever():
+    from epichat.params.schema_v2 import Fit
+    p = v2(run={"fit": {"target": "attack_rate", "value": 0.3}})
+    assert p.run.fit == Fit(target="attack_rate", value=0.3, lever="disease.beta")
+    assert v2(run={"fit": {"target": "peak_day", "value": 60, "lever": "network.network_beta"}}).run.fit.lever == "network.network_beta"
+    with pytest.raises(ValidationError):
+        v2(run={"fit": {"target": "deaths", "value": 10}})
+    with pytest.raises(ValidationError):
+        v2(run={"fit": {"target": "attack_rate", "value": 1.5}})
+    with pytest.raises(ValidationError):
+        v2(run={"fit": {"target": "peak_day", "value": 0}})
