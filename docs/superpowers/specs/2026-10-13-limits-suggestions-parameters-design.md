@@ -1,7 +1,8 @@
 # EpiChat Simulation Parameters, Part 2 Follow-up: Limits on Spread, Suggested Interventions, the Parameters Section and Chosen References (Design)
 
 Date: 2026-10-13. Status: confirmed by the owner on 2026-10-13 (the proposals of
-section 17 included); phase A shipped, with the amendments marked "as shipped".
+section 17 included); phases A and B shipped, with the amendments marked "as
+shipped".
 Builds on Part 1, `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
 and Part 2, `docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md`
 (phases 2A to 2D shipped on 2026-10-13). Where this document and either part
@@ -399,6 +400,20 @@ this order:
 - Treatment is not a candidate in this round: its capacity comes from the
   health-system fetch, where the agent already adds it.
 
+As shipped. The labels are "Vaccinate 70% in a campaign from day A to day B
+and rerun", "Close schools from day A for six weeks and rerun", "Cut
+(community) contacts by 30% from day A for eight weeks and rerun", "Add masks
+(20% less transmission) from day A for 90 days and rerun" and "Let people
+become careful as cases rise and rerun". A window never passes the run's last
+day. With the default 1% seeding the anchor is day 0. A routine vaccine from
+day 0 is held as initial immunity and leaves no entry, so a campaign is still
+offered on top of it. The database carries no vaccine efficacy yet, so the
+campaign's is the illustrative 0.9. The list of indicators is
+`epichat/params/indicators.py`, exported as `web/data/vaccine_indicators.json`;
+the frozen agent keeps its copy and a test compares the two. `what_if` comes
+last among a run's diagnostics; a lever without entries or a label is sent
+exactly as before.
+
 ### 7.3 The agent's order of offers
 
 The prompt's "Diagnostics and options" section becomes "After a run":
@@ -424,6 +439,11 @@ them. They are absent on the public share page and on earlier runs.
 `suggestion_used` gains the source `option` for these buttons, and
 `reference` for section 9.
 
+As shipped. The buttons belong to the last successful run of the last turn;
+once a turn passes without a run they are gone. They are not rendered while a
+reply streams. They were tested by rendering the components to markup, not in
+a browser.
+
 ### 7.5 Recording
 
 `diagnostic_shown` lists `what_if` among its ids as it lists any diagnostic.
@@ -446,6 +466,11 @@ offers, in order:
 3. On the random network only: the hybrid network, as the structure that
    school closures and distancing act on, with the sentence it already
    carries (the switch alone does not lower the final size).
+
+As shipped. The title is "Nearly everyone was infected: only the depletion of
+susceptibles limits this epidemic"; the three levers carry the labels "Add
+variation between people (CV 1) and rerun", "Let people become careful as
+cases rise and rerun" and "Switch to the hybrid network and rerun".
 
 ## 8. The Parameters section
 

@@ -49,7 +49,12 @@ describe("system prompt", () => {
 
   it("tells the assistant to use describe_parameters, the advanced patch, and the diagnostics' options", () => {
     expect(SYSTEM_PROMPT.indexOf("## Repairs")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Parameters"));
-    expect(SYSTEM_PROMPT.indexOf("## Parameters")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Diagnostics and options"));
+    expect(SYSTEM_PROMPT.indexOf("## Parameters")).toBeLessThan(SYSTEM_PROMPT.indexOf("## After a run"));
+    // follow-up spec 7.3 and 12: the order of offers after a run, levers that carry entries and labels, well_mixed on every network
+    for (const phrase of ["what_if", "by the lever's label", "through the interventions field as they are", "A warning diagnostic fired", "Offer no intervention then",
+      "only the depletion of susceptibles limits the epidemic", "contact and transmission reductions", "never tell the user to press"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    expect(SYSTEM_PROMPT).not.toContain("## Diagnostics and options");
+    expect(SYSTEM_PROMPT).not.toContain("offers the hybrid network as that structure");
     for (const phrase of [
       "call describe_parameters rather than answering from memory",
       "Never say a parameter cannot be changed",

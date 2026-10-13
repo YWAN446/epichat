@@ -71,7 +71,7 @@
   critical: false
   real_sim: true
   pending: api-harness
-  pending_note: "The hybrid option is a web-agent rule (Part 2, 5.1): the random network is the default, and the agent offers the hybrid network when asked why so many were infected. No country is named: a country brings the demographics fetch, which moves the scenario to the age-structured network, where the well_mixed diagnostic never fires."
+  pending_note: "A web-agent rule (Part 2, 5.1, as broadened by the follow-up's 7.6): the random network is the default; asked why so many were infected, the agent explains that only the depletion of susceptibles limits the epidemic, and offers the limits on spread and the hybrid network. No country is named, so the scenario stays on the random network the config check names."
   turns:
     - "Model measles in a city of 20,000 people for a year."
     - "Yes, run it."
@@ -83,6 +83,7 @@
       disease: measles
       network_type: random
     judge:
-      - "Explains that on the random network everyone meets fresh contacts every day, so at this R0 nearly every susceptible is eventually infected"
-      - "Offers the hybrid network (households, schools, workplaces, community) as an option, as the structure that school closures and distancing act on"
+      - "Explains that at this R0 nearly every susceptible is eventually infected on any network: nothing but the depletion of susceptibles limits the epidemic"
+      - "Offers variation between people or a behaviour response as illustrative assumptions that limit the spread"
+      - "May offer the hybrid network (households, schools, workplaces, community) as the structure that school closures and distancing act on"
       - "Does not promise that switching the network alone lowers the final size (at the same R0 the final size is close on every network)"

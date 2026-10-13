@@ -43,3 +43,6 @@ def test_the_part_2_cases_cover_the_school_closure_and_the_hybrid_option():
     assert not any("Kenya" in turn for turn in why["turns"])
     assert any("hybrid" in c for c in why["checks"]["judge"])
     assert any("not promise" in c.lower() for c in why["checks"]["judge"])
+    # follow-up spec 7.6: the answer is no longer the random network; the limits on spread come first
+    assert any("variation" in c and "behaviour response" in c and "illustrative" in c for c in why["checks"]["judge"])
+    assert not any("on the random network everyone meets fresh contacts" in c for c in why["checks"]["judge"])

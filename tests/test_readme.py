@@ -124,3 +124,10 @@ def test_the_readme_describes_the_limits_on_spread():
     from epichat.sim.diagnostics import final_size
     assert round(final_size(2.5) * 100) == 89 and round(final_size(2.5, 1.0) * 100) == 60
     assert "89%" in web and "60%" in web
+
+
+def test_the_readme_describes_the_suggested_interventions():
+    web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
+    for phrase in ("what_if", "Try next", "epichat/params/indicators.py", "interventions field", "on every network"):
+        assert phrase in web, phrase
+    assert "a random-network run that a" not in web                 # well_mixed no longer blames the random network

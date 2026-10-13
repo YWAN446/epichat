@@ -203,9 +203,23 @@ registry, schema v2, the exact R0, diagnostics and options) and
   the service keeps R0 by correcting beta, by a closed form on the random
   network (where a very susceptible agent's chance per contact is capped at
   1) and by the pilot on the hybrid one, at every value a fit tries.
-- **Diagnostics, continued.** `well_mixed` (a random-network run that a
-  hybrid scenario would describe better) and `r0_gap` (the measured R0 far
-  from the configured one) join the list above.
+- **Diagnostics, continued.** `well_mixed` (nearly everyone was infected:
+  it fires on every network, since at the same R0 they all end close, and
+  offers the two limits on spread, plus the hybrid network on the random one)
+  and `r0_gap` (the measured R0 far from the configured one) join the list
+  above.
+- **Suggested interventions.** A lever may carry intervention entries (for
+  `configure_simulation`'s interventions field) and a label, a ready reply.
+  After a run that had an epidemic, `what_if` offers up to four: a vaccination
+  campaign (a disease with a routine-immunization indicator; the list lives
+  in `epichat/params/indicators.py` and is exported to the web app), a school
+  closure (the hybrid network), distancing, masks and a behaviour response,
+  leaving out what the scenario already has. Each window starts the day 1% of
+  the agents had been infected. The sizes are named constants at the top of
+  `epichat/sim/diagnostics.py` and illustrative until the database carries
+  them. The conversation shows up to three of the labels as "Try next"
+  buttons under the latest run; the agent offers a warning diagnostic's
+  options first and interventions only on a baseline that is sound.
 - **The review list.** `scripts/review_requests.py` renders
   `docs/data-review-requests.md`: for every disease, the status of every
   database field the registry names, the fields the database does not have

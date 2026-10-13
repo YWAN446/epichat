@@ -127,7 +127,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "run_simulation",
     description:
-      "Run the configured Starsim simulation and return the results.\n\nOnly call this after the configuration is complete and the user has\nconfirmed they want to run. Results are scaled to the real\npopulation when demographics were fetched. The result plot is shown\nto the user automatically.",
+      "Run the configured Starsim simulation and return the results.\n\nOnly call this after the configuration is complete and the user has\nconfirmed they want to run. Results are scaled to the real\npopulation when demographics were fetched. The result plot is shown\nto the user automatically. The result's diagnostics carry levers: a patch of\nparameter paths, or interventions (entries for configure_simulation's\ninterventions field), or both, often with a label, a ready reply.",
     eager_input_streaming: true,
     input_schema: { type: "object", properties: {}, required: [], additionalProperties: false },
   },
