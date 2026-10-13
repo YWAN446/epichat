@@ -99,3 +99,23 @@ describe("the measured R0 in the report (Part 2, 5.6)", () => {
     expect(plain.items.map(([label]) => label)).not.toContain("R₀ measured");
   });
 });
+
+describe("the fit in the report (Part 2, 7.7)", () => {
+  it("adds a Fitted to row after the R0 rows when the latest run was fitted, and nothing otherwise", () => {
+    const fit = { target: "attack_rate", wanted: 0.3, achieved: 0.31, lever: "disease.beta", value: 9.5, runs: 4 };
+    const runs = FIXTURE.runs.map((r, i) => (i === FIXTURE.runs.length - 1 ? { ...r, stats: { ...r.stats, r0_measured: 2.4, fit } } : r));
+    const rows = composeReport({ ...FIXTURE, runs }, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (rows.kind !== "keyValues") throw new Error("kv");
+    const labels = rows.items.map(([label]) => label);
+    expect(labels.indexOf("Fitted to")).toBe(labels.indexOf("R\u2080 measured") + 1);
+    expect(rows.items).toContainEqual(["Fitted to", "attack rate 30% (reached 31% in 4 runs)"]);
+    const peak = { target: "peak_day", wanted: 60, achieved: 58, lever: "network.network_beta", value: 1.3, runs: 3 };
+    const peakRuns = FIXTURE.runs.map((r, i) => (i === 0 ? { ...r, stats: { ...r.stats, fit: peak } } : r));
+    const peakRows = composeReport({ ...FIXTURE, runs: peakRuns }, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (peakRows.kind !== "keyValues") throw new Error("kv");
+    expect(peakRows.items.map(([label]) => label)).not.toContain("Fitted to");                    // only the latest run's fit is the report's
+    const plain = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (plain.kind !== "keyValues") throw new Error("kv");
+    expect(plain.items.map(([label]) => label)).not.toContain("Fitted to");
+  });
+});

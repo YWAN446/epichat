@@ -123,6 +123,7 @@ export function parameterRows(p: SimParams): [string, string][] {
   return [
     ["R₀ (approx.)", approxR0(p).toFixed(1)],
     ["Transmission rate (β)", fmtValue(d.beta)],
+    ...(p.run.fit ? row("Fitted to", `${fitText(p.run.fit.target, p.run.fit.value)} by moving ${LEVER_LABELS[p.run.fit.lever] ?? p.run.fit.lever}`) : []),
     ...(p.network.network_type === "random" ? row("Contacts per day", fmtValue(p.network.n_contacts)) : []),
     ["Contact network", networkLabel(p.network)],
     ...(p.network.network_type === "random" && p.network.contacts_dist === "poisson" ? row("Contacts distribution", "Poisson") : []),
@@ -171,13 +172,74 @@ export function effectiveParameterRows(p: SimParams): [string, string][] {
   });
 }
 
-/** One line per intervention: "Vaccination: 72% coverage from day 60", "Treatment: 100% coverage, capacity 252 agents", "Seasonality: amplitude 0.3, shift 0". */
+const FIT_TARGET_LABELS: Record<string, string> = { attack_rate: "attack rate", peak_day: "peak day", peak_infections: "peak infections" };
+const LEVER_LABELS: Record<string, string> = { "disease.beta": "the transmission rate", "network.network_beta": "the network multiplier" };
+const LEVER_NAMES: Record<string, string> = { beta: "Transmission rate", network_beta: "Network multiplier" };
+const LAYER_WORDS: Record<string, string> = { all: "All", household: "Household", school: "School", work: "Workplace", community: "Community" };
+
+/** A fit outcome in its unit: "30%" for an attack rate, "60" for a peak day, "500 agents" for a peak size (Part 2, 7.7). */
+export function fitValueText(target: string, value: number): string {
+  if (target === "attack_rate") return formatQuantity(value, "fraction");
+  if (target === "peak_day") return fmtValue(value);
+  return `${commaInt(value)} agents`;
+}
+
+/** "attack rate 30%", "peak day 60", "peak infections 500 agents". */
+export function fitText(target: string, value: number): string {
+  return `${FIT_TARGET_LABELS[target] ?? words(target).toLowerCase()} ${fitValueText(target, value)}`;
+}
+
+/** " from day 30" (open), " on day 0" (one day) or ", days 10–40" (a window), as the suffix of an intervention line. */
+function windowText(start: number, end: number | null): string {
+  if (end === null) return ` from day ${fmtValue(start)}`;
+  return end === start ? ` on day ${fmtValue(start)}` : `, days ${fmtValue(start)}–${fmtValue(end)}`;
+}
+
+function agesText(min: number | null, max: number | null): string {
+  if (min !== null && max !== null) return `ages ${fmtValue(min)}–${fmtValue(max)}`;
+  return min !== null ? `ages ${fmtValue(min)} and over` : `ages under ${fmtValue(max)}`;
+}
+
+/** "from day 30 to day 72", or "from day 30" when the reduction runs to the end. */
+function spanText(start: number, end: number | null): string {
+  return end === null ? `from day ${fmtValue(start)}` : `from day ${fmtValue(start)} to day ${fmtValue(end)}`;
+}
+
+/**
+ * One line per intervention (Part 2, 7.1): "Vaccination campaign: 70% coverage, days 10–40, efficacy 80%, ages 5–17, protection 180 days",
+ * "Treatment: 100% coverage, capacity 20 agents, after 3 days, efficacy 70%, half transmissibility while waiting, symptomatic only",
+ * "School contacts reduced by 100% from day 30 to day 72", "Transmission reduced by 30% from day 0 to day 90", "Seasonality: amplitude 0.3, shift 0".
+ */
 export function interventionLines(p: SimParams): string[] {
   return p.interventions.map((i) => {
     const coverage = i.coverage === null ? "coverage not set" : `${formatQuantity(i.coverage, "fraction")} coverage`;
-    // A day-0 vaccine is disease.initial_immune_frac after validation (spec 18), so a listed vaccine always has a start day.
-    if (i.type === "vaccine") return `Vaccination: ${coverage} from day ${fmtValue(i.start_day)}`;
-    if (i.type === "treatment") return `Treatment: ${coverage}, ${i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} agents`}`;
+    const efficacy = i.efficacy < 1 ? [`efficacy ${formatQuantity(i.efficacy, "fraction")}`] : [];
+    if (i.type === "vaccine") {
+      // A day-0 vaccine at full efficacy is disease.initial_immune_frac after validation (spec 18); a listed one has a window or a partial efficacy.
+      const head = `Vaccination${i.kind === "campaign" ? " campaign" : ""}: ${coverage}${windowText(i.start_day, i.end_day)}`;
+      const rest = [
+        ...efficacy,
+        ...(i.age_min !== null || i.age_max !== null ? [agesText(i.age_min, i.age_max)] : []),
+        ...(i.protection_days !== null ? [`protection ${formatQuantity(i.protection_days, "days")}`] : []),
+        ...(i.leaky ? [] : ["all-or-nothing"]),
+      ];
+      return [head, ...rest].join(", ");
+    }
+    if (i.type === "treatment") {
+      const waiting = i.rel_trans_treated < 1 ? [`${i.rel_trans_treated === 0.5 ? "half" : `×${fmtValue(i.rel_trans_treated)}`} transmissibility while waiting`] : [];
+      const parts = [
+        `Treatment: ${coverage}`,
+        i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} agents`,
+        ...(i.delay_days > 0 ? [`after ${formatQuantity(i.delay_days, "days")}`] : []),
+        ...efficacy,
+        ...waiting,
+        ...(i.symptomatic_only ? ["symptomatic only"] : []),
+      ];
+      const window = i.start_day > 0 || i.end_day !== null ? windowText(i.start_day, i.end_day).replace(/^, /, "").trim() : "";
+      return window ? `${parts.join(", ")}, ${window}` : parts.join(", ");
+    }
+    if (i.type === "contact_reduction") return `${LAYER_WORDS[i.layer] ?? words(i.layer)} contacts reduced by ${formatQuantity(i.scale, "fraction")} ${spanText(i.start_day, i.end_day)}`;
+    if (i.type === "transmission_reduction") return `Transmission reduced by ${formatQuantity(i.scale, "fraction")} ${spanText(i.start_day, i.end_day)}`;
     return `Seasonality: amplitude ${fmtValue(i.scale)}, shift ${fmtValue(i.shift)}`;
   });
 }
@@ -191,7 +253,7 @@ export function formatRange(min: number, max: number, unit?: string): string {
   return `${plain(min)}–${plain(max)} ${unit}`;
 }
 
-type FieldSpec = { label: string; unit?: string; kind?: "percent_of_one" | "age" | "network" | "contacts" | "age_source" };
+type FieldSpec = { label: string; unit?: string; kind?: "percent_of_one" | "age" | "network" | "contacts" | "age_source" | "fit" | "interventions" | "intervention_keys" };
 
 /** WHO routine-immunization indicators, by the prefix of the field the adapter names. */
 const VACCINES: Record<string, string> = {
@@ -226,6 +288,10 @@ const FIELDS: Record<string, FieldSpec> = {
   applied_treatment_capacity: { label: "Treatment capacity applied", unit: "agents" },
   uhc_coverage: { label: "UHC service coverage index", unit: "of 100" },
   applied_vaccine_coverage: { label: "Vaccine coverage applied", kind: "percent_of_one" },
+  applied_vaccine_efficacy: { label: "Vaccine efficacy applied", kind: "percent_of_one" },
+  fit: { label: "Fit", kind: "fit" },
+  interventions: { label: "Interventions set", kind: "interventions" },
+  remove_interventions: { label: "Interventions removed", kind: "intervention_keys" },
   tb_incidence: { label: "TB incidence", unit: "per 100,000 per year" },
   malaria_incidence: { label: "Malaria incidence", unit: "per 1,000 at risk per year" },
   hiv_prevalence: { label: "HIV prevalence" },
@@ -240,12 +306,31 @@ function ageStructure(value: unknown): string {
     .join(", ");
 }
 
+/** "contact reduction (school)" for "contact_reduction:school" or an entry with a layer; "vaccine" otherwise. */
+function interventionName(type: string, layer?: unknown): string {
+  const name = type.replace(/_/g, " ");
+  return layer && layer !== "all" ? `${name} (${layer})` : name;
+}
+
+function fitFieldText(value: unknown): string {
+  if (value === null || value === undefined) return "cleared";
+  const f = value as { target?: string; value?: number; value_in_agents?: number };
+  if (typeof f.target !== "string" || typeof f.value !== "number") return fmtValue(value);
+  if (typeof f.value_in_agents === "number") return `${FIT_TARGET_LABELS[f.target] ?? f.target} ${commaInt(f.value)} people (${commaInt(f.value_in_agents)} agents)`;
+  return fitText(f.target, f.value);
+}
+
 /** A label and a readable value for a field a data tool applied; unknown fields fall back to the key in words. */
 export function describeField(key: string, value: unknown): { label: string; value: string } {
   const vaccine = /^([a-z0-9]+)_coverage$/.exec(key);
   if (vaccine && VACCINES[vaccine[1]]) return { label: `${VACCINES[vaccine[1]]} coverage`, value: `${fmtValue(value)}%` };
+  const fitted = /^(\w+)_fitted_to_(\w+)$/.exec(key);
+  if (fitted) return { label: `${LEVER_NAMES[fitted[1]] ?? words(fitted[1])} fitted to ${FIT_TARGET_LABELS[fitted[2]] ?? words(fitted[2]).toLowerCase()}`, value: fmtValue(value) };
   const spec = FIELDS[key];
   if (!spec) return { label: words(key), value: fmtValue(value) };
+  if (spec.kind === "fit") return { label: spec.label, value: fitFieldText(value) };
+  if (spec.kind === "interventions" && Array.isArray(value)) return { label: spec.label, value: value.map((i) => interventionName(String((i as { type?: unknown })?.type ?? "?"), (i as { layer?: unknown })?.layer)).join(", ") };
+  if (spec.kind === "intervention_keys" && Array.isArray(value)) return { label: spec.label, value: value.map((k) => { const [type, layer] = String(k).split(":"); return interventionName(type, layer); }).join(", ") };
   if (spec.kind === "age") return { label: spec.label, value: ageStructure(value) };
   if (spec.kind === "network") return { label: spec.label, value: String(value).replace(/_/g, "-") };
   if (spec.kind === "contacts") return { label: spec.label, value: contactsSourceLabel(String(value)) };

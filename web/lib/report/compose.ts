@@ -3,7 +3,7 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { EFFECTIVE_PARAM_PATHS, SOURCE_LABELS, configurationRows, countryName, describeField, effectiveParameterLabel, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { EFFECTIVE_PARAM_PATHS, SOURCE_LABELS, configurationRows, countryName, describeField, effectiveParameterLabel, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
 import { DOCUMENT_VERSION, SECTION_HEADINGS, figureLine, narrativeBlocks, type ReportBlock, type ReportDocument, type ReportNarrative, type ReportSection, type SectionId } from "@/lib/report/document";
@@ -115,6 +115,12 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
     // Part 2, 5.6: the latest run's measured R0 (the day-0 seeds' mean secondary infections) beside the configured one.
     const measured = [...runs].reverse().find((r) => typeof r.stats.r0_measured === "number");
     if (measured) rows.splice(rows.findIndex(([label]) => label.startsWith("R₀")) + 1, 0, ["R₀ measured", measured.stats.r0_measured!.toFixed(1)]);
+    // Part 2, 7.7: the latest run's fit, after the R0 rows: what was asked for, what the search reached, in how many runs.
+    const fit = runs.at(-1)?.stats.fit;
+    if (fit) {
+      const after = rows.map(([label]) => label.startsWith("R₀")).lastIndexOf(true) + 1;
+      rows.splice(after, 0, ["Fitted to", `${fitText(fit.target, fit.wanted)} (reached ${fitValueText(fit.target, fit.achieved)} in ${fit.runs} runs)`]);
+    }
     blocks.push({ kind: "keyValues", items: rows });
   }
   if (scenario.dataSources.length > 0) {
