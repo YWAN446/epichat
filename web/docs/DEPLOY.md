@@ -574,6 +574,14 @@ Local baseline (Python 3.12, Starsim 3.7.2 through `run_params`, one core,
 cold numba cache); 100k agents 1 year 4.8 s wall. The template pipeline on
 Starsim 3.3 (2026-10-08) took 1.5 s CPU for 10k and 11 s for 100k.
 
+Networks (sim-parameters Part 2; local, Python 3.12, one core, 2026-10-13; 10k
+agents, 1 year, R0 2.5, through `run_replicates`): random 4.2 s; age-structured
+5.3 s; hybrid 7.0 s, and 9.8 s with the pilot that calibrates beta to the
+measured R0 (the default on the hybrid network). The hybrid network builds four
+edge sets, so a 10k-agent year costs about 1.7× the random net's, 2.3× with the
+pilot. Owner: after the deploy, time a hybrid scenario through the binding as in
+step 4 and add the row to the table above.
+
 **Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
 Active CPU hours a month and pauses the whole project for the rest of the
 30-day window when exceeded. During the study check Usage > Active CPU

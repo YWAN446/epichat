@@ -256,9 +256,11 @@ Households are static clusters that saturate, so no closed form gives the
 exact R0 Part 1 has for the other two networks. Two numbers:
 
 - An approximate R0 for calibration: `p × D_eff × asymp_factor × Σ_l beta_l × c_l`,
-  with `c_l` the population-mean daily contacts of layer `l`: household size
-  minus one for households, the layer's contacts times the share of agents in
-  its age range for schools and workplaces, the community contacts as given.
+  with `c_l` the agent-weighted mean daily contacts of layer `l`: the household
+  size itself for households (a member of a Poisson(λ) household has λ other
+  members on average, the agent-weighted mean of size − 1), the layer's contacts
+  times the share of agents in its age range for schools and workplaces, the
+  community contacts as given.
   `calibrate_beta` inverts it; the run reports `approximate: true`.
 - The measured R0 of 5.6, which the agent quotes.
 
@@ -266,11 +268,13 @@ exact R0 Part 1 has for the other two networks. Two numbers:
 
 After every run the builder reads Starsim's infection log (seeds have source
 −1) and reports `stats.r0_measured`: the mean number of secondary infections
-caused by the day-0 seeds, null when there were none or when nobody was
-infected. It is population-free, so it is the same in agent and people units.
+caused by the day-0 seeds; null when there were none, 0 when they infected
+nobody, and null on the age-structured network, whose `MixingPools` record no
+per-agent sources (the exact formula is checked there by the per-group final
+sizes, not the log). It is population-free, so it is the same in agent and people units.
 With replicates it is the representative's value and the bands carry nothing
-for it. On the random and age-structured networks it checks the exact
-formula; on the hybrid network it is the number that matters. The run payload
+for it. On the random network it checks the exact formula; on the hybrid
+network it is the number that matters. The run payload
 carries it beside `approx_r0`, and the report's Parameters section shows
 "R₀ measured".
 
@@ -283,7 +287,11 @@ and repeats until the measured value is within 5% of the target or after
 three corrections; the real run then uses the corrected beta. The pilot is
 short: `min(sim days, 4 × (latent + infectious mean days))`, since the seeds'
 secondary infections are complete well within that window, and it uses the
-first replicate's seed. `run.calibrate_r0` (bool, default true, advanced)
+first replicate's seed. It is seeded with at least 300 day-0 infections (2% of
+the agents when that is fewer, never under 20), so the measurement's standard
+error stays near 5%, and it drops the scenario's interventions and initial
+immunity, since an R0 is measured in a susceptible population. The child
+returns `effective_params` with the corrected beta, which the service adopts. `run.calibrate_r0` (bool, default true, advanced)
 switches it off; on the exact networks nothing runs. `effective_params`
 carries the corrected beta; `stats.r0_calibration` reports
 `{target, measured, corrections}`; the run payload's `applied` notes
@@ -297,7 +305,7 @@ Two new rules in `epichat/sim/diagnostics.py`, thresholds as named constants:
 | id | Severity | Trigger | Levers |
 |---|---|---|---|
 | `well_mixed` | info | random network, no contact reduction, `R_eff ≥ 2`, attack rate above 0.7 | `network.network_type` to `hybrid` (rationale: with limited, repeated contacts the final size is lower than under daily random mixing); `network.contact_duration_days` to 7 |
-| `r0_gap` | info | `r0_measured` is not null and differs from `approx_r0` by more than 25% | none when the run was calibrated by measurement (5.7, the gap is closed by construction) or the user switched the calibration off (the measured value is quoted); on the exact networks, the beta recheck of Part 1 |
+| `r0_gap` | info | `r0_measured` is not null and differs from R_eff (`approx_r0 × (1 − initial_immune_frac)`, what the seeds can infect) by more than 25%, or by more than three standard errors of the measured mean (`3 × sqrt(R_eff / seeds) / R_eff`) when that is larger | none when the run was calibrated by measurement (5.7, the gap is closed by construction) or the user switched the calibration off (the measured value is quoted); on the exact networks, the beta recheck of Part 1 |
 
 ### 5.9 Agent and user
 
@@ -328,9 +336,11 @@ uniform ages within bands as today) or `default`.
 ### 6.2 Births and deaths
 
 `demographics.birth_rate` stays the crude rate for the first year and the
-override. For runs longer than a year with a known country the builder passes
-UN WPP's projected crude birth rates by year (bundled, 2024 to 2050) to
-`Births`. `demographics.death_rate` stays the crude rate (decision 4);
+override. For runs longer than a year with a known country the builder follows
+UN WPP's projected crude birth rates by year (bundled, 2020 to 2050) after the
+first year, which keeps the configured rate: a `Births` subclass switches the
+rate at each sim year, since the sims run on numeric days and Starsim's
+calendar-year lookup does not apply. `demographics.death_rate` stays the crude rate (decision 4);
 age-specific mortality is listed under section 15 for a later round. Aging is
 on when demographics are on, as Starsim does.
 
