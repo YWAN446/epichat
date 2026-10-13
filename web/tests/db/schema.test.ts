@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { PGlite } from "@electric-sql/pglite";
 import { beforeEach, describe, expect, it } from "vitest";
 import { STEP_EVENT_KINDS } from "@/lib/enums";
@@ -154,5 +155,23 @@ describe("runs", () => {
     expect(rows[0].diagnostics).toEqual([{ id: "unfinished", severity: "warning", title: "t", evidence: {}, levers: [] }]);
     const { rows: plain } = await db.query<{ diagnostics: unknown }>("insert into runs (user_id, params) values ($1, '{}'::jsonb) returning diagnostics", [ALICE]);
     expect(plain[0].diagnostics).toEqual([]);
+  });
+});
+
+describe("the runbook's diagnostics queries", () => {
+  it("run as written against the step events the handler writes", async () => {
+    const doc = readFileSync("docs/DEPLOY.md", "utf8");
+    const block = doc.split("**Diagnostics.**")[1].split("A rule that fires")[0];
+    const sql = block.split("\n").filter((line) => /^ {4,}\S/.test(line) && !line.trim().startsWith("--")).map((line) => line.trim()).join(" ");
+    const [fired, taken] = sql.split(";").map((s) => s.trim()).filter(Boolean);
+    const meta = (m: Record<string, unknown>) => JSON.stringify(m);
+    await db.query(
+      "insert into step_events (user_id, kind, meta) values ($1, 'diagnostic_shown', $2::jsonb), ($1, 'diagnostic_shown', $3::jsonb), ($1, 'option_chosen', $4::jsonb)",
+      [ALICE, meta({ run_id: "r1", ids: "unfinished,sharp_curve" }), meta({ run_id: "r2", ids: "unfinished" }), meta({ run_id: "r1", diagnostic_id: "unfinished", patch: "{}" })],
+    );
+    const { rows: firedRows } = await db.query<{ rule: string; count: string | number }>(fired);
+    expect(firedRows.map((r) => [r.rule, Number(r.count)])).toEqual([["unfinished", 2], ["sharp_curve", 1]]);
+    const { rows: takenRows } = await db.query<{ id: string; count: string | number }>(taken);
+    expect(takenRows.map((r) => [r.id, Number(r.count)])).toEqual([["unfinished", 1]]);
   });
 });

@@ -523,9 +523,9 @@ evidence they report is in agents, not people. Tune them from what the pilot
 recorded:
 
     -- how often each rule fired
-    select id, count(*) from step_events, jsonb_array_elements_text(
-      to_jsonb(string_to_array(meta->>'ids', ','))) as id
-    where kind = 'diagnostic_shown' group by id order by 2 desc;
+    select d.rule, count(*) from step_events e,
+      unnest(string_to_array(e.meta->>'ids', ',')) as d(rule)
+    where e.kind = 'diagnostic_shown' group by d.rule order by 2 desc;
     -- how often each rule's option was taken
     select meta->>'diagnostic_id' as id, count(*) from step_events
     where kind = 'option_chosen' group by 1 order by 2 desc;

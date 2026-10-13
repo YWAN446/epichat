@@ -39,7 +39,7 @@ describe("deployment files", () => {
     expect(doc).toContain("carries `diagnostics`");
     expect(doc).toContain("**Diagnostics.**");
     expect(doc).toContain("epichat/sim/diagnostics.py");
-    expect(doc).toContain("jsonb_array_elements_text");
+    expect(doc).toContain("unnest(string_to_array");
   });
 
   it("CI runs the web checks", () => {
