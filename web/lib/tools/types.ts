@@ -134,7 +134,7 @@ export type ToolDeps = {
   /** The scenario's latest successful run (this turn's included), for the comparison and the option matching; null when there is none or the read failed. */
   previousRun: () => Promise<PreviousRun | null>;
   /** The next configuration applied a diagnostic's lever (spec 11); the handler records option_chosen. */
-  onOptionChosen: (runId: string, diagnosticId: string, patch: Record<string, unknown>) => void;
+  onOptionChosen: (runId: string, diagnosticId: string, patch: Record<string, unknown>, interventions?: Record<string, unknown>[]) => void;
   /** The disease database as the tools read it; tests substitute entries (Part 2, 7.4: the vaccine efficacy path). */
   lookupDisease?: (name: string) => DiseaseEntry | null;
   reports: ReportDeps;

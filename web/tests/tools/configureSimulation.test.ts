@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { approxR0, getVaccine } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
+import type { PreviousRun } from "@/lib/db/runs";
 import { emptyScenario } from "@/lib/tools/types";
 import { makeDeps, params } from "./helpers";
 
@@ -192,7 +193,7 @@ describe("configure_simulation: the spec's field names, advanced and changed", (
       [{ "disease.dur_inf.mean_days": 5000 }, "CONFIG ERROR: disease.dur_inf.mean_days must be between 0.5 and 365 days"],
       [{ "disease.dur_inf.dist": "normal" }, "CONFIG ERROR: disease.dur_inf.dist must be one of constant, lognormal, gamma"],
       [{ "demographics.use_demographics": "yes" }, "CONFIG ERROR: demographics.use_demographics must be true or false"],
-      [{ "interventions[].coverage": 0.5 }, "CONFIG ERROR: interventions[].coverage is set through the vaccine, treatment and seasonality fields, not through advanced"],
+      [{ "interventions[].coverage": 0.5 }, "CONFIG ERROR: interventions[].coverage is set through configure_simulation's interventions field, not through advanced"],
       [{ "disease.dur_inf.mean_days": null }, "CONFIG ERROR: disease.dur_inf.mean_days cannot be unset"],
       [{ "run.n_agents": 20000, "disease.seed.mode": "count", "disease.seed.value": 50000 }, "schema"],
     ];
@@ -428,5 +429,58 @@ describe("configure_simulation and the limits on spread (follow-up spec 4.5, 5.5
     expect(day.content).toContain("peak_day can be fitted with disease.beta or network.network_beta");
     await run(deps, { fit: { target: "attack_rate", value: 0.3, lever: "disease.rel_sus_cv" } });
     expect(deps.scenario.params!.run.fit).toEqual({ target: "attack_rate", value: 0.3, lever: "disease.rel_sus_cv" });
+  });
+});
+
+describe("configure_simulation and a lever that carries entries (follow-up spec 7.5)", () => {
+  const closure = { type: "contact_reduction", layer: "school", scale: 1, start_day: 20, end_day: 62 };
+  const whatIf = { id: "what_if", severity: "info" as const, title: "Interventions to try", evidence: {}, levers: [
+    { patch: {}, current: {}, direction: "change" as const, rationale: "r", basis: "rule" as const, interventions: [closure], label: "Close schools from day 20 for six weeks and rerun" },
+    { patch: {}, current: {}, direction: "change" as const, rationale: "r", basis: "rule" as const, interventions: [{ type: "transmission_reduction", scale: 0.2, start_day: 20, end_day: 110 }], label: "Add masks" },
+  ] };
+  const previous = (diagnostics: unknown[]) => ({
+    id: "run-7", effectiveParams: params({}), stats: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 },
+    statsAgents: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 }, popScale: 1, diagnostics,
+  }) as unknown as PreviousRun;
+
+  it("records the lever when its entries were applied, and not when something else was", async () => {
+    const deps = makeDeps({ previousRun: previous([whatIf]) });
+    await run(deps, { disease: "measles", r0: 3, network_type: "hybrid" });
+    deps.scenario.hasRun = true;
+    await run(deps, { interventions: [closure] });
+    expect(deps.options).toEqual([{ runId: "run-7", diagnosticId: "what_if", patch: {}, interventions: [closure] }]);
+    deps.options.length = 0;
+    await run(deps, { interventions: [{ ...closure, scale: 0.5 }] });                      // a different size is the user's own change
+    await run(deps, { interventions: [{ type: "contact_reduction", layer: "community", scale: 1, start_day: 20, end_day: 62 }] });   // another layer
+    expect(deps.options).toEqual([]);
+    await run(deps, { interventions: [closure] });                                         // back to the lever's entry: taken again
+    expect(deps.options).toEqual([{ runId: "run-7", diagnosticId: "what_if", patch: {}, interventions: [closure] }]);
+    deps.options.length = 0;
+    await run(deps, { n_agents: 5000 });                                                   // the entry is there, but this call did not touch the interventions
+    expect(deps.options).toEqual([]);
+  });
+
+  it("needs the patch and the entries of a lever that has both", async () => {
+    const both = { id: "x", severity: "info" as const, title: "t", evidence: {}, levers: [
+      { patch: { "network.network_type": "hybrid" }, current: {}, direction: "change" as const, rationale: "r", basis: "rule" as const, interventions: [closure] }] };
+    const deps = makeDeps({ previousRun: previous([both]) });
+    await run(deps, { disease: "measles", r0: 3 });
+    deps.scenario.hasRun = true;
+    await run(deps, { network_type: "hybrid" });                                           // the patch alone
+    expect(deps.options).toEqual([]);
+    await run(deps, { network_type: "random" });
+    await run(deps, { network_type: "hybrid", interventions: [closure] });
+    expect(deps.options).toEqual([{ runId: "run-7", diagnosticId: "x", patch: { "network.network_type": "hybrid" }, interventions: [closure] }]);
+  });
+
+  it("still matches a stored lever without the new fields, and never a lever with nothing in it", async () => {
+    const stored = { id: "early_fadeout", severity: "warning" as const, title: "t", evidence: {}, levers: [
+      { patch: {}, current: {}, direction: "change" as const, rationale: "keep it", basis: "rule" as const },
+      { patch: { "run.n_replicates": 5 }, current: { "run.n_replicates": 1 }, direction: "increase" as const, rationale: "r", basis: "rule" as const }] };
+    const deps = makeDeps({ previousRun: previous([stored]) });
+    await run(deps, { disease: "measles", r0: 3 });
+    deps.scenario.hasRun = true;
+    await run(deps, { advanced: { "run.n_replicates": 5 } });
+    expect(deps.options).toEqual([{ runId: "run-7", diagnosticId: "early_fadeout", patch: { "run.n_replicates": 5 } }]);
   });
 });

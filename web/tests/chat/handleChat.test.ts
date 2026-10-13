@@ -597,4 +597,17 @@ describe("golden flows: the sim-parameters cases of spec section 1 (evals/golden
     expect(payload.compare?.changed).toEqual(expect.arrayContaining([{ path: "disease.seed.mode", from: "fraction", to: "count" }, { path: "disease.seed.value", from: 0.01, to: 50 }]));
     expect(payload.compare?.stats_delta.total_infected).toBe(STATS.total_infected - 15);
   });
+
+  it("a what_if lever taken through the interventions field is recorded with its entries (follow-up spec 7.5)", async () => {
+    const masks = { type: "transmission_reduction", scale: 0.2, start_day: 20, end_day: 110 };
+    const label = "Add masks (20% less transmission) from day 20 for 90 days and rerun";
+    const diagnostics = [{ id: "what_if", severity: "info" as const, title: "Interventions to try", evidence: { anchor_day: 20, attack_rate: 0.86 }, levers: [
+      { patch: {}, current: {}, direction: "change" as const, rationale: "Masks; the size is illustrative.", basis: "rule" as const, interventions: [masks], label }] }];
+    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ n_agents: 10000 }), stats: STATS, statsAgents: STATS, popScale: 1, diagnostics };
+    const h = setup([{ message: message([toolUse("tu_c", "configure_simulation", { interventions: [masks] })], "tool_use") }, { message: message([textBlock("Masks added.")]) }],
+      { history: HISTORY, scenario: { ...configured(), hasRun: true, stage: "interpret", stageReached: "interpret" }, previous });
+    await h.run({ conversationId: CONVERSATION, text: label });
+    expect(h.finished[0].step_events.find((e) => e.kind === "option_chosen")).toMatchObject({ meta: { run_id: "run-1", diagnostic_id: "what_if", patch: "{}", interventions: JSON.stringify([masks]) } });
+    expect(h.finished[0].scenario).toMatchObject({ params: { interventions: [{ type: "transmission_reduction", scale: 0.2, start_day: 20, end_day: 110 }] } });
+  });
 });

@@ -13,7 +13,7 @@ export function applyAdvanced(base: Obj, patch: Record<string, unknown>): string
   const model = String(patch["disease.model"] ?? getPath(base, "disease.model") ?? "sir");
   const entries = Object.entries(patch);
   for (const [path, value] of entries) {
-    if (path.startsWith("interventions[]")) return `${path} is set through the vaccine, treatment and seasonality fields, not through advanced`;
+    if (path.startsWith("interventions[]")) return `${path} is set through configure_simulation's interventions field, not through advanced`;
     const spec = specFor(path);
     if (!spec) return `unknown parameter path "${path}"; call describe_parameters for the list`;
     if (!appliesTo(spec, model)) return `${path} does not apply to the ${model} model (it applies to ${spec.models.join(", ")})`;

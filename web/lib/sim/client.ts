@@ -11,13 +11,17 @@ import type { SimParams } from "./params";
 export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number; seeds_day0?: number; r0_measured?: number | null; r0_calibration?: { target: number; measured: number | null; corrections: number; se?: number | null; reached?: boolean } | null; fit?: { target: string; wanted: number; achieved: number; lever: string; value: number; runs: number } | null; behavior?: { min_factor: number; min_day: number } | null };
 /** Spec 8.7: the service's replicate block, scaled to the population like stats, bands thinned like the series. */
 export type Replicates = { n: number; seeds: number[]; representative: number; stats: SimStats[]; bands: Record<string, { p10: number[]; p90: number[] }> };
-/** Spec 10: one suggested change, a patch of registry paths applied together. */
+/** Spec 10: one suggested change, a patch of registry paths applied together; since the follow-up it may carry intervention entries too. */
 export type Lever = {
   patch: Record<string, unknown>;
   current: Record<string, unknown>;
   direction: "increase" | "decrease" | "change";
   rationale: string;
   basis: "disease_db" | "rule" | "user";
+  /** Follow-up spec 7.1: intervention entries for configure_simulation's interventions field; absent on levers stored before it. */
+  interventions?: Record<string, unknown>[];
+  /** A complete reply of at most 80 characters naming the change, for the button and the suggested reply. */
+  label?: string | null;
 };
 export type Diagnostic = { id: string; severity: "info" | "warning"; title: string; evidence: Record<string, unknown>; levers: Lever[] };
 export type RepairRecord = {

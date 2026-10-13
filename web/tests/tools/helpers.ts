@@ -21,7 +21,7 @@ export type WrittenReport = { version: number; title: string; language: string; 
 export type Remembered = { kind: string; text: string; replaces?: string };
 export type FakeDeps = ToolDeps & {
   runs: RunRecord[]; starts: number; queries: unknown[]; reportsWritten: WrittenReport[]; remembered: Remembered[];
-  simulated: { popScale: number; contextText: string; disease: string | null }[]; options: { runId: string; diagnosticId: string; patch: Record<string, unknown> }[]; previousReads: number;
+  simulated: { popScale: number; contextText: string; disease: string | null }[]; options: { runId: string; diagnosticId: string; patch: Record<string, unknown>; interventions?: Record<string, unknown>[] }[]; previousReads: number;
 };
 
 export function makeDeps(over: Partial<{
@@ -59,7 +59,7 @@ export function makeDeps(over: Partial<{
     async onRun(run) { deps.runs.push(run); return over.runId === undefined ? "run-1" : over.runId; },
     onScenarioStart() { deps.starts++; },
     async previousRun() { deps.previousReads++; return over.previousRun ?? null; },
-    onOptionChosen(runId, diagnosticId, patch) { deps.options.push({ runId, diagnosticId, patch }); },
+    onOptionChosen(runId, diagnosticId, patch, interventions) { deps.options.push({ runId, diagnosticId, patch, ...(interventions ? { interventions } : {}) }); },
     lookupDisease(name) {
       const base = lookup(name);
       const extra = over.lookup?.[name];

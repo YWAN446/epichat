@@ -215,8 +215,9 @@ export async function handleChat(
         return null;
       }
     },
-    onOptionChosen(runId, diagnosticId, patch) {
-      step("option_chosen", { tool: "configure_simulation", meta: { run_id: runId, diagnostic_id: diagnosticId, patch: JSON.stringify(patch) } });
+    onOptionChosen(runId, diagnosticId, patch, interventions) {
+      // follow-up spec 7.5: a lever that carried intervention entries is recorded with them
+      step("option_chosen", { tool: "configure_simulation", meta: { run_id: runId, diagnostic_id: diagnosticId, patch: JSON.stringify(patch), ...(interventions ? { interventions: JSON.stringify(interventions) } : {}) } });
     },
     reports: {
       runs: () => deps.runs.listForReport(conversationId, scenario.id, turnId),
