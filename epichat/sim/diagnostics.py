@@ -43,6 +43,7 @@ HIGH_VARIANCE_SPREAD = 0.5
 R0_RECHECK_TOLERANCE = 0.1           # a configured R0 within 10% of the database typical needs no recheck
 WELL_MIXED_R_EFF = 2.0               # Part 2, 5.8
 WELL_MIXED_ATTACK_RATE = 0.7
+WELL_MIXED_CV = 1.0                  # follow-up spec 7.6: the variation it offers (illustrative)
 R0_GAP = 0.25
 R0_GAP_SIGMAS = 3                    # the gap must exceed three standard errors of the measured mean when the seeds are few
 # Follow-up spec 7.2: the interventions what_if offers. Every size is illustrative until the database carries it.
@@ -362,23 +363,34 @@ def _high_variance(run: _Run) -> Diagnostic | None:
 
 
 def _well_mixed(run: _Run) -> Diagnostic | None:
-    """Part 2, 5.8: on the random network nearly everyone is eventually infected; offer the hybrid network as the structure interventions
-    act on, without promising a lower final size (at the same measured R0 the hybrid network's final size is close to the random one's;
-    the review of 2B measured 0.886 against 0.893 at R0 2.5)."""
+    """Part 2, 5.8 as broadened by follow-up spec 7.6: at the same R0 every network infects nearly everyone (the follow-up measured
+    it), so this fires on all of them and offers the two limits on spread. The hybrid network is offered on the random one only, as
+    the structure interventions act on, without promising a lower final size (at the same measured R0 the hybrid network's final
+    size is close to the random one's; the review of 2B measured 0.886 against 0.893 at R0 2.5)."""
     p = run.params
-    if p.network.network_type != "random" or run.r_eff < WELL_MIXED_R_EFF or run.n <= 0:
+    if run.r_eff < WELL_MIXED_R_EFF or run.n <= 0:
         return None
-    if any(i.type == "contact_reduction" for i in p.interventions):            # Part 2, 7.5: the contacts were already limited
-        return None
+    if p.disease.rel_sus_cv > 0 or any(i.type in ("contact_reduction", "behavior_response") for i in p.interventions):
+        return None                             # a limit on spread is already set, or the contacts were already limited (Part 2, 7.5)
     attack = run.total / run.n
     if attack <= WELL_MIXED_ATTACK_RATE:
         return None
-    levers = [Lever({"network.network_type": "hybrid"}, {"network.network_type": "random"}, "change",
-                    "On the random network everyone meets fresh contacts every day, so nearly every susceptible is eventually infected. "
-                    "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same "
-                    "measured R0 its final size is close to the random network's, so fewer infections need a lower R0, interventions, or "
-                    "far fewer community, school and workplace contacts.", "rule")]
-    return Diagnostic("well_mixed", "info", "Nearly everyone was infected: the random network mixes the whole population every day",
+    levers = [
+        Lever({"disease.rel_sus_cv": WELL_MIXED_CV}, {"disease.rel_sus_cv": p.disease.rel_sus_cv}, "change",
+              "Variation between people in susceptibility: the most susceptible are infected first, so the epidemic ends smaller at the "
+              f"same R0. A coefficient of variation of {WELL_MIXED_CV:g} is illustrative.", "rule",
+              label=f"Add variation between people (CV {WELL_MIXED_CV:g}) and rerun"),
+        Lever({}, {}, "change",
+              f"A behaviour response: transmission falls by up to {RESPONSE_SCALE:.0%} as infections rise and recovers as they fall, which "
+              "flattens the peak and removes the overshoot; the size is illustrative.", "rule",
+              interventions=[{"type": "behavior_response", "scale": RESPONSE_SCALE}], label="Let people become careful as cases rise and rerun"),
+    ]
+    if p.network.network_type == "random":
+        levers.append(Lever({"network.network_type": "hybrid"}, {"network.network_type": "random"}, "change",
+                            "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same "
+                            "measured R0 its final size is close to the random network's, so the switch alone does not lower it.", "rule",
+                            label="Switch to the hybrid network and rerun"))
+    return Diagnostic("well_mixed", "info", "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
                       {"attack_rate": round(attack, 3), "r_eff": round(run.r_eff, 2)}, levers)
 
 

@@ -262,14 +262,27 @@ def test_cfr_out_of_range_reads_the_population_weighted_fatality():
     assert one(run(no_elderly, NORMAL, total=8600, seeds=100, disease="measles"), "cfr_out_of_range").evidence["p_death"] == pytest.approx(0.001)
 
 
-def test_well_mixed_fires_on_a_random_network_run_that_infected_nearly_everyone():
-    d = one(run(params(), NORMAL, total=8600, seeds=100), "well_mixed")             # R0 2.3, attack rate 0.86 on the random network
+def test_well_mixed_fires_on_every_network_and_offers_the_two_limits_on_spread():
+    # follow-up spec 7.6: every network infects nearly everyone at the same R0, so the diagnostic no longer blames the random one
+    d = one(run(params(), NORMAL, total=8600, seeds=100), "well_mixed")             # R0 2.3, attack rate 0.86
     assert d.severity == "info" and d.evidence == {"attack_rate": 0.86, "r_eff": pytest.approx(dx.approx_r0(params()), abs=0.01)}
-    assert [l.patch for l in d.levers] == [{"network.network_type": "hybrid"}]                 # no 7-day lever: it moved the attack rate by a point
-    assert d.levers[0].basis == "rule" and "same measured R0" in d.levers[0].rationale and "final size is lower" not in d.levers[0].rationale
-    assert "well_mixed" not in ids(run(params(**{"network.network_type": "hybrid"}), NORMAL, total=8600, seeds=100))
+    assert d.title == "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic"
+    variation, response, hybrid = d.levers
+    assert variation.patch == {"disease.rel_sus_cv": 1.0} and variation.current == {"disease.rel_sus_cv": 0.0} and variation.basis == "rule"
+    assert variation.label == "Add variation between people (CV 1) and rerun" and "illustrative" in variation.rationale and variation.interventions == []
+    assert response.patch == {} and response.interventions == [{"type": "behavior_response", "scale": 0.5}]
+    assert response.label == "Let people become careful as cases rise and rerun" and "illustrative" in response.rationale
+    assert hybrid.patch == {"network.network_type": "hybrid"} and hybrid.basis == "rule" and "same measured R0" in hybrid.rationale
+    assert hybrid.label == "Switch to the hybrid network and rerun" and "final size is lower" not in hybrid.rationale
+    for lever in d.levers:
+        assert len(lever.label) <= dx.LABEL_MAX
+    for network in ("hybrid", "age_structured"):
+        other = one(run(params(**{"network.network_type": network}), NORMAL, total=8600, seeds=100), "well_mixed")
+        assert [l.label for l in other.levers] == [variation.label, response.label]            # the hybrid network is offered on the random one only
     assert "well_mixed" not in ids(run(params(), NORMAL, total=6000, seeds=100))                       # attack rate 0.6
     assert "well_mixed" not in ids(run(params(**{"disease.initial_immune_frac": 0.3}), NORMAL, total=8600, seeds=100))   # R_eff 1.6
+    assert "well_mixed" not in ids(run(params(**{"disease.rel_sus_cv": 0.5}), NORMAL, total=8600, seeds=100))            # a limit on spread is already set
+    assert "well_mixed" not in ids(run(params(interventions=[{"type": "behavior_response", "scale": 0.2}]), NORMAL, total=8600, seeds=100))
 
 
 def test_r0_gap_fires_on_a_mismatch_beyond_the_noise_and_stands_down_when_calibrated():
