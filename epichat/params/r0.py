@@ -6,7 +6,10 @@ p = network_beta × (1 − exp(−beta / 365)); an agent transmits on D_eff days
 exposed days at rel_trans_exposed (Part 2, 4.4). On the random network
 R0 = n_contacts × p × D_eff; on the age-structured MixingPools network the
 next-generation matrix is similar to the contact matrix, so R0 = rho(C) × p × D_eff
-whatever the age shares (section 18). The v1 functions in epichat/schema.py and parser.py
+whatever the age shares (section 18). On the hybrid network no closed form holds
+(Part 2, 5.5): the formula sums the layers' agent-weighted contacts weighted by
+their transmissibility, is flagged approximate, and the measured R0 (5.6) is the
+one to quote; the same flag applies to a random network with lasting contacts. The v1 functions in epichat/schema.py and parser.py
 keep the linear approximation for the frozen Python agent."""
 from __future__ import annotations
 
@@ -14,13 +17,15 @@ import math
 
 import numpy as np
 
-from .registry import LATENT_MODELS
+from .registry import CONTACT_DEFAULTS, LATENT_MODELS
 from .schema_v2 import DiseaseParams, SimParamsV2
 
-CONTACT_MATRIX = np.array([[7.0, 2.5, 0.5], [2.5, 9.0, 1.5], [0.5, 1.5, 3.5]])
+CONTACT_MATRIX = np.array(CONTACT_DEFAULTS)          # the POLYMOD-like default (Part 1, section 18); the parameters may carry another
 CONTACT_SPECTRAL_RADIUS = float(np.linalg.eigvals(CONTACT_MATRIX).real.max())
 RANDOM_LEVERS = ("network.n_contacts", "disease.dur_inf.mean_days")
 AGE_LEVERS = ("network.network_beta", "disease.dur_inf.mean_days")
+HYBRID_LEVERS = ("network.household_size", "network.community_contacts", "disease.dur_inf.mean_days")
+AGE_BANDS = ((0.0, 18.0), (18.0, 65.0), (65.0, 95.0))    # the shares path draws ages uniformly within these bands (builder)
 DEFAULT_AGE_SHARES = (0.3, 0.7, 0.0)      # Starsim's default ages are uniform on 0 to 60: no elderly
 
 
@@ -80,15 +85,47 @@ def effective_days(d: DiseaseParams) -> float:
     return infectious_days(d) * asymp_factor(d) + d.rel_trans_exposed * exposed_days(d)
 
 
+def contact_matrix(p: SimParamsV2) -> np.ndarray:
+    """The age-structured network's matrix as configured: rows source, columns target (Part 2, 5.3)."""
+    return np.array(p.network.contacts.as_rows(), dtype=float)
+
+
+def age_range_share(shares, lo: float, hi: float) -> float:
+    """The share of agents aged lo to hi (hi excluded) when ages are uniform within the three bands."""
+    total = 0.0
+    for s, (a, b) in zip(shares, AGE_BANDS):
+        total += s * max(0.0, min(hi, b) - max(lo, a)) / (b - a)
+    return total
+
+
+def hybrid_contacts(p: SimParamsV2) -> float:
+    """Part 2, 5.5: sum over the four layers of beta_l × c_l, c_l the agent-weighted mean daily contacts of layer l: the household size
+    itself for households (a member of a Poisson(λ) household has λ other members on average), the layer's contacts times the share of
+    agents in its age range for schools and workplaces, the community contacts as given."""
+    n, s, lb = p.network, age_shares(p), p.network.layer_beta
+    return (lb.household * n.household_size
+            + lb.school * n.school_contacts * age_range_share(s, n.school_age_min, n.school_age_max)
+            + lb.work * n.work_contacts * age_range_share(s, n.work_age_min, n.work_age_max)
+            + lb.community * n.community_contacts)
+
+
+def r0_is_approximate(p: SimParamsV2) -> bool:
+    """Part 2, 5.2 and 5.5: no closed form holds with lasting contacts or on the hybrid network; the measured R0 is the one to quote."""
+    return p.network.network_type == "hybrid" or p.network.contact_duration_days > 0
+
+
 def contact_scale(p: SimParamsV2) -> float:
     n = p.network
     r = p.disease.rel_sus_age.as_tuple()
+    s = age_shares(p)
+    mean_r = sum(si * ri for si, ri in zip(s, r))
     if n.network_type == "age_structured":
-        # Each target group's row of the next-generation matrix scales by its susceptibility: rho(C · diag(r)) (Part 2, 4.4).
-        contacts = float(np.linalg.eigvals(CONTACT_MATRIX @ np.diag(r)).real.max()) if r != (1.0, 1.0, 1.0) else CONTACT_SPECTRAL_RADIUS
+        # Each target group's column of the next-generation matrix scales by its susceptibility: rho(C · diag(r)) (Part 2, 4.4).
+        contacts = float(np.linalg.eigvals(contact_matrix(p) @ np.diag(r)).real.max())
+    elif n.network_type == "hybrid":
+        contacts = hybrid_contacts(p) * mean_r
     else:
-        s = age_shares(p)
-        contacts = n.n_contacts * sum(si * ri for si, ri in zip(s, r))
+        contacts = n.n_contacts * mean_r
     return contacts * n.network_beta * effective_days(p.disease)
 
 
@@ -108,7 +145,8 @@ def max_r0(p: SimParamsV2) -> float:
 def calibrate_beta(p: SimParamsV2, target_r0: float) -> float:
     scale = contact_scale(p)
     if scale <= 0 or target_r0 >= scale:
-        raise R0Unreachable(target_r0, scale, AGE_LEVERS if p.network.network_type == "age_structured" else RANDOM_LEVERS)
+        levers = {"hybrid": HYBRID_LEVERS, "age_structured": AGE_LEVERS}.get(p.network.network_type, RANDOM_LEVERS)
+        raise R0Unreachable(target_r0, scale, levers)
     return -365.0 * math.log(1.0 - target_r0 / scale)
 
 

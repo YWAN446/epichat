@@ -107,7 +107,7 @@ def random_duration(rng: random.Random, mean: float) -> dict:
 
 def random_params(rng: random.Random) -> SimParamsV2 | None:
     model = rng.choice(TYPES)
-    network_type = rng.choice(["random", "age_structured"])
+    network_type = rng.choice(["random", "age_structured", "hybrid"])
     disease = {
         "model": model,
         "beta": round(rng.uniform(0.05, 300.0), 4),
@@ -128,12 +128,26 @@ def random_params(rng: random.Random) -> SimParamsV2 | None:
     if model in LATENT and rng.random() < 0.5:
         disease["rel_trans_exposed"] = round(rng.uniform(0.0, 1.0), 2)
     network = {"network_type": network_type, "n_contacts": rng.randint(1, 30), "network_beta": rng.choice([1.0, 0.5, 2.0])}
+    network["contacts_dist"] = rng.choice(["constant", "poisson"])
+    network["contact_duration_days"] = rng.choice([0.0, 0.0, 0.0, 7.0, 30.0])
+    if network_type == "age_structured" and rng.random() < 0.6:
+        groups = ("children", "adults", "elderly")
+        network["contacts"] = {f"{s}_{t}": round(r0.CONTACT_MATRIX[i][j] * rng.uniform(0.5, 1.5), 2)
+                               for i, s in enumerate(groups) for j, t in enumerate(groups)}
+        network["contacts_source"] = rng.choice(["prem_2021:KEN", "user"])
+    if network_type == "hybrid":
+        network.update(household_size=round(rng.uniform(1.5, 6.0), 2), school_contacts=rng.randint(5, 40), work_contacts=rng.randint(5, 30),
+                       community_contacts=rng.randint(5, 40),
+                       layer_beta={k: round(rng.uniform(0.1, 4.0), 2) for k in ("household", "school", "work", "community")})
+        lo = rng.randint(4, 8)
+        network.update(school_age_min=lo, school_age_max=lo + rng.randint(10, 16), work_age_min=rng.randint(16, 25), work_age_max=rng.randint(60, 70))
     demographics = {}
     if rng.random() < 0.6:
         under = round(rng.uniform(10.0, 45.0), 1)
         over = round(rng.uniform(2.0, 20.0), 1)
-        demographics = {"age_pct_under18": under, "age_pct_over65": over, "age_pct_18_64": round(100.0 - under - over, 1)}
-    run = {"n_agents": rng.choice([1000, 5000, 10000, 50000])}
+        demographics = {"age_pct_under18": under, "age_pct_over65": over, "age_pct_18_64": round(100.0 - under - over, 1),
+                        "age_source": rng.choice(["default", "shares", "un_wpp"])}
+    run = {"n_agents": rng.choice([1000, 5000, 10000, 50000]), "calibrate_r0": rng.random() < 0.8}
     try:
         return SimParamsV2.model_validate({"schema_version": 2, "disease": disease, "network": network, "demographics": demographics, "run": run})
     except Exception:
@@ -161,6 +175,8 @@ def params_cases(rng: random.Random) -> list[dict]:
         if p.network.network_type == "random":
             switched["network"]["network_type"] = "age_structured"
             switched["demographics"].update({"age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8})
+        elif p.network.network_type == "age_structured":
+            switched["network"]["network_type"] = "hybrid"
         else:
             switched["network"]["network_type"] = "random"
         raised = p.model_dump()
@@ -175,6 +191,7 @@ def params_cases(rng: random.Random) -> list[dict]:
         cases.append({
             "input": p.model_dump(mode="json"), "approx_r0": approx, "max_r0": round(r0.max_r0(p), 9),
             "weighted_cfr": round(r0.weighted_cfr(p), 9),
+            "approximate": r0.r0_is_approximate(p),
             "calibrate": [{"target_r0": t, "beta": _calibrate(p, t)} for t in (1.5, 3.0, 15.0)],
             "recalibrate": recalibrate,
         })
@@ -272,7 +289,7 @@ def main(web_dir: Path = ROOT / "web") -> None:
     (fixtures / "adapters").mkdir(parents=True, exist_ok=True)
     for name, text in ADAPTER_FILES.items():
         (fixtures / "adapters" / name).write_text(text, encoding="utf-8", newline="")
-    payload = {"version": 3, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
+    payload = {"version": 4, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
     (fixtures / "parity.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
 

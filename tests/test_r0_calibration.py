@@ -51,11 +51,11 @@ def test_random_network_final_size_implies_the_target_r0(model, dist, target):
     assert abs(implied - target) <= 0.05 * target, (model, dist, target, implied)
 
 
-def heterogeneous_final_sizes(a: float) -> np.ndarray:
+def heterogeneous_final_sizes(a: float, matrix: np.ndarray) -> np.ndarray:
     """Section 18: z_j = 1 - exp(-sum_i C[i][j] (1 - exp(-a z_i))), network_beta 1."""
     z = np.full(3, 0.5)
     for _ in range(5000):
-        z = 1 - np.exp(-(r0.CONTACT_MATRIX.T @ (1 - np.exp(-a * z))))
+        z = 1 - np.exp(-(matrix.T @ (1 - np.exp(-a * z))))
     return z
 
 
@@ -70,7 +70,7 @@ def test_age_structured_group_attack_rates_follow_the_heterogeneous_final_size_s
     p = r0.with_r0(base, target)
     assert r0.approx_r0(p) == pytest.approx(target, rel=1e-6)
     a = r0.per_contact_prob(p.disease.beta) * r0.effective_days(p.disease)
-    predicted = heterogeneous_final_sizes(a)
+    predicted = heterogeneous_final_sizes(a, r0.contact_matrix(p))
     rates = []
     for seed in (1, 2, 3):
         sim = build_sim(p, seed=seed)
@@ -110,12 +110,12 @@ def random_heterogeneous_final_sizes(a: float, shares, r) -> np.ndarray:
     return z
 
 
-def age_structured_heterogeneous_final_sizes(a: float, r) -> np.ndarray:
+def age_structured_heterogeneous_final_sizes(a: float, r, matrix: np.ndarray) -> np.ndarray:
     """Section 18's system with each target group's susceptibility: z_j = 1 - exp(-sum_i C[i][j] (1 - exp(-a r_j z_i)))."""
     r = np.asarray(r)
     z = np.full(3, 0.5)
     for _ in range(5000):
-        z = 1 - np.exp(-np.array([(r0.CONTACT_MATRIX[:, j] * (1 - np.exp(-a * r[j] * z))).sum() for j in range(3)]))
+        z = 1 - np.exp(-np.array([(matrix[:, j] * (1 - np.exp(-a * r[j] * z))).sum() for j in range(3)]))
     return z
 
 
@@ -142,7 +142,7 @@ def test_susceptibility_by_age_keeps_the_calibration_exact(network, target):
     if network == "random":
         predicted = random_heterogeneous_final_sizes(a * p.network.n_contacts, r0.age_shares(p), r)
     else:
-        predicted = age_structured_heterogeneous_final_sizes(a, r)
+        predicted = age_structured_heterogeneous_final_sizes(a, r, r0.contact_matrix(p))
     rates = []
     for seed in (1, 2, 3):
         sim = build_sim(p, seed=seed)

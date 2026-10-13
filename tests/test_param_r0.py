@@ -165,3 +165,34 @@ def test_asymptomatic_cases_reduce_the_infectious_days_only():
                     "p_asymp": 0.8, "rel_trans_asymp": 0.0, "rel_trans_exposed": 1.0})
     assert r0.effective_days(p.disease) == pytest.approx(10 * 0.2 + 4.5)
     assert r0.approx_r0(p) == pytest.approx(p.network.n_contacts * r0.per_contact_prob(p.disease.beta) * 6.5)
+
+
+def test_hybrid_r0_sums_the_layers_weighted_by_their_transmissibility():
+    p = v2(network={"network_type": "hybrid"})          # defaults: household 2, contacts 20/16/20, betas 3/0.6/0.6/0.3, ages 6-22 and 22-65
+    shares = (0.3, 0.7, 0.0)                             # no demographics: Starsim's default ages
+    school = r0.age_range_share(shares, 6, 22)
+    work = r0.age_range_share(shares, 22, 65)
+    assert school == pytest.approx(0.3 * 12 / 18 + 0.7 * 4 / 47) and work == pytest.approx(0.7 * 43 / 47)
+    assert r0.age_range_share(shares, 0, 95) == pytest.approx(1.0) and r0.age_range_share((0.2, 0.6, 0.2), 65, 95) == pytest.approx(0.2)
+    contacts = 3.0 * 2.0 + 0.6 * 20 * school + 0.6 * 16 * work + 0.3 * 20
+    assert r0.hybrid_contacts(p) == pytest.approx(contacts)
+    assert r0.approx_r0(p) == pytest.approx(contacts * r0.per_contact_prob(p.disease.beta) * r0.effective_days(p.disease))
+    scaled = v2(network={"network_type": "hybrid", "network_beta": 2.0}, disease={"rel_sus_age": {"children": 1.5, "adults": 1.0, "elderly": 0.7}})
+    assert r0.approx_r0(scaled) == pytest.approx(2.0 * (0.3 * 1.5 + 0.7 * 1.0) * r0.approx_r0(p))
+    assert r0.r0_is_approximate(p) and not r0.r0_is_approximate(v2()) and r0.r0_is_approximate(v2(network={"contact_duration_days": 7}))
+    assert not r0.r0_is_approximate(v2(network={"network_type": "age_structured"}))
+    with pytest.raises(r0.R0Unreachable) as e:
+        r0.calibrate_beta(p, 1000.0)
+    assert e.value.levers == r0.HYBRID_LEVERS
+    assert r0.approx_r0(r0.with_r0(p, 2.5)) == pytest.approx(2.5, rel=1e-6)
+
+
+def test_the_configured_contact_matrix_drives_the_age_structured_r0():
+    base = v2(network={"network_type": "age_structured"})
+    assert np.array_equal(r0.contact_matrix(base), r0.CONTACT_MATRIX)
+    doubled = v2(network={"network_type": "age_structured", "contacts": {k: 2 * v for k, v in base.network.contacts.model_dump().items()}})
+    assert r0.approx_r0(doubled) == pytest.approx(2 * r0.approx_r0(base))
+    assert r0.max_r0(base) == pytest.approx(r0.CONTACT_SPECTRAL_RADIUS * r0.effective_days(base.disease))
+    held = r0.recalibrate_beta(doubled, r0.approx_r0(base), base)      # fetch_demographics holds the confirmed R0 across the matrix change
+    assert r0.approx_r0(held) == pytest.approx(r0.approx_r0(base), rel=1e-6) and held.disease.beta < base.disease.beta
+    assert r0.contact_matrix(v2()).shape == (3, 3)
