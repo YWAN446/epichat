@@ -88,3 +88,89 @@ def test_age_structured_without_shares_calibrates_and_runs():
     sim = build_sim(p)
     sim.run()
     assert sim.results.sir.cum_infections.values[-1] > 1000
+
+
+SHARES = {"age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8}
+MULTIPLIERS = {"children": 1.5, "adults": 1.0, "elderly": 0.7}
+
+
+def _with(p: SimParamsV2, target: float, **disease) -> SimParamsV2:
+    body = p.model_dump()
+    body["disease"].update(disease)
+    return r0.with_r0(SimParamsV2.model_validate(body), target)
+
+
+def random_heterogeneous_final_sizes(a: float, shares, r) -> np.ndarray:
+    """Random network with susceptibility by group: z_g = 1 - exp(-r_g a sum_h s_h z_h), where a is the R0 with every multiplier 1
+    (n_contacts × p × D_eff); it reduces to the homogeneous final size at r = 1, which the test above validates."""
+    shares, r = np.asarray(shares), np.asarray(r)
+    z = np.full(3, 0.5)
+    for _ in range(5000):
+        z = 1 - np.exp(-r * a * (shares @ z))
+    return z
+
+
+def age_structured_heterogeneous_final_sizes(a: float, r) -> np.ndarray:
+    """Section 18's system with each target group's susceptibility: z_j = 1 - exp(-sum_i C[i][j] (1 - exp(-a r_j z_i)))."""
+    r = np.asarray(r)
+    z = np.full(3, 0.5)
+    for _ in range(5000):
+        z = 1 - np.exp(-np.array([(r0.CONTACT_MATRIX[:, j] * (1 - np.exp(-a * r[j] * z))).sum() for j in range(3)]))
+    return z
+
+
+def group_attack_rates(sim) -> list[float]:
+    age = np.asarray(sim.people.age.values)
+    ever = ~np.asarray(sim.diseases[0].susceptible.values)
+    return [ever[age < 18].mean(), ever[(age >= 18) & (age < 65)].mean(), ever[age >= 65].mean()]
+
+
+@pytest.mark.parametrize("target", [1.5, 2.5, 4.0])
+@pytest.mark.parametrize("network", ["random", "age_structured"])
+def test_susceptibility_by_age_keeps_the_calibration_exact(network, target):
+    base = scenario("sir", "gamma", target)
+    body = base.model_dump()
+    body["network"]["network_type"] = network
+    body["demographics"].update(SHARES)
+    body["disease"]["rel_sus_age"] = MULTIPLIERS
+    p = r0.with_r0(SimParamsV2.model_validate(body), target)
+    assert r0.approx_r0(p) == pytest.approx(target, rel=1e-6)
+    # the homogeneous final size no longer applies: with susceptibility by group each group's attack rate follows the
+    # heterogeneous system of Part 1 section 18 (contacts and the calibrated beta), with its own multiplier
+    a = r0.per_contact_prob(p.disease.beta) * r0.effective_days(p.disease)
+    r = p.disease.rel_sus_age.as_tuple()
+    if network == "random":
+        predicted = random_heterogeneous_final_sizes(a * p.network.n_contacts, r0.age_shares(p), r)
+    else:
+        predicted = age_structured_heterogeneous_final_sizes(a, r)
+    rates = []
+    for seed in (1, 2, 3):
+        sim = build_sim(p, seed=seed)
+        sim.run()
+        rates.append(group_attack_rates(sim))
+    mean = np.mean(rates, axis=0)
+    assert np.all(np.abs(mean - predicted) <= 0.03), (network, target, mean, predicted)
+    if network == "random":
+        assert mean[2] < mean[1] < mean[0]          # the multipliers order the groups on a network that does not
+
+
+def test_susceptibility_by_age_without_shares_uses_the_default_ages():
+    base = scenario("sir", "gamma", 2.5)
+    p = _with(base, 2.5, rel_sus_age=MULTIPLIERS)          # no shares: children 0.3, adults 0.7, no elderly
+    totals = []
+    for seed in (1, 2, 3):
+        sim = build_sim(p, seed=seed)
+        sim.run()
+        totals.append(int(sim.results.sir.cum_infections.values[-1]) + sim.seeds_day0)
+    assert abs(implied_r0(int(np.mean(totals)), N) - 2.5) / 2.5 < 0.05
+
+
+@pytest.mark.parametrize("dist", ["constant", "gamma"])
+def test_presymptomatic_transmission_keeps_the_calibration_exact(dist):
+    p = _with(scenario("seir", dist, 2.5), 2.5, rel_trans_exposed=0.5)
+    totals = []
+    for seed in (1, 2, 3):
+        sim = build_sim(p, seed=seed)
+        sim.run()
+        totals.append(int(sim.results.seir.cum_infections.values[-1]) + sim.seeds_day0)
+    assert abs(implied_r0(int(np.mean(totals)), N) - 2.5) / 2.5 < 0.05
