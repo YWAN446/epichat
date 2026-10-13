@@ -119,3 +119,24 @@ describe("the fit in the report (Part 2, 7.7)", () => {
     expect(plain.items.map(([label]) => label)).not.toContain("Fitted to");
   });
 });
+
+describe("the measured R0 row after the pilot fix (review I2)", () => {
+  const modelled = (runs: typeof FIXTURE.runs) => {
+    const rows = composeReport({ ...FIXTURE, runs }, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (rows.kind !== "keyValues") throw new Error("kv");
+    return rows.items;
+  };
+  const last = FIXTURE.runs.length - 1;
+
+  it("never borrows an earlier run's value when the latest run's was withheld", () => {
+    const runs = FIXTURE.runs.map((r, i) => ({ ...r, stats: { ...r.stats, r0_measured: i === 0 ? 5.9 : null } }));
+    expect(modelled(runs).map(([label]) => label)).not.toContain("R₀ measured");
+  });
+
+  it("shows the pilot's measurement when the latest run was calibrated and its live value was withheld", () => {
+    const runs = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, r0_measured: null, r0_calibration: { target: 12, measured: 11.82, se: 0.55, corrections: 2, reached: true } } } : r));
+    expect(modelled(runs)).toContainEqual(["R₀ measured", "11.8"]);
+    const both = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, r0_measured: 2.44, r0_calibration: { target: 2.5, measured: 2.49, se: 0.09, corrections: 1, reached: true } } } : r));
+    expect(modelled(both)).toContainEqual(["R₀ measured", "2.4"]);                  // the live value when there is one
+  });
+});

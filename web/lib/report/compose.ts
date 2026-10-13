@@ -112,9 +112,12 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
   if (scenario.params) {
     const rows = configurationRows(configView(scenario.params, scenario.disease), approxR0(scenario.params), name);
     if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
-    // Part 2, 5.6: the latest run's measured R0 (the day-0 seeds' mean secondary infections) beside the configured one.
-    const measured = [...runs].reverse().find((r) => typeof r.stats.r0_measured === "number");
-    if (measured) rows.splice(rows.findIndex(([label]) => label.startsWith("R₀")) + 1, 0, ["R₀ measured", measured.stats.r0_measured!.toFixed(1)]);
+    // Part 2, 5.6 as amended: the latest run's measured R0 beside the configured one, never an earlier run's (a withheld value is
+    // expected at a high R0); when the live value was withheld and a pilot ran, the pilot's first-generation measurement.
+    const latest = runs.at(-1)?.stats;
+    const pilot = latest?.r0_calibration?.measured;
+    const measured = typeof latest?.r0_measured === "number" ? latest.r0_measured : typeof pilot === "number" ? pilot : null;
+    if (measured !== null) rows.splice(rows.findIndex(([label]) => label.startsWith("R₀")) + 1, 0, ["R₀ measured", measured.toFixed(1)]);
     // Part 2, 7.7: the latest run's fit, after the R0 rows: what was asked for, what the search reached, in how many runs.
     const fit = runs.at(-1)?.stats.fit;
     if (fit) {

@@ -275,7 +275,13 @@ After every run the builder reads Starsim's infection log (seeds have source
 −1) and reports `stats.r0_measured`: for each day-0 seed, the infections it
 caused in its first infectious episode (before it was infected again), without
 what it transmitted on step 0, each weighted by alive over susceptible at the
-step before, averaged over the seeds. It is null when there were no day-0
+step before, averaged over the seeds. The weight is scaled by the share of
+the non-seed agents that was susceptible before anything spread, so initial
+immunity is not counted as depletion and the value then reads the effective
+reproduction number, as 5.8's reference does. On contacts that persist (the
+hybrid layers, a contact duration above zero) leaving out step 0 reads a few
+percent low, since a contact infected on step 0 is not there to infect later;
+the pilot of 5.7 has no such approximation. It is null when there were no day-0
 seeds, 0 when they infected nobody, null on the age-structured network, whose
 `MixingPools` record no per-agent sources (the exact formula is checked there
 by the per-group final sizes, not the log), and null when the mean weight
@@ -302,9 +308,11 @@ Where the formula is approximate (the hybrid network, or a contact duration
 above zero), the child calibrates before the real run: it runs a pilot with
 the formula's beta, measures R0, corrects beta by `target / measured`, and
 repeats until the measurement is within tolerance of the target or after
-three corrections; the real run then uses the corrected beta. The pilot is
-short: `min(sim days, 4 × (latent + infectious mean days))`, and it uses the
-first replicate's seed. It drops the scenario's interventions and initial
+three corrections; the real run then uses the corrected beta. The pilot lasts
+`4 × (latent + infectious mean days)` whatever the run's own length (cut to a
+short run it stopped before its seeds had finished, and the infections it did
+not wait for were corrected into beta: ×1.33 for a 14-day run of a scenario
+that needs ×1.09), and it uses the first replicate's seed. It drops the scenario's interventions and initial
 immunity, since an R0 is measured in a susceptible population.
 
 Amended on 2026-10-13: the pilot is a first-generation experiment. Only the
@@ -312,7 +320,9 @@ day-0 seeds transmit, and not on step 0, so each seed transmits on exactly the
 steps an ordinary case would and the population is depleted by the seeds' own
 infections only; the measurement is 5.6's estimator counting every step. The
 seeds are 15% of the agents divided by the target, never under 20 nor over
-1000, which keeps the measurement's standard error near 3 to 4%. A correction
+1000, the same for every trial beta, which keeps the measurement's standard
+error near 3 to 4% from about 10,000 agents at a moderate R0 (it is larger
+with fewer agents or a high R0, which the noise rule absorbs). A correction
 is taken only when the measurement is off by more than 5% and by more than
 its own standard error; it multiplies beta by at most 2, is kept only when it
 brings the measurement nearer the target, and stops at the registry's bound
@@ -326,7 +336,9 @@ returns `effective_params` with the corrected beta, which the service adopts. `r
 switches it off; on the exact networks nothing runs. `effective_params`
 carries the corrected beta; `stats.r0_calibration` reports
 `{target, measured, se, corrections, reached}`, `reached` being false when the
-network could not be brought to the target; the run payload's `applied` notes
+network could not be brought to the target (a pilot that can measure nothing
+reports no calibration at all); the report shows the pilot's measurement as
+"R₀ measured" when the run's own value is withheld; the run payload's `applied` notes
 `beta_calibrated_by_measurement`. The agent says "beta was adjusted so the
 measured R0 matches the one you set".
 
