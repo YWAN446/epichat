@@ -4,7 +4,7 @@ scripts/export_web_data.py writes it to web/data/param_registry.json for the
 TypeScript side. Registry order is the order describe_parameters lists."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
 Module = Literal["disease", "network", "demographics", "interventions", "run"]
@@ -42,9 +42,13 @@ class ParamSpec:
     starsim_target: str
     affects: tuple[Affects, ...]
     requires: tuple[str, ...] = field(default=())
+    networks: tuple[str, ...] = field(default=())       # the network types the parameter applies on; empty means every one
 
     def applies_to(self, model: str) -> bool:
         return not self.models or model in self.models
+
+    def applies_on(self, network: str) -> bool:
+        return not self.networks or network in self.networks
 
     def as_dict(self) -> dict:
         return {
@@ -54,6 +58,7 @@ class ParamSpec:
             "choices": list(self.choices) if self.choices is not None else None,
             "models": list(self.models), "tier": self.tier, "db_field": self.db_field,
             "starsim_target": self.starsim_target, "affects": list(self.affects), "requires": list(self.requires),
+            "networks": list(self.networks),
         }
 
 
@@ -103,6 +108,12 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
                 "number", "multiplier", 1.0, (0.0, 10.0), None, (), "advanced", None,
                 "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector", ("peak", "final_size"))
       for group, label in (("children", "children (under 18)"), ("adults", "adults (18 to 64)"), ("elderly", "the elderly (65 and over)"))],
+    ParamSpec("disease.rel_sus_cv", "disease", "Variation in susceptibility",
+              "Coefficient of variation of susceptibility between people: each agent gets a personal multiplier drawn once from a gamma "
+              "distribution with mean 1. The most susceptible are infected first, so the epidemic ends smaller at the same R0 (0 means "
+              "everyone is alike; 1 takes R0 2.5 from 89% to 60% infected). An illustrative assumption unless the database carries it.",
+              "number", "coefficient of variation", 0.0, (0.0, 2.0), None, (), "advanced", None,
+              "the per-agent state rel_sus_ind, a factor of the disease's rel_sus composition", ("final_size", "peak")),
     *[ParamSpec(f"disease.p_death_age.{group}", "disease", f"Case fatality ratio, {label}",
                 f"Share of cases among {label} that die; unset means the overall p_death. An illustrative assumption until the "
                 "database carries fatality by age.",
@@ -219,8 +230,9 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("interventions[].type", "interventions", "Intervention type", "vaccine (routine or campaign, with efficacy, age range and "
               "waning), treatment (capacity-limited, with a delay and an efficacy), seasonality (a yearly cycle in transmission), "
               "contact_reduction (a layer's contacts scaled over a window: school closure, distancing), transmission_reduction (every "
-              "contact's transmissibility scaled over a window: masks).", "enum", None, None, None,
-              ("vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"), (), "core", None,
+              "contact's transmissibility scaled over a window: masks), behavior_response (transmission falls as the share infectious "
+              "rises and recovers as it falls: people being careful, not a measure).", "enum", None, None, None,
+              ("vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"), (), "core", None,
               "ss.routine_vx, TreatmentDelivery, TransmissionModifiers, ContactReduction", ("peak", "final_size", "timing")),
     ParamSpec("interventions[].coverage", "interventions", "Coverage", "Vaccine: yearly probability each susceptible person is vaccinated; "
               "treatment: share of infectious people treated each day.", "number", "fraction", None, (0.0, 1.0), None, (), "core", None,
@@ -232,7 +244,7 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               None, (1, 1_000_000), None, (), "core", None, "SimpleTreatment(max_capacity=...)", ("peak", "final_size")),
     ParamSpec("interventions[].scale", "interventions", "Scale", "Seasonality: size of the yearly cycle (0.2 means transmission moves "
               "between 80% and 120% of beta); contact_reduction and transmission_reduction: the fraction removed over the window (0.3 "
-              "keeps 70%; 1 removes everything).", "number", None, 0.2, (0.0, 1.0), None, (), "core", None,
+              "keeps 70%; 1 removes everything); behavior_response: the largest reduction.", "number", None, 0.2, (0.0, 1.0), None, (), "core", None,
               "TransmissionModifiers or ContactReduction", ("timing", "peak", "final_size")),
     ParamSpec("interventions[].shift", "interventions", "Seasonal shift", "Fraction of a year by which the cycle is shifted.", "number",
               None, 0.0, (0.0, 1.0), None, (), "advanced", None, "TransmissibilityModifiers", ("timing",)),
@@ -260,6 +272,12 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "TreatmentDelivery(rel_trans_treated=...)", ("peak", "final_size")),
     ParamSpec("interventions[].symptomatic_only", "interventions", "Treat symptomatic only", "seiar: leave asymptomatic agents untreated.",
               "bool", None, False, None, None, ("seiar",), "advanced", None, "TreatmentDelivery(symptomatic_only=...)", ("final_size",)),
+    ParamSpec("interventions[].half_prevalence", "interventions", "Half-point of the response", "behavior_response: the share of people "
+              "infectious at which half of the largest reduction applies.", "number", "fraction", 0.01, (0.0001, 0.5), None, (), "advanced",
+              None, "TransmissionModifiers", ("peak", "final_size", "timing")),
+    ParamSpec("interventions[].memory_days", "interventions", "Memory of the response", "behavior_response: the number of days over which "
+              "the share infectious is averaged.", "integer", "days", 7, (1, 90), None, (), "advanced", None, "TransmissionModifiers",
+              ("peak", "timing")),
     ParamSpec("interventions[].layer", "interventions", "Layer", "Which hybrid layer a contact reduction scales: household, school, work, "
               "community, or all; the random and age-structured networks take all only.", "enum", None, "all", None,
               ("all", "household", "school", "work", "community"), (), "core", None, "ContactReduction(layer=...)", ("peak", "final_size")),
@@ -282,9 +300,25 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("run.fit.value", "run", "Fit value", "The value to reach: a fraction for attack_rate, a day for peak_day, agents for "
               "peak_infections.", "number", None, None, (0.0, 1_000_000.0), None, (), "advanced", None, "epichat.sim.fit",
               ("peak", "final_size", "timing")),
-    ParamSpec("run.fit.lever", "run", "Fit lever", "The parameter the fit moves within its bounds: disease.beta or network.network_beta.",
-              "enum", None, "disease.beta", None, ("disease.beta", "network.network_beta"), (), "advanced", None, "epichat.sim.fit", ("peak",)),
+    ParamSpec("run.fit.lever", "run", "Fit lever", "The parameter the fit moves within its bounds: disease.beta or network.network_beta "
+              "(the outcome rises with them), or disease.rel_sus_cv or the behaviour response's scale (the attack rate and the peak fall "
+              "as they rise; R0 stays).", "enum", None, "disease.beta", None,
+              ("disease.beta", "network.network_beta", "disease.rel_sus_cv", "behavior_response.scale"), (), "advanced", None,
+              "epichat.sim.fit", ("peak",)),
 ])
+
+# Where each network parameter applies (follow-up spec, 8.2); everything else applies on every network.
+_NETWORKS: dict[str, tuple[str, ...]] = {
+    **{p: ("random",) for p in ("network.n_contacts", "network.contacts_dist", "network.contact_duration_days")},
+    **{f"network.contacts.{a}_{b}": ("age_structured",) for a in CONTACT_GROUPS for b in CONTACT_GROUPS},
+    "network.contacts_source": ("age_structured",),
+    **{p: ("hybrid",) for p in ("network.household_size", "network.school_contacts", "network.work_contacts", "network.community_contacts",
+                                "network.layer_beta.household", "network.layer_beta.school", "network.layer_beta.work",
+                                "network.layer_beta.community", "network.school_age_min", "network.school_age_max",
+                                "network.work_age_min", "network.work_age_max")},
+}
+assert set(_NETWORKS) <= {s.path for s in REGISTRY}, sorted(set(_NETWORKS) - {s.path for s in REGISTRY})
+REGISTRY = tuple(replace(s, networks=_NETWORKS.get(s.path, ())) for s in REGISTRY)
 
 REGISTRY_BY_PATH: dict[str, ParamSpec] = {s.path: s for s in REGISTRY}
 
@@ -298,4 +332,4 @@ def applicable(model: str) -> tuple[ParamSpec, ...]:
 
 
 def export() -> dict:
-    return {"version": 4, "params": [s.as_dict() for s in REGISTRY]}
+    return {"version": 5, "params": [s.as_dict() for s in REGISTRY]}

@@ -99,6 +99,7 @@ class DiseaseParams(BaseModel):
     p_asymp: float = _field("disease.p_asymp")
     rel_trans_asymp: float = _field("disease.rel_trans_asymp")
     rel_sus_age: AgeMultipliers = Field(default_factory=AgeMultipliers)
+    rel_sus_cv: float = _field("disease.rel_sus_cv")
     p_death_age: AgeFractions = Field(default_factory=AgeFractions)
     rel_trans_exposed: float = _field("disease.rel_trans_exposed")
     sis_waning: float = _field("disease.sis_waning")
@@ -218,7 +219,7 @@ class Fit(BaseModel):
     """Part 2, 7.7: one outcome the participant knows, reached by moving one lever."""
     target: Literal["attack_rate", "peak_day", "peak_infections"]
     value: float = Field(gt=0.0)
-    lever: Literal["disease.beta", "network.network_beta"] = "disease.beta"
+    lever: Literal["disease.beta", "network.network_beta", "disease.rel_sus_cv", "behavior_response.scale"] = "disease.beta"
 
     @model_validator(mode="after")
     def check_value(self) -> "Fit":
@@ -226,6 +227,8 @@ class Fit(BaseModel):
             raise ValueError("run.fit.value is a fraction for attack_rate")
         if self.target == "peak_day" and self.value < 1:
             raise ValueError("run.fit.value is a day for peak_day")
+        if self.target == "peak_day" and self.lever not in ("disease.beta", "network.network_beta"):
+            raise ValueError("run.fit.target peak_day can be fitted with disease.beta or network.network_beta, not with " + self.lever)
         return self
 
 
@@ -263,6 +266,11 @@ class SimParamsV2(BaseModel):
                 raise ValueError("a vaccine with start_day 0 and disease.initial_immune_frac were both given with different values; set one of them")
             self.disease.initial_immune_frac = coverage
             self.interventions = [i for i in self.interventions if not i.is_day0_immunity()]
+        responses = [i for i in self.interventions if i.type == "behavior_response"]
+        if len(responses) > 1:
+            raise ValueError("interventions may hold one behavior_response entry")
+        if self.run.fit is not None and self.run.fit.lever == "behavior_response.scale" and not responses:
+            raise ValueError("run.fit.lever behavior_response.scale needs a behavior_response entry in interventions")
         if self.network.network_type != "hybrid":
             for i in self.interventions:
                 if i.type == "contact_reduction" and i.layer != "all":

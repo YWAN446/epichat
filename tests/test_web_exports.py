@@ -75,7 +75,7 @@ def test_param_registry_export_shape(tmp_path):
     mod = _load("export_web_data")
     mod.main(tmp_path)
     reg = json.loads((tmp_path / "data" / "param_registry.json").read_text(encoding="utf-8"))
-    assert reg["version"] == 4 and reg["params"][0]["path"] == "disease.model"
+    assert reg["version"] == 5 and reg["params"][0]["path"] == "disease.model"
     assert len(reg["params"]) >= 40 and all(set(p) >= {"path", "bounds", "default", "tier", "models"} for p in reg["params"])
 
 

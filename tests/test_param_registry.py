@@ -73,11 +73,11 @@ def test_applicable_filters_by_model():
 
 def test_export_is_a_plain_json_document_in_registry_order():
     out = reg.export()
-    assert out["version"] == 4 and [p["path"] for p in out["params"]] == [s.path for s in reg.REGISTRY]
+    assert out["version"] == 5 and [p["path"] for p in out["params"]] == [s.path for s in reg.REGISTRY]
     text = json.dumps(out)
     assert json.loads(text) == out
     first = out["params"][0]
-    assert set(first) == {"path", "module", "label", "description", "kind", "unit", "default", "bounds", "choices", "models", "tier", "db_field", "starsim_target", "affects", "requires"}
+    assert set(first) == {"path", "module", "label", "description", "kind", "unit", "default", "bounds", "choices", "models", "tier", "db_field", "starsim_target", "affects", "requires", "networks"}
     assert first["choices"] == list(reg.MODELS) and first["models"] == []
 
 
@@ -108,7 +108,7 @@ def test_the_age_specific_leaves_and_the_exposed_transmissibility_are_registered
         assert death.default is None and death.bounds == (0.0, 1.0) and death.models == reg.DEATH_MODELS and death.tier == "advanced"
     exposed = reg.spec_for("disease.rel_trans_exposed")
     assert exposed.default == 0.0 and exposed.bounds == (0.0, 1.0) and exposed.models == reg.LATENT_MODELS
-    assert reg.export()["version"] == 4
+    assert reg.export()["version"] == 5
 
 
 def test_phase_2b_adds_the_network_demographics_and_run_leaves():
@@ -126,7 +126,7 @@ def test_phase_2b_adds_the_network_demographics_and_run_leaves():
     assert reg.spec_for("run.calibrate_r0").default is True and reg.spec_for("run.calibrate_r0").kind == "bool"
     assert "no effect on the age-structured" in reg.spec_for("network.n_contacts").description
     assert reg.CONTACT_DEFAULTS == ((7.0, 2.5, 0.5), (2.5, 9.0, 1.5), (0.5, 1.5, 3.5))
-    assert reg.export()["version"] == 4
+    assert reg.export()["version"] == 5
 
 
 def test_phase_2c_adds_the_intervention_and_fit_leaves():
@@ -135,9 +135,33 @@ def test_phase_2c_adds_the_intervention_and_fit_leaves():
               "interventions[].age_max", "interventions[].protection_days", "interventions[].delay_days", "interventions[].rel_trans_treated",
               "interventions[].symptomatic_only", "interventions[].layer", "run.fit.target", "run.fit.value", "run.fit.lever"):
         assert p in paths, p
-    assert reg.spec_for("interventions[].type").choices == ("vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction")
+    assert reg.spec_for("interventions[].type").choices == ("vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response")
     assert reg.spec_for("interventions[].layer").choices == ("all", "household", "school", "work", "community")
     assert reg.spec_for("interventions[].efficacy").bounds == (0.0, 1.0) and reg.spec_for("interventions[].efficacy").default == 1.0
     assert reg.spec_for("run.fit.target").choices == ("attack_rate", "peak_day", "peak_infections") and reg.spec_for("run.fit.lever").default == "disease.beta"
     assert "contact_reduction" in reg.spec_for("interventions[].scale").description
-    assert reg.export()["version"] == 4
+    assert reg.export()["version"] == 5
+
+
+def test_registry_version_5_carries_the_limits_on_spread_and_where_each_parameter_applies():
+    out = reg.export()
+    assert out["version"] == 5
+    by = {p["path"]: p for p in out["params"]}
+    cv = by["disease.rel_sus_cv"]
+    assert (cv["default"], cv["bounds"], cv["tier"], cv["models"]) == (0.0, [0.0, 2.0], "advanced", [])
+    assert by["interventions[].half_prevalence"]["bounds"] == [0.0001, 0.5] and by["interventions[].half_prevalence"]["default"] == 0.01
+    assert by["interventions[].memory_days"]["bounds"] == [1, 90] and by["interventions[].memory_days"]["default"] == 7
+    assert "behavior_response" in by["interventions[].type"]["choices"]
+    assert by["run.fit.lever"]["choices"] == ["disease.beta", "network.network_beta", "disease.rel_sus_cv", "behavior_response.scale"]
+    assert all("networks" in p for p in out["params"])
+    assert by["network.n_contacts"]["networks"] == ["random"] and by["network.contacts_dist"]["networks"] == ["random"]
+    assert by["network.contact_duration_days"]["networks"] == ["random"]
+    assert by["network.contacts.children_adults"]["networks"] == ["age_structured"] and by["network.contacts_source"]["networks"] == ["age_structured"]
+    for path in ("network.household_size", "network.school_contacts", "network.work_contacts", "network.community_contacts",
+                 "network.layer_beta.household", "network.layer_beta.work", "network.school_age_min", "network.work_age_max"):
+        assert by[path]["networks"] == ["hybrid"], path
+    for path in ("network.network_beta", "network.network_type", "disease.beta", "run.n_agents"):
+        assert by[path]["networks"] == [], path
+    assert reg.spec_for("network.household_size").applies_on("hybrid") and not reg.spec_for("network.household_size").applies_on("random")
+    assert reg.spec_for("disease.beta").applies_on("random")
+    assert {n for p in out["params"] for n in p["networks"]} <= {"random", "age_structured", "hybrid"}

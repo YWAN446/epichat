@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Intervention(BaseModel):
-    type: Literal["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"]
+    type: Literal["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"]
     # vaccine / treatment
     coverage: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     start_day: int = Field(default=0, ge=0)
@@ -29,6 +29,9 @@ class Intervention(BaseModel):
     shift: float = Field(default=0.0, ge=0.0, le=1.0)
     # contact reduction
     layer: Literal["all", "household", "school", "work", "community"] = "all"
+    # behaviour response (follow-up spec, 5.1): scale is the largest reduction
+    half_prevalence: float = Field(default=0.01, ge=0.0001, le=0.5)
+    memory_days: int = Field(default=7, ge=1, le=90)
 
     @model_validator(mode="before")
     @classmethod
@@ -46,6 +49,8 @@ class Intervention(BaseModel):
             raise ValueError("interventions[].end_day must not be before start_day")
         if self.age_min is not None and self.age_max is not None and self.age_min >= self.age_max:
             raise ValueError("interventions[].age_min must be below age_max")
+        if self.type == "behavior_response" and self.layer != "all":
+            raise ValueError("interventions[].layer must be all for a behavior_response")
         return self
 
     def is_v1_vaccine(self) -> bool:
@@ -70,7 +75,9 @@ class Intervention(BaseModel):
                     "treat": "treatment", "treatment_intervention": "treatment",
                     "seasonal": "seasonality",
                     "school_closure": "contact_reduction", "distancing": "contact_reduction", "contact-reduction": "contact_reduction",
-                    "masks": "transmission_reduction", "transmission-reduction": "transmission_reduction"}
+                    "masks": "transmission_reduction", "transmission-reduction": "transmission_reduction",
+                    "behaviour_response": "behavior_response", "behavior": "behavior_response", "behaviour": "behavior_response",
+                    "behavior_change": "behavior_response", "behaviour_change": "behavior_response", "awareness": "behavior_response"}
         return _aliases.get(str(v).lower(), v)
 
     @field_validator("capacity", mode="before")

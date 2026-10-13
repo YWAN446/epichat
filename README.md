@@ -444,10 +444,10 @@ they have a window and a layer.
 
 ## Interventions
 
-Five intervention types can be combined in a single simulation (`vaccine`,
-`treatment`, `seasonality`, `contact_reduction`, `transmission_reduction`): the
-CLI and the templates know the first three; the web agent takes all five,
-with the schema v2 fields marked below.
+Six intervention types can be combined in a single simulation (`vaccine`,
+`treatment`, `seasonality`, `contact_reduction`, `transmission_reduction`,
+`behavior_response`): the CLI and the templates know the first three; the web
+agent takes all six, with the schema v2 fields marked below.
 
 ### Vaccine
 
@@ -522,6 +522,25 @@ Lowers every contact's transmission over a window: `type: transmission_reduction
 with `scale` (the fraction removed), `start_day` and `end_day`.
 
 - *"Masks for the first three months"* → `{type: transmission_reduction, scale: 0.3, start_day: 0, end_day: 90}`
+
+### Behaviour response (schema v2)
+
+Transmission falls as the share of people infectious rises, and recovers as it
+falls: people being careful, not a measure: `type: behavior_response`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `scale` | float (0–1) | The largest reduction in transmission |
+| `half_prevalence` | float | The share infectious at which half of `scale` applies (default 0.01) |
+| `memory_days` | integer | Days over which the share infectious is averaged (default 7) |
+| `start_day`, `end_day` | integer | The window (`end_day` null = the run's end) |
+
+    factor = 1 − scale × P / (half_prevalence + P)      P = the recent share infectious
+
+- *"People become careful as cases rise"* → `{type: behavior_response, scale: 0.5}`
+
+It flattens the peak and removes the overshoot; because it relaxes as cases
+fall it cannot take the total below the herd immunity threshold `1 − 1/R0`.
 
 Every effect size above is an illustrative assumption unless the database
 carries it (`docs/data-review-requests.md` asks for the cited ranges).

@@ -1,5 +1,5 @@
 {
- "version": 4,
+ "version": 5,
  "params": [
   {
    "path": "disease.model",
@@ -31,7 +31,8 @@
     "endemicity",
     "stochasticity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.beta",
@@ -54,7 +55,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.dur_exp.mean_days",
@@ -80,7 +82,8 @@
    "affects": [
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.dur_exp.dist",
@@ -109,7 +112,8 @@
    ],
    "requires": [
     "disease.dur_exp.sd_days"
-   ]
+   ],
+   "networks": []
   },
   {
    "path": "disease.dur_exp.sd_days",
@@ -135,7 +139,8 @@
    "affects": [
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.dur_inf.mean_days",
@@ -159,7 +164,8 @@
     "final_size",
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.dur_inf.dist",
@@ -186,7 +192,8 @@
    ],
    "requires": [
     "disease.dur_inf.sd_days"
-   ]
+   ],
+   "networks": []
   },
   {
    "path": "disease.dur_inf.sd_days",
@@ -210,7 +217,8 @@
     "final_size",
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.dur_immune.mean_days",
@@ -235,7 +243,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.dur_immune.dist",
@@ -263,7 +272,8 @@
    ],
    "requires": [
     "disease.dur_immune.sd_days"
-   ]
+   ],
+   "networks": []
   },
   {
    "path": "disease.dur_immune.sd_days",
@@ -288,7 +298,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.p_death",
@@ -316,7 +327,8 @@
    "affects": [
     "deaths"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.p_asymp",
@@ -341,7 +353,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.rel_trans_asymp",
@@ -366,7 +379,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.rel_sus_age.children",
@@ -389,7 +403,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.rel_sus_age.adults",
@@ -412,7 +427,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.rel_sus_age.elderly",
@@ -435,7 +451,32 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
+  },
+  {
+   "path": "disease.rel_sus_cv",
+   "module": "disease",
+   "label": "Variation in susceptibility",
+   "description": "Coefficient of variation of susceptibility between people: each agent gets a personal multiplier drawn once from a gamma distribution with mean 1. The most susceptible are infected first, so the epidemic ends smaller at the same R0 (0 means everyone is alike; 1 takes R0 2.5 from 89% to 60% infected). An illustrative assumption unless the database carries it.",
+   "kind": "number",
+   "unit": "coefficient of variation",
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    2.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "the per-agent state rel_sus_ind, a factor of the disease's rel_sus composition",
+   "affects": [
+    "final_size",
+    "peak"
+   ],
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.p_death_age.children",
@@ -463,7 +504,8 @@
    "affects": [
     "deaths"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.p_death_age.adults",
@@ -491,7 +533,8 @@
    "affects": [
     "deaths"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.p_death_age.elderly",
@@ -519,7 +562,8 @@
    "affects": [
     "deaths"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.rel_trans_exposed",
@@ -546,7 +590,8 @@
     "peak",
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.sis_waning",
@@ -570,7 +615,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.sis_imm_boost",
@@ -594,7 +640,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.seed.mode",
@@ -616,7 +663,8 @@
    "affects": [
     "stochasticity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.seed.value",
@@ -639,7 +687,8 @@
     "timing",
     "stochasticity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.seed.day",
@@ -661,7 +710,8 @@
    "affects": [
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "disease.initial_immune_frac",
@@ -683,7 +733,8 @@
    "affects": [
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "network.network_type",
@@ -707,7 +758,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "network.n_contacts",
@@ -730,7 +782,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "random"
+   ]
   },
   {
    "path": "network.contacts_dist",
@@ -752,7 +807,10 @@
    "affects": [
     "stochasticity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "random"
+   ]
   },
   {
    "path": "network.contact_duration_days",
@@ -775,7 +833,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "random"
+   ]
   },
   {
    "path": "network.network_beta",
@@ -798,7 +859,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "network.contacts.children_children",
@@ -821,7 +883,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.children_adults",
@@ -844,7 +909,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.children_elderly",
@@ -867,7 +935,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.adults_children",
@@ -890,7 +961,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.adults_adults",
@@ -913,7 +987,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.adults_elderly",
@@ -936,7 +1013,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.elderly_children",
@@ -959,7 +1039,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.elderly_adults",
@@ -982,7 +1065,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts.elderly_elderly",
@@ -1005,7 +1091,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.contacts_source",
@@ -1022,7 +1111,10 @@
    "db_field": null,
    "starsim_target": "fetch_demographics",
    "affects": [],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "age_structured"
+   ]
   },
   {
    "path": "network.household_size",
@@ -1045,7 +1137,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.school_contacts",
@@ -1068,7 +1163,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.work_contacts",
@@ -1091,7 +1189,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.community_contacts",
@@ -1114,7 +1215,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.layer_beta.household",
@@ -1137,7 +1241,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.layer_beta.school",
@@ -1160,7 +1267,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.layer_beta.work",
@@ -1183,7 +1293,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.layer_beta.community",
@@ -1206,7 +1319,10 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.school_age_min",
@@ -1228,7 +1344,10 @@
    "affects": [
     "peak"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.school_age_max",
@@ -1250,7 +1369,10 @@
    "affects": [
     "peak"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.work_age_min",
@@ -1272,7 +1394,10 @@
    "affects": [
     "peak"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "network.work_age_max",
@@ -1294,7 +1419,10 @@
    "affects": [
     "peak"
    ],
-   "requires": []
+   "requires": [],
+   "networks": [
+    "hybrid"
+   ]
   },
   {
    "path": "demographics.use_demographics",
@@ -1313,7 +1441,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.birth_rate",
@@ -1335,7 +1464,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.death_rate",
@@ -1357,7 +1487,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.age_pct_under18",
@@ -1380,7 +1511,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.age_pct_18_64",
@@ -1403,7 +1535,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.age_pct_over65",
@@ -1426,7 +1559,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.country",
@@ -1445,7 +1579,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.auto_demographics",
@@ -1464,7 +1599,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.demographics_year",
@@ -1486,7 +1622,8 @@
    "affects": [
     "endemicity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.demographics_source",
@@ -1503,7 +1640,8 @@
    "db_field": null,
    "starsim_target": "resolve_demographics",
    "affects": [],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "demographics.age_source",
@@ -1528,13 +1666,14 @@
     "final_size",
     "deaths"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].type",
    "module": "interventions",
    "label": "Intervention type",
-   "description": "vaccine (routine or campaign, with efficacy, age range and waning), treatment (capacity-limited, with a delay and an efficacy), seasonality (a yearly cycle in transmission), contact_reduction (a layer's contacts scaled over a window: school closure, distancing), transmission_reduction (every contact's transmissibility scaled over a window: masks).",
+   "description": "vaccine (routine or campaign, with efficacy, age range and waning), treatment (capacity-limited, with a delay and an efficacy), seasonality (a yearly cycle in transmission), contact_reduction (a layer's contacts scaled over a window: school closure, distancing), transmission_reduction (every contact's transmissibility scaled over a window: masks), behavior_response (transmission falls as the share infectious rises and recovers as it falls: people being careful, not a measure).",
    "kind": "enum",
    "unit": null,
    "default": null,
@@ -1544,7 +1683,8 @@
     "treatment",
     "seasonality",
     "contact_reduction",
-    "transmission_reduction"
+    "transmission_reduction",
+    "behavior_response"
    ],
    "models": [],
    "tier": "core",
@@ -1555,7 +1695,8 @@
     "final_size",
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].coverage",
@@ -1578,7 +1719,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].start_day",
@@ -1600,7 +1742,8 @@
    "affects": [
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].capacity",
@@ -1623,13 +1766,14 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].scale",
    "module": "interventions",
    "label": "Scale",
-   "description": "Seasonality: size of the yearly cycle (0.2 means transmission moves between 80% and 120% of beta); contact_reduction and transmission_reduction: the fraction removed over the window (0.3 keeps 70%; 1 removes everything).",
+   "description": "Seasonality: size of the yearly cycle (0.2 means transmission moves between 80% and 120% of beta); contact_reduction and transmission_reduction: the fraction removed over the window (0.3 keeps 70%; 1 removes everything); behavior_response: the largest reduction.",
    "kind": "number",
    "unit": null,
    "default": 0.2,
@@ -1647,7 +1791,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].shift",
@@ -1669,7 +1814,8 @@
    "affects": [
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].end_day",
@@ -1691,7 +1837,8 @@
    "affects": [
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].kind",
@@ -1714,7 +1861,8 @@
     "timing",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].efficacy",
@@ -1737,7 +1885,8 @@
     "final_size",
     "peak"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].leaky",
@@ -1756,7 +1905,8 @@
    "affects": [
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].age_min",
@@ -1778,7 +1928,8 @@
    "affects": [
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].age_max",
@@ -1800,7 +1951,8 @@
    "affects": [
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].protection_days",
@@ -1822,7 +1974,8 @@
    "affects": [
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].delay_days",
@@ -1845,7 +1998,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].rel_trans_treated",
@@ -1868,7 +2022,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].symptomatic_only",
@@ -1889,7 +2044,57 @@
    "affects": [
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
+  },
+  {
+   "path": "interventions[].half_prevalence",
+   "module": "interventions",
+   "label": "Half-point of the response",
+   "description": "behavior_response: the share of people infectious at which half of the largest reduction applies.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": 0.01,
+   "bounds": [
+    0.0001,
+    0.5
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "TransmissionModifiers",
+   "affects": [
+    "peak",
+    "final_size",
+    "timing"
+   ],
+   "requires": [],
+   "networks": []
+  },
+  {
+   "path": "interventions[].memory_days",
+   "module": "interventions",
+   "label": "Memory of the response",
+   "description": "behavior_response: the number of days over which the share infectious is averaged.",
+   "kind": "integer",
+   "unit": "days",
+   "default": 7,
+   "bounds": [
+    1,
+    90
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "TransmissionModifiers",
+   "affects": [
+    "peak",
+    "timing"
+   ],
+   "requires": [],
+   "networks": []
   },
   {
    "path": "interventions[].layer",
@@ -1915,7 +2120,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.n_agents",
@@ -1937,7 +2143,8 @@
    "affects": [
     "stochasticity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.sim_dur_years",
@@ -1959,7 +2166,8 @@
    "affects": [
     "duration"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.n_replicates",
@@ -1981,7 +2189,8 @@
    "affects": [
     "stochasticity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.rand_seed",
@@ -2000,7 +2209,8 @@
    "affects": [
     "stochasticity"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.calibrate_r0",
@@ -2020,7 +2230,8 @@
     "peak",
     "final_size"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.fit.target",
@@ -2045,7 +2256,8 @@
     "final_size",
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.fit.value",
@@ -2069,20 +2281,23 @@
     "final_size",
     "timing"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   },
   {
    "path": "run.fit.lever",
    "module": "run",
    "label": "Fit lever",
-   "description": "The parameter the fit moves within its bounds: disease.beta or network.network_beta.",
+   "description": "The parameter the fit moves within its bounds: disease.beta or network.network_beta (the outcome rises with them), or disease.rel_sus_cv or the behaviour response's scale (the attack rate and the peak fall as they rise; R0 stays).",
    "kind": "enum",
    "unit": null,
    "default": "disease.beta",
    "bounds": null,
    "choices": [
     "disease.beta",
-    "network.network_beta"
+    "network.network_beta",
+    "disease.rel_sus_cv",
+    "behavior_response.scale"
    ],
    "models": [],
    "tier": "advanced",
@@ -2091,7 +2306,8 @@
    "affects": [
     "peak"
    ],
-   "requires": []
+   "requires": [],
+   "networks": []
   }
  ]
 }

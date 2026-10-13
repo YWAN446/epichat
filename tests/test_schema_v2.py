@@ -28,7 +28,7 @@ def test_every_leaf_has_exactly_one_param_spec():
     leaves = {p for p in paths.flatten(full) if not p.startswith("interventions")} - {"schema_version"}
     registered = {p for p in REGISTRY_BY_PATH if not p.startswith("interventions[]")}
     assert leaves == registered
-    assert {p.split(".", 1)[1] for p in REGISTRY_BY_PATH if p.startswith("interventions[]")} == {"type", "coverage", "start_day", "capacity", "scale", "shift", "end_day", "kind", "efficacy", "leaky", "age_min", "age_max", "protection_days", "delay_days", "rel_trans_treated", "symptomatic_only", "layer"}
+    assert {p.split(".", 1)[1] for p in REGISTRY_BY_PATH if p.startswith("interventions[]")} == {"type", "coverage", "start_day", "capacity", "scale", "shift", "end_day", "kind", "efficacy", "leaky", "age_min", "age_max", "protection_days", "delay_days", "rel_trans_treated", "symptomatic_only", "layer", "half_prevalence", "memory_days"}
 
 
 def test_bounds_come_from_the_registry():
@@ -220,3 +220,34 @@ def test_the_day_zero_fold_keeps_only_the_v1_shaped_vaccine():
         p = v2(interventions=[{"type": "vaccine", "coverage": 0.9, "start_day": 0, **extra}])
         assert p.disease.initial_immune_frac == 0.0 and len(p.interventions) == 1 and not p.interventions[0].is_day0_immunity(), extra
     assert v2(interventions=[{"type": "vaccine", "coverage": 0.9, "start_day": 0}]).disease.initial_immune_frac == 0.9
+
+
+def test_the_variation_and_the_behaviour_response_have_defaults_bounds_and_aliases():
+    assert v2().disease.rel_sus_cv == 0.0 and v2(disease={"rel_sus_cv": 1.0}).disease.rel_sus_cv == 1.0
+    with pytest.raises(ValidationError):
+        v2(disease={"rel_sus_cv": 2.5})
+    e = v2(interventions=[{"type": "behaviour_response", "scale": 0.5}]).interventions[0]
+    assert (e.type, e.scale, e.half_prevalence, e.memory_days, e.start_day, e.end_day, e.layer) == ("behavior_response", 0.5, 0.01, 7, 0, None, "all")
+    for alias in ("behavior", "behaviour", "behavior_change", "behaviour_change", "awareness"):
+        assert v2(interventions=[{"type": alias}]).interventions[0].type == "behavior_response"
+    for bad in ({"half_prevalence": 0.0}, {"half_prevalence": 0.6}, {"memory_days": 0}, {"memory_days": 91}):
+        with pytest.raises(ValidationError):
+            v2(interventions=[{"type": "behavior_response", **bad}])
+    with pytest.raises(ValidationError, match="layer"):
+        v2(network={"network_type": "hybrid"}, interventions=[{"type": "behavior_response", "layer": "school"}])
+    with pytest.raises(ValidationError, match="one behavior_response"):
+        v2(interventions=[{"type": "behavior_response"}, {"type": "behavior_response", "scale": 0.4}])
+    stored = v2(interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 30}, {"type": "seasonality"}])     # entries stored before this round
+    assert all((i.half_prevalence, i.memory_days) == (0.01, 7) for i in stored.interventions)
+
+
+def test_the_fit_takes_the_two_new_levers_with_their_rules():
+    assert v2(disease={"rel_sus_cv": 0.5}, run={"fit": {"target": "attack_rate", "value": 0.5, "lever": "disease.rel_sus_cv"}}).run.fit.lever == "disease.rel_sus_cv"
+    ok = v2(interventions=[{"type": "behavior_response", "scale": 0.5}], run={"fit": {"target": "peak_infections", "value": 300, "lever": "behavior_response.scale"}})
+    assert ok.run.fit.lever == "behavior_response.scale"
+    with pytest.raises(ValidationError, match="needs a behavior_response entry"):
+        v2(run={"fit": {"target": "attack_rate", "value": 0.5, "lever": "behavior_response.scale"}})
+    for lever in ("disease.rel_sus_cv", "behavior_response.scale"):
+        with pytest.raises(ValidationError, match="peak_day"):
+            v2(interventions=[{"type": "behavior_response"}], run={"fit": {"target": "peak_day", "value": 40, "lever": lever}})
+    assert v2(run={"fit": {"target": "peak_day", "value": 40}}).run.fit.lever == "disease.beta"                      # beta still fits a peak day
