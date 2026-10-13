@@ -2006,7 +2006,7 @@
    "path": "run.calibrate_r0",
    "module": "run",
    "label": "Calibrate beta by measurement",
-   "description": "On the hybrid network, or with a contact duration above 0, the R0 formula is approximate: a short pilot run measures the seeds' secondary infections and corrects beta until the measured R0 is within 5% of the target, at most three times. Off, the formula's beta runs as it is.",
+   "description": "On the hybrid network, or with a contact duration above 0, the R0 formula is approximate: a short pilot in which only the seeds transmit measures R0 and corrects beta until the measurement is within 5% of the target (or within its own standard error when that is larger), at most three times. Off, the formula's beta runs as it is.",
    "kind": "bool",
    "unit": null,
    "default": true,

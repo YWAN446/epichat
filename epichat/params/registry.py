@@ -272,8 +272,9 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("run.rand_seed", "run", "Random seed", "Seed of the first replicate; unset means 1.", "integer", None, None, None, None, (),
               "expert", None, "ss.Sim(rand_seed=...)", ("stochasticity",)),
     ParamSpec("run.calibrate_r0", "run", "Calibrate beta by measurement", "On the hybrid network, or with a contact duration above 0, the R0 "
-              "formula is approximate: a short pilot run measures the seeds' secondary infections and corrects beta until the measured R0 is "
-              "within 5% of the target, at most three times. Off, the formula's beta runs as it is.", "bool", None, True, None, None, (),
+              "formula is approximate: a short pilot in which only the seeds transmit measures R0 and corrects beta until the measurement is "
+              "within 5% of the target (or within its own standard error when that is larger), at most three times. Off, the formula's "
+              "beta runs as it is.", "bool", None, True, None, None, (),
               "advanced", None, "epichat.sim.calibrate", ("peak", "final_size")),
     ParamSpec("run.fit.target", "run", "Fit target", "The outcome the run is fitted to: attack_rate (share infected), peak_day or "
               "peak_infections (in agents).", "enum", None, None, None, ("attack_rate", "peak_day", "peak_infections"), (), "advanced",

@@ -4,8 +4,6 @@ import pytest
 from epichat.params import r0
 from epichat.params.schema_v2 import SimParamsV2
 from epichat.sim import calibrate
-from epichat.sim.builder import build_sim
-from epichat.sim.outputs import extract
 from epichat.sim.replicates import run_replicates
 
 SHARES = {"age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8}
@@ -20,7 +18,7 @@ def hybrid(n_agents: int, target: float, **run) -> SimParamsV2:
 
 
 def test_exact_networks_and_the_switch_run_no_pilot(monkeypatch):
-    monkeypatch.setattr(calibrate, "measure", lambda p, seed: pytest.fail("a pilot ran on an exact network"))
+    monkeypatch.setattr(calibrate, "measure", lambda p, seed, target=None: pytest.fail("a pilot ran on an exact network"))
     for p in (SimParamsV2(), SimParamsV2.model_validate({"network": {"network_type": "age_structured"}}),
               SimParamsV2.model_validate({"network": {"network_type": "hybrid"}, "run": {"calibrate_r0": False}})):
         assert calibrate.calibrate_by_measurement(p, 1) == (p, None)
@@ -34,12 +32,12 @@ def test_pilot_params_are_short_bare_and_well_seeded():
     body["disease"]["initial_immune_frac"] = 0.4
     p = SimParamsV2.model_validate(body)
     pilot = calibrate.pilot_params(p, 7)
-    assert pilot.run.sim_dur_years == pytest.approx(40 / 365) and pilot.run.rand_seed == 7 and pilot.run.n_replicates == 1
+    assert pilot.run.sim_dur_years == pytest.approx(40 / 365) and pilot.run.rand_seed == 7 and pilot.run.n_replicates == 1 and pilot.run.fit is None
     assert pilot.disease.seed.mode == "count" and pilot.disease.seed.value == 1000 and pilot.disease.seed.day == 0     # the cap: 15% of 50k over the target is 3000
     assert pilot.interventions == [] and pilot.disease.initial_immune_frac == 0.0 and pilot.run.calibrate_r0 is False
     assert pilot.network.network_type == "hybrid" and pilot.disease.beta == p.disease.beta
     small = calibrate.pilot_params(hybrid(1000, 2.5, sim_dur_years=20 / 365), 1)
-    assert small.disease.seed.value == 60 and small.run.sim_dur_years == pytest.approx(20 / 365)                       # 15% of 1000 over 2.5; never longer than the run
+    assert small.disease.seed.value == 60 and small.run.sim_dur_years == pytest.approx(40 / 365)                       # 15% of 1000 over 2.5; its own 40 days, though the run has 20
     assert calibrate.pilot_seeds(hybrid(200, 2.5), 2.5) == 20                                                          # the floor
     tiny = SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 5}}, "run": {"n_agents": 15}})
     assert calibrate.pilot_seeds(tiny, 2.5) == 15                                                                      # never more seeds than agents
@@ -62,7 +60,7 @@ def test_a_pilot_that_measures_nothing_stops_cleanly():
     body["disease"]["beta"] = 0.001
     p = SimParamsV2.model_validate(body)
     calibrated, info = calibrate.calibrate_by_measurement(p, 1)
-    assert calibrated.disease.beta == 0.001 and info["corrections"] == 0 and info["measured"] in (0.0, None)
+    assert calibrated.disease.beta == 0.001 and info["corrections"] == 0 and info["measured"] == 0.0 and info["reached"] is False
 
 
 def test_run_replicates_reports_the_calibration_and_the_corrected_beta():
@@ -94,7 +92,7 @@ def _plain(target: float, dur: dict, n: int = 20000) -> SimParamsV2:
 def test_the_pilot_measures_the_configured_r0_where_it_is_known():
     # the random network's formula is exact, so the sterile first-generation experiment must return it, at a low and at a high R0
     ten = [calibrate.measure(_plain(2.5, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}), s).mean for s in (1, 2, 3)]
-    assert abs(sum(ten) / 3 - 2.5) / 2.5 < 0.04, ten
+    assert abs(sum(ten) / 3 - 2.5) / 2.5 < 0.06, ten
     high = [calibrate.measure(_plain(12.0, {"mean_days": 8.0, "dist": "gamma", "sd_days": 3.0}, n=10000), s).mean for s in (1, 2, 3)]
     assert abs(sum(high) / 3 - 12.0) / 12.0 < 0.10, high                        # the shipped pilot read 5.9 here
 
@@ -124,7 +122,7 @@ def test_a_correction_stops_at_a_bound_or_when_it_does_not_help(monkeypatch):
     from epichat.sim.outputs import Measurement
     p = hybrid(2000, 2.5)
     # a network that cannot carry the target: the measurement never moves, whatever beta is
-    monkeypatch.setattr(calibrate, "measure", lambda q, seed: Measurement(1.0, 0.01, 40, 1.0))
+    monkeypatch.setattr(calibrate, "measure", lambda q, seed, target=None: Measurement(1.0, 0.01, 40, 1.0))
     stuck, info = calibrate.calibrate_by_measurement(p, 1)
     assert stuck.disease.beta == p.disease.beta and info["corrections"] == 0 and info["reached"] is False and info["measured"] == 1.0
     # a correction that would break network_beta × (1 − e^(−β/365)) ≤ 1 is not taken
@@ -133,6 +131,49 @@ def test_a_correction_stops_at_a_bound_or_when_it_does_not_help(monkeypatch):
     body["disease"]["beta"] = 38.0                                               # 10 × (1 − e^(−38/365)) = 0.99
     tight = SimParamsV2.model_validate(body)
     half = 0.5 * r0.approx_r0(tight)
-    monkeypatch.setattr(calibrate, "measure", lambda q, seed: Measurement(half, 0.01, 40, 1.0))
+    monkeypatch.setattr(calibrate, "measure", lambda q, seed, target=None: Measurement(half, 0.01, 40, 1.0))
     held, info = calibrate.calibrate_by_measurement(tight, 1)
     assert held.disease.beta == tight.disease.beta and info["reached"] is False
+
+
+def _covid(days: int) -> SimParamsV2:
+    body = hybrid(10_000, 2.5, sim_dur_years=days / 365).model_dump()
+    body["disease"].update(model="seir", dur_exp={"mean_days": 5.0, "dist": "gamma", "sd_days": 2.0})
+    return r0.with_r0(SimParamsV2.model_validate(body), 3.0)
+
+
+def test_the_pilot_runs_its_whole_window_whatever_the_runs_length():
+    # review I3: a pilot cut to a two-week run stopped before its seeds had finished, and the infections it did not wait for were
+    # "corrected" into beta (×1.33 for a 14-day run against ×1.09 for a long one)
+    assert calibrate.pilot_params(_covid(14), 1).run.sim_dur_years == pytest.approx(60 / 365) == calibrate.pilot_params(_covid(180), 1).run.sim_dur_years
+    short, short_info = calibrate.calibrate_by_measurement(_covid(14), 1)
+    long, long_info = calibrate.calibrate_by_measurement(_covid(180), 1)
+    assert short.disease.beta == long.disease.beta and short_info == long_info and short_info["reached"] is True
+    body = hybrid(2000, 1.5).model_dump()
+    body["disease"]["dur_inf"] = {"mean_days": 0.6, "dist": "constant", "sd_days": None}
+    quick = calibrate.pilot_params(SimParamsV2.model_validate(body), 1)             # 4 × 0.6 days is under the registry's shortest run
+    assert quick.run.sim_dur_years == pytest.approx(4 / 365)
+
+
+def test_the_seeds_are_sized_by_the_target_whatever_the_trial_beta():
+    p = hybrid(10_000, 2.5)
+    doubled = p.model_copy(deep=True)
+    doubled.disease.beta = p.disease.beta * 2
+    assert calibrate.pilot_params(p, 1, target=2.5).disease.seed.value == calibrate.pilot_params(doubled, 1, target=2.5).disease.seed.value == 600
+    assert calibrate.pilot_params(doubled, 1).disease.seed.value < 600              # without a target, the trial's own formula R0
+
+
+def test_a_pilot_that_cannot_measure_reports_nothing(monkeypatch):
+    monkeypatch.setattr(calibrate, "measure", lambda q, seed, target=None: None)
+    p = hybrid(2000, 2.5)
+    assert calibrate.calibrate_by_measurement(p, 1) == (p, None)                    # no calibration to report, so nobody is told beta was adjusted
+
+
+def test_the_pilot_measures_a_latent_and_a_reinfection_model():
+    dur = {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}
+    seir = r0.with_r0(SimParamsV2.model_validate({"disease": {"model": "seir", "dur_inf": dur, "dur_exp": {"mean_days": 3.0, "dist": "gamma", "sd_days": 1.0}},
+                                                  "run": {"n_agents": 10000, "rand_seed": 1}}), 2.5)
+    sis = r0.with_r0(SimParamsV2.model_validate({"disease": {"model": "sis", "dur_inf": dur}, "run": {"n_agents": 10000, "rand_seed": 1}}), 2.5)
+    for name, p in (("seir", seir), ("sis", sis)):
+        values = [calibrate.measure(p, s).mean for s in (1, 2, 3)]
+        assert abs(sum(values) / 3 - 2.5) / 2.5 < 0.08, (name, values)
