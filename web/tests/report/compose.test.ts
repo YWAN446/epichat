@@ -84,3 +84,18 @@ describe("composeReport", () => {
     expect(runLabels([FIXTURE.runs[0], FIXTURE.runs[0]])).toEqual(["Run 1", "Run 2"]);
   });
 });
+
+describe("the measured R0 in the report (Part 2, 5.6)", () => {
+  it("adds an R0 measured row after the configured R0 when the latest run carries one, and nothing otherwise", () => {
+    const runs = FIXTURE.runs.map((r, i) => (i === FIXTURE.runs.length - 1 ? { ...r, stats: { ...r.stats, r0_measured: 2.4 } } : r));
+    const doc = composeReport({ ...FIXTURE, runs }, NOW);
+    const rows = doc.sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (rows.kind !== "keyValues") throw new Error("kv");
+    const labels = rows.items.map(([label]) => label);
+    expect(labels.indexOf("R₀ measured")).toBe(labels.indexOf("R₀ (approx.)") + 1);
+    expect(rows.items).toContainEqual(["R₀ measured", "2.4"]);
+    const plain = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (plain.kind !== "keyValues") throw new Error("kv");
+    expect(plain.items.map(([label]) => label)).not.toContain("R₀ measured");
+  });
+});

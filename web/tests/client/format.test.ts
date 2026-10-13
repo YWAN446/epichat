@@ -173,3 +173,27 @@ describe("parameter rows for the age-specific values", () => {
     expect(rows).toContainEqual(["Presymptomatic transmission", "50% of the infectious value"]);
   });
 });
+
+describe("network rows and field labels (Part 2, section 5)", () => {
+  it("names the network, its household size, matrix source and contact options", () => {
+    const hybrid = params({ disease_type: "sir" });
+    hybrid.network = { ...hybrid.network, network_type: "hybrid", household_size: 4.2 };
+    const rows = parameterRows(hybrid);
+    expect(rows).toContainEqual(["Contact network", "hybrid (households, schools, workplaces, community)"]);
+    expect(rows).toContainEqual(["Household size", "4.2 people"]);
+    expect(rows.map(([label]) => label)).not.toContain("Contacts per day");
+    const aged = params({ disease_type: "sir" });
+    aged.network = { ...aged.network, network_type: "age_structured", contacts_source: "prem_2021:KEN" };
+    expect(parameterRows(aged)).toContainEqual(["Contact matrix", "Prem 2021, Kenya"]);
+    aged.network.contacts_source = "polymod_default";
+    expect(parameterRows(aged)).toContainEqual(["Contact matrix", "POLYMOD default (European)"]);
+    const lasting = params({ disease_type: "sir" });
+    lasting.network = { ...lasting.network, contact_duration_days: 7, contacts_dist: "poisson" };
+    expect(parameterRows(lasting)).toContainEqual(["Contact duration", "7 days"]);
+    expect(parameterRows(lasting)).toContainEqual(["Contacts distribution", "Poisson"]);
+    expect(describeField("household_size", 4.2)).toEqual({ label: "Household size", value: "4.2 people" });
+    expect(describeField("contact_matrix", "prem_2021:KEN")).toEqual({ label: "Contact matrix", value: "Prem 2021, Kenya" });
+    expect(describeField("beta_calibrated_by_measurement", 31.25)).toEqual({ label: "Transmission rate calibrated to the measured R₀", value: "31.25" });
+    expect(describeField("age_source", "un_wpp")).toEqual({ label: "Age source", value: "UN WPP 2024 pyramid" });
+  });
+});

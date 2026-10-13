@@ -107,11 +107,14 @@ function sourceOf(citation: string): string {
   return "Source";
 }
 
-function modelled(scenario: Scenario, name: string): ReportBlock[] {
+function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBlock[] {
   const blocks: ReportBlock[] = [];
   if (scenario.params) {
     const rows = configurationRows(configView(scenario.params, scenario.disease), approxR0(scenario.params), name);
     if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
+    // Part 2, 5.6: the latest run's measured R0 (the day-0 seeds' mean secondary infections) beside the configured one.
+    const measured = [...runs].reverse().find((r) => typeof r.stats.r0_measured === "number");
+    if (measured) rows.splice(rows.findIndex(([label]) => label.startsWith("R₀")) + 1, 0, ["R₀ measured", measured.stats.r0_measured!.toFixed(1)]);
     blocks.push({ kind: "keyValues", items: rows });
   }
   if (scenario.dataSources.length > 0) {
@@ -169,7 +172,7 @@ export function composeReport(input: ComposeInput, now: Date): ReportDocument {
       section("summary", narrativeBlocks(input.narrative.summary)),
       section("results", results(input.runs, labels)),
       section("meaning", narrativeBlocks(input.narrative.meaning)),
-      section("modelled", modelled(input.scenario, name)),
+      section("modelled", modelled(input.scenario, name, input.runs)),
       section("decisions", input.recap.length > 0 ? [{ kind: "bullets", items: input.recap }] : [{ kind: "paragraph", text: "The conversation recorded no decisions." }]),
       section("limitations", narrativeBlocks(input.narrative.limitations)),
       section("next_steps", narrativeBlocks(input.narrative.next_steps)),

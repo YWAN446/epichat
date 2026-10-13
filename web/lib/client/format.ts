@@ -95,6 +95,20 @@ export function seedText(s: Seed): string {
   return s.day > 0 ? `${size} on day ${fmtValue(s.day)}` : size;
 }
 
+const AGE_SOURCE_LABELS: Record<string, string> = { default: "Starsim's default ages", shares: "the three shares", un_wpp: "UN WPP 2024 pyramid" };
+
+function networkLabel(n: SimParams["network"]): string {
+  return n.network_type === "hybrid" ? "hybrid (households, schools, workplaces, community)" : n.network_type.replace(/_/g, "-");
+}
+
+/** "POLYMOD default (European)", "Prem 2021, Kenya" or "user-set" (Part 2, 5.3). */
+export function contactsSourceLabel(source: string): string {
+  if (source === "polymod_default") return "POLYMOD default (European)";
+  const prem = /^prem_2021:([A-Z]{3})$/.exec(source);
+  if (prem) return `Prem 2021, ${countryName(prem[1])}`;
+  return source === "user" ? "user-set" : source;
+}
+
 /**
  * The scenario's current parameters as label and value pairs for the panel's
  * Parameters section: what the next run uses, in words with units. Rows a
@@ -109,8 +123,12 @@ export function parameterRows(p: SimParams): [string, string][] {
   return [
     ["R₀ (approx.)", approxR0(p).toFixed(1)],
     ["Transmission rate (β)", fmtValue(d.beta)],
-    ["Contacts per day", fmtValue(p.network.n_contacts)],
-    ["Contact network", p.network.network_type.replace(/_/g, "-")],
+    ...(p.network.network_type === "random" ? row("Contacts per day", fmtValue(p.network.n_contacts)) : []),
+    ["Contact network", networkLabel(p.network)],
+    ...(p.network.network_type === "random" && p.network.contacts_dist === "poisson" ? row("Contacts distribution", "Poisson") : []),
+    ...(p.network.network_type === "random" && p.network.contact_duration_days > 0 ? row("Contact duration", formatQuantity(p.network.contact_duration_days, "days")) : []),
+    ...(p.network.network_type === "age_structured" ? row("Contact matrix", contactsSourceLabel(p.network.contacts_source)) : []),
+    ...(p.network.network_type === "hybrid" ? row("Household size", `${fmtValue(p.network.household_size)} people`) : []),
     ["Initial infections", seedText(d.seed)],
     ...(d.initial_immune_frac > 0 ? row("Initially immune", formatQuantity(d.initial_immune_frac, "fraction")) : []),
     ["Infectious period", durationText(d.dur_inf)],
@@ -133,7 +151,8 @@ export function parameterRows(p: SimParams): [string, string][] {
 
 /** The v2 paths a run's effective parameters are listed by, in the runs panel and the report appendix. */
 export const EFFECTIVE_PARAM_PATHS = [
-  "disease.model", "run.n_agents", "run.sim_dur_years", "disease.beta", "network.n_contacts", "network.network_type",
+  "disease.model", "run.n_agents", "run.sim_dur_years", "disease.beta", "network.n_contacts", "network.network_type", "network.household_size",
+  "network.contact_duration_days", "network.contacts_source",
   "disease.seed.value", "disease.seed.mode", "disease.dur_inf.mean_days", "disease.dur_inf.dist", "disease.dur_exp.mean_days",
   "disease.dur_immune.mean_days", "disease.p_death", "disease.initial_immune_frac", "demographics.use_demographics",
   "demographics.birth_rate", "demographics.death_rate", "run.n_replicates", "run.rand_seed",
@@ -172,7 +191,7 @@ export function formatRange(min: number, max: number, unit?: string): string {
   return `${plain(min)}–${plain(max)} ${unit}`;
 }
 
-type FieldSpec = { label: string; unit?: string; kind?: "percent_of_one" | "age" | "network" };
+type FieldSpec = { label: string; unit?: string; kind?: "percent_of_one" | "age" | "network" | "contacts" | "age_source" };
 
 /** WHO routine-immunization indicators, by the prefix of the field the adapter names. */
 const VACCINES: Record<string, string> = {
@@ -199,6 +218,10 @@ const FIELDS: Record<string, FieldSpec> = {
   age_structure_pct: { label: "Age structure", kind: "age" },
   network_type: { label: "Contact network", kind: "network" },
   beta_recalibrated_to_hold_r0: { label: "Transmission rate recalibrated to hold R₀" },
+  household_size: { label: "Household size", unit: "people" },
+  contact_matrix: { label: "Contact matrix", kind: "contacts" },
+  age_source: { label: "Age source", kind: "age_source" },
+  beta_calibrated_by_measurement: { label: "Transmission rate calibrated to the measured R₀" },
   treatment_capacity: { label: "Treatment capacity", unit: "per 1,000 people" },
   applied_treatment_capacity: { label: "Treatment capacity applied", unit: "agents" },
   uhc_coverage: { label: "UHC service coverage index", unit: "of 100" },
@@ -225,6 +248,8 @@ export function describeField(key: string, value: unknown): { label: string; val
   if (!spec) return { label: words(key), value: fmtValue(value) };
   if (spec.kind === "age") return { label: spec.label, value: ageStructure(value) };
   if (spec.kind === "network") return { label: spec.label, value: String(value).replace(/_/g, "-") };
+  if (spec.kind === "contacts") return { label: spec.label, value: contactsSourceLabel(String(value)) };
+  if (spec.kind === "age_source") return { label: spec.label, value: AGE_SOURCE_LABELS[String(value)] ?? String(value) };
   if (spec.kind === "percent_of_one") return { label: spec.label, value: `${plain(Number(value) * 100)}%` };
   if (!spec.unit) return { label: spec.label, value: fmtValue(value) };
   return { label: spec.label, value: `${fmtValue(value)}${spec.unit.startsWith("%") ? "" : " "}${spec.unit}` };
