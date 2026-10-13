@@ -23,6 +23,9 @@ REQUESTED_FIELDS = {
     "vaccine_efficacy": "Protection against infection of the routine vaccine, as a fraction, naming the product and the dose schedule; the registry's interventions[].efficacy.",
     "treatment_efficacy": "Share of treated cases cured and the usual delay from symptoms to treatment, naming the treatment; the registry's interventions[].efficacy and delay_days.",
     "presymptomatic_transmission": "Share of transmission that happens before symptoms, or the latent-period infectiousness as a fraction of the symptomatic one; the registry's disease.rel_trans_exposed.",
+    "school_closure_effect": "The reduction in school-age contacts or transmission while schools are closed, as a cited range (a systematic review or a modelling study with data), seeding the illustrative default of a full closure; the registry's interventions[].scale on the school layer.",
+    "distancing_effect": "The reduction in community contacts under distancing measures, as a cited range, seeding the illustrative default; the registry's interventions[].scale on the community layer.",
+    "mask_effect": "The reduction in per-contact transmission from mask use, as a cited range, seeding the illustrative default of a transmission reduction; the registry's interventions[].scale.",
 }
 
 EXISTING_NOTES = {

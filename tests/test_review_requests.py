@@ -13,6 +13,9 @@ def test_every_disease_gets_a_row_per_existing_and_requested_field():
     diseases = sorted(db["diseases"])
     fields = {r["field"] for r in rows}
     assert set(REQUESTED_FIELDS) <= fields and {"r0", "fatality_rate", "infectious_days"} <= fields
+    assert {"vaccine_efficacy", "treatment_efficacy", "school_closure_effect", "distancing_effect", "mask_effect"} <= set(REQUESTED_FIELDS)
+    for effect in ("school_closure_effect", "distancing_effect", "mask_effect"):
+        assert "cited range" in REQUESTED_FIELDS[effect] and "illustrative default" in REQUESTED_FIELDS[effect], effect
     for disease in diseases:
         mine = {r["field"]: r for r in rows if r["disease"] == disease}
         assert set(mine) == fields, disease

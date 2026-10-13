@@ -364,24 +364,27 @@ validate unchanged.
 
 | Type | Fields (default) | Starsim |
 |---|---|---|
-| `vaccine` | `coverage`, `kind` (`routine`; or `campaign`), `start_day` (0), `end_day` (null: the run's end), `efficacy` (1.0), `leaky` (true), `age_min` (null), `age_max` (null), `protection_days` (null: permanent) | `routine_vx` or `campaign_vx` with the EpiChat vaccine product; `eligibility` by age |
-| `treatment` | `coverage` (1.0), `capacity` (null), `start_day` (0), `end_day` (null), `efficacy` (1.0), `delay_days` (0), `rel_trans_treated` (1.0), `symptomatic_only` (false) | `treat_num` with an EpiChat treatment product |
+| `vaccine` | `coverage`, `kind` (`routine`; or `campaign`), `start_day` (0), `end_day` (null: the run's end), `efficacy` (1.0), `leaky` (true), `age_min` (null), `age_max` (null), `protection_days` (null: permanent) | the v1 shape (routine, full efficacy, no end day, no ages, no waning) keeps `routine_vx`, whose yearly probability the parity baseline pins; every other entry runs through the EpiChat `VaccineDelivery`, a per-day probability over the day window with the EpiChat vaccine product and an age eligibility (Starsim's `routine_vx` cannot end on a day: its `end_year` covers a whole year of daily steps) |
+| `treatment` | `coverage` (1.0), `capacity` (null), `start_day` (0), `end_day` (null), `efficacy` (1.0), `delay_days` (0), `rel_trans_treated` (1.0), `symptomatic_only` (false) | the v1 shape (no delay, full efficacy, no waiting factor, not symptomatic-only, no end day) keeps the v1 `SimpleTreatment` for the parity baseline; every other entry runs through the EpiChat `TreatmentDelivery` (a queue with the delay, the capacity, the waiting factor and `symptomatic_only`) with the EpiChat treatment product |
 | `seasonality` | `scale` (0.2), `shift` (0); `peak_day` accepted as an alias of `shift` | the connector |
-| `contact_reduction` (new) | `layer` (`all`; or `household`, `school`, `work`, `community`), `scale` (0 to 1), `start_day`, `end_day` | the layer's network `beta` scaled over the window; on random and age-structured only `all` |
-| `transmission_reduction` (new) | `scale` (0 to 1), `start_day`, `end_day` | a connector factor on `rel_trans` over the window |
+| `contact_reduction` (new) | `layer` (`all`; or `household`, `school`, `work`, `community`), `scale` (0 to 1: the fraction of contacts removed; 1 closes the layer), `start_day`, `end_day` | the layer's edge betas (the hybrid layers) or pool betas (the age-structured mixing pools) scaled by 1 − `scale` over the window and restored after it; on random and age-structured only `all` |
+| `transmission_reduction` (new) | `scale` (0 to 1: the fraction removed), `start_day`, `end_day` | a connector factor of 1 − `scale` on `rel_trans` over the window |
 
 Semantics: routine coverage is the yearly probability each eligible person
 is vaccinated (Starsim's annual probability), as today; a campaign reaches
 the target coverage uniformly over its window (the per-day probability is
 derived from the window's length). A day-0 vaccine with efficacy 1 stays
 `disease.initial_immune_frac` (Part 1 section 18); with efficacy below 1 it is
-a campaign on day 0, so the protection is leaky as the product says. Treatment
-with a delay treats an infectious agent `delay_days` after it became
-infectious, cures it with probability `efficacy`, and lowers its
-`rel_trans` to `rel_trans_treated` while it waits; `symptomatic_only` skips
-asymptomatic agents in SEIAR. School closure is a `contact_reduction` on the
-school layer at scale 0; distancing is the community layer at a fraction;
-masks are a `transmission_reduction`.
+a one-day campaign at day 0 (the builder turns a routine entry with
+`start_day` 0, no end day and efficacy below 1 into a campaign ending on day
+0), so the protection is leaky as the product says, and the vaccine product
+recomposes `rel_sus` so a repeated dose does not stack. Treatment with a delay
+treats an infectious agent `delay_days` after it became infectious, cures it
+with probability `efficacy`, and lowers its `rel_trans` to
+`rel_trans_treated` while it waits; `symptomatic_only` skips asymptomatic
+agents in SEIAR. School closure is a `contact_reduction` on the school layer
+at scale 1 (the fraction removed); distancing is the community layer at a
+fraction; masks are a `transmission_reduction`.
 
 ### 7.2 Products
 
@@ -430,18 +433,27 @@ cited ranges to seed the illustrative defaults.
 A participant often knows one number from the real event: the share
 infected, or when the peak came. `run.fit` (object, optional, advanced):
 `{ target: attack_rate | peak_day | peak_infections, value, lever: disease.beta | network.network_beta }`,
-the lever defaulting to beta. The child searches the lever by bisection on a
-log scale within the registry bounds, one full-length run per step with the
-first replicate's seed, until the outcome is within tolerance (attack rate
-within 2 points, peak day within 3 days, peak infections within 5%) or after
-eight runs; the replicates, if any, then run with the fitted value.
-`effective_params` carries it, `stats.fit` reports
+the lever defaulting to beta. The child runs the current value first, then
+doubles or halves the lever (never past the registry bounds: an unreachable
+target ends with the bound's run) until the target is bracketed, then takes
+the bracket's geometric midpoint, one full-length run per step with the first
+replicate's seed, until the outcome is within tolerance (attack rate within 2
+points, peak day within 3 days, peak infections within 5%) or after eight
+runs; a run that faded out (under twice its seeds infected, or a peak under
+twice the seeds) counts as a lever too low, so a peak-day target is never met
+by the seeds' bump. The replicates, if any, then run with the fitted value,
+and the fit supersedes the R0 pilot: a fit together with `calibrate_r0` skips
+the pilot, since the fit sets the lever. `peak_infections` is in agents;
+`configure_simulation` converts a value given in people when the scenario's
+population is known and records both in `applied.fit`. `effective_params`
+carries the fitted lever, `stats.fit` reports
 `{target, wanted, achieved, lever, value, runs}`, and the agent reports
 "beta was set so that the attack rate is 30%", labelling the fit as such in
-the limitations. `configure_simulation` gains `fit` as a field; the
-diagnostics and the comparison read the fitted run like any other, and
-`final_size_gap` stands down on a fitted run. Eight runs of 10k agents cost
-about half a minute on the service; the cap applies to each run.
+the limitations. `configure_simulation` gains `fit` as a field (null clears
+it); the diagnostics and the comparison read the fitted run like any other,
+and `final_size_gap` and `r0_gap` stand down on a fitted run. Eight runs of
+10k agents cost about half a minute on the service; the cap applies to each
+run.
 
 ## 8. Run module
 
