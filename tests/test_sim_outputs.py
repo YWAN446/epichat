@@ -100,25 +100,49 @@ def test_seeds_stat_counts_day_zero_and_delayed_seeds():
     assert stats["seeds_day0"] == 0 and stats["seeds"] == 30
 
 
-def test_measured_r0_counts_the_seeds_secondary_infections():
-    from epichat.sim.outputs import measured_r0
-    p = SimParamsV2.model_validate({"disease": {"beta": 100.0, "dur_inf": {"mean_days": 5}, "seed": {"mode": "count", "value": 20}},
-                                    "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
+def _live(model: str, target: float, dur: dict, seeds: int, n: int = 20000, days: int = 60, seed: int = 1):
+    from epichat.params.r0 import with_r0
+    p = with_r0(SimParamsV2.model_validate({"disease": {"model": model, "dur_inf": dur, "seed": {"mode": "count", "value": seeds}},
+                                            "run": {"n_agents": n, "sim_dur_years": days / 365, "rand_seed": seed}}), target)
+    sim = build_sim(p, seed=seed)
     sim.run()
-    r0 = measured_r0(sim)
-    df = sim.analyzers["infection_log"].logs["sir"].to_df()
-    seeds = df[df["source"].astype(float) < 0]["target"].to_numpy()
-    assert len(seeds) == 20 and r0 == float(df["source"].isin(seeds).sum()) / 20 and r0 > 0.5
-    assert extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] == r0
+    return sim
+
+
+def test_the_measured_r0_is_unbiased_for_a_short_infectious_period():
+    # a day-0 seed transmits on one more step than an ordinary case: with a 4-day period the raw count read 20% high
+    from epichat.sim.outputs import measured_r0
+    values = [measured_r0(_live("sir", 1.5, {"mean_days": 4.0, "dist": "gamma", "sd_days": 1.5}, 300, seed=s)) for s in (1, 2, 3)]
+    assert abs(sum(values) / 3 - 1.5) / 1.5 < 0.06, values
+
+
+def test_the_measured_r0_counts_only_a_seeds_first_episode():
+    # in sis a seed recovers and is infected again; the infections of its later episodes are not its reproduction number
+    from epichat.sim.outputs import measured_r0
+    values = [measured_r0(_live("sis", 2.5, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, 100, days=40, seed=s)) for s in (1, 2, 3)]
+    assert all(v is not None for v in values) and abs(sum(values) / 3 - 2.5) / 2.5 < 0.10, values
+
+
+def test_the_measured_r0_is_withheld_when_the_seeds_exhaust_the_population():
+    # 2% seeded at R0 12: the seeds' descendants infect everyone while the seeds are still infectious; the raw count read 5.9
+    from epichat.sim.outputs import MEASURED_MAX_WEIGHT, measure_r0, measured_r0
+    sim = _live("sir", 12.0, {"mean_days": 8.0, "dist": "gamma", "sd_days": 3.0}, 200, n=10000, days=40)
+    assert measured_r0(sim) is None and measure_r0(sim, count_day0=False).weight > MEASURED_MAX_WEIGHT
+
+
+def test_a_measurement_carries_its_standard_error_and_the_edge_cases_hold():
+    from epichat.sim.outputs import measure_r0, measured_r0
+    m = measure_r0(_live("sir", 2.5, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, 100), count_day0=False)
+    assert m.seeds == 100 and 0 < m.se < 0.5 and 1.0 <= m.weight < 1.25 and abs(m.mean - 2.5) < 4 * m.se + 0.15, m
     quiet = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
     sim = build_sim(quiet)
     sim.run()
-    assert measured_r0(sim) == 0.0                                                   # seeds, but they infected nobody
+    assert measured_r0(sim) == 0.0 and measure_r0(sim, count_day0=False).se == 0.0             # seeds, but they infected nobody
+    assert extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] == 0.0
     later = SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 20, "day": 5}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
     sim = build_sim(later)
     sim.run()
-    assert measured_r0(sim) is None                                                  # no day-0 seeds
+    assert measured_r0(sim) is None and measure_r0(sim, count_day0=False) is None             # no day-0 seeds
 
 
 def test_measured_r0_is_unknown_on_the_age_structured_network():

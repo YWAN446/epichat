@@ -4,11 +4,16 @@ the disease's own, with the all-causes pair only when demographics are on. The
 stats carry seeds_day0 and seeds (day 0 plus delayed), the latter for spec 10."""
 from __future__ import annotations
 
+import math
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 import starsim as ss
 
 from .interventions import SeedInfections
+
+MEASURED_MAX_WEIGHT = 1.25       # a live run's seeds were no longer in a susceptible population above this mean depletion weight
 
 SERIES_KEYS = ("n_susceptible", "n_exposed", "n_infectious", "n_infected", "n_asymptomatic", "n_recovered",
                "new_infections", "cum_infections", "new_deaths", "cum_deaths", "new_deaths_all", "cum_deaths_all")
@@ -33,10 +38,20 @@ def infection_log(sim: ss.Sim):
     return getattr(disease, "infection_log", None)
 
 
-def measured_r0(sim: ss.Sim) -> float | None:
-    """Part 2, 5.6: the mean number of secondary infections caused by the day-0 seeds (the log's entries with source -1 at t 0);
-    None without day-0 seeds or on a network that records no per-agent sources (the age-structured MixingPools), 0.0 when the
-    seeds infected nobody."""
+@dataclass(frozen=True)
+class Measurement:
+    mean: float          # infections per seed, depletion-weighted
+    se: float            # the standard error of that mean over the seeds
+    seeds: int
+    weight: float        # the mean of alive / susceptible over the infections counted; 1.0 when none were
+
+
+def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
+    """Part 2, 5.6 as amended: for each day-0 seed, the infections it caused in its first infectious episode (before it was infected
+    again), each weighted by alive / susceptible at the step before, which corrects the depletion of susceptibles to first order.
+    count_day0 False leaves out what the seeds transmitted on step 0: a seed is infectious from step 0, an ordinary case from the step
+    after its infection, so a seed transmits on one more step. True counts everything (the pilot keeps its seeds quiet on step 0).
+    None without day-0 seeds or on a network that records no per-agent sources (the age-structured MixingPools)."""
     log = infection_log(sim)
     if log is None or len(log) == 0:
         return None
@@ -45,13 +60,35 @@ def measured_r0(sim: ss.Sim) -> float | None:
     t = np.array([float(getattr(x, "value", x)) for x in df["t"]])        # the log stores TimePars (days) on the numeric day axis
     targets = df["target"].to_numpy()
     seeded = (t == 0) & (np.isnan(source) | (source < 0))
-    seeds = targets[seeded]
+    seeds = np.sort(targets[seeded].astype(np.int64))
     if len(seeds) == 0:
         return None
     later = ~seeded
     if later.any() and not (source[later] >= 0).any():
         return None                     # the network records no per-agent sources (ss.MixingPools writes -999999): unknown, not zero
-    return float(np.isin(source, seeds).sum()) / len(seeds)
+    again = np.full(len(seeds), np.inf)                                    # the step each seed was infected again, if it was
+    hit = later & np.isin(targets, seeds)
+    np.minimum.at(again, np.searchsorted(seeds, targets[hit].astype(np.int64)), t[hit])
+    by_seed = later & np.isin(source, seeds) & (t >= (0 if count_day0 else 1))
+    index = np.searchsorted(seeds, source[by_seed].astype(np.int64))
+    first = t[by_seed] < again[index]
+    index, when = index[first], np.maximum(t[by_seed][first].astype(int) - 1, 0)
+    name = list(sim.diseases.keys())[0]
+    susceptible = np.asarray(sim.results[name]["n_susceptible"].values, dtype=float)
+    alive = np.asarray(sim.results["n_alive"].values, dtype=float)
+    weights = alive[when] / np.maximum(susceptible[when], 1.0)
+    per_seed = np.bincount(index, weights=weights, minlength=len(seeds))
+    se = float(per_seed.std(ddof=1) / math.sqrt(len(seeds))) if len(seeds) > 1 else 0.0
+    return Measurement(float(per_seed.mean()), se, int(len(seeds)), float(weights.mean()) if len(weights) else 1.0)
+
+
+def measured_r0(sim: ss.Sim) -> float | None:
+    """The R0 a live run shows: measure_r0 without the seeds' step-0 transmissions, withheld (None) when the population was already
+    depleted while the seeds were infectious (too many seeds for the R0), where no weighting recovers what the seeds would have done."""
+    m = measure_r0(sim, count_day0=False)
+    if m is None or m.weight > MEASURED_MAX_WEIGHT:
+        return None
+    return m.mean
 
 
 def extract(sim: ss.Sim, n_agents: int, seeds_day0: int, demographics_on: bool) -> dict:
