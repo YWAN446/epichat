@@ -16,7 +16,7 @@ from typing import Any, Literal
 import numpy as np
 
 from epichat.disease_db import _num, _range_of, lookup
-from epichat.params.r0 import R0Unreachable, approx_r0, calibrate_beta, clamp_beta, weighted_cfr
+from epichat.params.r0 import R0Unreachable, approx_r0, calibrate_beta, clamp_beta, r0_is_approximate, weighted_cfr
 from epichat.params.registry import DEATH_MODELS, REGISTRY_BY_PATH, WANING_MODELS
 from epichat.params.schema_v2 import SimParamsV2
 
@@ -40,6 +40,10 @@ ILLUSTRATIVE_SD_SHARE = 0.3          # spec 7.3: 0.3 × mean without a database 
 FATALITY_ASYMP_SHARE = 0.2
 HIGH_VARIANCE_SPREAD = 0.5
 R0_RECHECK_TOLERANCE = 0.1           # a configured R0 within 10% of the database typical needs no recheck
+WELL_MIXED_R_EFF = 2.0               # Part 2, 5.8
+WELL_MIXED_ATTACK_RATE = 0.7
+R0_GAP = 0.25
+R0_GAP_SIGMAS = 3                    # the gap must exceed three standard errors of the measured mean when the seeds are few
 DAYS_PER_UNIT = {"days": 1.0, "weeks": 7.0, "months": 30.44, "years": 365.25}
 SIMPLE_MODELS = ("sir", "seir", "seiar")
 
@@ -334,6 +338,51 @@ def _high_variance(run: _Run) -> Diagnostic | None:
                        "faded_out_share": round(faded / len(totals), 2), "n_replicates": len(totals)}, [])
 
 
+def _well_mixed(run: _Run) -> Diagnostic | None:
+    """Part 2, 5.8: on the random network nearly everyone is eventually infected; offer the hybrid network and lasting contacts."""
+    p = run.params
+    if p.network.network_type != "random" or run.r_eff < WELL_MIXED_R_EFF or run.n <= 0:
+        return None
+    attack = run.total / run.n
+    if attack <= WELL_MIXED_ATTACK_RATE:
+        return None
+    levers = [Lever({"network.network_type": "hybrid"}, {"network.network_type": "random"}, "change",
+                    "On the random network everyone meets fresh contacts every day, so nearly every susceptible is eventually infected. "
+                    "With the households, schools, workplaces and community of the hybrid network, contacts are limited and repeated and "
+                    "the final size is lower.", "rule"),
+              Lever({"network.contact_duration_days": 7}, {"network.contact_duration_days": p.network.contact_duration_days}, "increase",
+                    "Contacts that last a week instead of a day slow the spread by local depletion.", "rule")]
+    return Diagnostic("well_mixed", "info", "Nearly everyone was infected: the random network mixes the whole population every day",
+                      {"attack_rate": round(attack, 3), "r_eff": round(run.r_eff, 2)}, levers)
+
+
+def r0_gap_threshold(reference: float, seeds: int) -> float:
+    """25%, widened to R0_GAP_SIGMAS standard errors of a mean over `seeds` Poisson-like counts when the seeds are few."""
+    if reference <= 0 or seeds <= 0:
+        return R0_GAP
+    return max(R0_GAP, R0_GAP_SIGMAS * math.sqrt(reference / seeds) / reference)
+
+
+def _r0_gap(run: _Run) -> Diagnostic | None:
+    """Part 2, 5.8: the measured R0 (the seeds' secondary infections, so R_eff when some agents start immune) differs from the
+    configured one; levers only on the exact networks (the Part 1 recheck)."""
+    measured = run.stats.get("r0_measured")
+    if measured is None or run.r_eff <= 0:
+        return None
+    threshold = r0_gap_threshold(run.r_eff, run.seeds)
+    if abs(float(measured) - run.r_eff) / run.r_eff <= threshold:
+        return None
+    calibrated = run.stats.get("r0_calibration") is not None
+    levers = []
+    if not calibrated and not r0_is_approximate(run.params):
+        lever = _r0_recheck(run)
+        if lever is not None:
+            levers.append(lever)
+    return Diagnostic("r0_gap", "info", "The measured R0 differs from the configured one",
+                      {"approx_r0": round(run.r0, 2), "r_eff": round(run.r_eff, 2), "r0_measured": round(float(measured), 2),
+                       "threshold": round(threshold, 2), "calibrated": calibrated}, levers)
+
+
 def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | None, seeds: int,
              disease: str | None = None) -> list[Diagnostic]:
     """Every diagnostic the run triggers, warnings first and in the table's order within (section 10, 19)."""
@@ -343,7 +392,7 @@ def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | 
     candidates = (fadeout, _instant_peak(run), unfinished,
                   None if fadeout else _final_size_gap(run, unfinished is not None),
                   _sharp_curve(run), _cfr_out_of_range(run), _fatality_on_all_infections(run),
-                  _no_reinfection(run), _high_variance(run))
+                  _no_reinfection(run), _high_variance(run), _well_mixed(run), _r0_gap(run))
     found = [c for c in candidates if c is not None]
     return sorted(found, key=lambda d: 0 if d.severity == "warning" else 1)
 

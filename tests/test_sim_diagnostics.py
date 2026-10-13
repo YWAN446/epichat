@@ -39,9 +39,11 @@ def curve(peak: float, t_peak: int, width: int, tail: float = 0.0, days: int = D
     return out
 
 
-def run(p: SimParamsV2, infectious: list[float], total: float, seeds: int, new: list[float] | None = None, replicates=None, disease=None):
+def run(p: SimParamsV2, infectious: list[float], total: float, seeds: int, new: list[float] | None = None, replicates=None, disease=None,
+        stats_extra: dict | None = None):
     series = {"day": list(range(len(infectious))), "n_infectious": infectious, "new_infections": new or [0.0] * len(infectious)}
-    stats = {"total_infected": total, "n_agents": p.run.n_agents, "seeds": seeds, "seeds_day0": seeds if p.disease.seed.day == 0 else 0}
+    stats = {"total_infected": total, "n_agents": p.run.n_agents, "seeds": seeds, "seeds_day0": seeds if p.disease.seed.day == 0 else 0,
+             **(stats_extra or {})}
     return diagnose(p, series, stats, replicates, seeds, disease)
 
 
@@ -199,7 +201,7 @@ def test_warnings_come_before_infos_and_the_dict_form_is_json_ready():
     assert ids(found) == ["unfinished", "cfr_out_of_range"]            # the gap stands down when the run is unfinished
     mixed = run(params(**{"disease.model": "sirs", "disease.dur_immune": {"mean_days": 1825}, "disease.p_death": 0.2}),
                 NORMAL, total=8600, seeds=100, disease="measles")
-    assert ids(mixed) == ["cfr_out_of_range", "no_reinfection"]        # warning first, then the info
+    assert ids(mixed) == ["cfr_out_of_range", "no_reinfection", "well_mixed"]        # warning first, then the info
     as_json = dx.as_dicts(found)
     assert as_json[0]["levers"][0]["patch"] == {"run.sim_dur_years": 2.0} and as_json[0]["severity"] == "warning"
     json.dumps(as_json)
@@ -238,11 +240,11 @@ def test_the_thresholds_are_named_constants():
         assert isinstance(getattr(dx, name), (int, float)), name
 
 
-def test_a_normal_run_raises_no_diagnostic():
+def test_a_normal_run_raises_only_the_well_mixed_info():
     from epichat.sim.replicates import run_replicates
     p = params(**{"run.n_agents": 2000})
     out = run_replicates(p)
-    assert diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None) == []
+    assert ids(diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["well_mixed"]   # Part 2: the random network's thesis
     immune = params(**{"run.n_agents": 2000, "disease.beta": clamp_beta(calibrate_beta(params(), 15)), "disease.initial_immune_frac": 0.8})
     out = run_replicates(immune)
     assert diagnose(immune, out["series"], out["stats"], None, out["stats"]["seeds"], None) == []
@@ -258,3 +260,32 @@ def test_cfr_out_of_range_reads_the_population_weighted_fatality():
     assert d.evidence["p_death"] == pytest.approx(0.001)
     no_elderly = params(**{"disease.p_death": 0.001, "disease.p_death_age": {"elderly": 0.5}})   # default ages: no elderly
     assert one(run(no_elderly, NORMAL, total=8600, seeds=100, disease="measles"), "cfr_out_of_range").evidence["p_death"] == pytest.approx(0.001)
+
+
+def test_well_mixed_fires_on_a_random_network_run_that_infected_nearly_everyone():
+    d = one(run(params(), NORMAL, total=8600, seeds=100), "well_mixed")             # R0 2.3, attack rate 0.86 on the random network
+    assert d.severity == "info" and d.evidence == {"attack_rate": 0.86, "r_eff": pytest.approx(dx.approx_r0(params()), abs=0.01)}
+    assert [l.patch for l in d.levers] == [{"network.network_type": "hybrid"}, {"network.contact_duration_days": 7}]
+    assert d.levers[0].basis == "rule" and "repeated" in d.levers[0].rationale
+    assert "well_mixed" not in ids(run(params(**{"network.network_type": "hybrid"}), NORMAL, total=8600, seeds=100))
+    assert "well_mixed" not in ids(run(params(), NORMAL, total=6000, seeds=100))                       # attack rate 0.6
+    assert "well_mixed" not in ids(run(params(**{"disease.initial_immune_frac": 0.3}), NORMAL, total=8600, seeds=100))   # R_eff 1.6
+
+
+def test_r0_gap_fires_on_a_mismatch_beyond_the_noise_and_stands_down_when_calibrated():
+    approx = dx.approx_r0(params())                                                                     # about 2.3
+    gap = one(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.2}, disease="measles"), "r0_gap")
+    assert gap.severity == "info" and gap.evidence["r0_measured"] == 1.2 and gap.evidence["approx_r0"] == pytest.approx(approx, abs=0.01)
+    assert gap.levers and gap.levers[0].patch.keys() == {"disease.beta"}                               # the Part 1 recheck on an exact network
+    assert "r0_gap" not in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.9}))
+    assert "r0_gap" not in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": None}))
+    assert dx.r0_gap_threshold(2.3, 500) == 0.25 and dx.r0_gap_threshold(2.3, 20) == pytest.approx(3 * (2.3 / 20) ** 0.5 / 2.3)
+    assert "r0_gap" not in ids(run(params(), NORMAL, total=8600, seeds=20, stats_extra={"r0_measured": 1.6}))       # 30% gap, 20 seeds: noise
+    assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.6}))
+    # with initial immunity the seeds meet fewer susceptibles: the measured value is compared with R_eff, not R0
+    assert "r0_gap" not in ids(run(params(**{"disease.initial_immune_frac": 0.5}), NORMAL, total=4300, seeds=500, stats_extra={"r0_measured": approx * 0.5}))
+    calibrated = run(params(**{"network.network_type": "hybrid"}), NORMAL, total=8600, seeds=500,
+                     stats_extra={"r0_measured": 1.2, "r0_calibration": {"target": approx, "measured": 1.2, "corrections": 3}})
+    assert one(calibrated, "r0_gap").levers == [] and one(calibrated, "r0_gap").evidence["calibrated"] is True
+    off = run(params(**{"network.network_type": "hybrid", "run.calibrate_r0": False}), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.2})
+    assert one(off, "r0_gap").levers == []
