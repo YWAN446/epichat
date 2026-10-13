@@ -19,8 +19,9 @@ from __future__ import annotations
 import math
 
 from pydantic import ValidationError
+from scipy.special import gammainc
 
-from epichat.params.r0 import approx_r0, clamp_beta, r0_is_approximate
+from epichat.params.r0 import approx_r0, clamp_beta, per_contact_prob, r0_is_approximate
 from epichat.params.schema_v2 import SimParamsV2, sim_days
 
 from .builder import build_sim
@@ -35,10 +36,30 @@ TOLERANCE = 0.05
 NOISE_SIGMAS = 1                # no correction within this many standard errors of the measurement
 MAX_STEP = 2.0                  # one correction multiplies beta by at most this, or divides it
 MAX_CORRECTIONS = 3
+SATURATION_LOSS = 0.02          # the share of the configured R0 lost to saturation above which the pilot runs (follow-up spec 4.3)
+
+
+def gamma_loss(q: float, cv: float) -> float:
+    """1 − E[min(x, 1/q)] for x gamma with mean 1 and coefficient of variation cv: the share of R0 lost when the per-contact
+    probability q × x of a very susceptible agent is capped at 1 (E[min(X, c)] = P(k+1, c/θ) + c (1 − P(k, c/θ)) for shape k,
+    scale θ, kθ = 1, P the regularized incomplete gamma function)."""
+    if cv <= 0 or q <= 0:
+        return 0.0
+    shape, scale, cap = 1.0 / cv ** 2, cv ** 2, 1.0 / q
+    return float(max(0.0, 1.0 - (gammainc(shape + 1.0, cap / scale) + cap * (1.0 - gammainc(shape, cap / scale)))))
+
+
+def saturation_loss(p: SimParamsV2) -> float:
+    """Follow-up spec 4.3: on the random network each contact is a draw with probability q × x for a target of personal multiplier
+    x; the age-structured network's mixing pools take the multiplier linearly while R0 is being defined, and the hybrid network
+    is measured anyway."""
+    if p.network.network_type != "random":
+        return 0.0
+    return gamma_loss(p.network.network_beta * per_contact_prob(p.disease.beta), p.disease.rel_sus_cv)
 
 
 def needs_calibration(p: SimParamsV2) -> bool:
-    return r0_is_approximate(p) and p.run.calibrate_r0
+    return bool(p.run.calibrate_r0 and (r0_is_approximate(p) or saturation_loss(p) > SATURATION_LOSS))
 
 
 def pilot_seeds(p: SimParamsV2, target: float) -> int:

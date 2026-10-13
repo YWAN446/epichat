@@ -311,3 +311,22 @@ def test_fitted_runs_stand_down_the_final_size_and_r0_gaps_and_a_contact_reducti
     assert "final_size_gap" in ids(run(params(), NORMAL, total=3000, seeds=100))
     closed = run(params(interventions=[{"type": "contact_reduction", "layer": "all", "scale": 0.5, "start_day": 10, "end_day": 40}]), NORMAL, total=8600, seeds=100)
     assert "well_mixed" not in ids(closed)
+
+
+def test_final_size_gap_expects_the_size_the_variation_gives():
+    # follow-up spec 4.4: a run with variation that infects what its own closed form predicts raises nothing
+    varied = params(**{"disease.rel_sus_cv": 1.0})
+    expected = final_size(approx_r0(varied), 1.0)
+    assert 0.5 < expected < 0.62 and final_size(approx_r0(varied)) > 0.8
+    assert "final_size_gap" not in ids(run(varied, NORMAL, total=round(expected * N), seeds=100))
+    gap = one(run(params(), NORMAL, total=round(expected * N), seeds=100), "final_size_gap")              # the same total without variation
+    assert gap.evidence["expected_attack_rate"] == pytest.approx(final_size(approx_r0(params())), abs=1e-3)
+    high = one(run(varied, NORMAL, total=8600, seeds=100), "final_size_gap")                              # and the homogeneous total with it
+    assert high.evidence["expected_attack_rate"] == pytest.approx(expected, abs=1e-3)
+
+
+def test_a_calibrated_runs_r0_is_its_target():
+    # its beta was corrected, so the formula on the effective parameters is no longer the R0 the run was set to
+    p = params(**{"network.network_type": "hybrid"})
+    found = run(p, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.0, "r0_calibration": {"target": 3.3, "measured": 3.2, "se": 0.1, "corrections": 1, "reached": True}})
+    assert one(found, "r0_gap").evidence["approx_r0"] == 3.3

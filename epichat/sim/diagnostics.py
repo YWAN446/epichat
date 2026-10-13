@@ -66,13 +66,15 @@ class Diagnostic:
     levers: list[Lever] = field(default_factory=list)
 
 
-def final_size(r: float) -> float:
-    """z = 1 − exp(−r z): the homogeneous final size; 0 at or below R 1."""
+def final_size(r: float, cv: float = 0.0) -> float:
+    """The share of susceptibles an epidemic reaches: z = 1 − exp(−r z), or with gamma-distributed susceptibility of coefficient
+    of variation cv (follow-up spec 4.4) z = 1 − (1 + cv² r z)^(−1/cv²); 0 at or below R 1."""
     if r <= 1:
         return 0.0
+    v = cv * cv
     z = 0.99
-    for _ in range(200):
-        z = 1 - math.exp(-r * z)
+    for _ in range(400):
+        z = 1 - math.exp(-r * z) if v <= 0 else 1 - (1 + v * r * z) ** (-1 / v)
     return z
 
 
@@ -148,7 +150,9 @@ class _Run:
         self.peak = max(self.infectious) if self.infectious else 0.0
         self.t_peak = self.infectious.index(self.peak) if self.infectious else 0
         self.total = float(self.stats.get("total_infected", 0))
-        self.r0 = approx_r0(p)
+        calibration = self.stats.get("r0_calibration")
+        # a calibrated run's beta is no longer the formula's, so its R0 is the calibration's target, not the formula on what ran
+        self.r0 = float(calibration["target"]) if calibration and calibration.get("target") else approx_r0(p)
         self.r_eff = self.r0 * (1 - p.disease.initial_immune_frac)
         self.simple = (p.disease.model in SIMPLE_MODELS and p.network.network_type == "random"
                        and not p.demographics.use_demographics and not p.interventions)
@@ -228,7 +232,7 @@ def _final_size_gap(run: _Run, unfinished: bool) -> Diagnostic | None:
     if not run.simple or unfinished or not run.n or run.stats.get("fit"):       # a fitted run's size is the user's, not the R0's (7.7)
         return None
     susceptible = 1 - run.params.disease.initial_immune_frac
-    z = final_size(run.r_eff)            # the share of the susceptibles the epidemic reaches
+    z = final_size(run.r_eff, run.params.disease.rel_sus_cv)            # the share of the susceptibles the epidemic reaches
     expected = susceptible * z           # the attack rate over everyone (section 19)
     attack = run.total / run.n
     if abs(attack - expected) <= FINAL_SIZE_GAP:

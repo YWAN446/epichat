@@ -65,7 +65,8 @@ def seed_dist(seed: Seed):
 
 def disease_kwargs(params: SimParamsV2) -> dict:
     d = params.disease
-    kw = dict(init_prev=seed_dist(d.seed), beta=ss.peryear(d.beta), dur_inf=to_dist(d.dur_inf), rel_sus_age=d.rel_sus_age.as_tuple())
+    kw = dict(init_prev=seed_dist(d.seed), beta=ss.peryear(d.beta), dur_inf=to_dist(d.dur_inf), rel_sus_age=d.rel_sus_age.as_tuple(),
+              rel_sus_cv=d.rel_sus_cv)
     if d.model == "sis":
         kw.update(waning=ss.peryear(d.sis_waning), imm_boost=d.sis_imm_boost)     # 0 and 0 reproduce v1
     else:

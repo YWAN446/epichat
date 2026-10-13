@@ -177,3 +177,34 @@ def test_the_pilot_measures_a_latent_and_a_reinfection_model():
     for name, p in (("seir", seir), ("sis", sis)):
         values = [calibrate.measure(p, s).mean for s in (1, 2, 3)]
         assert abs(sum(values) / 3 - 2.5) / 2.5 < 0.08, (name, values)
+
+
+def test_the_saturation_loss_and_the_pilot_it_asks_for():
+    # follow-up spec 4.3: on the random network a very susceptible agent's per-contact probability cannot exceed 1
+    assert calibrate.gamma_loss(0.0625, 1.0) < 1e-4 and calibrate.gamma_loss(0.2, 1.0) == pytest.approx(0.007, abs=1e-3)
+    assert calibrate.gamma_loss(0.47, 1.0) == pytest.approx(0.119, abs=2e-3) and calibrate.gamma_loss(0.47, 2.0) == pytest.approx(0.390, abs=3e-3)
+    assert calibrate.gamma_loss(0.47, 0.0) == 0.0 and calibrate.gamma_loss(0.0, 1.0) == 0.0
+    import math
+    for q in (0.1, 0.4, 0.9):
+        assert calibrate.gamma_loss(q, 1.0) == pytest.approx(math.exp(-1 / q), abs=1e-9)                # a coefficient of variation of 1 is the exponential
+
+    def measles(cv, **network):
+        body = _plain(12.0, {"mean_days": 8.0, "dist": "gamma", "sd_days": 3.0}, n=10000).model_dump()
+        body["disease"]["rel_sus_cv"] = cv
+        body["network"].update(network)
+        return SimParamsV2.model_validate(body)
+
+    # R0 12 over 4 contacts and 7.5 transmitting days is a per-contact probability of 0.4: the loss is e^(−2.5), about 8%
+    assert calibrate.saturation_loss(measles(1.0)) == pytest.approx(math.exp(-2.5), abs=5e-3) and calibrate.needs_calibration(measles(1.0))
+    assert calibrate.saturation_loss(measles(0.0)) == 0.0 and not calibrate.needs_calibration(measles(0.0))
+    typical = _plain(2.5, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}).model_dump()
+    typical["disease"]["rel_sus_cv"] = 1.0
+    assert not calibrate.needs_calibration(SimParamsV2.model_validate(typical))                       # a loss under 2% runs no pilot
+    aged = measles(1.0, network_type="age_structured")
+    assert calibrate.saturation_loss(aged) == 0.0 and not calibrate.needs_calibration(aged)            # mixing pools enter linearly
+    off = measles(1.0).model_dump()
+    off["run"]["calibrate_r0"] = False
+    assert not calibrate.needs_calibration(SimParamsV2.model_validate(off))
+    calibrated, info = calibrate.calibrate_by_measurement(measles(1.0), 1)
+    assert calibrated.disease.beta > measles(1.0).disease.beta * 1.05 and info["corrections"] >= 1 and info["reached"] is True, info
+    assert abs(calibrate.measure(calibrated, 2, 12.0).mean - 12.0) / 12.0 < 0.10

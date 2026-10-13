@@ -17,14 +17,22 @@ import starsim as ss
 
 
 class EpiChatDisease:
-    """Mixin for every EpiChat model: the base states (rel_trans_base for the connector's rel_trans, rel_sus_base
-    and vaccine_protection for the disease's own rel_sus composition; Part 1 8.4, Part 2 4.2) and a disease-death counter."""
+    """Mixin for every EpiChat model: the base states (rel_trans_base for the connector's rel_trans, rel_sus_base,
+    rel_sus_ind and vaccine_protection for the disease's own rel_sus composition; Part 1 8.4, Part 2 4.2, follow-up
+    spec 4.2) and a disease-death counter."""
 
-    def __init__(self, pars=None, rel_sus_age=None, **kwargs):
+    def __init__(self, pars=None, rel_sus_age=None, rel_sus_cv=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
         self.define_pars(rel_sus_age=(1.0, 1.0, 1.0))      # children, adults, elderly (Part 2, 4.1)
         if rel_sus_age is not None:
             self.update_pars(rel_sus_age=tuple(float(v) for v in rel_sus_age))
+        cv = float(rel_sus_cv or 0.0)
+        # Follow-up spec 4.1: a personal multiplier drawn once per agent (births included) from a gamma with mean 1 and coefficient
+        # of variation cv; with no variation it is the constant 1 and nothing is drawn, so no random stream is added.
+        personal = ss.gamma(a=1.0 / cv ** 2, scale=cv ** 2) if cv > 0 else 1.0
+        self.define_states(
+            ss.FloatArr("rel_sus_ind", default=personal, label="Personal susceptibility multiplier"),
+        )
         self.define_states(
             ss.FloatArr("rel_trans_base", default=1.0, label="Base relative transmission"),
             ss.FloatArr("rel_sus_base", default=1.0, label="Base relative susceptibility"),
@@ -34,7 +42,8 @@ class EpiChatDisease:
         )
 
     def compose_rel_sus(self):
-        """Part 2, 4.2: rel_sus = rel_sus_base (from the agents' ages) × vaccine protection × (1 − SIS immunity)."""
+        """Part 2, 4.2 and follow-up spec 4.2: rel_sus = rel_sus_base (from the agents' ages) × rel_sus_ind (the personal
+        multiplier) × vaccine protection × (1 − SIS immunity)."""
         expired = np.asarray(self.vaccine_expires.raw) <= self.ti          # Part 2, 7.1: waning restores the susceptibility
         if expired.any():
             self.vaccine_protection.raw[expired] = 1.0
@@ -44,7 +53,7 @@ class EpiChatDisease:
         base = np.select([age < 18, age < 65], [children, adults], default=elderly)
         self.rel_sus_base[:] = base
         immunity = np.clip(1.0 - np.asarray(self.immunity), 0.0, 1.0) if hasattr(self, "immunity") else 1.0
-        self.rel_sus[:] = base * np.asarray(self.vaccine_protection) * immunity
+        self.rel_sus[:] = base * np.asarray(self.rel_sus_ind) * np.asarray(self.vaccine_protection) * immunity
 
     def init_results(self):
         super().init_results()
