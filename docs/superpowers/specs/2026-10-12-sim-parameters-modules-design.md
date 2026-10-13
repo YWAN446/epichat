@@ -119,7 +119,10 @@ rel_trans = rel_trans_base × seasonal_factor × transmission_reduction_factor
 rel_sus   = rel_sus_base   × vaccine_protection × (1 − sis_immunity)
 ```
 
-`rel_trans_base` carries the asymptomatic reduction and the exposed fraction;
+The disease composes `rel_sus` in its own `step_state`, so it holds with or
+without the connector (the intervention tests build sims without one); the
+connector composes `rel_trans`. `rel_trans_base` carries the asymptomatic
+reduction and the exposed fraction;
 `rel_sus_base` carries the age multiplier; `vaccine_protection` is a new
 per-agent state the EpiChat vaccine product writes (1 for nobody vaccinated,
 `1 − efficacy` for a leaky dose, 0 or 1 for an all-or-nothing one, restored to

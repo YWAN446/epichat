@@ -16,12 +16,28 @@ import starsim as ss
 
 
 class EpiChatDisease:
-    """Mixin for every EpiChat model: a transmissibility base state the
-    connector composes into rel_trans (spec 8.4), and a disease-death counter."""
+    """Mixin for every EpiChat model: the base states the TransmissionModifiers connector composes into
+    rel_trans and rel_sus (Part 1 8.4, Part 2 4.2), and a disease-death counter."""
 
-    def __init__(self, pars=None, **kwargs):
+    def __init__(self, pars=None, rel_sus_age=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
-        self.define_states(ss.FloatArr("rel_trans_base", default=1.0, label="Base relative transmission"))
+        self.define_pars(rel_sus_age=(1.0, 1.0, 1.0))      # children, adults, elderly (Part 2, 4.1)
+        if rel_sus_age is not None:
+            self.update_pars(rel_sus_age=tuple(float(v) for v in rel_sus_age))
+        self.define_states(
+            ss.FloatArr("rel_trans_base", default=1.0, label="Base relative transmission"),
+            ss.FloatArr("rel_sus_base", default=1.0, label="Base relative susceptibility"),
+            ss.FloatArr("vaccine_protection", default=1.0, label="Susceptibility left by vaccination"),
+        )
+
+    def compose_rel_sus(self):
+        """Part 2, 4.2: rel_sus = rel_sus_base (from the agents' ages) × vaccine protection × (1 − SIS immunity)."""
+        age = np.asarray(self.sim.people.age)
+        children, adults, elderly = self.pars.rel_sus_age
+        base = np.select([age < 18, age < 65], [children, adults], default=elderly)
+        self.rel_sus_base[:] = base
+        immunity = np.clip(1.0 - np.asarray(self.immunity), 0.0, 1.0) if hasattr(self, "immunity") else 1.0
+        self.rel_sus[:] = base * np.asarray(self.vaccine_protection) * immunity
 
     def init_results(self):
         super().init_results()
@@ -33,18 +49,60 @@ class EpiChatDisease:
             if len(deaths):
                 self.results.new_deaths_disease[self.ti] += len(deaths)
         super().step_state()
+        self.compose_rel_sus()
 
 
 class SIR(EpiChatDisease, ss.SIR):
     pass
 
 
-class SEIR(EpiChatDisease, ss.SEIR):
+class _Presymptomatic:
+    """Part 2, 4.3: exposed agents transmit at rel_trans_exposed of the infectious value. Starsim's kernel
+    takes the infectious as sources; this one takes everyone infected (exposed or infectious), with
+    rel_trans_base carrying the exposed fraction, so the default 0 changes nothing."""
+
+    def __init__(self, pars=None, rel_trans_exposed=None, **kwargs):
+        super().__init__(pars=pars, **kwargs)
+        self.define_pars(rel_trans_exposed=0.0)
+        if rel_trans_exposed is not None:
+            self.update_pars(rel_trans_exposed=rel_trans_exposed)
+
+    def set_infection(self, uids):
+        super().set_infection(uids)
+        self.rel_trans_base[uids] = float(self.pars.rel_trans_exposed)
+
+    def step_state(self):
+        exposed_before = np.array(self.exposed.raw, copy=True)
+        super().step_state()
+        moved = exposed_before & ~np.asarray(self.exposed.raw) & np.asarray(self.infectious.raw)
+        self.rel_trans_base.raw[moved] = 1.0                 # left the latent period this step; SEIAR then marks its asymptomatic ones
+        self.rel_trans_base[self.exposed] = float(self.pars.rel_trans_exposed)
+
+    def infect(self):
+        betamap = self.validate_beta()
+        sources_mask = self.exposed.raw | self.infectious.raw
+        rel_trans = self.rel_trans.asnew(sources_mask * self.rel_trans.raw, copy=False)
+        rel_sus = self.rel_sus.asnew(self.susceptible.raw * self.rel_sus.raw, copy=False)
+        new_cases, sources, networks = [], [], []
+        for i, (nkey, route) in enumerate(self.sim.networks.items()):
+            betas = betamap[ss.standardize_netkey(nkey)]
+            target_uids, source_uids, network_ids = self.infect_route(i, route, betas, rel_trans, rel_sus)
+            new_cases.append(target_uids)
+            sources.append(source_uids)
+            networks.append(network_ids)
+        return self.finalize_infections(new_cases, sources, networks)
+
+
+class SEIR(EpiChatDisease, _Presymptomatic, ss.SEIR):
     pass
 
 
 class SIS(EpiChatDisease, ss.SIS):
-    pass
+    def update_immunity(self):
+        # Starsim writes rel_sus here; the connector composes it from immunity instead (Part 2, 4.2).
+        waning = self.pars.waning.to_prob()
+        has_imm = (self.immunity > 0).uids
+        self.immunity[has_imm] *= (1 - waning)
 
 
 class _Waning:

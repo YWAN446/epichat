@@ -238,3 +238,26 @@ def test_null_seed_is_reproducible_on_every_random_path():
     b.run()
     assert np.array_equal(np.asarray(a.diseases[0].recovered.uids), np.asarray(b.diseases[0].recovered.uids))
     assert list(a.results.sir.cum_infections.values) == list(b.results.sir.cum_infections.values)
+
+
+def test_ages_follow_the_shares_on_the_random_network_too():
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({"demographics": {"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0},
+                                    "run": {"n_agents": 5000, "rand_seed": 1}})
+    age = np.asarray(build_sim(p).people.age)
+    assert abs((age < 18).mean() - 0.40) < 0.02 and abs((age >= 65).mean() - 0.10) < 0.02
+    default = np.asarray(build_sim(SimParamsV2.model_validate({"run": {"n_agents": 5000, "rand_seed": 1}})).people.age)
+    assert (default >= 65).sum() == 0 and abs((default < 18).mean() - 0.30) < 0.03
+
+
+def test_the_new_leaves_leave_a_default_scenario_unchanged():
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    before = SimParamsV2.model_validate({"run": {"n_agents": 2000, "sim_dur_years": 60 / 365, "rand_seed": 3}})
+    explicit = SimParamsV2.model_validate({"disease": {"rel_sus_age": {"children": 1.0, "adults": 1.0, "elderly": 1.0}, "rel_trans_exposed": 0.0},
+                                           "run": {"n_agents": 2000, "sim_dur_years": 60 / 365, "rand_seed": 3}})
+    a, b = build_sim(before), build_sim(explicit)
+    a.run()
+    b.run()
+    assert list(a.results.sir.cum_infections.values) == list(b.results.sir.cum_infections.values)

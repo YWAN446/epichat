@@ -134,3 +134,39 @@ def test_seiar_recovery_restores_the_base():
               p_asymp=ss.bernoulli(p=1.0), rel_trans_asymp=0.5)
     d = sim.diseases[0]
     assert int(d.recovered.count()) == 100 and np.all(d.rel_trans_base.values == 1.0)
+
+
+def test_exposed_agents_transmit_only_when_rel_trans_exposed_is_set():
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    base = {"model": "seir", "beta": 300.0, "dur_exp": {"mean_days": 10}, "dur_inf": {"mean_days": 0.5}, "p_death": 0.0,
+            "seed": {"mode": "count", "value": 20}}
+    silent = SimParamsV2.model_validate({"disease": base, "run": {"n_agents": 2000, "sim_dur_years": 8 / 365, "rand_seed": 1}})
+    sim = build_sim(silent)
+    sim.run()
+    assert sim.results.seir.cum_infections.values[-1] == 0          # nobody left the latent period: no transmission without the flag
+    loud = SimParamsV2.model_validate({"disease": {**base, "rel_trans_exposed": 1.0}, "run": {"n_agents": 2000, "sim_dur_years": 8 / 365, "rand_seed": 1}})
+    sim = build_sim(loud)
+    sim.run()
+    assert sim.results.seir.cum_infections.values[-1] > 100         # the exposed infected others at the full rate
+    assert set(np.unique(np.asarray(sim.diseases[0].rel_trans_base)[np.asarray(sim.diseases[0].exposed)])) == {1.0}
+    half = SimParamsV2.model_validate({"disease": {**base, "rel_trans_exposed": 0.5}, "run": {"n_agents": 2000, "sim_dur_years": 8 / 365, "rand_seed": 1}})
+    sim = build_sim(half)
+    sim.run()
+    assert set(np.unique(np.asarray(sim.diseases[0].rel_trans_base)[np.asarray(sim.diseases[0].exposed)])) == {0.5}
+
+
+def test_fatality_by_age_kills_only_the_groups_with_a_fatality():
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({
+        "disease": {"model": "sir", "beta": 300.0, "dur_inf": {"mean_days": 5}, "p_death": 0.0, "p_death_age": {"elderly": 1.0}, "seed": {"mode": "fraction", "value": 0.2}},
+        "demographics": {"age_pct_under18": 30.0, "age_pct_18_64": 50.0, "age_pct_over65": 20.0},
+        "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    sim = build_sim(p)
+    ages_at_start = np.asarray(sim.people.age.raw).copy()
+    sim.run()
+    disease = sim.diseases[0]
+    dead = np.isfinite(np.asarray(disease.ti_dead.raw))
+    assert dead.sum() > 100
+    assert np.all(ages_at_start[dead] >= 65)

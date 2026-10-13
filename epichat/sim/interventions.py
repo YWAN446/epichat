@@ -80,7 +80,7 @@ class InitialImmunity(ss.Intervention):
             disease.recovered[chosen] = True
             if hasattr(disease, "ti_susceptible"):
                 disease.ti_susceptible[chosen] = self.ti + disease.pars.dur_immune.rvs(chosen)
-        else:                                   # sis: immunity 1 wanes through update_immunity at the waning rate
+        else:                                   # sis: immunity 1 wanes through update_immunity; the disease composes rel_sus each step
             disease.immunity[chosen] = 1.0
-            disease.rel_sus[chosen] = 0.0
+            disease.rel_sus[chosen] = 0.0       # protected from this step on, before the next composition
         self.n_immunised = int(len(chosen))

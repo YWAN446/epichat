@@ -1,8 +1,8 @@
-"""Transmissibility composition (spec 8.4): once per step, after step_state
-and before transmission, rel_trans = rel_trans_base × the active modifiers.
-Seasonality is the first modifier, with Starsim's own formula on the numeric
-day axis (year fraction ti / 365). The interventions spec adds its modifiers
-here, so SEIAR's asymptomatic reduction always reaches rel_trans."""
+"""Transmissibility composition (Part 1, 8.4; Part 2, 4.2): once per step, after step_state and before
+transmission, rel_trans = rel_trans_base × the seasonal factor. Seasonality uses Starsim's own formula on
+the numeric day axis (year fraction ti / 365). The susceptibility composition (rel_sus_base × vaccine
+protection × SIS immunity) lives in the disease's own step_state, so it holds with or without this
+connector; phase 2C adds the transmission-reduction factor here."""
 from __future__ import annotations
 
 import math
@@ -11,7 +11,7 @@ import numpy as np
 import starsim as ss
 
 
-class TransmissibilityModifiers(ss.Connector):
+class TransmissionModifiers(ss.Connector):
     def __init__(self, disease: str, seasonality_scale: float = 0.0, seasonality_shift: float = 0.0):
         super().__init__()
         self.disease_name = disease
@@ -30,3 +30,6 @@ class TransmissibilityModifiers(ss.Connector):
         factor = self.factor()
         disease.rel_trans[:] = np.asarray(disease.rel_trans_base) * factor
         self.factors.append(factor)
+
+
+TransmissibilityModifiers = TransmissionModifiers   # the Part 1 name, for the tests that use it
