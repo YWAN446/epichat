@@ -462,16 +462,20 @@ Done after the sim-parameters phases 3 and 4 are pushed, with migration
 Done after the sim-parameters Part 2 phases (2A to 2D) are pushed. No
 migration. One browser; a phone is enough.
 
-1. New conversation: "Model seasonal influenza in a town of 50,000 people
-   with households, schools and workplaces, for six months." The configure
-   call sets `network_type: hybrid`; the panel's Parameters section shows
+1. New conversation: "Model seasonal influenza in a town with households,
+   schools and workplaces, for six months, with 10,000 agents." (Keep the
+   10,000 agents: step 4 fits this scenario, and a fitted hybrid run with
+   more agents does not fit the service's timeout on Vercel; see section 7.)
+   The configure call sets `network_type: hybrid`; the panel's Parameters
+   section shows
    "Contact network: hybrid (households, schools, workplaces, community)" and
    a "Household size" row; the reply says the hybrid network was chosen for
    the setting.
 2. "Run it." The reply says in one sentence that beta was adjusted to the
    measured R0 (the run payload carries `applied.beta_calibrated_by_measurement`
-   and `stats.r0_calibration`); the runs panel and the report show an
-   "R₀ measured" row.
+   and `stats.r0_calibration`). Then "Create a report": its "What was
+   modelled" block shows an "R₀ measured" row under the configured R₀ (the
+   report is the only place that row appears; the panel has none).
 3. "Close the schools from day 30 for six weeks and run it again." The
    configure call carries `interventions: [{type: contact_reduction, layer:
    school, scale: 1, start_day: 30, end_day: 72}]`; the panel's
@@ -479,27 +483,32 @@ migration. One browser; a phone is enough.
    to day 72"; the reply reports what changed against the previous run before
    interpreting, and calls the closure's effect size an illustrative
    assumption.
-4. "Fit it so that 30% of the town is infected." The configure call carries
-   `fit: {target: attack_rate, value: 0.3}`; the panel shows a "Fitted to"
-   row ("attack rate 30% by moving the transmission rate"); the run takes
-   longer (the fit's search, at most eight runs before the replicates); the
-   reply says beta was set so that the attack rate is 30% and labels the run
-   as fitted in the limitations; the report's Parameters block shows "Fitted
-   to: attack rate 30% (reached …% in N runs)".
-5. New conversation on the random network: "Model measles in Kenya for a
-   year." Run it, then ask "Why were so many infected?": the reply explains
-   the random network (fresh contacts every day) and offers the hybrid
-   network as an option without promising that the switch alone lowers the
-   final size.
+4. "Fit it so that 30% of the town is infected, and run it." The configure
+   call carries `fit: {target: attack_rate, value: 0.3}`; the panel shows a
+   "Fitted to" row ("attack rate 30% by moving the transmission rate"); the
+   run takes longer (the fit's search, at most eight runs before the
+   replicates); the reply says beta was set so that the attack rate is 30%
+   and labels the run as fitted in the limitations. "Create a report" again:
+   its "What was modelled" block shows "Fitted to: attack rate 30% (reached
+   …% in N runs)".
+5. New conversation: "Model measles in a city of 20,000 people for a year."
+   Name no country here: a country brings the demographics fetch, which
+   moves the scenario to the age-structured network, and this step checks
+   the random one. Run it, then ask "Why were so many infected?": the reply
+   explains the random network (fresh contacts every day) and offers the
+   hybrid network as an option without promising that the switch alone
+   lowers the final size.
 6. In the SQL editor:
 
        select id, stats->'fit' as fit, stats->'r0_calibration' as calibration, stats->'r0_measured' as measured
        from runs order by created_at desc limit 4;
 
    The fitted run's row carries `fit` with `target`, `wanted`, `achieved`,
-   `lever`, `value` and `runs`; the hybrid runs carry `calibration`; every
-   row carries `measured` (null on an age-structured run, where Starsim's
-   mixing pools do not log the source).
+   `lever`, `value` and `runs`, and no `calibration` (the fit replaces the
+   pilot); the two unfitted hybrid runs of steps 2 and 3 carry `calibration`;
+   the random run of step 5 carries neither. Every row here carries
+   `measured`; it is null only on an age-structured run, where Starsim's
+   mixing pools do not log the source.
 
 ## 7. Simulation service (`sim/`)
 
@@ -627,13 +636,17 @@ pilot. Owner: after the deploy, time a hybrid scenario through the binding as in
 step 4 and add the row to the table above.
 
 A fitted run (Part 2, 7.7) costs one full run per search step before the
-replicates, at most eight: locally (the same machine and settings, 2026-10-13)
-fitting the attack rate to 30% on the random network at 10k agents took
-8 runs and 41 s in all (the search reached 31.4%). On Vercel the per-attempt
-timeout covers eight runs of 10k agents (about a minute at the warm 10k
-time); a fit at 100k agents is the one case to keep to the local service.
-Owner: after the deploy, time a fitted scenario once from the activity's
-run duration and add it here.
+replicates, at most eight. Locally (the same machine and settings,
+2026-10-13), fitting the attack rate to 30% at 10k agents took 8 runs and
+41 s on the random network for a year (the search reached 31.4%), and 7 runs
+and 29 s on the hybrid network with a school closure for six months (29.5%);
+the same hybrid scenario at 50k agents took 82 s. The service's per-attempt
+timeout is 120 s (`SIM_TIMEOUT_SECONDS`) and Vercel runs at about 1.5× the
+local time, so a fit at 10k agents fits and a hybrid fit at 50k agents does
+not: keep fitted scenarios to 10k agents on Vercel (section 6j's first step
+does), or run larger ones against the local service. Owner: after the
+deploy, time a fitted scenario once from the activity's run duration and add
+it here.
 
 **Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
 Active CPU hours a month and pauses the whole project for the rest of the
