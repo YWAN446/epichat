@@ -38,5 +38,8 @@ def test_the_part_2_cases_cover_the_school_closure_and_the_hybrid_option():
     why = by_id["parameters-why-so-many-infected"]
     assert why["real_sim"] is True and why["checks"]["ran_simulation"] is True
     assert "Why were so many infected" in why["turns"][-1]
+    # 2D review: a country brings a fetch that switches the network to age-structured, where well_mixed never fires
+    assert why["checks"]["config"] == {"disease": "measles", "network_type": "random"}
+    assert not any("Kenya" in turn for turn in why["turns"])
     assert any("hybrid" in c for c in why["checks"]["judge"])
     assert any("not promise" in c.lower() for c in why["checks"]["judge"])

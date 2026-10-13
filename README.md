@@ -147,16 +147,22 @@ registry, schema v2, the exact R0, diagnostics and options) and
   defaults, or the country's Prem 2021 matrix once `fetch_demographics` has
   run) or `hybrid` (households, schools, workplaces and community as in
   Covasim, with the country's household size and the layers' sizes and
-  transmissibilities as parameters). The R0 formula is exact on the first two
-  and approximate on the hybrid network, so every run reports the measured R0
-  (the day-0 seeds' mean secondary infections) and on the hybrid network a
-  short pilot adjusts beta to it (`applied.beta_calibrated_by_measurement`;
-  `run.calibrate_r0` switches it off). At the same R0 the final size is close
+  transmissibilities as parameters). The R0 formula is exact on the random
+  and age-structured networks and approximate on the hybrid network or with a
+  `contact_duration_days` above 0. A run reports the measured R0 (the day-0
+  seeds' mean secondary infections; null on the age-structured network,
+  where Starsim's mixing pools do not record who infected whom), and where
+  the formula is approximate a short pilot adjusts beta to it
+  (`applied.beta_calibrated_by_measurement`; `run.calibrate_r0` switches it
+  off; a fit replaces it). At the same R0 the final size is close
   on every network: the networks differ in who meets whom and in what the
   interventions act on.
-- **Demographics.** With a country, the agents' ages follow the UN WPP 2024
-  pyramid (`epichat/data/un_wpp_age.csv`) and multi-year runs follow the
-  projected crude birth rates (`un_wpp_cbr.csv`); the household size comes
+- **Demographics.** Once `fetch_demographics` has run for a country (it sets
+  `demographics.age_source` to `un_wpp`; a country alone leaves Starsim's
+  default ages), the agents' ages follow the UN WPP 2024 pyramid
+  (`epichat/data/un_wpp_age.csv`); with births and deaths on, a multi-year
+  run for a known country follows the projected crude birth rates after its
+  first year (`un_wpp_cbr.csv`); the household size comes
   from the UN household database (`un_household_size.csv`) and the contact
   matrix from Prem 2021 (`contact_matrices.csv`). `scripts/fetch_un_wpp_tables.py`,
   `scripts/fetch_household_size.py` and `scripts/fetch_contact_matrices.py`
@@ -385,7 +391,7 @@ above.
 
 | Parameter | Type | Options / Range | Default | Description |
 |-----------|------|----------------|---------|-------------|
-| `network_type` | string | `random`, `age_structured`, `hybrid` | `random` | Contact network structure |
+| `network_type` | string | `random`, `age_structured`; `hybrid` (web agent and `/simulate` only) | `random` | Contact network structure |
 | `n_contacts` | integer | 1–100 | 4 | Average daily contacts per person |
 | `network_beta` | float | 0–10 | 1.0 | Transmission multiplier per contact (use <1 for masks/distancing) |
 
@@ -393,8 +399,10 @@ above.
 
 - **`random`** — Each agent contacts `n_contacts` random others per day. Good default for most scenarios. Use higher `n_contacts` for crowded settings.
 - **`age_structured`** — Uses a built-in POLYMOD-style contact matrix with three age groups (children 0–17, adults 18–64, elderly 65+). Accounts for the fact that children mix more with children, adults with adults, etc. Use when age heterogeneity matters (school outbreaks, elderly vulnerability).
-- **`hybrid`** — Households (the country's mean size), schools, workplaces and
-  community, as in Covasim: each layer has its own contacts per day and
+- **`hybrid`** — Schema v2 only: the web agent and `/simulate` take it, the
+  CLI and the Streamlit app reject it. Households (the country's mean size),
+  schools, workplaces and community, as in Covasim: each layer has its own
+  contacts per day and
   transmissibility (schema v2: `household_size`, `school_contacts`,
   `work_contacts`, `community_contacts`, `layer_beta.household` and so on, the
   school and working age ranges). The structure a school closure or
@@ -446,10 +454,10 @@ Removes a fraction of agents from the susceptible pool.
 | Field | Type | Description |
 |-------|------|-------------|
 | `coverage` | float (0–1) | Fraction of population vaccinated |
-| `start_day` | integer | `0` = pre-existing immunity (applied before simulation starts); `>0` = ongoing campaign starting on that day |
+| `start_day` | integer | `0` = pre-existing immunity (applied before simulation starts); `>0` = ongoing campaign starting on that day. In v2 this holds for a plain entry only; see `efficacy` |
 | `kind` | string | v2: `routine` (default: a yearly probability over the window) or `campaign` (reaches the coverage uniformly over the window) |
 | `end_day` | integer or null | v2: last day of the window (null = the run's end) |
-| `efficacy` | float (0–1) | v2: protection per dose (1.0 = full). A day-0 vaccine with efficacy below 1 is a one-day campaign, not pre-existing immunity |
+| `efficacy` | float (0–1) | v2: protection per dose (1.0 = full). Only a plain day-0 vaccine (routine, full efficacy, no end day) is pre-existing immunity; one with an efficacy below 1, ages, a protection duration or all-or-nothing protection keeps its fields and runs as a one-day campaign on day 0 (a `campaign` or an entry with an `end_day` runs over its window) |
 | `leaky` | bool | v2: `true` scales susceptibility by 1 − efficacy; `false` protects a fraction fully |
 | `age_min`, `age_max` | integer or null | v2: the ages vaccinated |
 | `protection_days` | integer or null | v2: days before the protection wanes (null = permanent) |
@@ -469,8 +477,8 @@ Reduces infectious duration or mortality for a fraction of infected agents.
 | `start_day` | integer | Day treatment becomes available |
 | `end_day` | integer or null | v2: last day treatment is available |
 | `efficacy` | float (0–1) | v2: share of treated cases cured |
-| `delay_days` | integer | v2: days from infection to treatment |
-| `rel_trans_treated` | float (0–1) | v2: transmissibility while waiting for treatment |
+| `delay_days` | integer | v2: days from becoming infectious to seeking treatment |
+| `rel_trans_treated` | float (0–1) | v2: transmissibility while queued for treatment behind `capacity` (without a capacity nobody queues, so it has no effect) |
 | `symptomatic_only` | bool | v2: skip asymptomatic cases (SEIAR) |
 
 **Examples in natural language:**

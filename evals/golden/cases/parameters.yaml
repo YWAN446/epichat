@@ -71,9 +71,9 @@
   critical: false
   real_sim: true
   pending: api-harness
-  pending_note: "The hybrid option is a web-agent rule (Part 2, 5.1): the random network is the default, and the agent offers the hybrid network when asked why so many were infected."
+  pending_note: "The hybrid option is a web-agent rule (Part 2, 5.1): the random network is the default, and the agent offers the hybrid network when asked why so many were infected. No country is named: a country brings the demographics fetch, which moves the scenario to the age-structured network, where the well_mixed diagnostic never fires."
   turns:
-    - "Model measles in Kenya for a year with 20,000 agents."
+    - "Model measles in a city of 20,000 people for a year."
     - "Yes, run it."
     - "Why were so many infected?"
   checks:
@@ -81,7 +81,7 @@
     ran_simulation: true
     config:
       disease: measles
-      country: KEN
+      network_type: random
     judge:
       - "Explains that on the random network everyone meets fresh contacts every day, so at this R0 nearly every susceptible is eventually infected"
       - "Offers the hybrid network (households, schools, workplaces, community) as an option, as the structure that school closures and distancing act on"
