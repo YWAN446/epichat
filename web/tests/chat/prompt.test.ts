@@ -50,6 +50,8 @@ describe("system prompt", () => {
       "what it changes, the suggested value, and its basis",
       "before interpreting the new run",
       "apply the lever's whole patch",
+      "under 18, 18 to 64, and 65 and over",
+      "no elderly group",
     ]) {
       expect(SYSTEM_PROMPT).toContain(phrase);
     }

@@ -1,7 +1,7 @@
 import type { ResolvedField } from "@/lib/data/types";
 import { checkParams } from "@/lib/disease/checkParams";
 import { detectDisease } from "@/lib/disease/db";
-import { approxR0, type SimParams } from "@/lib/sim/params";
+import { approxR0, weightedCfr, type SimParams } from "@/lib/sim/params";
 import type { Scenario, ToolOutcome } from "./types";
 
 export const NEEDS_CONFIG = "Call configure_simulation first to establish the simulation before fetching data.";
@@ -21,7 +21,7 @@ export function paramWarnings(scenario: Scenario, params: SimParams, contextText
   if (!disease) return [];
   const d = params.disease;
   return checkParams(disease, approxR0(params), d.dur_inf.mean_days, d.dur_exp?.mean_days ?? null, {
-    pDeath: d.p_death || null,
+    pDeath: weightedCfr(params) || null,
     nContacts: params.network.n_contacts,
     durImmune: d.dur_immune?.mean_days ?? null,
     pAsymp: d.model === "seiar" ? d.p_asymp : null,

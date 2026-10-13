@@ -4,7 +4,7 @@
  * Values are formatted the way the Python app prints them (lib/sim/pyformat).
  */
 import names from "@/data/country_names.json";
-import { approxR0, type Duration, type Seed, type SimParams } from "@/lib/sim/params";
+import { AGE_GROUPS, approxR0, deathProbabilities, type Duration, type Seed, type SimParams } from "@/lib/sim/params";
 import { getPath } from "@/lib/sim/paths";
 import { specFor } from "@/lib/sim/registry";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
@@ -119,6 +119,9 @@ export function parameterRows(p: SimParams): [string, string][] {
     ...(d.model === "sis" && d.sis_waning > 0 ? row("Immunity waning", `${fmtValue(d.sis_waning)} per year`) : []),
     ...(d.model !== "sis" ? row("Death probability", formatQuantity(d.p_death, "fraction")) : []),
     ...(asymptomatic ? [...row("Asymptomatic share", formatQuantity(d.p_asymp, "fraction")), ...row("Asymptomatic transmission", `${formatQuantity(d.rel_trans_asymp, "fraction")} of symptomatic`)] : []),
+    ...(Object.values(d.rel_sus_age).some((v) => v !== 1) ? row("Susceptibility by age", `children ×${fmtValue(d.rel_sus_age.children)}, adults ×${fmtValue(d.rel_sus_age.adults)}, elderly ×${fmtValue(d.rel_sus_age.elderly)}`) : []),
+    ...(Object.values(d.p_death_age).some((v) => v !== null) ? row("Fatality by age", deathProbabilities(d).map((q, i) => `${AGE_GROUPS[i]} ${formatQuantity(q, "fraction")}`).join(", ")) : []),
+    ...(d.rel_trans_exposed > 0 ? row("Presymptomatic transmission", `${formatQuantity(d.rel_trans_exposed, "fraction")} of the infectious value`) : []),
     ["Agents", commaInt(p.run.n_agents)],
     ["Duration", formatQuantity(p.run.sim_dur_years, "years")],
     ...(p.run.n_replicates > 1 ? row("Replicates", fmtValue(p.run.n_replicates)) : []),

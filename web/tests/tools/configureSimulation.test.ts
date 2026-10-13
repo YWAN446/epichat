@@ -281,3 +281,14 @@ describe("configure_simulation records a taken option", () => {
     expect(deps.options).toHaveLength(2);
   });
 });
+
+describe("configure_simulation and the fatality by age", () => {
+  it("checks the fatality ratio against the literature as the population-weighted value", async () => {
+    const deps = makeDeps();
+    const out = JSON.parse((await run(deps, { disease: "measles", r0: 15, dur_inf_days: 8, p_death: 0.001, advanced: { "disease.p_death_age.elderly": 0.5 } })).content);
+    // default shares have no elderly: the weighted CFR is 0.1%, below the 0.5–6% range
+    expect(out.warnings.some((w: string) => w.startsWith("Fatality rate 0.1%"))).toBe(true);
+    const withElderly = JSON.parse((await run(deps, { advanced: { "demographics.age_pct_under18": 40, "demographics.age_pct_18_64": 50, "demographics.age_pct_over65": 10 } })).content);
+    expect(withElderly.warnings.some((w: string) => w.startsWith("Fatality rate"))).toBe(false); // 0.9 × 0.1% + 0.1 × 50% = 5.09%
+  });
+});

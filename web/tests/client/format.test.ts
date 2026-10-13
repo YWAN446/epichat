@@ -160,3 +160,16 @@ describe("configuration rows", () => {
     expect(scenarioRows({ ...config, country: null, interventions: [] }, "Measles")).toEqual([["Disease", "Measles"], ["Model", "SEIR"], ["Country", "—"], ["Duration", "2 years"], ["Interventions", "none"]]);
   });
 });
+
+describe("parameter rows for the age-specific values", () => {
+  it("shows the age multipliers, the fatality by age and the presymptomatic share only when set", () => {
+    const plain = parameterRows(params({ schema_version: 2 })).map(([label]) => label);
+    expect(plain).not.toContain("Susceptibility by age");
+    expect(plain).not.toContain("Fatality by age");
+    expect(plain).not.toContain("Presymptomatic transmission");
+    const rows = parameterRows(params({ schema_version: 2, disease: { model: "seir", dur_exp: { mean_days: 5 }, p_death: 0.01, rel_sus_age: { children: 1.5, elderly: 0.7 }, p_death_age: { elderly: 0.1 }, rel_trans_exposed: 0.5 } }));
+    expect(rows).toContainEqual(["Susceptibility by age", "children ×1.5, adults ×1, elderly ×0.7"]);
+    expect(rows).toContainEqual(["Fatality by age", "children 1%, adults 1%, elderly 10%"]);
+    expect(rows).toContainEqual(["Presymptomatic transmission", "50% of the infectious value"]);
+  });
+});

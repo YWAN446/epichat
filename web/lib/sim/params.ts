@@ -79,6 +79,18 @@ export type Seed = z.infer<typeof SeedSchema>;
 
 const DURATIONS = ["dur_exp", "dur_inf", "dur_immune"] as const;
 
+export const AGE_GROUPS = ["children", "adults", "elderly"] as const;
+export const AgeMultipliersSchema = z.object({
+  children: withDefault("disease.rel_sus_age.children"),
+  adults: withDefault("disease.rel_sus_age.adults"),
+  elderly: withDefault("disease.rel_sus_age.elderly"),
+});
+export const AgeFractionsSchema = z.object({
+  children: nullable(bounded("disease.p_death_age.children")),
+  adults: nullable(bounded("disease.p_death_age.adults")),
+  elderly: nullable(bounded("disease.p_death_age.elderly")),
+});
+
 export const DiseaseSchema = z
   .object({
     model: z.enum(DISEASE_TYPES).default("sir"),
@@ -89,6 +101,9 @@ export const DiseaseSchema = z
     p_death: withDefault("disease.p_death"),
     p_asymp: withDefault("disease.p_asymp"),
     rel_trans_asymp: withDefault("disease.rel_trans_asymp"),
+    rel_sus_age: AgeMultipliersSchema.prefault({}),
+    p_death_age: AgeFractionsSchema.prefault({}),
+    rel_trans_exposed: withDefault("disease.rel_trans_exposed"),
     sis_waning: withDefault("disease.sis_waning"),
     sis_imm_boost: withDefault("disease.sis_imm_boost"),
     seed: SeedSchema.prefault({ value: 0.01 }),
@@ -296,6 +311,35 @@ export function asympFactor(d: DiseaseParams): number {
   return d.model === "seiar" ? 1 - d.p_asymp * (1 - d.rel_trans_asymp) : 1;
 }
 
+/** Starsim's default ages are uniform on 0 to 60: no elderly (Part 2, section 4.1). */
+export const DEFAULT_AGE_SHARES: [number, number, number] = [0.3, 0.7, 0];
+
+/** The share of agents in each age group: the fetched shares when all three are set, else the default ages'. */
+export function ageShares(p: SimParams): [number, number, number] {
+  const g = p.demographics;
+  if (g.age_pct_under18 !== null && g.age_pct_18_64 !== null && g.age_pct_over65 !== null) return [g.age_pct_under18 / 100, g.age_pct_18_64 / 100, g.age_pct_over65 / 100];
+  return DEFAULT_AGE_SHARES;
+}
+
+/** Each group's case fatality ratio: its own value, or the scalar. */
+export function deathProbabilities(d: DiseaseParams): [number, number, number] {
+  return [d.p_death_age.children ?? d.p_death, d.p_death_age.adults ?? d.p_death, d.p_death_age.elderly ?? d.p_death];
+}
+
+/** The population case fatality ratio, the groups weighted by their shares. */
+export function weightedCfr(p: SimParams): number {
+  const s = ageShares(p);
+  const q = deathProbabilities(p.disease);
+  return s[0] * q[0] + s[1] * q[1] + s[2] * q[2];
+}
+
+/** Days an exposed agent can transmit on a daily step, by the infectious period's offsets; 0 outside the latent models. */
+export function exposedDays(d: DiseaseParams): number {
+  if (!LATENT_MODELS.includes(d.model) || !d.dur_exp) return 0;
+  const exp = d.dur_exp;
+  return Math.max(0, exp.dist === "constant" ? Math.ceil(exp.mean_days) - 1 : exp.mean_days - 0.5);
+}
+
 /** Days an infected agent transmits on a daily step (spec 7.4). */
 export function effectiveDays(d: DiseaseParams): number {
   const inf = d.dur_inf;
@@ -307,12 +351,19 @@ export function effectiveDays(d: DiseaseParams): number {
     else days = inf.mean_days;
   } else if (inf.dist === "constant") days = Math.ceil(inf.mean_days) - 1;
   else days = inf.mean_days - 0.5;
-  return Math.max(0, days);
+  return Math.max(0, days) + d.rel_trans_exposed * exposedDays(d);
 }
 
-/** The R0 reached if every contact transmitted: contacts × network_beta × D_eff × asymp_factor. */
+/** The R0 reached if every contact transmitted: contacts × network_beta × D_eff × asymp_factor, with the susceptibility multipliers (Part 2, 4.4). */
 export function contactScale(p: SimParams): number {
-  const contacts = p.network.network_type === "age_structured" ? CONTACT_SPECTRAL_RADIUS : p.network.n_contacts;
+  const r = [p.disease.rel_sus_age.children, p.disease.rel_sus_age.adults, p.disease.rel_sus_age.elderly];
+  let contacts: number;
+  if (p.network.network_type === "age_structured") {
+    contacts = r.every((v) => v === 1) ? CONTACT_SPECTRAL_RADIUS : spectralRadius3(CONTACT_MATRIX.map((row) => row.map((v, j) => v * r[j])));
+  } else {
+    const s = ageShares(p);
+    contacts = p.network.n_contacts * (s[0] * r[0] + s[1] * r[1] + s[2] * r[2]);
+  }
   return contacts * p.network.network_beta * effectiveDays(p.disease) * asympFactor(p.disease);
 }
 

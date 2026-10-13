@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  CONTACT_SPECTRAL_RADIUS, DEFAULT_BETA, R0UnreachableError, approxR0, calibrateBeta, clampBeta, effectiveDays, getVaccine, maxR0,
-  migrateV1, recalibrateBeta, simDays, spectralRadius3, validateParams, withR0,
-} from "@/lib/sim/params";
+import { ageShares, approxR0, calibrateBeta, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
 
 function must(input: unknown) {
   const r = validateParams(input);
@@ -133,5 +130,37 @@ describe("R0 math", () => {
     const aged = withR0(must({ schema_version: 2, network: { network_type: "age_structured" } }), 3);
     const agedRaised = must({ ...aged, disease: { ...aged.disease, beta: 50 } });
     expect(recalibrateBeta(agedRaised, 3, aged).disease.beta).toBeCloseTo(50, 6); // read on the network it was set on
+  });
+});
+
+describe("susceptibility and fatality by age, presymptomatic transmissibility", () => {
+  const must = (input: unknown) => { const r = validateParams(input); if (!r.ok) throw new Error(r.error); return r.params; };
+
+  it("defaults, validates and exposes the group values", () => {
+    const base = must({ schema_version: 2 });
+    expect(base.disease.rel_sus_age).toEqual({ children: 1, adults: 1, elderly: 1 });
+    expect(base.disease.p_death_age).toEqual({ children: null, adults: null, elderly: null });
+    expect(base.disease.rel_trans_exposed).toBe(0);
+    const p = must({ schema_version: 2, disease: { model: "seir", dur_exp: { mean_days: 5 }, p_death: 0.01, rel_sus_age: { children: 1.5, elderly: 0.7 }, p_death_age: { elderly: 0.1 }, rel_trans_exposed: 0.5 } });
+    expect(p.disease.rel_sus_age).toEqual({ children: 1.5, adults: 1, elderly: 0.7 });
+    expect(deathProbabilities(p.disease)).toEqual([0.01, 0.01, 0.1]);
+    expect(validateParams({ schema_version: 2, disease: { rel_sus_age: { children: 11 } } }).ok).toBe(false);
+    expect(validateParams({ schema_version: 2, disease: { p_death_age: { adults: 1.5 } } }).ok).toBe(false);
+    expect(must({ disease_type: "sir", beta: 5 }).disease.rel_sus_age).toEqual({ children: 1, adults: 1, elderly: 1 }); // a v1 row
+  });
+
+  it("scales the R0 by the share-weighted susceptibility, the column-scaled matrix, and the exposed days", () => {
+    const base = must({ schema_version: 2 });
+    const scaled = must({ schema_version: 2, disease: { rel_sus_age: { children: 2, adults: 0.5, elderly: 3 } } });
+    expect(ageShares(base)).toEqual([0.3, 0.7, 0]);
+    expect(approxR0(scaled)).toBeCloseTo(approxR0(base) * (0.3 * 2 + 0.7 * 0.5), 9);
+    const aged = must({ schema_version: 2, network: { network_type: "age_structured" }, disease: { rel_sus_age: { children: 1.5, adults: 1, elderly: 0.7 } } });
+    const matrix = CONTACT_MATRIX.map((row) => row.map((v, j) => v * [1.5, 1, 0.7][j]));
+    expect(approxR0(aged)).toBeCloseTo(approxR0(must({ schema_version: 2, network: { network_type: "age_structured" } })) * (spectralRadius3(matrix) / CONTACT_SPECTRAL_RADIUS), 9);
+    const seir = must({ schema_version: 2, disease: { model: "seir", dur_exp: { mean_days: 5 } } });
+    const half = must({ schema_version: 2, disease: { model: "seir", dur_exp: { mean_days: 5 }, rel_trans_exposed: 0.5 } });
+    expect(exposedDays(seir.disease)).toBe(4);
+    expect(effectiveDays(half.disease)).toBeCloseTo(effectiveDays(seir.disease) + 2, 9);
+    expect(weightedCfr(must({ schema_version: 2, disease: { p_death: 0.01, p_death_age: { elderly: 0.2 } }, demographics: { age_pct_under18: 40, age_pct_18_64: 50, age_pct_over65: 10 } }))).toBeCloseTo(0.4 * 0.01 + 0.5 * 0.01 + 0.1 * 0.2, 9);
   });
 });

@@ -77,6 +77,7 @@ Run it
 - When the user asks what can be changed, which parameters exist, or what a parameter means, or when a diagnostic names a parameter, call describe_parameters rather than answering from memory: it lists every parameter of the current model with its bounds, unit, current value and where that value came from (the user, the database, a fetch, a default, or an illustrative assumption).
 - Never say a parameter cannot be changed without checking describe_parameters. Anything it lists can be set: the common ones through configure_simulation's own fields, the rest through its advanced patch by path (for example {"disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4}); a change that needs two paths together is one call.
 - When you present options, say for each one what it changes, the suggested value, and its basis: the database range, the user's own input, or an illustrative assumption.
+- The age groups are under 18, 18 to 64, and 65 and over. Susceptibility and fatality by age and presymptomatic transmission are illustrative assumptions unless the database carries them; say so in the limitations. Without fetched demographics the simulated ages run from 0 to 60, so there is no elderly group: say that, and offer to fetch the demographics, before setting an elderly value.
 
 ## Diagnostics and options
 
