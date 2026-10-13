@@ -91,3 +91,12 @@ def test_hybrid_run_calibrates_beta_and_reports_the_measured_r0(client):
     assert isinstance(body["stats"]["r0_measured"], float) and body["stats"]["r0_calibration"]["corrections"] <= 3
     assert body["effective_params"]["network"]["network_type"] == "hybrid"
     assert body["stats"]["r0_measured"] == body["stats_agents"]["r0_measured"]          # a ratio: never scaled
+
+
+def test_a_fitted_run_reports_the_fit_and_the_fitted_beta(client):
+    params = {"schema_version": 2, "run": {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 1, "fit": {"target": "attack_rate", "value": 0.4}}}
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["stats"]["fit"]["runs"] <= 8 and abs(body["stats"]["fit"]["achieved"] - 0.4) <= 0.02
+    assert body["effective_params"]["disease"]["beta"] == body["stats"]["fit"]["value"]

@@ -225,7 +225,7 @@ def _unfinished(run: _Run) -> Diagnostic | None:
 
 
 def _final_size_gap(run: _Run, unfinished: bool) -> Diagnostic | None:
-    if not run.simple or unfinished or not run.n:
+    if not run.simple or unfinished or not run.n or run.stats.get("fit"):       # a fitted run's size is the user's, not the R0's (7.7)
         return None
     susceptible = 1 - run.params.disease.initial_immune_frac
     z = final_size(run.r_eff)            # the share of the susceptibles the epidemic reaches
@@ -345,6 +345,8 @@ def _well_mixed(run: _Run) -> Diagnostic | None:
     p = run.params
     if p.network.network_type != "random" or run.r_eff < WELL_MIXED_R_EFF or run.n <= 0:
         return None
+    if any(i.type == "contact_reduction" for i in p.interventions):            # Part 2, 7.5: the contacts were already limited
+        return None
     attack = run.total / run.n
     if attack <= WELL_MIXED_ATTACK_RATE:
         return None
@@ -386,7 +388,7 @@ def _r0_gap(run: _Run) -> Diagnostic | None:
     day-0 seasonal factor, or the calibration's target); levers only on the exact networks (the Part 1 recheck)."""
     measured = run.stats.get("r0_measured")
     reference = _r0_reference(run)
-    if measured is None or reference is None or reference <= 0:
+    if measured is None or reference is None or reference <= 0 or run.stats.get("fit"):
         return None
     threshold = r0_gap_threshold(reference, run.seeds)
     if abs(float(measured) - reference) / reference <= threshold:

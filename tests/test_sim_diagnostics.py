@@ -303,3 +303,11 @@ def test_r0_gap_accounts_for_the_day_zero_seasonal_factor_the_calibration_target
     assert "r0_gap" not in ids(calibrated)                                                           # the reference is the target the user set, not the formula at the corrected beta
     treated = params(**{"interventions": [{"type": "treatment", "coverage": 1.0, "start_day": 0}]})
     assert "r0_gap" not in ids(run(treated, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.5}))   # treatment cuts the seeds' transmission
+
+
+def test_fitted_runs_stand_down_the_final_size_and_r0_gaps_and_a_contact_reduction_stands_down_well_mixed():
+    fitted = run(params(), NORMAL, total=3000, seeds=100, stats_extra={"fit": {"target": "attack_rate", "wanted": 0.3, "achieved": 0.3, "lever": "disease.beta", "value": 9.0, "runs": 4}, "r0_measured": 1.1})
+    assert "final_size_gap" not in ids(fitted) and "r0_gap" not in ids(fitted)
+    assert "final_size_gap" in ids(run(params(), NORMAL, total=3000, seeds=100))
+    closed = run(params(interventions=[{"type": "contact_reduction", "layer": "all", "scale": 0.5, "start_day": 10, "end_day": 40}]), NORMAL, total=8600, seeds=100)
+    assert "well_mixed" not in ids(closed)
