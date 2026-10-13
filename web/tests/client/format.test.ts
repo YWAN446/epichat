@@ -248,3 +248,26 @@ describe("intervention lines, the fit row and the applied-field labels (Part 2, 
     expect(describeField("network_beta_fitted_to_peak_day", 1.3)).toEqual({ label: "Network multiplier fitted to peak day", value: "1.3" });
   });
 });
+
+describe("the limits on spread in the panel (follow-up spec 4.5, 5.5, 6)", () => {
+  it("writes the behaviour response as a line and the variation as a row", () => {
+    const p = params({ schema_version: 2, disease: { rel_sus_cv: 1 }, interventions: [{ type: "behavior_response", scale: 0.5 }, { type: "seasonality", scale: 0.2 }] });
+    expect(interventionLines(p)).toEqual([
+      "Behaviour response: transmission falls by up to 50% as infections rise (half of that at 1% infectious, 7-day memory)",
+      "Seasonality: amplitude 0.2, shift 0",
+    ]);
+    expect(parameterRows(p)).toContainEqual(["Variation in susceptibility", "CV 1"]);
+    expect(parameterRows(params({})).map(([label]) => label)).not.toContain("Variation in susceptibility");
+    const windowed = params({ schema_version: 2, interventions: [{ type: "behavior_response", scale: 0.6, half_prevalence: 0.005, memory_days: 14, start_day: 20, end_day: 80 }] });
+    expect(interventionLines(windowed)).toEqual(["Behaviour response: transmission falls by up to 60% as infections rise (half of that at 0.5% infectious, 14-day memory), days 20\u201380"]);
+  });
+
+  it("names the new fit levers and the applied notes", () => {
+    expect(parameterRows(params({ schema_version: 2, disease: { rel_sus_cv: 0.5 }, run: { fit: { target: "attack_rate", value: 0.3, lever: "disease.rel_sus_cv" } } }))).toContainEqual(["Fitted to", "attack rate 30% by moving the variation in susceptibility"]);
+    expect(parameterRows(params({ schema_version: 2, interventions: [{ type: "behavior_response" }], run: { fit: { target: "attack_rate", value: 0.3, lever: "behavior_response.scale" } } }))).toContainEqual(["Fitted to", "attack rate 30% by moving the behaviour response"]);
+    expect(describeField("rel_sus_cv_fitted_to_attack_rate", 0.92)).toEqual({ label: "Variation in susceptibility fitted to attack rate", value: "0.92" });
+    expect(describeField("behavior_response_fitted_to_attack_rate", 0.61)).toEqual({ label: "Behaviour response fitted to attack rate", value: "61%" });
+    expect(describeField("behavior_response_min_factor", 0.53)).toEqual({ label: "Strongest reduction by the behaviour response", value: "47%" });
+    expect(describeField("beta_fitted_to_attack_rate", 9.5)).toEqual({ label: "Transmission rate fitted to attack rate", value: "9.5" });
+  });
+});

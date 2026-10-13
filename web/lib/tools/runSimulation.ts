@@ -56,7 +56,12 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   // Part 2, 5.7 and 7.7: the service corrected beta to the measured R0, or moved a lever to the participant's known outcome.
   const notes: Record<string, unknown> = {};
   if (result.stats.r0_calibration) notes.beta_calibrated_by_measurement = result.effective_params.disease.beta;
-  if (result.stats.fit) notes[`${result.stats.fit.lever.split(".").pop()}_fitted_to_${result.stats.fit.target}`] = result.stats.fit.value;
+  if (result.stats.fit) {
+    // the lever's last segment names the note, except the behaviour response's scale, which is the response (follow-up spec 6)
+    const lever = result.stats.fit.lever === "behavior_response.scale" ? "behavior_response" : result.stats.fit.lever.split(".").pop();
+    notes[`${lever}_fitted_to_${result.stats.fit.target}`] = result.stats.fit.value;
+  }
+  if (result.stats.behavior) notes.behavior_response_min_factor = result.stats.behavior.min_factor;          // 5.2: the strongest reduction reached
   const applied = Object.keys(notes).length > 0 ? notes : undefined;
   const agents = result.stats_agents;
   const n = agents.n_agents || params.run.n_agents || 1;

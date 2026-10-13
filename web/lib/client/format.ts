@@ -138,6 +138,7 @@ export function parameterRows(p: SimParams): [string, string][] {
     ...(d.model === "sis" && d.sis_waning > 0 ? row("Immunity waning", `${fmtValue(d.sis_waning)} per year`) : []),
     ...(d.model !== "sis" ? row("Death probability", formatQuantity(d.p_death, "fraction")) : []),
     ...(asymptomatic ? [...row("Asymptomatic share", formatQuantity(d.p_asymp, "fraction")), ...row("Asymptomatic transmission", `${formatQuantity(d.rel_trans_asymp, "fraction")} of symptomatic`)] : []),
+    ...(d.rel_sus_cv > 0 ? row("Variation in susceptibility", `CV ${fmtValue(d.rel_sus_cv)}`) : []),
     ...(Object.values(d.rel_sus_age).some((v) => v !== 1) ? row("Susceptibility by age", `children ×${fmtValue(d.rel_sus_age.children)}, adults ×${fmtValue(d.rel_sus_age.adults)}, elderly ×${fmtValue(d.rel_sus_age.elderly)}`) : []),
     ...(Object.values(d.p_death_age).some((v) => v !== null) ? row("Fatality by age", deathProbabilities(d).map((q, i) => `${AGE_GROUPS[i]} ${formatQuantity(q, "fraction")}`).join(", ")) : []),
     ...(d.rel_trans_exposed > 0 ? row("Presymptomatic transmission", `${formatQuantity(d.rel_trans_exposed, "fraction")} of the infectious value`) : []),
@@ -173,8 +174,13 @@ export function effectiveParameterRows(p: SimParams): [string, string][] {
 }
 
 const FIT_TARGET_LABELS: Record<string, string> = { attack_rate: "attack rate", peak_day: "peak day", peak_infections: "peak infections" };
-const LEVER_LABELS: Record<string, string> = { "disease.beta": "the transmission rate", "network.network_beta": "the network multiplier" };
-const LEVER_NAMES: Record<string, string> = { beta: "Transmission rate", network_beta: "Network multiplier" };
+const LEVER_LABELS: Record<string, string> = {
+  "disease.beta": "the transmission rate",
+  "network.network_beta": "the network multiplier",
+  "disease.rel_sus_cv": "the variation in susceptibility",
+  "behavior_response.scale": "the behaviour response",
+};
+const LEVER_NAMES: Record<string, string> = { beta: "Transmission rate", network_beta: "Network multiplier", rel_sus_cv: "Variation in susceptibility", behavior_response: "Behaviour response" };
 const LAYER_WORDS: Record<string, string> = { all: "All", household: "Household", school: "School", work: "Workplace", community: "Community" };
 
 /** A fit outcome in its unit: "30%" for an attack rate, "60" for a peak day, "500 agents" for a peak size (Part 2, 7.7). */
@@ -240,6 +246,11 @@ export function interventionLines(p: SimParams): string[] {
     }
     if (i.type === "contact_reduction") return `${LAYER_WORDS[i.layer] ?? words(i.layer)} contacts reduced by ${formatQuantity(i.scale, "fraction")} ${spanText(i.start_day, i.end_day)}`;
     if (i.type === "transmission_reduction") return `Transmission reduced by ${formatQuantity(i.scale, "fraction")} ${spanText(i.start_day, i.end_day)}`;
+    if (i.type === "behavior_response") {
+      // follow-up spec 5.5: people being careful as infections rise; the window only when it has one
+      const window = i.start_day > 0 || i.end_day !== null ? windowText(i.start_day, i.end_day) : "";
+      return `Behaviour response: transmission falls by up to ${formatQuantity(i.scale, "fraction")} as infections rise (half of that at ${formatQuantity(i.half_prevalence, "fraction")} infectious, ${fmtValue(i.memory_days)}-day memory)${window}`;
+    }
     return `Seasonality: amplitude ${fmtValue(i.scale)}, shift ${fmtValue(i.shift)}`;
   });
 }
@@ -253,7 +264,7 @@ export function formatRange(min: number, max: number, unit?: string): string {
   return `${plain(min)}–${plain(max)} ${unit}`;
 }
 
-type FieldSpec = { label: string; unit?: string; kind?: "percent_of_one" | "age" | "network" | "contacts" | "age_source" | "fit" | "interventions" | "intervention_keys" };
+type FieldSpec = { label: string; unit?: string; kind?: "percent_of_one" | "reduction" | "age" | "network" | "contacts" | "age_source" | "fit" | "interventions" | "intervention_keys" };
 
 /** WHO routine-immunization indicators, by the prefix of the field the adapter names. */
 const VACCINES: Record<string, string> = {
@@ -289,6 +300,7 @@ const FIELDS: Record<string, FieldSpec> = {
   uhc_coverage: { label: "UHC service coverage index", unit: "of 100" },
   applied_vaccine_coverage: { label: "Vaccine coverage applied", kind: "percent_of_one" },
   applied_vaccine_efficacy: { label: "Vaccine efficacy applied", kind: "percent_of_one" },
+  behavior_response_min_factor: { label: "Strongest reduction by the behaviour response", kind: "reduction" },
   fit: { label: "Fit", kind: "fit" },
   interventions: { label: "Interventions set", kind: "interventions" },
   remove_interventions: { label: "Interventions removed", kind: "intervention_keys" },
@@ -325,7 +337,10 @@ export function describeField(key: string, value: unknown): { label: string; val
   const vaccine = /^([a-z0-9]+)_coverage$/.exec(key);
   if (vaccine && VACCINES[vaccine[1]]) return { label: `${VACCINES[vaccine[1]]} coverage`, value: `${fmtValue(value)}%` };
   const fitted = /^(\w+)_fitted_to_(\w+)$/.exec(key);
-  if (fitted) return { label: `${LEVER_NAMES[fitted[1]] ?? words(fitted[1])} fitted to ${FIT_TARGET_LABELS[fitted[2]] ?? words(fitted[2]).toLowerCase()}`, value: fmtValue(value) };
+  if (fitted) {
+    const label = `${LEVER_NAMES[fitted[1]] ?? words(fitted[1])} fitted to ${FIT_TARGET_LABELS[fitted[2]] ?? words(fitted[2]).toLowerCase()}`;
+    return { label, value: fitted[1] === "behavior_response" ? `${plain(Number(value) * 100)}%` : fmtValue(value) };      // the response's scale is a share
+  }
   const spec = FIELDS[key];
   if (!spec) return { label: words(key), value: fmtValue(value) };
   if (spec.kind === "fit") return { label: spec.label, value: fitFieldText(value) };
@@ -336,6 +351,7 @@ export function describeField(key: string, value: unknown): { label: string; val
   if (spec.kind === "contacts") return { label: spec.label, value: contactsSourceLabel(String(value)) };
   if (spec.kind === "age_source") return { label: spec.label, value: AGE_SOURCE_LABELS[String(value)] ?? String(value) };
   if (spec.kind === "percent_of_one") return { label: spec.label, value: `${plain(Number(value) * 100)}%` };
+  if (spec.kind === "reduction") return { label: spec.label, value: `${plain(Math.round((1 - Number(value)) * 1000) / 10)}%` };          // a factor of 0.53 is a reduction of 47%
   if (!spec.unit) return { label: spec.label, value: fmtValue(value) };
   return { label: spec.label, value: `${fmtValue(value)}${spec.unit.startsWith("%") ? "" : " "}${spec.unit}` };
 }

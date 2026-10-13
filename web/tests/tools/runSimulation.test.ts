@@ -179,3 +179,21 @@ describe("run_simulation and a fitted lever (Part 2, 7.7)", () => {
     expect((out.payload as { applied?: Record<string, unknown> }).applied).toEqual({ beta_fitted_to_attack_rate: 9.5 });
   });
 });
+
+describe("run_simulation and the levers that keep R0 (follow-up spec 6)", () => {
+  const fitted = async (stats: Record<string, unknown>) => {
+    const result = success();
+    result.stats = { ...result.stats, ...stats } as typeof result.stats;
+    const deps = makeDeps({ simulate: result, runId: "run-4" });
+    deps.scenario.params = params({ disease_type: "sir" });
+    const out = await runSimulation({}, deps);
+    return (out.payload as { applied?: Record<string, unknown> }).applied;
+  };
+
+  it("notes a fitted variation, a fitted response, and the response's strongest reduction", async () => {
+    expect(await fitted({ fit: { target: "attack_rate", wanted: 0.3, achieved: 0.31, lever: "disease.rel_sus_cv", value: 0.92, runs: 5 } })).toEqual({ rel_sus_cv_fitted_to_attack_rate: 0.92 });
+    expect(await fitted({ fit: { target: "attack_rate", wanted: 0.3, achieved: 0.31, lever: "behavior_response.scale", value: 0.61, runs: 5 }, behavior: { min_factor: 0.53, min_day: 55 } })).toEqual({ behavior_response_fitted_to_attack_rate: 0.61, behavior_response_min_factor: 0.53 });
+    expect(await fitted({ behavior: { min_factor: 0.53, min_day: 55 } })).toEqual({ behavior_response_min_factor: 0.53 });
+    expect(await fitted({})).toBeUndefined();
+  });
+});

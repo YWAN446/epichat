@@ -7,7 +7,9 @@ import promptFile from "@/data/system_prompt.json";
 describe("system prompt", () => {
   it("starts with the Python agent's prompt verbatim and adds the four sections", () => {
     expect(SYSTEM_PROMPT.startsWith((promptFile as { system: string }).system)).toBe(true);
-    for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Report", "## Repairs", "## Interventions", "## Contact networks"]) expect(SYSTEM_PROMPT).toContain(heading);
+    for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Report", "## Repairs", "## Limits on spread", "## Interventions", "## Contact networks"]) expect(SYSTEM_PROMPT).toContain(heading);
+    for (const phrase of ["disease.rel_sus_cv", "behavior_response", "herd immunity threshold", "off by default", "lever: disease.rel_sus_cv", "behavior_response_min_factor"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    expect(SYSTEM_PROMPT.indexOf("## Limits on spread")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Interventions"));
     for (const phrase of ["close on every network", "measured R0", "Covasim", "expectedly null"]) expect(SYSTEM_PROMPT).toContain(phrase);
     for (const phrase of ["stats.r0_calibration.reached", "could not be brought to the R0 you set", "only its seeds transmit", "stats.r0_calibration.measured"]) expect(SYSTEM_PROMPT).toContain(phrase);
     for (const phrase of ["schools closed", "illustrative assumption", "fitted", "remove_interventions", "stats.fit"]) expect(SYSTEM_PROMPT).toContain(phrase);

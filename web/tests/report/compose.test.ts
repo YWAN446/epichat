@@ -140,3 +140,17 @@ describe("the measured R0 row after the pilot fix (review I2)", () => {
     expect(modelled(both)).toContainEqual(["R₀ measured", "2.4"]);                  // the live value when there is one
   });
 });
+
+describe("run labels and the limits on spread (follow-up spec 4 and 5)", () => {
+  it("names a run by the variation or the response it gained or lost", () => {
+    const base = FIXTURE.runs[0];
+    const withCv = { ...base, effectiveParams: { ...base.effectiveParams, disease: { ...base.effectiveParams.disease, rel_sus_cv: 1 } } };
+    const response = { type: "behavior_response", coverage: null, start_day: 0, end_day: null, efficacy: 1, kind: "routine", leaky: true, age_min: null, age_max: null, protection_days: null,
+      capacity: null, delay_days: 0, rel_trans_treated: 1, symptomatic_only: false, scale: 0.5, shift: 0, layer: "all", half_prevalence: 0.01, memory_days: 7 } as (typeof base.effectiveParams.interventions)[number];
+    const withResponse = { ...base, effectiveParams: { ...base.effectiveParams, interventions: [response] } };
+    expect(runLabels([base, withCv])).toEqual(["Run 1", "Run 2, variation CV 1"]);
+    expect(runLabels([withCv, base])).toEqual(["Run 1", "Run 2, no variation"]);
+    expect(runLabels([base, withResponse])).toEqual(["Run 1", "Run 2, behaviour response"]);
+    expect(runLabels([withResponse, base])).toEqual(["Run 1", "Run 2, no behaviour response"]);
+  });
+});

@@ -69,6 +69,14 @@ export function runLabels(runs: ReportRun[]): string[] {
     const prevCap = intervention(prev, "treatment")?.capacity;
     if (typeof cap === "number" && cap !== prevCap) changes.push(`treatment capacity ${commaInt(cap)}`);
     else if (cap === undefined && typeof prevCap === "number") changes.push("no treatment");
+    // follow-up spec 4 and 5: the variation between people and the behaviour response, the two limits on spread
+    const cv = run.effectiveParams.disease?.rel_sus_cv ?? 0;
+    const prevCv = prev.effectiveParams.disease?.rel_sus_cv ?? 0;
+    if (cv !== prevCv) changes.push(cv > 0 ? `variation CV ${fmtValue(cv)}` : "no variation");
+    const response = intervention(run, "behavior_response");
+    const prevResponse = intervention(prev, "behavior_response");
+    if (response && !prevResponse) changes.push("behaviour response");
+    else if (!response && prevResponse) changes.push("no behaviour response");
     const r0 = pyRound(approxR0(run.effectiveParams), 1);
     if (r0 !== pyRound(approxR0(prev.effectiveParams), 1)) changes.push(`R₀ ${r0}`);
     if (run.effectiveParams.run.n_agents !== prev.effectiveParams.run.n_agents) changes.push(`${commaInt(run.effectiveParams.run.n_agents)} agents`);

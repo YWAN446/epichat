@@ -399,3 +399,34 @@ describe("the vaccine shortcut fields and a rich vaccine entry (2C review, I6)",
     expect(p.disease.initial_immune_frac).toBe(0);
   });
 });
+
+describe("configure_simulation and the limits on spread (follow-up spec 4.5, 5.5, 6)", () => {
+  it("sets and removes the behaviour response, and sets the variation without moving R0", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", r0: 3, interventions: [{ type: "behaviour_response", scale: 0.5 }] });
+    expect(deps.scenario.params!.interventions).toMatchObject([{ type: "behavior_response", scale: 0.5, half_prevalence: 0.01, memory_days: 7 }]);
+    await run(deps, { interventions: [{ type: "behavior_response", scale: 0.7, half_prevalence: 0.02 }] });
+    expect(deps.scenario.params!.interventions).toHaveLength(1);
+    expect(deps.scenario.params!.interventions[0]).toMatchObject({ scale: 0.7, half_prevalence: 0.02 });
+    const before = approxR0(deps.scenario.params!);
+    const out = JSON.parse((await run(deps, { advanced: { "disease.rel_sus_cv": 1 } })).content);
+    expect(deps.scenario.params!.disease.rel_sus_cv).toBe(1);
+    expect(approxR0(deps.scenario.params!)).toBeCloseTo(before, 9);
+    expect(out.config.interventions).toEqual(["behavior_response"]);
+    await run(deps, { remove_interventions: ["behavior_response"] });
+    expect(deps.scenario.params!.interventions).toEqual([]);
+  });
+
+  it("refuses a fit on the response without the entry, and a peak day on a lever that keeps R0", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", r0: 3 });
+    const missing = await run(deps, { fit: { target: "attack_rate", value: 0.3, lever: "behavior_response.scale" } });
+    expect(missing.isError).toBe(true);
+    expect(missing.content).toContain("needs a behavior_response entry");
+    const day = await run(deps, { fit: { target: "peak_day", value: 40, lever: "disease.rel_sus_cv" } });
+    expect(day.isError).toBe(true);
+    expect(day.content).toContain("peak_day can be fitted with disease.beta or network.network_beta");
+    await run(deps, { fit: { target: "attack_rate", value: 0.3, lever: "disease.rel_sus_cv" } });
+    expect(deps.scenario.params!.run.fit).toEqual({ target: "attack_rate", value: 0.3, lever: "disease.rel_sus_cv" });
+  });
+});

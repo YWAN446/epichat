@@ -53,13 +53,13 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
         household_size: num("Mean household size for the hybrid network (people)."),
         interventions: {
           type: ["array", "null"],
-          description: "A list of intervention entries, each with a type (vaccine, treatment, seasonality, contact_reduction, transmission_reduction) and its fields: coverage, start_day, end_day, efficacy, kind (routine or campaign), leaky, age_min, age_max, protection_days, capacity, delay_days, rel_trans_treated, symptomatic_only, scale (seasonality: the amplitude; reductions: the fraction removed, 1 closes a layer), shift or peak_day, layer (household, school, work, community or all; the hybrid network only). Each entry replaces the one of the same type (and layer).",
+          description: "A list of intervention entries, each with a type (vaccine, treatment, seasonality, contact_reduction, transmission_reduction, behavior_response) and its fields: coverage, start_day, end_day, efficacy, kind (routine or campaign), leaky, age_min, age_max, protection_days, capacity, delay_days, rel_trans_treated, symptomatic_only, scale (seasonality: the amplitude; reductions: the fraction removed, 1 closes a layer), shift or peak_day, layer (household, school, work, community or all; the hybrid network only). A behavior_response entry (people being careful as cases rise) takes scale (its largest reduction), half_prevalence and memory_days. Each entry replaces the one of the same type (and layer).",
           items: { type: "object", additionalProperties: true },
         },
         remove_interventions: { type: ["array", "null"], description: "Intervention types to drop, or type:layer for one contact reduction.", items: { type: "string" } },
         fit: {
           type: ["object", "null"],
-          description: "Fit the run to one outcome the user knows: {target: attack_rate | peak_day | peak_infections, value, lever?: disease.beta | network.network_beta}; attack_rate is a fraction, peak_day a day, peak_infections people when a population is known (else agents). null clears the fit.",
+          description: "Fit the run to one outcome the user knows: {target: attack_rate | peak_day | peak_infections, value, lever?: disease.beta | network.network_beta | disease.rel_sus_cv | behavior_response.scale}; the last two keep R0 and fit an attack rate or a peak size, not a peak day (behavior_response.scale needs a behavior_response entry); attack_rate is a fraction, peak_day a day, peak_infections people when a population is known (else agents). null clears the fit.",
           additionalProperties: true,
         },
         advanced: {
