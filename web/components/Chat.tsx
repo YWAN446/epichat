@@ -12,6 +12,7 @@ import type { ShareState } from "@/lib/client/share";
 import { keepFollowing } from "@/lib/client/scroll";
 import { readEvents } from "@/lib/client/sse";
 import { track } from "@/lib/client/track";
+import { latestRunKey } from "@/lib/client/tryNext";
 import { INTERRUPTED, applyEvent, lastRecap, lastStage, lastSuggestions, startTurn, type TurnProgress } from "@/lib/client/turn";
 import type { ConversationSummary } from "@/lib/db/conversations";
 import type { ExportFormat, PanelSection } from "@/lib/enums";
@@ -117,6 +118,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const empty = turns.length === 0 && !live;
   const chips = live || empty ? { items: [], source: "draft" as ChipSource } : chipsFor(stage, lastSuggestions(turns));
   const recap = lastRecap(turns);
+  // Follow-up spec 7.4: what_if's replies as buttons under the latest run; none while a reply streams.
+  const tryNext = live ? undefined : { key: latestRunKey(turns), onPick: (label: string) => void send(label, "option") };
   const feedback = conversationId ? { conversationId, sessionId } : null;
   const session = sessionId ?? undefined;
 
@@ -360,7 +363,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
       ) : (
         <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">
           {turns.map((turn) => (
-            <Turn key={turn.id} turn={turn} status={null} feedback={feedback} onActivityExpand={() => onActivityExpand(turn.id)} onExport={onExport} />
+            <Turn key={turn.id} turn={turn} status={null} feedback={feedback} onActivityExpand={() => onActivityExpand(turn.id)} onExport={onExport} tryNext={tryNext} />
           ))}
           {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} onExport={onExport} />}
         </div>

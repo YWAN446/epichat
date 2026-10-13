@@ -43,8 +43,8 @@ export function StatTiles({ payload }: { payload: RunPayload }) {
   );
 }
 
-/** Inline under the run's tool call: the tiles and the infected curve. The panel carries the rest. */
-export function RunSummary({ payload }: { payload: RunPayload }) {
+/** Inline under the run's tool call: the tiles and the infected curve. The panel carries the rest. With options (the latest run only; follow-up spec 7.4) the interventions to try are buttons that send the reply. */
+export function RunSummary({ payload, options, onPick }: { payload: RunPayload; options?: string[]; onPick?: (label: string) => void }) {
   const series = useRunSeries(payload);
   return (
     <section aria-label="Simulation results" className="my-3 rounded-xl border border-line bg-surface p-3">
@@ -58,6 +58,21 @@ export function RunSummary({ payload }: { payload: RunPayload }) {
           <p className="text-sm text-ink-faint">Series unavailable.</p>
         )}
       </div>
+      {options && options.length > 0 && onPick && (
+        <div aria-label="Try next" className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-ink-faint">Try next</span>
+          {options.map((label) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => onPick(label)}
+              className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-left text-sm font-medium text-accent hover:border-accent hover:bg-accent-wash"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

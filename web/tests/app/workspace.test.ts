@@ -9,6 +9,18 @@ describe("the reply in the middle column", () => {
     for (const piece of ["<ActivityLine", "<TurnBlocks", "<FeedbackControl", "turn.userText", "export type DisplayTurn"]) expect(turn).toContain(piece);
   });
 
+  it("offers what_if's replies under the latest run only, never while a reply streams and never on the share page (follow-up spec 7.4)", () => {
+    const summary = read("components/RunSummary.tsx");
+    for (const piece of ["Try next", "options.map(", "onPick(label)", 'type="button"']) expect(summary).toContain(piece);
+    const blocks = read("components/TurnBlocks.tsx");
+    for (const piece of ["tryNextLabels(", "tryNext?.key ===", "onPick={offered?.onPick}"]) expect(blocks).toContain(piece);
+    expect(read("components/Turn.tsx")).toContain("tryNext={tryNext}");
+    const chat = read("components/Chat.tsx");
+    for (const piece of ["latestRunKey(turns)", 'send(label, "option")', "live ? undefined :"]) expect(chat).toContain(piece);
+    expect(chat.match(/tryNext=\{tryNext\}/g)).toHaveLength(1);                             // the stored turns; the live turn gets none
+    expect(read("components/SharedConversation.tsx")).not.toContain("tryNext");
+  });
+
   it("shows prose, the run summary, and notices only; tool lines live in the activity list", () => {
     const blocks = read("components/TurnBlocks.tsx");
     expect(blocks).toContain("withoutHidden(");

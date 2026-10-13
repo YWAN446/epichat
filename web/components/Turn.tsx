@@ -3,6 +3,7 @@
 import type { Block } from "@/lib/chat/events";
 import { ActivityLine } from "./ActivityLine";
 import { FeedbackControl } from "./FeedbackControl";
+import type { TryNext } from "@/lib/client/tryNext";
 import type { ExportFormat } from "@/lib/enums";
 import { TurnBlocks } from "./TurnBlocks";
 
@@ -16,15 +17,17 @@ type Props = {
   feedback: { conversationId: string; sessionId: string | null } | null;
   onActivityExpand?: () => void;
   onExport?: (format: ExportFormat) => void;
+  /** The Try next buttons under the latest run (follow-up spec 7.4); absent on the share page and on the live turn. */
+  tryNext?: TryNext;
 };
 
-export function Turn({ turn, status, feedback, onActivityExpand, onExport }: Props) {
+export function Turn({ turn, status, feedback, onActivityExpand, onExport, tryNext }: Props) {
   return (
     <article className="py-4">
       <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-accent-wash px-4 py-2.5 whitespace-pre-wrap">{turn.userText}</p>
       <div className="mt-4">
         <ActivityLine blocks={turn.blocks} status={status} onExpand={onActivityExpand} />
-        <TurnBlocks blocks={turn.blocks} onExport={onExport} />
+        <TurnBlocks blocks={turn.blocks} onExport={onExport} turnId={turn.id} tryNext={tryNext} />
         {turn.notice && (
           <p role="status" className="my-2 rounded-r-lg border-l-[3px] border-warn bg-warn-wash px-3.5 py-2 text-sm text-warn-ink">
             {turn.notice}

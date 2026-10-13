@@ -28,8 +28,8 @@ export const DRAFTS: Record<Stage, string[]> = {
   report: ["Shorten the summary", "Run another scenario to compare", "Start a new scenario"],
 };
 
-/** model: the assistant suggested it; draft: a stage draft; intro: one of the welcome's introduction questions. */
-export type ChipSource = "model" | "draft" | "intro";
+/** model: the assistant suggested it; draft: a stage draft; intro: one of the welcome's introduction questions; option: a Try next button under a run; reference: a "Use this value" button. */
+export type ChipSource = "model" | "draft" | "intro" | "option" | "reference";
 
 /** The chips above the composer: the model's suggestions when it made any, otherwise the stage's drafts. */
 export function chipsFor(stage: Stage, suggestions: string[]): { items: string[]; source: ChipSource } {

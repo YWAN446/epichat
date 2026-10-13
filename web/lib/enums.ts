@@ -112,7 +112,8 @@ export const CARD_KINDS = ["disease", "config", "data", "run", "tool_error", "ac
 export const PANEL_SECTIONS = ["scenario", "data", "parameters", "runs", "report", "activity", "profile"] as const;
 export type PanelSection = (typeof PANEL_SECTIONS)[number];
 /** Where a pressed chip came from. */
-export const SUGGESTION_SOURCES = ["model", "draft", "intro"] as const;
+/** Where a pressed reply came from; option is a Try next button under a run, reference a "Use this value" button (follow-up spec 7.4, 9.2). */
+export const SUGGESTION_SOURCES = ["model", "draft", "intro", "option", "reference"] as const;
 export const CHART_VIEWS = ["compartments", "incidence", "cumulative", "deaths"] as const;
 export const EXPORT_FORMATS = ["md", "html", "docx", "pdf"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
