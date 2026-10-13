@@ -211,14 +211,16 @@ def build_demographics(params: SimParamsV2) -> list | None:
     return [births, ss.Deaths(death_rate=ss.peryear(g.death_rate))]
 
 
-def build_sim(params, seed: int | None = None) -> ss.Sim:
-    """params: a SimParamsV2, or anything coerce_params accepts (a v1 dict or object)."""
+def build_sim(params, seed: int | None = None, first_generation: bool = False) -> ss.Sim:
+    """params: a SimParamsV2, or anything coerce_params accepts (a v1 dict or object). first_generation is the R0 pilot's sterile
+    experiment (only the day-0 seeds transmit, and not on step 0); every other run leaves it off."""
     params = coerce_params(params)
     name = params.disease.model
     disease = MODELS[name](**disease_kwargs(params))
     seasonality = next((i for i in params.interventions if i.type == "seasonality"), None)
     reductions = [(i.start_day, i.end_day, i.scale) for i in params.interventions if i.type == "transmission_reduction"]
-    connector = TransmissionModifiers(name, seasonality.scale if seasonality else 0.0, seasonality.shift if seasonality else 0.0, reductions)
+    connector = TransmissionModifiers(name, seasonality.scale if seasonality else 0.0, seasonality.shift if seasonality else 0.0, reductions,
+                                      first_generation=first_generation)
     rand_seed = resolve_seed(params, seed)
     n = params.run.n_agents
     sim = ss.Sim(n_agents=n, people=build_people(params, n, rand_seed), networks=build_network(params), diseases=disease,

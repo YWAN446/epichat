@@ -80,3 +80,36 @@ def test_sis_immunity_still_protects_under_the_connector():
     assert 0.4 < immune.mean() < 0.6
     assert np.all(np.asarray(disease.rel_sus)[immune] == 0.0)
     assert not np.any(np.asarray(disease.infected)[immune])
+
+
+def _log(sim):
+    import pandas as pd
+    from epichat.sim.outputs import infection_log
+    df = infection_log(sim).to_df()
+    source = pd.to_numeric(df["source"], errors="coerce").to_numpy(dtype=float)
+    t = np.array([float(getattr(x, "value", x)) for x in df["t"]])
+    seeds = df["target"].to_numpy()[(t == 0) & ~(source >= 0)]
+    return source, t, seeds
+
+
+def test_in_a_first_generation_run_only_the_seeds_transmit_and_not_on_step_zero():
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({"disease": {"beta": 60.0, "seed": {"mode": "count", "value": 30}}, "run": {"n_agents": 3000, "sim_dur_years": 40 / 365, "rand_seed": 1}})
+    sim = build_sim(p, first_generation=True)
+    sim.run()
+    source, t, seeds = _log(sim)
+    caused = source >= 0
+    assert len(seeds) == 30 and caused.sum() > 30                           # the seeds did infect
+    assert np.isin(source[caused], seeds).all()                             # and nobody else did
+    assert not (caused & (t == 0)).any()                                    # nothing on step 0
+
+
+def test_a_run_that_is_not_a_pilot_spreads_past_the_seeds():
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({"disease": {"beta": 60.0, "seed": {"mode": "count", "value": 30}}, "run": {"n_agents": 3000, "sim_dur_years": 40 / 365, "rand_seed": 1}})
+    sim = build_sim(p)
+    sim.run()
+    source, t, seeds = _log(sim)
+    assert not np.isin(source[source >= 0], seeds).all() and ((source >= 0) & (t == 0)).any()
