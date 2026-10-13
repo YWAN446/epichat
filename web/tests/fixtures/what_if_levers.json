@@ -1,0 +1,616 @@
+{
+ "cases": [
+  {
+   "network": "random",
+   "disease": null,
+   "anchor": 20,
+   "diagnostics": [
+    {
+     "id": "well_mixed",
+     "severity": "info",
+     "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
+     "evidence": {
+      "attack_rate": 0.86,
+      "r_eff": 2.3
+     },
+     "levers": [
+      {
+       "patch": {
+        "disease.rel_sus_cv": 1.0
+       },
+       "current": {
+        "disease.rel_sus_cv": 0.0
+       },
+       "direction": "change",
+       "rationale": "Variation between people in susceptibility: the most susceptible are infected first, so the epidemic ends smaller at the same R0. A coefficient of variation of 1 is illustrative.",
+       "basis": "rule",
+       "label": "Add variation between people (CV 1) and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall, which flattens the peak and removes the overshoot; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      },
+      {
+       "patch": {
+        "network.network_type": "hybrid"
+       },
+       "current": {
+        "network.network_type": "random"
+       },
+       "direction": "change",
+       "rationale": "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same measured R0 its final size is close to the random network's, so the switch alone does not lower it.",
+       "basis": "rule",
+       "label": "Switch to the hybrid network and rerun"
+      }
+     ]
+    },
+    {
+     "id": "what_if",
+     "severity": "info",
+     "title": "Interventions to try",
+     "evidence": {
+      "anchor_day": 20,
+      "attack_rate": 0.86
+     },
+     "levers": [
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Distancing: 30% fewer contacts for eight weeks; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "contact_reduction",
+         "layer": "all",
+         "scale": 0.3,
+         "start_day": 20,
+         "end_day": 76
+        }
+       ],
+       "label": "Cut contacts by 30% from day 20 for eight weeks and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Masks: 20% less transmission per contact for 90 days; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "transmission_reduction",
+         "scale": 0.2,
+         "start_day": 20,
+         "end_day": 110
+        }
+       ],
+       "label": "Add masks (20% less transmission) from day 20 for 90 days and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "network": "hybrid",
+   "disease": "measles",
+   "anchor": 20,
+   "diagnostics": [
+    {
+     "id": "well_mixed",
+     "severity": "info",
+     "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
+     "evidence": {
+      "attack_rate": 0.86,
+      "r_eff": 12.24
+     },
+     "levers": [
+      {
+       "patch": {
+        "disease.rel_sus_cv": 1.0
+       },
+       "current": {
+        "disease.rel_sus_cv": 0.0
+       },
+       "direction": "change",
+       "rationale": "Variation between people in susceptibility: the most susceptible are infected first, so the epidemic ends smaller at the same R0. A coefficient of variation of 1 is illustrative.",
+       "basis": "rule",
+       "label": "Add variation between people (CV 1) and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall, which flattens the peak and removes the overshoot; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      }
+     ]
+    },
+    {
+     "id": "what_if",
+     "severity": "info",
+     "title": "Interventions to try",
+     "evidence": {
+      "anchor_day": 20,
+      "attack_rate": 0.86
+     },
+     "levers": [
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "vaccine",
+         "kind": "campaign",
+         "coverage": 0.7,
+         "efficacy": 0.9,
+         "start_day": 20,
+         "end_day": 50
+        }
+       ],
+       "label": "Vaccinate 70% in a campaign from day 20 to day 50 and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A full school closure for six weeks from the day 1% had been infected; the length is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "contact_reduction",
+         "layer": "school",
+         "scale": 1.0,
+         "start_day": 20,
+         "end_day": 62
+        }
+       ],
+       "label": "Close schools from day 20 for six weeks and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Distancing: 30% fewer community contacts for eight weeks; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "contact_reduction",
+         "layer": "community",
+         "scale": 0.3,
+         "start_day": 20,
+         "end_day": 76
+        }
+       ],
+       "label": "Cut community contacts by 30% from day 20 for eight weeks and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Masks: 20% less transmission per contact for 90 days; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "transmission_reduction",
+         "scale": 0.2,
+         "start_day": 20,
+         "end_day": 110
+        }
+       ],
+       "label": "Add masks (20% less transmission) from day 20 for 90 days and rerun"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "network": "age_structured",
+   "disease": "pertussis",
+   "anchor": 20,
+   "diagnostics": [
+    {
+     "id": "well_mixed",
+     "severity": "info",
+     "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
+     "evidence": {
+      "attack_rate": 0.86,
+      "r_eff": 6.33
+     },
+     "levers": [
+      {
+       "patch": {
+        "disease.rel_sus_cv": 1.0
+       },
+       "current": {
+        "disease.rel_sus_cv": 0.0
+       },
+       "direction": "change",
+       "rationale": "Variation between people in susceptibility: the most susceptible are infected first, so the epidemic ends smaller at the same R0. A coefficient of variation of 1 is illustrative.",
+       "basis": "rule",
+       "label": "Add variation between people (CV 1) and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall, which flattens the peak and removes the overshoot; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      }
+     ]
+    },
+    {
+     "id": "what_if",
+     "severity": "info",
+     "title": "Interventions to try",
+     "evidence": {
+      "anchor_day": 20,
+      "attack_rate": 0.86
+     },
+     "levers": [
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "vaccine",
+         "kind": "campaign",
+         "coverage": 0.7,
+         "efficacy": 0.9,
+         "start_day": 20,
+         "end_day": 50
+        }
+       ],
+       "label": "Vaccinate 70% in a campaign from day 20 to day 50 and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Distancing: 30% fewer contacts for eight weeks; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "contact_reduction",
+         "layer": "all",
+         "scale": 0.3,
+         "start_day": 20,
+         "end_day": 76
+        }
+       ],
+       "label": "Cut contacts by 30% from day 20 for eight weeks and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Masks: 20% less transmission per contact for 90 days; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "transmission_reduction",
+         "scale": 0.2,
+         "start_day": 20,
+         "end_day": 110
+        }
+       ],
+       "label": "Add masks (20% less transmission) from day 20 for 90 days and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "network": "hybrid",
+   "disease": "measles",
+   "anchor": 0,
+   "diagnostics": [
+    {
+     "id": "well_mixed",
+     "severity": "info",
+     "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
+     "evidence": {
+      "attack_rate": 0.86,
+      "r_eff": 12.24
+     },
+     "levers": [
+      {
+       "patch": {
+        "disease.rel_sus_cv": 1.0
+       },
+       "current": {
+        "disease.rel_sus_cv": 0.0
+       },
+       "direction": "change",
+       "rationale": "Variation between people in susceptibility: the most susceptible are infected first, so the epidemic ends smaller at the same R0. A coefficient of variation of 1 is illustrative.",
+       "basis": "rule",
+       "label": "Add variation between people (CV 1) and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall, which flattens the peak and removes the overshoot; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      }
+     ]
+    },
+    {
+     "id": "what_if",
+     "severity": "info",
+     "title": "Interventions to try",
+     "evidence": {
+      "anchor_day": 0,
+      "attack_rate": 0.86
+     },
+     "levers": [
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "vaccine",
+         "kind": "campaign",
+         "coverage": 0.7,
+         "efficacy": 0.9,
+         "start_day": 0,
+         "end_day": 30
+        }
+       ],
+       "label": "Vaccinate 70% in a campaign from day 0 to day 30 and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A full school closure for six weeks from the day 1% had been infected; the length is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "contact_reduction",
+         "layer": "school",
+         "scale": 1.0,
+         "start_day": 0,
+         "end_day": 42
+        }
+       ],
+       "label": "Close schools from day 0 for six weeks and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Distancing: 30% fewer community contacts for eight weeks; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "contact_reduction",
+         "layer": "community",
+         "scale": 0.3,
+         "start_day": 0,
+         "end_day": 56
+        }
+       ],
+       "label": "Cut community contacts by 30% from day 0 for eight weeks and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Masks: 20% less transmission per contact for 90 days; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "transmission_reduction",
+         "scale": 0.2,
+         "start_day": 0,
+         "end_day": 90
+        }
+       ],
+       "label": "Add masks (20% less transmission) from day 0 for 90 days and rerun"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "network": "random",
+   "disease": "measles",
+   "anchor": 0,
+   "diagnostics": [
+    {
+     "id": "well_mixed",
+     "severity": "info",
+     "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
+     "evidence": {
+      "attack_rate": 0.86,
+      "r_eff": 2.3
+     },
+     "levers": [
+      {
+       "patch": {
+        "disease.rel_sus_cv": 1.0
+       },
+       "current": {
+        "disease.rel_sus_cv": 0.0
+       },
+       "direction": "change",
+       "rationale": "Variation between people in susceptibility: the most susceptible are infected first, so the epidemic ends smaller at the same R0. A coefficient of variation of 1 is illustrative.",
+       "basis": "rule",
+       "label": "Add variation between people (CV 1) and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall, which flattens the peak and removes the overshoot; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      },
+      {
+       "patch": {
+        "network.network_type": "hybrid"
+       },
+       "current": {
+        "network.network_type": "random"
+       },
+       "direction": "change",
+       "rationale": "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same measured R0 its final size is close to the random network's, so the switch alone does not lower it.",
+       "basis": "rule",
+       "label": "Switch to the hybrid network and rerun"
+      }
+     ]
+    },
+    {
+     "id": "what_if",
+     "severity": "info",
+     "title": "Interventions to try",
+     "evidence": {
+      "anchor_day": 0,
+      "attack_rate": 0.86
+     },
+     "levers": [
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "vaccine",
+         "kind": "campaign",
+         "coverage": 0.7,
+         "efficacy": 0.9,
+         "start_day": 0,
+         "end_day": 30
+        }
+       ],
+       "label": "Vaccinate 70% in a campaign from day 0 to day 30 and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Distancing: 30% fewer contacts for eight weeks; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "contact_reduction",
+         "layer": "all",
+         "scale": 0.3,
+         "start_day": 0,
+         "end_day": 56
+        }
+       ],
+       "label": "Cut contacts by 30% from day 0 for eight weeks and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "Masks: 20% less transmission per contact for 90 days; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "transmission_reduction",
+         "scale": 0.2,
+         "start_day": 0,
+         "end_day": 90
+        }
+       ],
+       "label": "Add masks (20% less transmission) from day 0 for 90 days and rerun"
+      },
+      {
+       "patch": {},
+       "current": {},
+       "direction": "change",
+       "rationale": "A behaviour response: transmission falls by up to 50% as infections rise and recovers as they fall; the size is illustrative.",
+       "basis": "rule",
+       "interventions": [
+        {
+         "type": "behavior_response",
+         "scale": 0.5
+        }
+       ],
+       "label": "Let people become careful as cases rise and rerun"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

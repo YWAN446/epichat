@@ -8,9 +8,15 @@ const LABEL_MAX = 80;
 /** What the conversation hands a turn: which run block gets the buttons (null: none) and what a press does. */
 export type TryNext = { key: string | null; onPick: (label: string) => void };
 
-/** The labels of the run's what_if levers, in the service's order: non-empty, at most 80 characters, no duplicates, three at most. */
+/**
+ * The labels of the run's what_if levers, in the service's order: non-empty, at most 80 characters, no duplicates, three at most.
+ * None when the run raised a warning: the agent then offers the warning's options and no intervention (spec 7.3), and the card
+ * must not say otherwise.
+ */
 export function tryNextLabels(payload: RunPayload): string[] {
-  const whatIf = (payload.diagnostics ?? []).find((d) => d.id === "what_if");
+  const diagnostics = payload.diagnostics ?? [];
+  if (diagnostics.some((d) => d.severity === "warning")) return [];
+  const whatIf = diagnostics.find((d) => d.id === "what_if");
   const labels: string[] = [];
   for (const lever of whatIf?.levers ?? []) {
     const label = typeof lever.label === "string" ? lever.label.trim() : "";
@@ -28,4 +34,9 @@ export function latestRunKey(turns: { id: string; blocks: Block[] }[]): string |
     if (block.kind === "tool_result" && block.ok && block.payload.kind === "run") return `${last.id}:${index}`;
   }
   return null;
+}
+
+/** The run that gets the buttons: the latest one, and none while a reply streams. */
+export function tryNextKey(turns: { id: string; blocks: Block[] }[], live: boolean): string | null {
+  return live ? null : latestRunKey(turns);
 }

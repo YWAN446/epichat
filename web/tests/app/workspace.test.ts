@@ -16,7 +16,7 @@ describe("the reply in the middle column", () => {
     for (const piece of ["tryNextLabels(", "tryNext?.key ===", "onPick={offered?.onPick}"]) expect(blocks).toContain(piece);
     expect(read("components/Turn.tsx")).toContain("tryNext={tryNext}");
     const chat = read("components/Chat.tsx");
-    for (const piece of ["latestRunKey(turns)", 'send(label, "option")', "live ? undefined :"]) expect(chat).toContain(piece);
+    for (const piece of ["tryNextKey(turns, live !== null)", 'send(label, "option")']) expect(chat).toContain(piece);
     expect(chat.match(/tryNext=\{tryNext\}/g)).toHaveLength(1);                             // the stored turns; the live turn gets none
     expect(read("components/SharedConversation.tsx")).not.toContain("tryNext");
   });

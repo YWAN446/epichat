@@ -412,7 +412,20 @@ campaign's is the illustrative 0.9. The list of indicators is
 `epichat/params/indicators.py`, exported as `web/data/vaccine_indicators.json`;
 the frozen agent keeps its copy and a test compares the two. `what_if` comes
 last among a run's diagnostics; a lever without entries or a label is sent
-exactly as before.
+exactly as before. The service's levers are exported
+(`web/tests/fixtures/what_if_levers.json`) and a web test feeds each one
+through `configure_simulation`.
+
+Two things the review of phase B added. On a scenario with `run.fit`, the next
+run fitted an added intervention away (a baseline fitted to 45% infected
+still showed 45% with distancing; 29.5% once the fit was held). So a change to
+the interventions after a fitted run now ends the fit and writes the fitted
+value into its lever (`configure_simulation` says so in its warnings; a fitted
+beta also switches the measured-R0 calibration off, which would otherwise
+move it); a call that passes `fit` fits again with the change in place.
+`well_mixed` stands down on a fitted run. And `r0_gap` stands down while a
+dated contact or transmission reduction covers the seeds' infectious period,
+which the day-0 anchor of the default seeding makes the usual case.
 
 ### 7.3 The agent's order of offers
 
@@ -429,6 +442,11 @@ The prompt's "Diagnostics and options" section becomes "After a run":
 
 The limit of three suggested replies stays.
 
+As shipped. Rule 2 left no reply for the lever of another info diagnostic
+(`well_mixed`'s variation, a fatality or reinfection note, an R0 recheck).
+When one fired, the agent gives one of the two intervention replies to its
+first lever; the buttons already show the `what_if` labels.
+
 ### 7.4 The run card's buttons
 
 Under the run's summary in the conversation, the latest run shows up to three
@@ -441,8 +459,10 @@ them. They are absent on the public share page and on earlier runs.
 
 As shipped. The buttons belong to the last successful run of the last turn;
 once a turn passes without a run they are gone. They are not rendered while a
-reply streams. They were tested by rendering the components to markup, not in
-a browser.
+reply streams, nor on a run that raised a warning diagnostic: 7.3 has the
+agent offer the warning's options and no intervention, and the card follows
+it. They were tested by rendering the components to markup, not in a
+browser.
 
 ### 7.5 Recording
 
@@ -451,6 +471,10 @@ a browser.
 is in the new scenario (same type and layer, the lever's fields equal) and
 the call changed the interventions. `option_chosen` then records the lever as
 today, with the entries in its meta.
+
+As shipped. An entry counts only when the call put it there (in the new list
+and not in the old one), so a later change to another entry does not record
+the lever again; every lever whose entries one call added is recorded.
 
 ### 7.6 `well_mixed`, broadened
 

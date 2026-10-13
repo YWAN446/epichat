@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { approxR0, getVaccine } from "@/lib/sim/params";
+import { approxR0, getVaccine, type SimParams } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
 import type { PreviousRun } from "@/lib/db/runs";
 import { emptyScenario } from "@/lib/tools/types";
@@ -482,5 +482,126 @@ describe("configure_simulation and a lever that carries entries (follow-up spec 
     deps.scenario.hasRun = true;
     await run(deps, { advanced: { "run.n_replicates": 5 } });
     expect(deps.options).toEqual([{ runId: "run-7", diagnosticId: "early_fadeout", patch: { "run.n_replicates": 5 } }]);
+  });
+});
+
+describe("configure_simulation and two changes to the interventions after one run (review of phase B)", () => {
+  const masks = { type: "transmission_reduction", scale: 0.2, start_day: 20, end_day: 110 };
+  const distancing = { type: "contact_reduction", layer: "all", scale: 0.3, start_day: 20, end_day: 76 };
+  const lever = (entry: Record<string, unknown>) => ({ patch: {}, current: {}, direction: "change" as const, rationale: "r", basis: "rule" as const, interventions: [entry], label: "l" });
+  const previous = () => ({
+    id: "run-7", effectiveParams: params({}), stats: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 },
+    statsAgents: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 }, popScale: 1,
+    diagnostics: [{ id: "what_if", severity: "info" as const, title: "Interventions to try", evidence: {}, levers: [lever(distancing), lever(masks)] }],
+  }) as unknown as PreviousRun;
+  const start = async () => {
+    const deps = makeDeps({ previousRun: previous() });
+    await run(deps, { disease: "measles", r0: 3 });
+    deps.scenario.hasRun = true;
+    return deps;
+  };
+
+  it("does not record a lever again for an entry that was already there", async () => {
+    const deps = await start();
+    await run(deps, { interventions: [masks] });
+    await run(deps, { interventions: [{ type: "seasonality", scale: 0.2 }] });             // the masks are still there, but this call did not add them
+    await run(deps, { interventions: [{ ...distancing, scale: 0.5, end_day: 40 }] });      // the user's own distancing
+    expect(deps.options.map((o) => o.interventions)).toEqual([[masks]]);
+  });
+
+  it("records every lever whose entries one call added, and each lever once across calls", async () => {
+    const both = await start();
+    await run(both, { interventions: [distancing, masks] });
+    expect(both.options.map((o) => o.interventions)).toEqual([[distancing], [masks]]);
+    const twice = await start();
+    await run(twice, { interventions: [distancing] });
+    await run(twice, { interventions: [masks] });
+    expect(twice.options.map((o) => o.interventions)).toEqual([[distancing], [masks]]);
+  });
+});
+
+describe("configure_simulation on a fitted scenario (review of phase B)", () => {
+  const masks = { type: "transmission_reduction", scale: 0.2, start_day: 20, end_day: 110 };
+  const stats = { peak_infections: 1, peak_day: 1, total_infected: 4500, total_deaths: 0, n_agents: 10000, sim_days: 366 };
+  const fittedRun = (effective: SimParams, fit: { target: string; lever: string; value: number; wanted: number }): PreviousRun => ({
+    id: "run-9", effectiveParams: effective, stats: { ...stats, fit: { target: fit.target, wanted: fit.wanted, achieved: fit.wanted, lever: fit.lever, value: fit.value, runs: 4 } },
+    statsAgents: stats, popScale: 1, diagnostics: [],
+  }) as unknown as PreviousRun;
+  const fitted = async (fit: Record<string, unknown>, value: number, extra: Record<string, unknown> = {}) => {
+    const first = makeDeps();
+    await run(first, { disease: "measles", r0: 3, ...extra, fit });
+    const spec = first.scenario.params!.run.fit!;
+    const deps = makeDeps({ scenario: first.scenario, previousRun: fittedRun(first.scenario.params!, { target: spec.target, lever: spec.lever, value, wanted: spec.value }) });
+    deps.scenario.hasRun = true;
+    return deps;
+  };
+
+  it("ends the fit and keeps the fitted beta when an intervention is added, so the next run does not fit it away", async () => {
+    const deps = await fitted({ target: "attack_rate", value: 0.45 }, 13.56, { network_type: "hybrid" });
+    const out = JSON.parse((await run(deps, { interventions: [masks] })).content);
+    const p = deps.scenario.params!;
+    expect(p.run.fit).toBeNull();
+    expect(p.disease.beta).toBe(13.56);
+    expect(p.run.calibrate_r0).toBe(false);                                                 // the pilot would move the fitted beta to the formula's R0
+    expect(p.interventions).toHaveLength(1);
+    expect(out.warnings.join(" ")).toContain("ended the fit");
+    expect(out.warnings.join(" ")).toContain("13.56");
+    expect(out.changed.map((c: { path: string }) => c.path)).toEqual(expect.arrayContaining(["interventions", "disease.beta", "run.fit.target"]));
+  });
+
+  it("keeps a fitted variation and a fitted response the same way, and leaves the calibration on", async () => {
+    const cv = await fitted({ target: "attack_rate", value: 0.6, lever: "disease.rel_sus_cv" }, 0.875);
+    await run(cv, { interventions: [masks] });
+    expect(cv.scenario.params!.run.fit).toBeNull();
+    expect(cv.scenario.params!.disease.rel_sus_cv).toBe(0.875);
+    expect(cv.scenario.params!.run.calibrate_r0).toBe(true);
+    const response = await fitted({ target: "attack_rate", value: 0.7, lever: "behavior_response.scale" }, 0.3, { interventions: [{ type: "behavior_response", scale: 0.2 }] });
+    await run(response, { interventions: [masks] });
+    expect(response.scenario.params!.run.fit).toBeNull();
+    expect(response.scenario.params!.interventions.find((i) => i.type === "behavior_response")?.scale).toBe(0.3);
+  });
+
+  it("fits again when the call asks for a fit, and leaves the fit alone before a fitted run or for another change", async () => {
+    const again = await fitted({ target: "attack_rate", value: 0.45 }, 13.56);
+    await run(again, { interventions: [masks], fit: { target: "attack_rate", value: 0.45 } });
+    expect(again.scenario.params!.run.fit).toMatchObject({ target: "attack_rate", value: 0.45 });
+    const other = await fitted({ target: "attack_rate", value: 0.45 }, 13.56);
+    const before = other.scenario.params!.disease.beta;
+    await run(other, { n_agents: 5000 });                                                   // not an intervention: the fit goes on, as in Part 2
+    expect(other.scenario.params!.run.fit).not.toBeNull();
+    expect(other.scenario.params!.disease.beta).toBe(before);
+    const unrun = makeDeps();
+    await run(unrun, { disease: "measles", r0: 3, fit: { target: "attack_rate", value: 0.45 } });
+    await run(unrun, { interventions: [masks] });                                           // no fitted run yet: the first run fits with the masks in place
+    expect(unrun.scenario.params!.run.fit).not.toBeNull();
+    const moved = await fitted({ target: "attack_rate", value: 0.45 }, 13.56);
+    await run(moved, { fit: { target: "attack_rate", value: 0.3 } });                       // a new target since the fitted run
+    await run(moved, { interventions: [masks] });
+    expect(moved.scenario.params!.run.fit).toMatchObject({ value: 0.3 });
+  });
+});
+
+describe("configure_simulation with routine immunity and a campaign on top of it (review of phase B)", () => {
+  const campaign = { type: "vaccine", kind: "campaign", coverage: 0.7, efficacy: 0.9, start_day: 20, end_day: 50 };
+
+  it("reads vaccine_coverage as the routine coverage and keeps the campaign", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", r0: 3, vaccine_coverage: 0.85 });
+    await run(deps, { interventions: [campaign] });
+    expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.85);
+    await run(deps, { vaccine_coverage: 0.9 });
+    expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.9);
+    expect(deps.scenario.params!.interventions).toMatchObject([{ type: "vaccine", kind: "campaign", coverage: 0.7, start_day: 20, end_day: 50 }]);
+  });
+
+  it("refuses a start day there, naming both", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", r0: 3, vaccine_coverage: 0.85 });
+    await run(deps, { interventions: [campaign] });
+    const out = await run(deps, { vaccine_coverage: 0.9, vaccine_start_day: 30 });
+    expect(out.isError).toBe(true);
+    expect(out.content).toContain("routine immunity");
+    expect(out.content).toContain("campaign");
+    expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.85);                  // nothing was written
   });
 });

@@ -12,7 +12,7 @@ import type { ShareState } from "@/lib/client/share";
 import { keepFollowing } from "@/lib/client/scroll";
 import { readEvents } from "@/lib/client/sse";
 import { track } from "@/lib/client/track";
-import { latestRunKey } from "@/lib/client/tryNext";
+import { tryNextKey } from "@/lib/client/tryNext";
 import { INTERRUPTED, applyEvent, lastRecap, lastStage, lastSuggestions, startTurn, type TurnProgress } from "@/lib/client/turn";
 import type { ConversationSummary } from "@/lib/db/conversations";
 import type { ExportFormat, PanelSection } from "@/lib/enums";
@@ -119,7 +119,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const chips = live || empty ? { items: [], source: "draft" as ChipSource } : chipsFor(stage, lastSuggestions(turns));
   const recap = lastRecap(turns);
   // Follow-up spec 7.4: what_if's replies as buttons under the latest run; none while a reply streams.
-  const tryNext = live ? undefined : { key: latestRunKey(turns), onPick: (label: string) => void send(label, "option") };
+  const tryNext = { key: tryNextKey(turns, live !== null), onPick: (label: string) => void send(label, "option") };
   const feedback = conversationId ? { conversationId, sessionId } : null;
   const session = sessionId ?? undefined;
 

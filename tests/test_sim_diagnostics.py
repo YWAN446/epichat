@@ -240,7 +240,7 @@ def test_the_thresholds_are_named_constants():
         assert isinstance(getattr(dx, name), (int, float)), name
 
 
-def test_a_normal_run_raises_only_the_well_mixed_info():
+def test_a_normal_run_raises_well_mixed_and_the_interventions_to_try():
     from epichat.sim.replicates import run_replicates
     p = params(**{"run.n_agents": 2000})
     out = run_replicates(p)
@@ -394,3 +394,21 @@ def test_a_lever_may_carry_entries_and_a_label_and_serializes_as_before_without_
     assert out[0] == {"patch": {"disease.beta": 9.0}, "current": {"disease.beta": 22.8}, "direction": "decrease", "rationale": "why", "basis": "rule"}
     assert out[1]["interventions"] == [{"type": "behavior_response", "scale": 0.5}] and out[1]["label"] == "Let people become careful and rerun"
     json.dumps(out)
+
+
+def test_r0_gap_stands_down_while_a_dated_reduction_covers_the_seeds():
+    # review of phase B: what_if's windows start the day 1% were infected, day 0 with the default seeding, so the seeds pass on less
+    low = {"r0_measured": 1.5}
+    assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra=low))
+    for entry in ({"type": "contact_reduction", "layer": "all", "scale": 0.3, "start_day": 0, "end_day": 56},
+                  {"type": "transmission_reduction", "scale": 0.2, "start_day": 1, "end_day": 91}):
+        assert "r0_gap" not in ids(run(params(interventions=[entry]), NORMAL, total=8600, seeds=500, stats_extra=low)), entry
+    later = params(interventions=[{"type": "transmission_reduction", "scale": 0.2, "start_day": 60, "end_day": 150}])
+    assert "r0_gap" in ids(run(later, NORMAL, total=8600, seeds=500, stats_extra=low))               # the seeds had finished before it began
+
+
+def test_well_mixed_stands_down_on_a_fitted_run():
+    # review of phase B: on a run fitted to a known outcome the size is what the user said it was, and a lever would be fitted away
+    fitted = {"fit": {"target": "attack_rate", "wanted": 0.86, "achieved": 0.86, "lever": "disease.beta", "value": 22.0, "runs": 3}}
+    assert "well_mixed" in ids(run(params(), NORMAL, total=8600, seeds=100))
+    assert "well_mixed" not in ids(run(params(), NORMAL, total=8600, seeds=100, stats_extra=fitted))

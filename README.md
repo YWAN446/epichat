@@ -219,7 +219,11 @@ registry, schema v2, the exact R0, diagnostics and options) and
   `epichat/sim/diagnostics.py` and illustrative until the database carries
   them. The conversation shows up to three of the labels as "Try next"
   buttons under the latest run; the agent offers a warning diagnostic's
-  options first and interventions only on a baseline that is sound.
+  options first and interventions only on a baseline that is sound, and the
+  buttons follow the same rule. On a scenario fitted to a known outcome, a
+  change to the interventions after the fitted run ends the fit and keeps the
+  fitted value, so the next run shows the intervention against the fitted
+  baseline (it used to be fitted away).
 - **The review list.** `scripts/review_requests.py` renders
   `docs/data-review-requests.md`: for every disease, the status of every
   database field the registry names, the fields the database does not have

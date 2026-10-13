@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Block } from "@/lib/chat/events";
-import { TRY_NEXT_MAX, latestRunKey, tryNextLabels } from "@/lib/client/tryNext";
+import { TRY_NEXT_MAX, latestRunKey, tryNextKey, tryNextLabels } from "@/lib/client/tryNext";
 import { SUGGESTION_SOURCES } from "@/lib/enums";
 import type { RunPayload } from "@/lib/tools/types";
 
@@ -27,6 +27,20 @@ describe("the run card's Try next buttons (follow-up spec 7.4)", () => {
     expect(latestRunKey([{ id: "a", blocks: [run(false)] }])).toBeNull();                              // a failed run has nothing to offer
     expect(latestRunKey([{ id: "a", blocks: [run(), run(false)] }])).toBe("a:0");
     expect(latestRunKey([])).toBeNull();
+  });
+
+  it("offers nothing on a run with a warning: a baseline that is broken is fixed first (review of phase B)", () => {
+    const whatIf = { id: "what_if", severity: "info", title: "Interventions to try", evidence: {}, levers: [lever("A and rerun")] };
+    const unfinished = { id: "unfinished", severity: "warning", title: "The run ended before the epidemic did", evidence: {}, levers: [] };
+    expect(tryNextLabels(payload([unfinished, whatIf]))).toEqual([]);
+    expect(tryNextLabels(payload([whatIf, { ...unfinished, severity: "info" }]))).toEqual(["A and rerun"]);
+  });
+
+  it("gives no key while a reply streams", () => {
+    const turns = [{ id: "a", blocks: [run()] }];
+    expect(tryNextKey(turns, false)).toBe("a:0");
+    expect(tryNextKey(turns, true)).toBeNull();
+    expect(tryNextKey([], false)).toBeNull();
   });
 
   it("has a source for the buttons and one for a chosen reference", () => {

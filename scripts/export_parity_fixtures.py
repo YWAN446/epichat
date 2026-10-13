@@ -1,7 +1,9 @@
 """Export the parity fixture the TypeScript tests pin themselves to: the exact
 R0 math on a few hundred seeded v2 parameter sets, the v1 migration on a fixed
 set of v1 rows, literature warnings on seeded arguments, and the three
-adapters' row mapping on recorded responses.
+adapters' row mapping on recorded responses. A second file holds the levers the
+diagnostics offer after a run, as the service serializes them, for the web tool
+to apply (follow-up spec 7).
 
     py -3.12 scripts/export_parity_fixtures.py   # writes web/tests/fixtures/
 """
@@ -24,6 +26,7 @@ from epichat.params import r0  # noqa: E402
 from epichat.params.migrate import coerce_params  # noqa: E402
 from epichat.params.schema_v2 import SimParamsV2  # noqa: E402
 from epichat.resolver import DataQuery, ResolvedField  # noqa: E402
+from epichat.sim.diagnostics import as_dicts, diagnose  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "tests"))
 from template_cases import cases as template_cases  # noqa: E402
@@ -319,6 +322,28 @@ def adapter_cases() -> dict:
     return {"un_wpp": un, "who_gho": who, "wb_data360": wb}
 
 
+def what_if_cases() -> list[dict]:
+    """The levers of what_if and well_mixed after a synthetic epidemic on each network, with the anchor on day 20 and on day 0 (the
+    default seeding), exactly as the service sends them. The Python tests prove the Python validator takes the entries; the web's
+    test feeds these through configure_simulation, whose validator is the TypeScript one (review of the follow-up's phase B)."""
+    n, days, total = 10000, 366, 8600
+    cases = []
+    for network, disease, anchor in (("random", None, 20), ("hybrid", "measles", 20), ("age_structured", "pertussis", 20), ("hybrid", "measles", 0), ("random", "measles", 0)):
+        seeds = 100 if anchor == 0 else 10
+        p = SimParamsV2.model_validate({"disease": {"dur_inf": {"mean_days": 10, "dist": "gamma", "sd_days": 3}, "seed": {"mode": "count", "value": seeds}},
+                                        "network": {"network_type": network}, "run": {"n_agents": n, "sim_dur_years": 1.0, "rand_seed": 1}})
+        new = [0.0] * days
+        new[0] = float(seeds)
+        new[anchor] += 0.01 * n - seeds
+        for t in range(anchor + 1, anchor + 101):
+            new[t] = (total - 0.01 * n) / 100
+        series = {"day": list(range(days)), "n_infectious": [min(800.0, 20.0 * t) if t < 150 else 0.0 for t in range(days)], "new_infections": new}
+        stats = {"total_infected": total, "n_agents": n, "seeds": seeds, "seeds_day0": seeds}
+        found = [d for d in as_dicts(diagnose(p, series, stats, None, seeds, disease)) if d["id"] in ("what_if", "well_mixed")]
+        cases.append({"network": network, "disease": disease, "anchor": anchor, "diagnostics": found})
+    return cases
+
+
 def main(web_dir: Path = ROOT / "web") -> None:
     rng = random.Random(SEED)
     fixtures = web_dir / "tests" / "fixtures"
@@ -327,8 +352,9 @@ def main(web_dir: Path = ROOT / "web") -> None:
         (fixtures / "adapters" / name).write_text(text, encoding="utf-8", newline="")
     payload = {"version": 6, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
     (fixtures / "parity.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    (fixtures / "what_if_levers.json").write_text(json.dumps({"cases": what_if_cases()}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":
     main()
-    print("wrote web/tests/fixtures/parity.json and web/tests/fixtures/adapters/")
+    print("wrote web/tests/fixtures/parity.json, what_if_levers.json and web/tests/fixtures/adapters/")

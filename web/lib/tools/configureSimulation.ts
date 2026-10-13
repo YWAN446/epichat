@@ -1,13 +1,16 @@
 import { z } from "zod";
+import { fitText } from "@/lib/client/format";
+import type { PreviousRun } from "@/lib/db/runs";
 import { detectDisease } from "@/lib/disease/db";
 import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccine, recalibrateBeta, validateParams, withR0, type Duration, type Intervention, type SimParams } from "@/lib/sim/params";
-import { changedPaths, type PathChange } from "@/lib/sim/paths";
-import { pyRound } from "@/lib/sim/pyformat";
+import { changedPaths, setPath, type PathChange } from "@/lib/sim/paths";
+import { fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { applyAdvanced } from "./advanced";
 import { configView } from "./configView";
 import { durationFor, type DurationName } from "./durations";
 import { matchedLevers } from "./options";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
+import { near } from "./sources";
 import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
 
 const opt = <T extends z.ZodTypeAny>(t: T) => t.nullish();
@@ -58,6 +61,37 @@ const block = (base: Obj, key: string): Obj => {
  * validated once), `changed`, start_new_scenario, and the gamma defaults of
  * spec 7.3.
  */
+const BETA_FIT_LEVERS = ["disease.beta", "network.network_beta"];
+
+/**
+ * The scenario with its fit ended and the value the fitted run found written into the lever, or null when the last run was not a
+ * run of this fit (another target, value or lever, or no fit at all). A fitted beta or network multiplier also switches the
+ * measured-R0 calibration off: on a network where the pilot runs it would move the fitted value back to the formula's R0.
+ */
+function keepFittedValue(params: SimParams, previous: PreviousRun): { params: SimParams; note: string } | null {
+  const fit = params.run.fit;
+  const ran = previous.effectiveParams.run?.fit;
+  const found = previous.stats.fit;
+  if (!fit || !ran || !found || ran.target !== fit.target || ran.lever !== fit.lever || !near(ran.value, fit.value) || found.lever !== fit.lever) return null;
+  const body = structuredClone(params) as unknown as Obj;
+  (body.run as Obj).fit = null;
+  if (fit.lever === "behavior_response.scale") {
+    const response = (body.interventions as Obj[]).find((i) => i.type === "behavior_response");
+    if (!response) return null;
+    response.scale = found.value;
+  } else {
+    setPath(body, fit.lever, found.value);
+    if (BETA_FIT_LEVERS.includes(fit.lever)) (body.run as Obj).calibrate_r0 = false;
+  }
+  const validated = validateParams(body);
+  if (!validated.ok) return null;
+  const calibration = BETA_FIT_LEVERS.includes(fit.lever) ? " The measured-R0 calibration is off for this scenario, since its beta is the fitted one." : "";
+  return {
+    params: validated.params,
+    note: `This change to the interventions ended the fit (${fitText(fit.target, fit.value)}) and kept the fitted value of ${fit.lever} (${fmtValue(found.value)}), so the next run shows the change against the fitted baseline.${calibration} Pass fit again in the same call to fit with the change in place.`,
+  };
+}
+
 export async function configureSimulation(input: ConfigureSimulationArgs, deps: ToolDeps): Promise<ToolOutcome> {
   if (given(input.seed_fraction) && given(input.seed_count)) return errorOutcome("CONFIG ERROR: seed_fraction and seed_count are mutually exclusive; pass one of them.");
   const newScenario = input.start_new_scenario === true;
@@ -136,28 +170,39 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     // efficacy, a window, ages or waning (the database efficacy path, Part 2 7.4) keeps them and takes the new coverage or start (2C review, I6).
     const immune = Number(disease.initial_immune_frac ?? 0);
     const existing = interventions.find((i) => i.type === "vaccine");
+    const campaignOnTop = immune > 0 && existing !== undefined && !isV1Vaccine(existing as unknown as Intervention);
+    if (campaignOnTop && given(input.vaccine_start_day)) {
+      // Review of the follow-up's phase B: routine immunity and a campaign on top of it (what_if offers one) are two things, and a
+      // start day does not say which one moves.
+      return errorOutcome(`CONFIG ERROR: the scenario has routine immunity (${fmtValue(immune)}) and a vaccination campaign (coverage ${fmtValue(existing.coverage)} from day ${fmtValue(existing.start_day)}); `
+        + "vaccine_coverage alone sets the routine immunity, and the campaign is changed through interventions [{type: vaccine, ...}] or removed with remove_interventions.");
+    }
     const current = existing ?? (immune > 0 ? { coverage: immune, start_day: 0 } : {});
     const coverage = given(input.vaccine_coverage) ? input.vaccine_coverage : (current.coverage as number | null | undefined);
     const startDay = given(input.vaccine_start_day) ? input.vaccine_start_day : ((current.start_day as number | undefined) ?? 0);
     if (!given(coverage)) {
       return errorOutcome("CONFIG ERROR: a vaccination campaign needs a coverage level — pass vaccine_coverage alongside vaccine_start_day.");
     }
-    interventions = interventions.filter((i) => i.type !== "vaccine");
     const rich = existing !== undefined && !isV1Vaccine(existing as unknown as Intervention);
-    if (rich) {
+    if (campaignOnTop) {
+      disease.initial_immune_frac = Math.min(coverage, 0.99);        // the routine coverage; the campaign keeps its own
+    } else if (rich) {
+      interventions = interventions.filter((i) => i.type !== "vaccine");
       // the window moves with the start: a one-day campaign stays one day, a window that would end before the new start ends on it
       const endDay = existing.end_day as number | null | undefined;
       const end = endDay === null || endDay === undefined ? null : Math.max(endDay, startDay);
       interventions = upsertIntervention(interventions, "vaccine", { ...existing, coverage, start_day: startDay, end_day: end });
       disease.initial_immune_frac = 0;
     } else if (startDay > 0) {
+      interventions = interventions.filter((i) => i.type !== "vaccine");
       interventions = upsertIntervention(interventions, "vaccine", { coverage, start_day: startDay });
       disease.initial_immune_frac = 0;
     } else {
+      interventions = interventions.filter((i) => i.type !== "vaccine");
       disease.initial_immune_frac = Math.min(coverage, 0.99);
     }
     applied.vaccine_coverage = coverage;
-    applied.vaccine_start_day = startDay;
+    applied.vaccine_start_day = campaignOnTop ? 0 : startDay;
   }
   if (given(input.treatment_capacity)) {
     interventions = upsertIntervention(interventions, "treatment", { coverage: 1.0, capacity: input.treatment_capacity });
@@ -250,9 +295,25 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     applied.r0 = input.r0;
   }
 
+  // Review of the follow-up's phase B: the scenario keeps its fit, so the next run would fit an added intervention away (a baseline
+  // fitted to 45% infected still showed 45% with distancing). A change to the interventions after a fitted run ends the fit and
+  // keeps the fitted value; a call that passes fit fits again with the change in place.
+  let previous: PreviousRun | null | undefined;
+  let fitEnded: string | null = null;
+  if (before?.run.fit && params.run.fit && input.fit === undefined && scenario.hasRun
+    && JSON.stringify(before.interventions) !== JSON.stringify(params.interventions)) {
+    previous = await deps.previousRun();
+    const kept = previous ? keepFittedValue(params, previous) : null;
+    if (kept) {
+      params = kept.params;
+      fitEnded = kept.note;
+    }
+  }
+
   scenario.params = params;
   scenario.countryIso3 = params.demographics.country;
   const warnings = paramWarnings(scenario, params, deps.contextText);
+  if (fitEnded) warnings.push(fitEnded);
   const approx_r0 = pyRound(approxR0(params), 2);
   if (given(input.r0) && Math.abs(approx_r0 - input.r0) > R0_CLAMP_TOLERANCE * input.r0) {
     warnings.push(`beta was clamped at ${params.disease.beta}, so the run's R0 is ${approx_r0} rather than the requested ${input.r0}; more contacts or a longer infectious period would reach it.`);
@@ -260,7 +321,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   const changed: PathChange[] = before ? changedPaths(before as unknown as Obj, params as unknown as Obj) : [];
   if (scenario.hasRun && changed.length > 0) {
     // Spec 11: a lever is taken when the applied patch carries every one of its paths with its value.
-    const previous = await deps.previousRun();
+    if (previous === undefined) previous = await deps.previousRun();
     for (const match of matchedLevers(previous, changed, params)) deps.onOptionChosen(previous!.id, match.diagnosticId, match.patch, match.interventions);
   }
   const config = configView(params, scenario.disease);
