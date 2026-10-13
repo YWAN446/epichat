@@ -22,6 +22,8 @@ export type ParamSpec = {
   starsim_target: string;
   affects: string[];
   requires: string[];
+  /** The network types the parameter applies on; empty means every one (follow-up spec, 8.2). */
+  networks: string[];
 };
 
 const FILE = raw as unknown as { version: number; params: ParamSpec[] };
@@ -35,6 +37,10 @@ export function specFor(path: string): ParamSpec | null {
 
 export function appliesTo(spec: ParamSpec, model: string): boolean {
   return spec.models.length === 0 || spec.models.includes(model);
+}
+
+export function appliesOn(spec: ParamSpec, network: string): boolean {
+  return spec.networks.length === 0 || spec.networks.includes(network);
 }
 
 export function applicableSpecs(model: string): ParamSpec[] {

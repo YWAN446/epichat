@@ -21,7 +21,7 @@ function calibrateOrNull(p: ReturnType<typeof must>, target: number): number | n
 
 describe("parity with the Python package", () => {
   it("has enough cases", () => {
-    expect(parity.version).toBe(5);
+    expect(parity.version).toBe(6);
     expect(parity.params.length).toBeGreaterThanOrEqual(200);
     expect(parity.migration.length).toBeGreaterThanOrEqual(12);
     expect(parity.warnings.length).toBeGreaterThanOrEqual(300);

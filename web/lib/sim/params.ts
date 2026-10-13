@@ -18,10 +18,12 @@ export const WANING_MODELS: readonly DiseaseType[] = ["sirs", "seirs"];
 export const NETWORK_TYPES = ["random", "age_structured", "hybrid"] as const;
 export const CONTACTS_DISTS = ["constant", "poisson"] as const;
 export const AGE_SOURCES = ["default", "shares", "un_wpp"] as const;
-export const INTERVENTION_TYPES = ["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"] as const;
+export const INTERVENTION_TYPES = ["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"] as const;
 export const LAYERS = ["all", "household", "school", "work", "community"] as const;
 export const FIT_TARGETS = ["attack_rate", "peak_day", "peak_infections"] as const;
-export const FIT_LEVERS = ["disease.beta", "network.network_beta"] as const;
+export const FIT_LEVERS = ["disease.beta", "network.network_beta", "disease.rel_sus_cv", "behavior_response.scale"] as const;
+/** The two levers that set R0; the other two leave it where it was set (follow-up spec, 6). */
+export const BETA_LEVERS: readonly string[] = ["disease.beta", "network.network_beta"];
 export const DISTS = ["constant", "lognormal", "gamma"] as const;
 
 const TYPE_ALIASES: Record<string, string> = {
@@ -35,6 +37,12 @@ const TYPE_ALIASES: Record<string, string> = {
   "contact-reduction": "contact_reduction",
   masks: "transmission_reduction",
   "transmission-reduction": "transmission_reduction",
+  behaviour_response: "behavior_response",
+  behavior: "behavior_response",
+  behaviour: "behavior_response",
+  behavior_change: "behavior_response",
+  behaviour_change: "behavior_response",
+  awareness: "behavior_response",
 };
 
 const nullable = <T extends z.ZodTypeAny>(inner: T) => inner.nullable().default(null);
@@ -81,10 +89,13 @@ export const InterventionSchema = z.preprocess(
       scale: z.number().min(0).max(1).default(0.2),
       shift: z.number().min(0).max(1).default(0),
       layer: z.enum(LAYERS).default("all"),
+      half_prevalence: z.number().min(0.0001).max(0.5).default(0.01),
+      memory_days: z.number().int().min(1).max(90).default(7),
     })
     .superRefine((i, ctx) => {
       if (i.end_day !== null && i.end_day < i.start_day) issue(ctx, "interventions[].end_day must not be before start_day");
       if (i.age_min !== null && i.age_max !== null && i.age_min >= i.age_max) issue(ctx, "interventions[].age_min must be below age_max");
+      if (i.type === "behavior_response" && i.layer !== "all") issue(ctx, "interventions[].layer must be all for a behavior_response");
     }),
 );
 export type Intervention = z.infer<typeof InterventionSchema>;
@@ -105,6 +116,7 @@ export const FitSchema = z
   .superRefine((f, ctx) => {
     if (f.target === "attack_rate" && f.value > 1) issue(ctx, "run.fit.value is a fraction for attack_rate");
     if (f.target === "peak_day" && f.value < 1) issue(ctx, "run.fit.value is a day for peak_day");
+    if (f.target === "peak_day" && !BETA_LEVERS.includes(f.lever)) issue(ctx, `run.fit.target peak_day can be fitted with disease.beta or network.network_beta, not with ${f.lever}`);
   });
 export type Fit = z.infer<typeof FitSchema>;
 
@@ -157,6 +169,7 @@ export const DiseaseSchema = z
     p_asymp: withDefault("disease.p_asymp"),
     rel_trans_asymp: withDefault("disease.rel_trans_asymp"),
     rel_sus_age: AgeMultipliersSchema.prefault({}),
+    rel_sus_cv: withDefault("disease.rel_sus_cv"),
     p_death_age: AgeFractionsSchema.prefault({}),
     rel_trans_exposed: withDefault("disease.rel_trans_exposed"),
     sis_waning: withDefault("disease.sis_waning"),
@@ -290,6 +303,9 @@ export const SimParamsSchema = z
         issue(ctx, "a vaccine with start_day 0 and disease.initial_immune_frac were both given with different values; set one of them");
       }
     }
+    const responses = p.interventions.filter((i) => i.type === "behavior_response");
+    if (responses.length > 1) issue(ctx, "interventions may hold one behavior_response entry");
+    if (p.run.fit && p.run.fit.lever === "behavior_response.scale" && responses.length === 0) issue(ctx, "run.fit.lever behavior_response.scale needs a behavior_response entry in interventions");
     if (p.network.network_type !== "hybrid") {
       for (const i of p.interventions) {
         if (i.type === "contact_reduction" && i.layer !== "all") issue(ctx, `interventions[].layer ${i.layer} needs the hybrid network; the ${p.network.network_type} network has no layers, use all`);

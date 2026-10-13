@@ -123,6 +123,8 @@ def random_params(rng: random.Random) -> SimParamsV2 | None:
         disease["rel_trans_asymp"] = round(rng.uniform(0.0, 1.0), 2)
     if rng.random() < 0.5:
         disease["rel_sus_age"] = {g: round(rng.uniform(0.3, 2.5), 2) for g in ("children", "adults", "elderly") if rng.random() < 0.8}
+    if rng.random() < 0.35:
+        disease["rel_sus_cv"] = rng.choice([0.5, 1.0, 1.5])
     if rng.random() < 0.4 and model != "sis":
         disease["p_death_age"] = {g: round(rng.choice([0.0, 0.001, 0.05, 0.2]), 3) for g in ("children", "adults", "elderly") if rng.random() < 0.6}
     if model in LATENT and rng.random() < 0.5:
@@ -149,13 +151,17 @@ def random_params(rng: random.Random) -> SimParamsV2 | None:
                         "age_source": rng.choice(["default", "shares", "un_wpp"])}
     run = {"n_agents": rng.choice([1000, 5000, 10000, 50000]), "calibrate_r0": rng.random() < 0.8}
     if rng.random() < 0.3:
-        target = rng.choice(["attack_rate", "peak_day", "peak_infections"])
+        lever = rng.choice(["disease.beta", "network.network_beta", "disease.rel_sus_cv", "behavior_response.scale"])
+        targets = ["attack_rate", "peak_day", "peak_infections"] if lever in ("disease.beta", "network.network_beta") else ["attack_rate", "peak_infections"]
+        target = rng.choice(targets)                                             # a peak day is fitted with the beta levers only
         value = {"attack_rate": round(rng.uniform(0.05, 0.9), 2), "peak_day": rng.randint(10, 300), "peak_infections": rng.randint(10, 5000)}[target]
-        run["fit"] = {"target": target, "value": value, "lever": rng.choice(["disease.beta", "network.network_beta"])}
+        run["fit"] = {"target": target, "value": value, "lever": lever}
     interventions = []
     if rng.random() < 0.6:
         for _ in range(rng.randint(1, 3)):
-            kind = rng.choice(["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction"])
+            kind = rng.choice(["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"])
+            if kind == "behavior_response" and any(i["type"] == "behavior_response" for i in interventions):
+                kind = "seasonality"                                             # one behaviour response per scenario
             if kind == "vaccine":
                 interventions.append({"type": "vaccine", "coverage": round(rng.uniform(0.1, 0.95), 2), "start_day": rng.choice([0, 0, 30, 120]),
                                       "efficacy": rng.choice([1.0, 1.0, 0.6, 0.9]), "kind": rng.choice(["routine", "campaign"]),
@@ -165,12 +171,17 @@ def random_params(rng: random.Random) -> SimParamsV2 | None:
                                       "delay_days": rng.choice([0, 0, 2]), "efficacy": rng.choice([1.0, 0.7]), "rel_trans_treated": rng.choice([1.0, 0.5])})
             elif kind == "seasonality":
                 interventions.append({"type": "seasonality", "scale": round(rng.uniform(0, 0.5), 2)})
+            elif kind == "behavior_response":
+                interventions.append({"type": "behavior_response", "scale": round(rng.uniform(0.1, 0.9), 2),
+                                      "half_prevalence": rng.choice([0.01, 0.005, 0.05]), "memory_days": rng.choice([7, 14])})
             elif kind == "contact_reduction":
                 interventions.append({"type": "contact_reduction", "layer": rng.choice(["all", "school", "community"]) if network_type == "hybrid" else "all",
                                       "scale": round(rng.uniform(0, 1), 2), "start_day": 30, "end_day": rng.choice([None, 72])})
             else:
                 interventions.append({"type": "transmission_reduction", "scale": round(rng.uniform(0, 0.8), 2), "start_day": rng.choice([0, 14]),
                                       "end_day": rng.choice([None, 90])})
+    if run.get("fit", {}).get("lever") == "behavior_response.scale" and not any(i["type"] == "behavior_response" for i in interventions):
+        interventions.append({"type": "behavior_response", "scale": 0.5})        # the lever needs its entry
     try:
         return SimParamsV2.model_validate({"schema_version": 2, "disease": disease, "network": network, "demographics": demographics,
                                            "interventions": interventions, "run": run})
@@ -314,7 +325,7 @@ def main(web_dir: Path = ROOT / "web") -> None:
     (fixtures / "adapters").mkdir(parents=True, exist_ok=True)
     for name, text in ADAPTER_FILES.items():
         (fixtures / "adapters" / name).write_text(text, encoding="utf-8", newline="")
-    payload = {"version": 5, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
+    payload = {"version": 6, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
     (fixtures / "parity.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
 

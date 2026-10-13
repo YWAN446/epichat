@@ -16,7 +16,7 @@ describe("SimParams v2 validation", () => {
       disease: {
         model: "sir", beta: DEFAULT_BETA, dur_exp: null, dur_inf: { mean_days: 10, dist: "constant", sd_days: null }, dur_immune: null,
         p_death: 0, p_asymp: 0.3, rel_trans_asymp: 0.5, rel_sus_age: { children: 1, adults: 1, elderly: 1 }, p_death_age: { children: null, adults: null, elderly: null },
-        rel_trans_exposed: 0, sis_waning: 0, sis_imm_boost: 0, seed: { mode: "fraction", value: 0.01, day: 0 }, initial_immune_frac: 0,
+        rel_sus_cv: 0, rel_trans_exposed: 0, sis_waning: 0, sis_imm_boost: 0, seed: { mode: "fraction", value: 0.01, day: 0 }, initial_immune_frac: 0,
       },
       network: {
         network_type: "random", n_contacts: 4, network_beta: 1, contacts_dist: "constant", contact_duration_days: 0,
@@ -230,5 +230,31 @@ describe("the day-0 fold after the 2C review (I4)", () => {
       expect(isDay0Immunity(p.interventions[0])).toBe(false);
     }
     expect(must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 0.9, start_day: 0 }] }).disease.initial_immune_frac).toBe(0.9);
+  });
+});
+
+describe("the limits on spread in the schema (follow-up spec, 4 to 6)", () => {
+  it("fills the variation and the behaviour response and keeps their rules", () => {
+    expect(must({ schema_version: 2 }).disease.rel_sus_cv).toBe(0);
+    expect(must({ schema_version: 2, disease: { rel_sus_cv: 1 } }).disease.rel_sus_cv).toBe(1);
+    expect(validateParams({ schema_version: 2, disease: { rel_sus_cv: 2.5 } }).ok).toBe(false);
+    const p = must({ schema_version: 2, interventions: [{ type: "behaviour_response", scale: 0.5 }] });
+    expect(p.interventions[0]).toMatchObject({ type: "behavior_response", scale: 0.5, half_prevalence: 0.01, memory_days: 7, start_day: 0, end_day: null, layer: "all" });
+    for (const alias of ["behavior", "behaviour", "behavior_change", "behaviour_change", "awareness"]) expect(must({ schema_version: 2, interventions: [{ type: alias }] }).interventions[0].type).toBe("behavior_response");
+    for (const bad of [{ half_prevalence: 0 }, { half_prevalence: 0.6 }, { memory_days: 0 }, { memory_days: 91 }]) expect(validateParams({ schema_version: 2, interventions: [{ type: "behavior_response", ...bad }] }).ok).toBe(false);
+    expect(validateParams({ schema_version: 2, network: { network_type: "hybrid" }, interventions: [{ type: "behavior_response", layer: "school" }] })).toEqual({ ok: false, error: expect.stringContaining("layer must be all for a behavior_response") });
+    expect(validateParams({ schema_version: 2, interventions: [{ type: "behavior_response" }, { type: "behavior_response", scale: 0.4 }] })).toEqual({ ok: false, error: expect.stringContaining("one behavior_response entry") });
+    const stored = must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 0.5, start_day: 30 }, { type: "seasonality" }] });
+    expect(stored.interventions.every((i) => i.half_prevalence === 0.01 && i.memory_days === 7)).toBe(true);
+  });
+
+  it("takes the two new fit levers with their rules", () => {
+    expect(must({ schema_version: 2, disease: { rel_sus_cv: 0.5 }, run: { fit: { target: "attack_rate", value: 0.5, lever: "disease.rel_sus_cv" } } }).run.fit).toEqual({ target: "attack_rate", value: 0.5, lever: "disease.rel_sus_cv" });
+    expect(must({ schema_version: 2, interventions: [{ type: "behavior_response", scale: 0.5 }], run: { fit: { target: "peak_infections", value: 300, lever: "behavior_response.scale" } } }).run.fit?.lever).toBe("behavior_response.scale");
+    expect(validateParams({ schema_version: 2, run: { fit: { target: "attack_rate", value: 0.5, lever: "behavior_response.scale" } } })).toEqual({ ok: false, error: expect.stringContaining("needs a behavior_response entry") });
+    for (const lever of ["disease.rel_sus_cv", "behavior_response.scale"]) {
+      expect(validateParams({ schema_version: 2, interventions: [{ type: "behavior_response" }], run: { fit: { target: "peak_day", value: 40, lever } } })).toEqual({ ok: false, error: expect.stringContaining("peak_day can be fitted with disease.beta or network.network_beta") });
+    }
+    expect(must({ schema_version: 2, run: { fit: { target: "peak_day", value: 40 } } }).run.fit?.lever).toBe("disease.beta");
   });
 });

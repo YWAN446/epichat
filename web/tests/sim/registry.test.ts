@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { PARAM_REGISTRY, REGISTRY_VERSION, applicableSpecs, boundsOf, defaultOf, specFor } from "@/lib/sim/registry";
+import { PARAM_REGISTRY, REGISTRY_VERSION, appliesOn, applicableSpecs, boundsOf, defaultOf, specFor } from "@/lib/sim/registry";
 
 describe("the exported parameter registry", () => {
   it("loads in registry order with the version", () => {
-    expect(REGISTRY_VERSION).toBe(4);
+    expect(REGISTRY_VERSION).toBe(5);
     expect(PARAM_REGISTRY[0].path).toBe("disease.model");
     expect(PARAM_REGISTRY.at(-1)?.path).toBe("run.fit.lever");
     expect(PARAM_REGISTRY.length).toBeGreaterThanOrEqual(60);
@@ -26,5 +26,18 @@ describe("the exported parameter registry", () => {
     expect(sir).not.toContain("disease.dur_exp.mean_days");
     expect(seiar).toContain("disease.p_asymp");
     expect(applicableSpecs("sis").map((s) => s.path)).not.toContain("disease.p_death");
+  });
+});
+
+describe("where a parameter applies (follow-up spec, 8.2)", () => {
+  it("says on which network each parameter applies", () => {
+    expect(specFor("network.household_size")?.networks).toEqual(["hybrid"]);
+    expect(specFor("network.n_contacts")?.networks).toEqual(["random"]);
+    expect(specFor("network.contacts.children_adults")?.networks).toEqual(["age_structured"]);
+    expect(specFor("disease.beta")?.networks).toEqual([]);
+    expect(appliesOn(specFor("network.household_size")!, "hybrid")).toBe(true);
+    expect(appliesOn(specFor("network.household_size")!, "random")).toBe(false);
+    expect(appliesOn(specFor("disease.beta")!, "random")).toBe(true);
+    expect(PARAM_REGISTRY.every((s) => Array.isArray(s.networks))).toBe(true);
   });
 });
