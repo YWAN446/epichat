@@ -98,8 +98,12 @@ PDF export now renders Chinese, Japanese, and Korean characters correctly via Re
 The web app (`web/`, Next.js on Vercel) and its simulation service (`sim/`,
 FastAPI running Starsim 3.7 through `epichat/sim/`) replace the templates
 above for the usability study. Their parameters are the sim-parameters
-design, `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`;
-the runbook is `web/docs/DEPLOY.md`.
+design in two parts,
+`docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md` (the
+registry, schema v2, the exact R0, diagnostics and options) and
+`docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md`
+(networks, demographics, interventions and the fit); the runbook is
+`web/docs/DEPLOY.md`.
 
 - **One registry.** Every parameter is described once in
   `epichat/params/registry.py` (path, label, unit, bounds, default, the
@@ -131,6 +135,59 @@ the runbook is `web/docs/DEPLOY.md`.
   `diagnostic_shown` and `option_chosen` say which fired and which were taken,
   so the thresholds (named constants at the top of the diagnostics module)
   can be tuned from the pilot.
+- **Disease extensions (Part 2).** Susceptibility by age (`rel_sus_age`:
+  children under 18, adults, the elderly), fatality by age (`p_death_age`)
+  and presymptomatic transmissibility (`rel_trans_exposed`); a connector
+  composes `rel_sus` and `rel_trans` from every factor (age, vaccine,
+  seasonality, treatment) on every step, and the exact R0 carries the
+  multipliers.
+- **Networks.** `network_type` is `random` (fresh contacts daily, constant or
+  Poisson, optionally lasting `contact_duration_days`), `age_structured`
+  (three age groups mixing by a 3×3 contact matrix: POLYMOD's European
+  defaults, or the country's Prem 2021 matrix once `fetch_demographics` has
+  run) or `hybrid` (households, schools, workplaces and community as in
+  Covasim, with the country's household size and the layers' sizes and
+  transmissibilities as parameters). The R0 formula is exact on the first two
+  and approximate on the hybrid network, so every run reports the measured R0
+  (the day-0 seeds' mean secondary infections) and on the hybrid network a
+  short pilot adjusts beta to it (`applied.beta_calibrated_by_measurement`;
+  `run.calibrate_r0` switches it off). At the same R0 the final size is close
+  on every network: the networks differ in who meets whom and in what the
+  interventions act on.
+- **Demographics.** With a country, the agents' ages follow the UN WPP 2024
+  pyramid (`epichat/data/un_wpp_age.csv`) and multi-year runs follow the
+  projected crude birth rates (`un_wpp_cbr.csv`); the household size comes
+  from the UN household database (`un_household_size.csv`) and the contact
+  matrix from Prem 2021 (`contact_matrices.csv`). `scripts/fetch_un_wpp_tables.py`,
+  `scripts/fetch_household_size.py` and `scripts/fetch_contact_matrices.py`
+  rebuild the tables.
+- **Interventions.** Five types: a vaccine (routine or a campaign over a
+  window, with an efficacy, an age range and a protection duration), a
+  treatment (with a delay, an efficacy and a transmissibility while waiting,
+  optionally symptomatic cases only), seasonality, a contact reduction on one
+  layer (a school closure is the school layer at scale 1) and a transmission
+  reduction (masks). `configure_simulation` takes them as structured entries
+  (`interventions`, `remove_interventions`) beside the shortcut fields; every
+  effect size is an illustrative assumption unless the database carries it,
+  and `fetch_vaccination_coverage` writes a day-0 campaign with the database's
+  vaccine efficacy when it has one.
+- **The fit.** `run.fit` (`configure_simulation`'s `fit` field) fits the run
+  to one outcome the user knows: the attack rate, the peak day or the peak
+  size. The service searches the transmission rate (or the network
+  multiplier) in at most eight runs and reports `stats.fit`; the report shows
+  the target and what the search reached.
+- **Diagnostics, continued.** `well_mixed` (a random-network run that a
+  hybrid scenario would describe better) and `r0_gap` (the measured R0 far
+  from the configured one) join the list above.
+- **The review list.** `scripts/review_requests.py` renders
+  `docs/data-review-requests.md`: for every disease, the status of every
+  database field the registry names, the fields the database does not have
+  yet (fatality by age, vaccine and treatment efficacy, presymptomatic
+  transmission, the school-closure, distancing and mask effects) with what a
+  reviewer should find, and the bundled tables' checks. A test keeps the
+  committed file equal to the script's output; regenerate it with
+  `.venv/Scripts/python.exe scripts/review_requests.py --write docs/data-review-requests.md`
+  whenever the database or the registry changes.
 
 The CLI, the Streamlit app and the templates below still use the v1 flat
 parameters; the web app accepts both shapes and writes v2.
@@ -280,7 +337,10 @@ each completed fetch gets its own 🔧 line, and the post-run results include a
 | **Disease parameter database** | `epichat/data/disease_parameters.json` (16 diseases, citation-backed) | R₀ used for beta calibration; literature ranges (infectious/incubation period, fatality, contacts, immunity, asymptomatic fraction) behind parameter warnings |
 | **UN WPP 2024 indicators CSV** | `epichat/data/demographics/` | Offline birth/death-rate fill for any country at generation time |
 | **WHO Mortality Database CSV** | `epichat/data/demographics/` | Age-specific death rates (supplement) |
-| **Contact matrices** (Prem 2021 / POLYMOD / SOCRATES) | `epichat/data/` (add CSVs to activate) | Country-specific mean daily contacts |
+| **Contact matrices (Prem et al. 2021)** | `epichat/data/contact_matrices.csv` (177 countries, 16 age bands aggregated to under 18 / 18–64 / 65+ with each country's pyramid; `scripts/fetch_contact_matrices.py`) | The age-structured network's matrix for the scenario's country |
+| **UN WPP 2024 population by single age** | `epichat/data/un_wpp_age.csv` (every country, 2024 and 2030; `scripts/fetch_un_wpp_tables.py`) | The agents' age pyramid and the three age shares |
+| **UN WPP 2024 projected crude birth rates** | `epichat/data/un_wpp_cbr.csv` (2020–2050; the same script) | The birth rate after the first year of a multi-year run |
+| **UN household size** | `epichat/data/un_household_size.csv` (189 countries, the 2026 household database; `scripts/fetch_household_size.py`) | The hybrid network's mean household size |
 
 Additional loaders included for future phases: CMU Delphi CovidCast/FluView
 surveillance (`data_loaders/epidata.py`), UN/DHS/Census household size
@@ -325,7 +385,7 @@ above.
 
 | Parameter | Type | Options / Range | Default | Description |
 |-----------|------|----------------|---------|-------------|
-| `network_type` | string | `random`, `age_structured` | `random` | Contact network structure |
+| `network_type` | string | `random`, `age_structured`, `hybrid` | `random` | Contact network structure |
 | `n_contacts` | integer | 1–100 | 4 | Average daily contacts per person |
 | `network_beta` | float | 0–10 | 1.0 | Transmission multiplier per contact (use <1 for masks/distancing) |
 
@@ -333,6 +393,14 @@ above.
 
 - **`random`** — Each agent contacts `n_contacts` random others per day. Good default for most scenarios. Use higher `n_contacts` for crowded settings.
 - **`age_structured`** — Uses a built-in POLYMOD-style contact matrix with three age groups (children 0–17, adults 18–64, elderly 65+). Accounts for the fact that children mix more with children, adults with adults, etc. Use when age heterogeneity matters (school outbreaks, elderly vulnerability).
+- **`hybrid`** — Households (the country's mean size), schools, workplaces and
+  community, as in Covasim: each layer has its own contacts per day and
+  transmissibility (schema v2: `household_size`, `school_contacts`,
+  `work_contacts`, `community_contacts`, `layer_beta.household` and so on, the
+  school and working age ranges). The structure a school closure or
+  distancing acts on. Schema v2 also adds `contacts_dist` (constant or
+  Poisson), `contact_duration_days`, the nine `contacts.<group>_<group>` cells
+  and `contacts_source` for the age-structured network.
 
 **`n_contacts` guidance:**
 
@@ -350,6 +418,10 @@ above.
 | 50% mask uptake, 50% efficacy | ~0.75 |
 | Strict physical distancing | ~0.4–0.6 |
 
+Schema v2 prefers a `transmission_reduction` (masks) or a `contact_reduction`
+(distancing, a school closure) intervention over a hand-set `network_beta`:
+they have a window and a layer.
+
 ### Demographics Parameters
 
 | Parameter | Type | Default | Description |
@@ -362,7 +434,10 @@ above.
 
 ## Interventions
 
-Up to three intervention types can be combined in a single simulation.
+Five intervention types can be combined in a single simulation (`vaccine`,
+`treatment`, `seasonality`, `contact_reduction`, `transmission_reduction`): the
+CLI and the templates know the first three; the web agent takes all five,
+with the schema v2 fields marked below.
 
 ### Vaccine
 
@@ -372,6 +447,12 @@ Removes a fraction of agents from the susceptible pool.
 |-------|------|-------------|
 | `coverage` | float (0–1) | Fraction of population vaccinated |
 | `start_day` | integer | `0` = pre-existing immunity (applied before simulation starts); `>0` = ongoing campaign starting on that day |
+| `kind` | string | v2: `routine` (default: a yearly probability over the window) or `campaign` (reaches the coverage uniformly over the window) |
+| `end_day` | integer or null | v2: last day of the window (null = the run's end) |
+| `efficacy` | float (0–1) | v2: protection per dose (1.0 = full). A day-0 vaccine with efficacy below 1 is a one-day campaign, not pre-existing immunity |
+| `leaky` | bool | v2: `true` scales susceptibility by 1 − efficacy; `false` protects a fraction fully |
+| `age_min`, `age_max` | integer or null | v2: the ages vaccinated |
+| `protection_days` | integer or null | v2: days before the protection wanes (null = permanent) |
 
 **Examples in natural language:**
 - *"80% of the population is vaccinated"* → `coverage=0.8, start_day=0`
@@ -386,6 +467,11 @@ Reduces infectious duration or mortality for a fraction of infected agents.
 | `coverage` | float (0–1) | Fraction of eligible infected agents who receive treatment |
 | `capacity` | integer or null | Maximum treatments administered per day; `null` = unlimited |
 | `start_day` | integer | Day treatment becomes available |
+| `end_day` | integer or null | v2: last day treatment is available |
+| `efficacy` | float (0–1) | v2: share of treated cases cured |
+| `delay_days` | integer | v2: days from infection to treatment |
+| `rel_trans_treated` | float (0–1) | v2: transmissibility while waiting for treatment |
+| `symptomatic_only` | bool | v2: skip asymptomatic cases (SEIAR) |
 
 **Examples in natural language:**
 - *"Treatment available from day 30 with 60% coverage"*
@@ -399,10 +485,36 @@ Modulates transmission rate sinusoidally over the year.
 |-------|------|-------|-------------|
 | `scale` | float | 0–1 | Seasonal variation strength (0.2 = ±20% around the annual mean) |
 | `shift` | float | 0–1 | Phase offset (0.0 = peak in winter/Jan 1; 0.5 = peak in summer/Jul 1) |
+| `peak_day` | integer | 0–365 | v2 alias of `shift`: the day of the year the transmission peaks |
 
 **Examples in natural language:**
 - *"Seasonal winter transmission"* → `scale=0.3, shift=0.0`
 - *"Mild seasonal variation with summer peak"* → `scale=0.2, shift=0.5`
+
+---
+
+### Contact reduction (schema v2)
+
+Removes a fraction of one layer's contacts over a window: `type: contact_reduction`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `layer` | string | `all`, or on the hybrid network `household`, `school`, `work`, `community` |
+| `scale` | float (0–1) | The fraction of contacts removed; `1` closes the layer |
+| `start_day`, `end_day` | integer | The window (`end_day` null = the run's end) |
+
+- *"Close the schools from day 30 for six weeks"* → `{type: contact_reduction, layer: school, scale: 1, start_day: 30, end_day: 72}` on the hybrid network
+- *"Physical distancing"* → the `community` layer at a fraction
+
+### Transmission reduction (schema v2)
+
+Lowers every contact's transmission over a window: `type: transmission_reduction`
+with `scale` (the fraction removed), `start_day` and `end_day`.
+
+- *"Masks for the first three months"* → `{type: transmission_reduction, scale: 0.3, start_day: 0, end_day: 90}`
+
+Every effect size above is an illustrative assumption unless the database
+carries it (`docs/data-review-requests.md` asks for the cited ranges).
 
 ---
 
@@ -450,7 +562,11 @@ epichat/
 │   ├── modifier.py          # Plain-text modification → updated SimParams
 │   ├── epichat.py           # Main orchestrator + error recovery loop
 │   ├── data/
-│   │   └── disease_parameters.json   # Literature-backed R₀/incubation/infectious ranges
+│   │   ├── disease_parameters.json   # Literature-backed R₀/incubation/infectious ranges
+│   │   ├── contact_matrices.csv      # Prem 2021 matrices, three age bands (web agent)
+│   │   ├── un_wpp_age.csv            # UN WPP 2024 pyramids, 2024 and 2030 (web agent)
+│   │   ├── un_wpp_cbr.csv            # UN WPP 2024 projected birth rates (web agent)
+│   │   └── un_household_size.csv     # UN household size by country (web agent)
 │   ├── prompts/
 │   │   ├── enrichment.txt   # System prompt for input enrichment (Layer 0)
 │   │   ├── extraction.txt   # System prompt for parameter parsing (Layer 1)
@@ -473,6 +589,7 @@ epichat/
 │   └── sis.py.j2            # SIS (no immunity) template
 ├── sim/                     # The simulation service (FastAPI) the web app calls
 ├── web/                     # The web app (Next.js); web/docs/DEPLOY.md is its runbook
+├── docs/data-review-requests.md  # The review list for the database team (generated)
 ├── evals/golden/            # The golden set; cases/parameters.yaml is pending the API harness
 └── tests/
     ├── test_queries.json              # Benchmark queries
