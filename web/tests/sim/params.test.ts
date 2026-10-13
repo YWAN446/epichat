@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ageShares, approxR0, calibrateBeta, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, perContactProb, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
+import { ageRangeShare, ageShares, approxR0, calibrateBeta, contactRows, hybridContacts, r0IsApproximate, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, perContactProb, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
 
 function must(input: unknown) {
   const r = validateParams(input);
@@ -18,13 +18,18 @@ describe("SimParams v2 validation", () => {
         p_death: 0, p_asymp: 0.3, rel_trans_asymp: 0.5, rel_sus_age: { children: 1, adults: 1, elderly: 1 }, p_death_age: { children: null, adults: null, elderly: null },
         rel_trans_exposed: 0, sis_waning: 0, sis_imm_boost: 0, seed: { mode: "fraction", value: 0.01, day: 0 }, initial_immune_frac: 0,
       },
-      network: { network_type: "random", n_contacts: 4, network_beta: 1 },
+      network: {
+        network_type: "random", n_contacts: 4, network_beta: 1, contacts_dist: "constant", contact_duration_days: 0,
+        contacts: { children_children: 7, children_adults: 2.5, children_elderly: 0.5, adults_children: 2.5, adults_adults: 9, adults_elderly: 1.5, elderly_children: 0.5, elderly_adults: 1.5, elderly_elderly: 3.5 },
+        contacts_source: "polymod_default", household_size: 2, school_contacts: 20, work_contacts: 16, community_contacts: 20,
+        layer_beta: { household: 3, school: 0.6, work: 0.6, community: 0.3 }, school_age_min: 6, school_age_max: 22, work_age_min: 22, work_age_max: 65,
+      },
       demographics: {
         use_demographics: false, birth_rate: 20, death_rate: 10, age_pct_under18: null, age_pct_18_64: null, age_pct_over65: null,
-        country: null, auto_demographics: true, demographics_year: 2022, demographics_source: null,
+        country: null, auto_demographics: true, demographics_year: 2022, demographics_source: null, age_source: "default",
       },
       interventions: [],
-      run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1 },
+      run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1, calibrate_r0: true },
     });
     expect(must({})).toEqual(must({ schema_version: 2 })); // a v1 row with nothing in it migrates to the same defaults
   });
@@ -73,7 +78,7 @@ describe("migration from v1", () => {
   it("migrates a flat row to constant durations and a fraction seed", () => {
     const p = must({ disease_type: "seirs", beta: 12.5, dur_inf: 7, dur_exp: 4, dur_immune: 90, init_prev: 0.02, n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, p_death: 0.1 });
     expect(p.disease).toMatchObject({ model: "seirs", beta: 12.5, dur_inf: { mean_days: 7, dist: "constant", sd_days: null }, p_death: 0.1, seed: { mode: "fraction", value: 0.02, day: 0 } });
-    expect(p.run).toEqual({ n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, n_replicates: 1 });
+    expect(p.run).toEqual({ n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, n_replicates: 1, calibrate_r0: true });
   });
 
   it("folds a day-0 vaccine into initial immunity and keeps later campaigns", () => {
@@ -163,6 +168,26 @@ describe("susceptibility and fatality by age, presymptomatic transmissibility", 
     expect(exposedDays(seir.disease)).toBe(4);
     expect(effectiveDays(half.disease)).toBeCloseTo(effectiveDays(seir.disease) + 2, 9);
     expect(weightedCfr(must({ schema_version: 2, disease: { p_death: 0.01, p_death_age: { elderly: 0.2 } }, demographics: { age_pct_under18: 40, age_pct_18_64: 50, age_pct_over65: 10 } }))).toBeCloseTo(0.4 * 0.01 + 0.5 * 0.01 + 0.1 * 0.2, 9);
+  });
+
+  it("mirrors the hybrid R0, the configured matrix and the approximate flag", () => {
+    const hybrid = must({ schema_version: 2, network: { network_type: "hybrid" } });
+    const school = ageRangeShare([0.3, 0.7, 0], 6, 22);
+    const work = ageRangeShare([0.3, 0.7, 0], 22, 65);
+    expect(school).toBeCloseTo(0.3 * 12 / 18 + 0.7 * 4 / 47, 12);
+    expect(hybridContacts(hybrid)).toBeCloseTo(3 * 2 + 0.6 * 20 * school + 0.6 * 16 * work + 0.3 * 20, 9);
+    expect(r0IsApproximate(hybrid)).toBe(true);
+    expect(r0IsApproximate(must({ schema_version: 2 }))).toBe(false);
+    expect(r0IsApproximate(must({ schema_version: 2, network: { contact_duration_days: 7 } }))).toBe(true);
+    expect(() => calibrateBeta(hybrid, 1000)).toThrow(/network.household_size/);
+    const base = must({ schema_version: 2, network: { network_type: "age_structured" } });
+    const doubled = must({ schema_version: 2, network: { network_type: "age_structured", contacts: Object.fromEntries(Object.entries(base.network.contacts).map(([k, v]) => [k, 2 * v])) } });
+    expect(approxR0(doubled)).toBeCloseTo(2 * approxR0(base), 9);
+    expect(contactRows(base.network.contacts)).toEqual([[7, 2.5, 0.5], [2.5, 9, 1.5], [0.5, 1.5, 3.5]]);
+    expect(validateParams({ schema_version: 2, network: { school_age_min: 22, school_age_max: 22 } })).toEqual({ ok: false, error: expect.stringContaining("school_age_min") });
+    expect(must({ schema_version: 2 }).network).toMatchObject({ contacts_dist: "constant", contact_duration_days: 0, contacts_source: "polymod_default", household_size: 2, layer_beta: { household: 3, school: 0.6, work: 0.6, community: 0.3 } });
+    expect(must({ schema_version: 2 }).demographics.age_source).toBe("default");
+    expect(must({ schema_version: 2 }).run.calibrate_r0).toBe(true);
   });
 
   it("scales the infectious days alone by the asymptomatic factor: the exposed transmit at the fraction whatever their track", () => {

@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from epichat.agent import _SYSTEM  # noqa: E402
 from epichat.disease_db import _range_of, _rich_param, load_db, parameter_summary  # noqa: E402
+from epichat.params import tables  # noqa: E402
 from epichat.params.registry import export as export_registry  # noqa: E402
 
 PARAMS = ("r0", "incubation_days", "infectious_days", "fatality_rate",
@@ -80,8 +81,20 @@ def references_payload() -> dict:
     return {"diseases": diseases}
 
 
+def country_demographics_payload() -> dict:
+    """Part 2, section 10: the per-country values fetch_demographics applies from the bundled tables (shares as percentages)."""
+    countries = {}
+    for iso3 in tables.countries():
+        shares = {str(year): [round(100 * v, 1) for v in tables.age_shares(iso3, year)] for year in tables.AGE_YEARS}
+        m = tables.contact_matrix(iso3)
+        countries[iso3] = {"shares": shares, "household_size": tables.household_size(iso3),
+                           "contacts": None if m is None else [round(float(v), 4) for v in m.flatten()]}
+    return {"version": 1, "countries": countries}
+
+
 def main(web_dir: Path = ROOT / "web") -> None:
     write_json(web_dir / "data" / "disease_db.json", disease_db_payload())
+    write_json(web_dir / "data" / "country_demographics.json", country_demographics_payload())
     write_json(web_dir / "data" / "disease_refs.json", references_payload())
     write_json(web_dir / "data" / "system_prompt.json", {"system": _SYSTEM})
     write_json(web_dir / "data" / "param_registry.json", export_registry())

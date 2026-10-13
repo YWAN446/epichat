@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { checkParams } from "@/lib/disease/checkParams";
-import { approxR0, calibrateBeta, clampBeta, maxR0, R0UnreachableError, recalibrateBeta, validateParams, weightedCfr } from "@/lib/sim/params";
+import { approxR0, calibrateBeta, clampBeta, maxR0, r0IsApproximate, R0UnreachableError, recalibrateBeta, validateParams, weightedCfr } from "@/lib/sim/params";
 import parity from "../fixtures/parity.json";
 
 function must(input: unknown) {
@@ -21,7 +21,7 @@ function calibrateOrNull(p: ReturnType<typeof must>, target: number): number | n
 
 describe("parity with the Python package", () => {
   it("has enough cases", () => {
-    expect(parity.version).toBe(3);
+    expect(parity.version).toBe(4);
     expect(parity.params.length).toBeGreaterThanOrEqual(200);
     expect(parity.migration.length).toBeGreaterThanOrEqual(12);
     expect(parity.warnings.length).toBeGreaterThanOrEqual(300);
@@ -33,6 +33,7 @@ describe("parity with the Python package", () => {
       expect(approxR0(p)).toBeCloseTo(c.approx_r0, 6);
       expect(maxR0(p)).toBeCloseTo(c.max_r0, 6);
       expect(weightedCfr(p)).toBeCloseTo((c as { weighted_cfr: number }).weighted_cfr, 6);
+      expect(r0IsApproximate(p)).toBe((c as { approximate: boolean }).approximate);
       for (const k of c.calibrate) {
         const beta = calibrateOrNull(p, k.target_r0);
         if (k.beta === null) expect(beta).toBeNull();

@@ -74,7 +74,7 @@ describe("describe_parameters", () => {
     p = byPath(await describe_(deps));
     expect(p["demographics.birth_rate"].source).toBe("user");
     expect(p["demographics.death_rate"].source).toBe("fetch");
-    expect(Object.keys(byPath(await describe_(deps, { tier: "expert" })))).toEqual(["demographics.auto_demographics", "demographics.demographics_year", "demographics.demographics_source", "run.rand_seed"]);
+    expect(Object.keys(byPath(await describe_(deps, { tier: "expert" })))).toEqual(["network.contacts_source", "demographics.auto_demographics", "demographics.demographics_year", "demographics.demographics_source", "demographics.age_source", "run.rand_seed"]);
     expect((await describe_(deps, { module: "interventions" })).parameters).toEqual([]);
   });
 
@@ -98,7 +98,7 @@ describe("describe_parameters", () => {
     const out = await describeParameters({} as never, deps);
     const body = JSON.parse(out.content) as Body;
     expect(out.payload).toEqual({ kind: "parameters", model: "seir", disease: "measles", count: body.parameters.length });
-    expect((await describeParameters({ tier: "expert" } as never, makeDeps())).payload).toMatchObject({ kind: "parameters", model: "sir", disease: null, count: 4 });
+    expect((await describeParameters({ tier: "expert" } as never, makeDeps())).payload).toMatchObject({ kind: "parameters", model: "sir", disease: null, count: 6 });
   });
 
   it("valueSources covers every set path", () => {

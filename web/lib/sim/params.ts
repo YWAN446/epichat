@@ -15,7 +15,9 @@ export const DISEASE_TYPES = ["sir", "seir", "sis", "sirs", "seirs", "seiar"] as
 export type DiseaseType = (typeof DISEASE_TYPES)[number];
 export const LATENT_MODELS: readonly DiseaseType[] = ["seir", "seirs", "seiar"];
 export const WANING_MODELS: readonly DiseaseType[] = ["sirs", "seirs"];
-export const NETWORK_TYPES = ["random", "age_structured"] as const;
+export const NETWORK_TYPES = ["random", "age_structured", "hybrid"] as const;
+export const CONTACTS_DISTS = ["constant", "poisson"] as const;
+export const AGE_SOURCES = ["default", "shares", "un_wpp"] as const;
 export const INTERVENTION_TYPES = ["vaccine", "treatment", "seasonality"] as const;
 export const DISTS = ["constant", "lognormal", "gamma"] as const;
 
@@ -124,11 +126,53 @@ export const DiseaseSchema = z
     }
   });
 
-export const NetworkSchema = z.object({
-  network_type: z.enum(NETWORK_TYPES).default("random"),
-  n_contacts: withDefault("network.n_contacts", true),
-  network_beta: withDefault("network.network_beta"),
+export const ContactMatrixSchema = z.object({
+  children_children: withDefault("network.contacts.children_children"),
+  children_adults: withDefault("network.contacts.children_adults"),
+  children_elderly: withDefault("network.contacts.children_elderly"),
+  adults_children: withDefault("network.contacts.adults_children"),
+  adults_adults: withDefault("network.contacts.adults_adults"),
+  adults_elderly: withDefault("network.contacts.adults_elderly"),
+  elderly_children: withDefault("network.contacts.elderly_children"),
+  elderly_adults: withDefault("network.contacts.elderly_adults"),
+  elderly_elderly: withDefault("network.contacts.elderly_elderly"),
 });
+export type ContactMatrix = z.infer<typeof ContactMatrixSchema>;
+/** The nine matrix leaves in registry order: source group, then target group (Part 2, 5.3). */
+export const CONTACT_PAIRS = AGE_GROUPS.flatMap((s) => AGE_GROUPS.map((t) => `${s}_${t}` as keyof ContactMatrix));
+/** Rows source, columns target, as Starsim's MixingPools reads them (Part 2, 5.3). */
+export function contactRows(c: ContactMatrix): number[][] {
+  return AGE_GROUPS.map((s) => AGE_GROUPS.map((t) => c[`${s}_${t}` as keyof ContactMatrix]));
+}
+export const LayerBetaSchema = z.object({
+  household: withDefault("network.layer_beta.household"),
+  school: withDefault("network.layer_beta.school"),
+  work: withDefault("network.layer_beta.work"),
+  community: withDefault("network.layer_beta.community"),
+});
+export const NetworkSchema = z
+  .object({
+    network_type: z.enum(NETWORK_TYPES).default("random"),
+    n_contacts: withDefault("network.n_contacts", true),
+    network_beta: withDefault("network.network_beta"),
+    contacts_dist: z.enum(CONTACTS_DISTS).default("constant"),
+    contact_duration_days: withDefault("network.contact_duration_days"),
+    contacts: ContactMatrixSchema.prefault({}),
+    contacts_source: z.string().default("polymod_default"),
+    household_size: withDefault("network.household_size"),
+    school_contacts: withDefault("network.school_contacts", true),
+    work_contacts: withDefault("network.work_contacts", true),
+    community_contacts: withDefault("network.community_contacts", true),
+    layer_beta: LayerBetaSchema.prefault({}),
+    school_age_min: withDefault("network.school_age_min", true),
+    school_age_max: withDefault("network.school_age_max", true),
+    work_age_min: withDefault("network.work_age_min", true),
+    work_age_max: withDefault("network.work_age_max", true),
+  })
+  .superRefine((n, ctx) => {
+    if (n.school_age_min >= n.school_age_max) issue(ctx, "network.school_age_min must be below network.school_age_max");
+    if (n.work_age_min >= n.work_age_max) issue(ctx, "network.work_age_min must be below network.work_age_max");
+  });
 
 const country = z
   .preprocess((v) => {
@@ -150,6 +194,7 @@ export const DemographicsSchema = z
     auto_demographics: z.boolean().default(true),
     demographics_year: withDefault("demographics.demographics_year", true),
     demographics_source: nullable(z.string()),
+    age_source: z.enum(AGE_SOURCES).default("default"),
   })
   .superRefine((d, ctx) => {
     const pcts = [d.age_pct_under18, d.age_pct_18_64, d.age_pct_over65];
@@ -163,6 +208,7 @@ export const RunSchema = z.object({
   n_agents: withDefault("run.n_agents", true),
   sim_dur_years: withDefault("run.sim_dur_years"),
   rand_seed: nullable(z.number().int()),
+  calibrate_r0: z.boolean().default(true),
   n_replicates: withDefault("run.n_replicates", true),
 });
 
@@ -301,6 +347,32 @@ export function spectralRadius3(m: number[][]): number {
 export const CONTACT_SPECTRAL_RADIUS = spectralRadius3(CONTACT_MATRIX);
 export const RANDOM_LEVERS = ["network.n_contacts", "disease.dur_inf.mean_days"] as const;
 export const AGE_LEVERS = ["network.network_beta", "disease.dur_inf.mean_days"] as const;
+export const HYBRID_LEVERS = ["network.household_size", "network.community_contacts", "disease.dur_inf.mean_days"] as const;
+/** The shares path draws ages uniformly within these bands (the builder). */
+const AGE_BANDS: [number, number][] = [[0, 18], [18, 65], [65, 95]];
+
+export function contactMatrix(p: SimParams): number[][] {
+  return contactRows(p.network.contacts);
+}
+
+/** The share of agents aged lo to hi (hi excluded) when ages are uniform within the three bands. */
+export function ageRangeShare(shares: readonly [number, number, number], lo: number, hi: number): number {
+  return AGE_BANDS.reduce((total, [a, b], i) => total + (shares[i] * Math.max(0, Math.min(hi, b) - Math.max(lo, a))) / (b - a), 0);
+}
+
+/** Part 2, 5.5: the sum over the layers of beta_l × c_l, c_l the agent-weighted mean daily contacts of layer l (the household size itself for households). */
+export function hybridContacts(p: SimParams): number {
+  const n = p.network;
+  const s = ageShares(p);
+  const lb = n.layer_beta;
+  return lb.household * n.household_size + lb.school * n.school_contacts * ageRangeShare(s, n.school_age_min, n.school_age_max)
+    + lb.work * n.work_contacts * ageRangeShare(s, n.work_age_min, n.work_age_max) + lb.community * n.community_contacts;
+}
+
+/** No closed form holds with lasting contacts or on the hybrid network; the measured R0 is the one to quote (Part 2, 5.2, 5.5). */
+export function r0IsApproximate(p: SimParams): boolean {
+  return p.network.network_type === "hybrid" || p.network.contact_duration_days > 0;
+}
 
 /** Starsim's per-contact daily transmission probability for a per-year beta. */
 export function perContactProb(beta: number): number {
@@ -359,17 +431,17 @@ export function effectiveDays(d: DiseaseParams): number {
   return infectiousDays(d) * asympFactor(d) + d.rel_trans_exposed * exposedDays(d);
 }
 
-/** The R0 reached if every contact transmitted: contacts × network_beta × D_eff, with the susceptibility multipliers (Part 2, 4.4). */
+/** The R0 reached if every contact transmitted: contacts × network_beta × D_eff, with the susceptibility multipliers, on the three networks (Part 2, 4.4, 5.5). */
 export function contactScale(p: SimParams): number {
+  const n = p.network;
   const r = [p.disease.rel_sus_age.children, p.disease.rel_sus_age.adults, p.disease.rel_sus_age.elderly];
+  const s = ageShares(p);
+  const meanR = s[0] * r[0] + s[1] * r[1] + s[2] * r[2];
   let contacts: number;
-  if (p.network.network_type === "age_structured") {
-    contacts = r.every((v) => v === 1) ? CONTACT_SPECTRAL_RADIUS : spectralRadius3(CONTACT_MATRIX.map((row) => row.map((v, j) => v * r[j])));
-  } else {
-    const s = ageShares(p);
-    contacts = p.network.n_contacts * (s[0] * r[0] + s[1] * r[1] + s[2] * r[2]);
-  }
-  return contacts * p.network.network_beta * effectiveDays(p.disease);
+  if (n.network_type === "age_structured") contacts = spectralRadius3(contactMatrix(p).map((row) => row.map((v, j) => v * r[j])));
+  else if (n.network_type === "hybrid") contacts = hybridContacts(p) * meanR;
+  else contacts = n.n_contacts * meanR;
+  return contacts * n.network_beta * effectiveDays(p.disease);
 }
 
 export function approxR0(p: SimParams): number {
@@ -394,7 +466,10 @@ export class R0UnreachableError extends Error {
 /** The beta whose approxR0 is targetR0 on the current network; throws R0UnreachableError when none exists. Unclamped. */
 export function calibrateBeta(p: SimParams, targetR0: number): number {
   const scale = contactScale(p);
-  if (scale <= 0 || targetR0 >= scale) throw new R0UnreachableError(targetR0, scale, p.network.network_type === "age_structured" ? AGE_LEVERS : RANDOM_LEVERS);
+  if (scale <= 0 || targetR0 >= scale) {
+    const levers = p.network.network_type === "hybrid" ? HYBRID_LEVERS : p.network.network_type === "age_structured" ? AGE_LEVERS : RANDOM_LEVERS;
+    throw new R0UnreachableError(targetR0, scale, levers);
+  }
   return -365 * Math.log(1 - targetR0 / scale);
 }
 
