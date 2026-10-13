@@ -244,10 +244,10 @@ def test_a_normal_run_raises_only_the_well_mixed_info():
     from epichat.sim.replicates import run_replicates
     p = params(**{"run.n_agents": 2000})
     out = run_replicates(p)
-    assert ids(diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["well_mixed"]   # Part 2: the random network's thesis
+    assert ids(diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["well_mixed", "what_if"]   # nearly everyone was infected, and interventions to try (follow-up spec 7.2)
     immune = params(**{"run.n_agents": 2000, "disease.beta": clamp_beta(calibrate_beta(params(), 15)), "disease.initial_immune_frac": 0.8})
     out = run_replicates(immune)
-    assert diagnose(immune, out["series"], out["stats"], None, out["stats"]["seeds"], None) == []
+    assert ids(diagnose(immune, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["what_if"]   # the fifth still susceptible had their epidemic
 
 
 def test_cfr_out_of_range_reads_the_population_weighted_fatality():

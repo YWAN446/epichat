@@ -16,7 +16,8 @@ from typing import Any, Literal
 import numpy as np
 
 from epichat.disease_db import _num, _range_of, lookup
-from epichat.params.r0 import R0Unreachable, approx_r0, calibrate_beta, clamp_beta, r0_is_approximate, weighted_cfr
+from epichat.params.indicators import has_vaccine_indicator
+from epichat.params.r0 import R0Unreachable, age_shares, approx_r0, calibrate_beta, clamp_beta, r0_is_approximate, weighted_cfr
 from epichat.params.registry import DEATH_MODELS, REGISTRY_BY_PATH, WANING_MODELS
 from epichat.params.schema_v2 import SimParamsV2
 
@@ -44,6 +45,20 @@ WELL_MIXED_R_EFF = 2.0               # Part 2, 5.8
 WELL_MIXED_ATTACK_RATE = 0.7
 R0_GAP = 0.25
 R0_GAP_SIGMAS = 3                    # the gap must exceed three standard errors of the measured mean when the seeds are few
+# Follow-up spec 7.2: the interventions what_if offers. Every size is illustrative until the database carries it.
+ANCHOR_SHARE = 0.01                  # the windows start the day the cumulative infections reached this share of the agents
+WHAT_IF_MIN_ATTACK = 0.05            # no offer after a run that had no epidemic
+WHAT_IF_MAX_LEVERS = 4
+LABEL_MAX = 80                       # a lever's label is a complete reply of at most this many characters
+CAMPAIGN_COVERAGE = 0.7
+CAMPAIGN_DAYS = 30
+CAMPAIGN_EFFICACY = 0.9              # when the database carries no vaccine efficacy
+CLOSURE_DAYS = 42                    # schools closed for six weeks
+DISTANCING_SCALE = 0.3
+DISTANCING_DAYS = 56                 # eight weeks
+MASKS_SCALE = 0.2
+MASKS_DAYS = 90
+RESPONSE_SCALE = 0.5
 DAYS_PER_UNIT = {"days": 1.0, "weeks": 7.0, "months": 30.44, "years": 365.25}
 SIMPLE_MODELS = ("sir", "seir", "seiar")
 
@@ -413,6 +428,83 @@ def _r0_gap(run: _Run) -> Diagnostic | None:
                        "r0_measured": round(float(measured), 2), "threshold": round(threshold, 2), "calibrated": calibrated}, levers)
 
 
+def anchor_day(run: _Run) -> int | None:
+    """The first day the run's cumulative infections reached ANCHOR_SHARE of the agents: when the outbreak would have been noticed.
+    None when they never did."""
+    cumulative = run.series.get("cum_infections")
+    if not cumulative:
+        cumulative = np.cumsum([float(v) for v in run.series.get("new_infections") or []]).tolist()
+    threshold = ANCHOR_SHARE * run.n
+    return next((t for t, value in enumerate(cumulative) if float(value) >= threshold), None)
+
+
+def _campaign_efficacy(disease: str | None) -> tuple[float, Basis]:
+    """The database's vaccine efficacy when it carries one (a percentage is read as one), else the illustrative constant."""
+    rng = db_range(disease, "vaccine_efficacy")
+    typical = rng[2] if rng else None
+    if typical is not None:
+        value = typical / 100.0 if typical > 1 else typical
+        if 0 < value <= 1:
+            return round(value, 4), "disease_db"
+    return CAMPAIGN_EFFICACY, "rule"
+
+
+def _what_if(run: _Run, faded: bool) -> Diagnostic | None:
+    """Follow-up spec 7.2: interventions to try after a run that had an epidemic, each a lever with one entry and a ready reply.
+    The candidates the scenario does not already have (by type, and by layer for a contact reduction), in the spec's order, four
+    at most. Every window starts on the anchor day and never passes the run's last day."""
+    p = run.params
+    if faded or run.n <= 0 or run.total / run.n < WHAT_IF_MIN_ATTACK:
+        return None
+    anchor = anchor_day(run)
+    if anchor is None:
+        return None
+    last = max(run.days - 1, anchor)
+    has = {(i.type, i.layer if i.type == "contact_reduction" else None) for i in p.interventions}
+    types = {kind for kind, _ in has}
+    hybrid = p.network.network_type == "hybrid"
+
+    def window(days: int) -> dict:
+        return {"start_day": anchor, "end_day": min(anchor + days, last)}
+
+    levers: list[Lever] = []
+
+    def offer(entry: dict, label: str, rationale: str, basis: Basis = "rule") -> None:
+        levers.append(Lever({}, {}, "change", rationale, basis, interventions=[entry], label=label))
+
+    if has_vaccine_indicator(run.disease) and "vaccine" not in types:
+        efficacy, basis = _campaign_efficacy(run.disease)
+        w = window(CAMPAIGN_DAYS)
+        offer({"type": "vaccine", "kind": "campaign", "coverage": CAMPAIGN_COVERAGE, "efficacy": efficacy, **w},
+              f"Vaccinate {CAMPAIGN_COVERAGE:.0%} in a campaign from day {w['start_day']} to day {w['end_day']} and rerun",
+              f"A campaign reaching {CAMPAIGN_COVERAGE:.0%} of the susceptible from the day 1% had been infected; "
+              + ("the efficacy is the database's, the coverage is illustrative." if basis == "disease_db"
+                 else f"the coverage and the efficacy ({efficacy:g}) are illustrative."), basis)
+    if hybrid and age_shares(p)[0] > 0 and ("contact_reduction", "school") not in has:
+        offer({"type": "contact_reduction", "layer": "school", "scale": 1.0, **window(CLOSURE_DAYS)},
+              f"Close schools from day {anchor} for six weeks and rerun",
+              "A full school closure for six weeks from the day 1% had been infected; the length is illustrative.")
+    layer = "community" if hybrid else "all"
+    where = "community " if hybrid else ""
+    if ("contact_reduction", layer) not in has:
+        offer({"type": "contact_reduction", "layer": layer, "scale": DISTANCING_SCALE, **window(DISTANCING_DAYS)},
+              f"Cut {where}contacts by {DISTANCING_SCALE:.0%} from day {anchor} for eight weeks and rerun",
+              f"Distancing: {DISTANCING_SCALE:.0%} fewer {where}contacts for eight weeks; the size is illustrative.")
+    if "transmission_reduction" not in types:
+        offer({"type": "transmission_reduction", "scale": MASKS_SCALE, **window(MASKS_DAYS)},
+              f"Add masks ({MASKS_SCALE:.0%} less transmission) from day {anchor} for {MASKS_DAYS} days and rerun",
+              f"Masks: {MASKS_SCALE:.0%} less transmission per contact for {MASKS_DAYS} days; the size is illustrative.")
+    if "behavior_response" not in types:
+        offer({"type": "behavior_response", "scale": RESPONSE_SCALE},
+              "Let people become careful as cases rise and rerun",
+              f"A behaviour response: transmission falls by up to {RESPONSE_SCALE:.0%} as infections rise and recovers as they fall; "
+              "the size is illustrative.")
+    if not levers:
+        return None
+    return Diagnostic("what_if", "info", "Interventions to try", {"anchor_day": anchor, "attack_rate": round(run.total / run.n, 3)},
+                      levers[:WHAT_IF_MAX_LEVERS])
+
+
 def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | None, seeds: int,
              disease: str | None = None) -> list[Diagnostic]:
     """Every diagnostic the run triggers, warnings first and in the table's order within (section 10, 19)."""
@@ -422,7 +514,7 @@ def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | 
     candidates = (fadeout, _instant_peak(run), unfinished,
                   None if fadeout else _final_size_gap(run, unfinished is not None),
                   _sharp_curve(run), _cfr_out_of_range(run), _fatality_on_all_infections(run),
-                  _no_reinfection(run), _high_variance(run), _well_mixed(run), _r0_gap(run))
+                  _no_reinfection(run), _high_variance(run), _well_mixed(run), _r0_gap(run), _what_if(run, fadeout is not None))
     found = [c for c in candidates if c is not None]
     return sorted(found, key=lambda d: 0 if d.severity == "warning" else 1)
 
