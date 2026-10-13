@@ -58,3 +58,17 @@ def test_the_replicates_run_with_the_fitted_lever_and_skip_the_pilot():
     body["network"]["network_type"] = "hybrid"
     hybrid = run_replicates(SimParamsV2.model_validate({**body, "run": {**body["run"], "n_replicates": 1}}))
     assert "fit" in hybrid["stats"] and "r0_calibration" not in hybrid["stats"]                                  # the fit supersedes the pilot
+
+
+def test_an_unreachable_fit_stops_at_the_joint_bound_of_the_two_levers_without_raising():
+    # review I1: network.network_beta × (1 − e^(−β/365)) ≤ 1 cuts the registry's bound; the search ends there instead of raising
+    import math
+    body = scenario("attack_rate", 0.99, n_agents=2000).model_dump()
+    body["disease"]["beta"] = 300.0
+    body["disease"]["dur_inf"] = {"mean_days": 2.0, "dist": "constant", "sd_days": None}
+    body["network"]["n_contacts"] = 1
+    body["run"]["fit"]["lever"] = "network.network_beta"
+    fitted, info = fit.fit_lever(SimParamsV2.model_validate(body), 1)
+    bound = 1 / (1 - math.exp(-300 / 365))
+    assert info["runs"] <= fit.MAX_RUNS and info["achieved"] < 0.99
+    assert fitted.network.network_beta == pytest.approx(bound, rel=1e-4) and fitted.network.network_beta <= bound

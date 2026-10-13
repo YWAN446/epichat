@@ -116,8 +116,8 @@ def age_eligibility(age_min: int | None, age_max: int | None):
         return None
 
     def eligible(sim):
-        age = np.asarray(sim.people.age)
-        keep = np.asarray(sim.people.alive, dtype=bool).copy()
+        age = np.asarray(sim.people.age.raw)                                    # raw: every uid, so the positions are uids (review C1)
+        keep = np.asarray(sim.people.alive.raw, dtype=bool).copy()
         if age_min is not None:
             keep &= age >= age_min
         if age_max is not None:
@@ -138,7 +138,7 @@ def vaccine_delivery(entry, run_days: int):
     if v1_shaped:
         return ss.routine_vx(product=Vaccine(efficacy=1.0), prob=coverage, start_year=entry.start_day / 365)
     kind, end_day = entry.kind, entry.end_day
-    if entry.start_day == 0 and entry.efficacy < 1.0 and end_day is None and kind == "routine":
+    if entry.start_day == 0 and end_day is None and kind == "routine":        # not folded (an efficacy, ages, waning, all-or-nothing): day-0 protection
         kind, end_day = "campaign", 0
     end_day = run_days if end_day is None else min(end_day, run_days)
     product = Vaccine(efficacy=entry.efficacy, leaky=entry.leaky, protection_days=entry.protection_days)
