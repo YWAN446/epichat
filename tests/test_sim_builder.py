@@ -261,3 +261,19 @@ def test_the_new_leaves_leave_a_default_scenario_unchanged():
     a.run()
     b.run()
     assert list(a.results.sir.cum_infections.values) == list(b.results.sir.cum_infections.values)
+
+
+def test_day_zero_seeds_draw_their_fatality_on_the_assigned_ages():
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.builder import build_sim
+    p = SimParamsV2.model_validate({
+        "disease": {"model": "sir", "p_death": 0.0, "p_death_age": {"elderly": 1.0}, "seed": {"mode": "fraction", "value": 0.2}},
+        "demographics": {"age_pct_under18": 30.0, "age_pct_18_64": 50.0, "age_pct_over65": 20.0},
+        "run": {"n_agents": 2000, "rand_seed": 1}})
+    sim = build_sim(p)
+    d = sim.diseases[0]
+    seeds = d.infected.uids
+    assert len(seeds) > 300
+    elderly = np.asarray(sim.people.age[seeds]) >= 65
+    assert elderly.sum() > 50
+    assert np.array_equal(np.isfinite(np.asarray(d.ti_dead[seeds])), elderly)     # every elderly seed dies, nobody else

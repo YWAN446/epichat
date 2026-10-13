@@ -157,3 +157,11 @@ def test_weighted_cfr_follows_the_shares_and_the_scalar_fallback():
                                     "demographics": {"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0}})
     assert r0.weighted_cfr(p) == pytest.approx(0.4 * 0.01 + 0.5 * 0.01 + 0.1 * 0.2)
     assert r0.weighted_cfr(SimParamsV2.model_validate({"disease": {"p_death": 0.02}})) == pytest.approx(0.02)
+
+
+def test_asymptomatic_cases_reduce_the_infectious_days_only():
+    # seiar: exposed agents transmit at rel_trans_exposed whatever their track; the asymptomatic factor scales the infectious days alone
+    p = v2(disease={"model": "seiar", "dur_exp": {"mean_days": 5, "dist": "gamma", "sd_days": 2}, "dur_inf": {"mean_days": 10, "dist": "gamma", "sd_days": 4},
+                    "p_asymp": 0.8, "rel_trans_asymp": 0.0, "rel_trans_exposed": 1.0})
+    assert r0.effective_days(p.disease) == pytest.approx(10 * 0.2 + 4.5)
+    assert r0.approx_r0(p) == pytest.approx(p.network.n_contacts * r0.per_contact_prob(p.disease.beta) * 6.5)

@@ -340,8 +340,8 @@ export function exposedDays(d: DiseaseParams): number {
   return Math.max(0, exp.dist === "constant" ? Math.ceil(exp.mean_days) - 1 : exp.mean_days - 0.5);
 }
 
-/** Days an infected agent transmits on a daily step (spec 7.4). */
-export function effectiveDays(d: DiseaseParams): number {
+/** Days an infectious agent transmits on a daily step (spec 7.4). */
+export function infectiousDays(d: DiseaseParams): number {
   const inf = d.dur_inf;
   let days: number;
   if (LATENT_MODELS.includes(d.model)) {
@@ -351,10 +351,15 @@ export function effectiveDays(d: DiseaseParams): number {
     else days = inf.mean_days;
   } else if (inf.dist === "constant") days = Math.ceil(inf.mean_days) - 1;
   else days = inf.mean_days - 0.5;
-  return Math.max(0, days) + d.rel_trans_exposed * exposedDays(d);
+  return Math.max(0, days);
 }
 
-/** The R0 reached if every contact transmitted: contacts × network_beta × D_eff × asymp_factor, with the susceptibility multipliers (Part 2, 4.4). */
+/** The transmission-weighted days of one infection: the infectious days scaled by the asymptomatic factor (seiar) plus the exposed days at rel_trans_exposed, whatever the track (Part 2, 4.3 and 4.4). */
+export function effectiveDays(d: DiseaseParams): number {
+  return infectiousDays(d) * asympFactor(d) + d.rel_trans_exposed * exposedDays(d);
+}
+
+/** The R0 reached if every contact transmitted: contacts × network_beta × D_eff, with the susceptibility multipliers (Part 2, 4.4). */
 export function contactScale(p: SimParams): number {
   const r = [p.disease.rel_sus_age.children, p.disease.rel_sus_age.adults, p.disease.rel_sus_age.elderly];
   let contacts: number;
@@ -364,7 +369,7 @@ export function contactScale(p: SimParams): number {
     const s = ageShares(p);
     contacts = p.network.n_contacts * (s[0] * r[0] + s[1] * r[1] + s[2] * r[2]);
   }
-  return contacts * p.network.network_beta * effectiveDays(p.disease) * asympFactor(p.disease);
+  return contacts * p.network.network_beta * effectiveDays(p.disease);
 }
 
 export function approxR0(p: SimParams): number {

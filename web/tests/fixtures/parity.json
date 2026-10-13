@@ -7685,26 +7685,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 125.30163074,
-   "max_r0": 513.703853801,
+   "approx_r0": 136.078884074,
+   "max_r0": 557.887768554,
    "weighted_cfr": 0.0059,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 1.067348
+     "beta": 0.982702
     },
     {
      "target_r0": 3.0,
-     "beta": 2.137827
+     "beta": 1.968057
     },
     {
      "target_r0": 15.0,
-     "beta": 10.816592
+     "beta": 9.948148
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 125.30163074,
+     "r0_before": 136.078884074,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -7836,7 +7836,7 @@
      "beta": 216.421612
     },
     {
-     "r0_before": 125.30163074,
+     "r0_before": 136.078884074,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -9061,26 +9061,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 3.091603327,
-   "max_r0": 95.746728,
+   "approx_r0": 3.2478088,
+   "max_r0": 100.5844,
    "weighted_cfr": 0.067,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 5.763476
+     "beta": 5.484185
     },
     {
      "target_r0": 3.0,
-     "beta": 11.619422
+     "beta": 11.052029
     },
     {
      "target_r0": 15.0,
-     "beta": 62.19199
+     "beta": 58.945366
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 3.091603327,
+     "r0_before": 3.2478088,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -9212,7 +9212,7 @@
      "beta": 31.296263
     },
     {
-     "r0_before": 3.091603327,
+     "r0_before": 3.2478088,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -10530,26 +10530,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 6.868614474,
-   "max_r0": 46.210004018,
+   "approx_r0": 7.934162656,
+   "max_r0": 53.378696625,
    "weighted_cfr": 0.01,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 12.044647
+     "beta": 10.403774
     },
     {
      "target_r0": 3.0,
-     "beta": 24.500358
+     "beta": 21.112814
     },
     {
      "target_r0": 15.0,
-     "beta": 143.247034
+     "beta": 120.416857
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 6.868614474,
+     "r0_before": 7.934162656,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -10681,7 +10681,7 @@
      "beta": 39.356252
     },
     {
-     "r0_before": 6.868614474,
+     "r0_before": 7.934162656,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -16548,26 +16548,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 62.213391855,
-   "max_r0": 351.466883251,
+   "approx_r0": 73.40406715,
+   "max_r0": 414.68722296,
    "weighted_cfr": 0.067,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 1.561091
+     "beta": 1.322666
     },
     {
      "target_r0": 3.0,
-     "beta": 3.128887
+     "beta": 2.650142
     },
     {
      "target_r0": 15.0,
-     "beta": 15.919753
+     "beta": 13.447424
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 62.213391855,
+     "r0_before": 73.40406715,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -16699,7 +16699,7 @@
      "beta": 79.065216
     },
     {
-     "r0_before": 62.213391855,
+     "r0_before": 73.40406715,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -19385,26 +19385,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 13.80185183,
-   "max_r0": 28.251947148,
+   "approx_r0": 16.56619983,
+   "max_r0": 33.910478666,
    "weighted_cfr": 0.0,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 19.912619
+     "beta": 16.513434
     },
     {
      "target_r0": 3.0,
-     "beta": 40.974576
+     "beta": 33.809523
     },
     {
      "target_r0": 15.0,
-     "beta": 276.311528
+     "beta": 213.162875
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 13.80185183,
+     "r0_before": 16.56619983,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -19536,7 +19536,7 @@
      "beta": 77.80231
     },
     {
-     "r0_before": 13.80185183,
+     "r0_before": 16.56619983,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -31754,26 +31754,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 162.966065083,
-   "max_r0": 638.497201056,
+   "approx_r0": 179.037128857,
+   "max_r0": 701.463250048,
    "weighted_cfr": 0.001,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 0.858491
+     "beta": 0.781347
     },
     {
      "target_r0": 3.0,
-     "beta": 1.719006
+     "beta": 1.56437
     },
     {
      "target_r0": 15.0,
-     "beta": 8.677151
+     "beta": 7.889774
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 162.966065083,
+     "r0_before": 179.037128857,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -31905,7 +31905,7 @@
      "beta": 266.465092
     },
     {
-     "r0_before": 162.966065083,
+     "r0_before": 179.037128857,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -41917,26 +41917,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 19.247914494,
-   "max_r0": 58.059495337,
+   "approx_r0": 30.046801746,
+   "max_r0": 90.633307123,
    "weighted_cfr": 0.1,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 9.553936
+     "beta": 6.091373
     },
     {
      "target_r0": 3.0,
-     "beta": 19.364685
+     "beta": 12.28613
     },
     {
      "target_r0": 15.0,
-     "beta": 109.093206
+     "beta": 66.037631
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 19.247914494,
+     "r0_before": 30.046801746,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -42068,7 +42068,7 @@
      "beta": 60.173174
     },
     {
-     "r0_before": 19.247914494,
+     "r0_before": 30.046801746,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -45777,26 +45777,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 10.763095851,
-   "max_r0": 261.613224754,
+   "approx_r0": 11.001040245,
+   "max_r0": 267.396820952,
    "weighted_cfr": 0.0,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 2.098807
+     "beta": 2.053283
     },
     {
      "target_r0": 3.0,
-     "beta": 4.209752
+     "beta": 4.118182
     },
     {
      "target_r0": 15.0,
-     "beta": 21.551773
+     "beta": 21.071903
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 10.763095851,
+     "r0_before": 11.001040245,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -45928,7 +45928,7 @@
      "beta": 63.535803
     },
     {
-     "r0_before": 10.763095851,
+     "r0_before": 11.001040245,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -46343,26 +46343,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 145.138604621,
-   "max_r0": 405.164412182,
+   "approx_r0": 149.327259799,
+   "max_r0": 416.857331633,
    "weighted_cfr": 0.00023,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 1.353811
+     "beta": 1.315768
     },
     {
      "target_r0": 3.0,
-     "beta": 2.712662
+     "beta": 2.636296
     },
     {
      "target_r0": 15.0,
-     "beta": 13.769523
+     "beta": 13.37612
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 145.138604621,
+     "r0_before": 149.327259799,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -50504,26 +50504,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 67.60907144,
-   "max_r0": 186.066884121,
+   "approx_r0": 99.81864072,
+   "max_r0": 274.710820018,
    "weighted_cfr": 0.001,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 2.954415
+     "beta": 1.998466
     },
     {
      "target_r0": 3.0,
-     "beta": 5.932939
+     "beta": 4.007934
     },
     {
      "target_r0": 15.0,
-     "beta": 30.678829
+     "beta": 20.494823
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 67.60907144,
+     "r0_before": 99.81864072,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -52117,26 +52117,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 58.594032108,
-   "max_r0": 142.715409148,
+   "approx_r0": 60.276304409,
+   "max_r0": 146.81286022,
    "weighted_cfr": 0.01,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 3.856609
+     "beta": 3.748419
     },
     {
      "target_r0": 3.0,
-     "beta": 7.754403
+     "beta": 7.535733
     },
     {
      "target_r0": 15.0,
-     "beta": 40.532549
+     "beta": 39.338067
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 58.594032108,
+     "r0_before": 60.276304409,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -52268,7 +52268,7 @@
      "beta": 254.411159
     },
     {
-     "r0_before": 58.594032108,
+     "r0_before": 60.276304409,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -55238,26 +55238,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 47.911019823,
-   "max_r0": 675.223969408,
+   "approx_r0": 49.898213716,
+   "max_r0": 703.230072244,
    "weighted_cfr": 0.14,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 0.811744
+     "beta": 0.779382
     },
     {
      "target_r0": 3.0,
-     "beta": 1.625297
+     "beta": 1.560431
     },
     {
      "target_r0": 15.0,
-     "beta": 8.199841
+     "beta": 7.869736
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 47.911019823,
+     "r0_before": 49.898213716,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -55389,7 +55389,7 @@
      "beta": 75.786317
     },
     {
-     "r0_before": 47.911019823,
+     "r0_before": 49.898213716,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -57990,26 +57990,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 6.336647256,
-   "max_r0": 34.467214448,
+   "approx_r0": 6.614169278,
+   "max_r0": 35.97675264,
    "weighted_cfr": 0.001,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 16.240675
+     "beta": 15.544514
     },
     {
      "target_r0": 3.0,
-     "beta": 33.237766
+     "beta": 31.780595
     },
     {
      "target_r0": 15.0,
-     "beta": 208.516042
+     "beta": 196.902229
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 6.336647256,
+     "r0_before": 6.614169278,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -58141,7 +58141,7 @@
      "beta": 26.855172
     },
     {
-     "r0_before": 6.336647256,
+     "r0_before": 6.614169278,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -58339,26 +58339,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 81.605417963,
-   "max_r0": 230.629133609,
+   "approx_r0": 81.659141211,
+   "max_r0": 230.780963553,
    "weighted_cfr": 0.0003,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 2.381695
+     "beta": 2.380123
     },
     {
      "target_r0": 3.0,
-     "beta": 4.779033
+     "beta": 4.775868
     },
     {
      "target_r0": 15.0,
-     "beta": 24.546608
+     "beta": 24.529904
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 81.605417963,
+     "r0_before": 81.659141211,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -62993,26 +62993,26 @@
      "n_replicates": 1
     }
    },
-   "approx_r0": 33.206284979,
-   "max_r0": 193.443529892,
+   "approx_r0": 38.811789561,
+   "max_r0": 226.098450308,
    "weighted_cfr": 0.01752,
    "calibrate": [
     {
      "target_r0": 1.5,
-     "beta": 2.841314
+     "beta": 2.42958
     },
     {
      "target_r0": 3.0,
-     "beta": 5.704919
+     "beta": 4.87544
     },
     {
      "target_r0": 15.0,
-     "beta": 29.460407
+     "beta": 25.055758
     }
    ],
    "recalibrate": [
     {
-     "r0_before": 33.206284979,
+     "r0_before": 38.811789561,
      "before": {
       "schema_version": 2,
       "disease": {
@@ -63144,7 +63144,7 @@
      "beta": 54.981442
     },
     {
-     "r0_before": 33.206284979,
+     "r0_before": 38.811789561,
      "before": {
       "schema_version": 2,
       "disease": {

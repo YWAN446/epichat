@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ageShares, approxR0, calibrateBeta, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
+import { ageShares, approxR0, calibrateBeta, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, perContactProb, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
 
 function must(input: unknown) {
   const r = validateParams(input);
@@ -163,5 +163,11 @@ describe("susceptibility and fatality by age, presymptomatic transmissibility", 
     expect(exposedDays(seir.disease)).toBe(4);
     expect(effectiveDays(half.disease)).toBeCloseTo(effectiveDays(seir.disease) + 2, 9);
     expect(weightedCfr(must({ schema_version: 2, disease: { p_death: 0.01, p_death_age: { elderly: 0.2 } }, demographics: { age_pct_under18: 40, age_pct_18_64: 50, age_pct_over65: 10 } }))).toBeCloseTo(0.4 * 0.01 + 0.5 * 0.01 + 0.1 * 0.2, 9);
+  });
+
+  it("scales the infectious days alone by the asymptomatic factor: the exposed transmit at the fraction whatever their track", () => {
+    const p = must({ schema_version: 2, disease: { model: "seiar", dur_exp: { mean_days: 5, dist: "gamma", sd_days: 2 }, dur_inf: { mean_days: 10, dist: "gamma", sd_days: 4 }, p_asymp: 0.8, rel_trans_asymp: 0, rel_trans_exposed: 1 } });
+    expect(effectiveDays(p.disease)).toBeCloseTo(10 * 0.2 + 4.5, 9);
+    expect(approxR0(p)).toBeCloseTo(p.network.n_contacts * perContactProb(p.disease.beta) * 6.5, 9);
   });
 });

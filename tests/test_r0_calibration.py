@@ -174,3 +174,14 @@ def test_presymptomatic_transmission_keeps_the_calibration_exact(dist):
         sim.run()
         totals.append(int(sim.results.seir.cum_infections.values[-1]) + sim.seeds_day0)
     assert abs(implied_r0(int(np.mean(totals)), N) - 2.5) / 2.5 < 0.05
+
+
+def test_presymptomatic_transmission_with_asymptomatic_cases_keeps_the_calibration_exact():
+    # the asymptomatic factor scales the infectious days alone: exposed agents transmit at rel_trans_exposed whatever their track
+    p = _with(scenario("seiar", "gamma", 2.5), 2.5, p_asymp=0.8, rel_trans_asymp=0.0, rel_trans_exposed=1.0)
+    totals = []
+    for seed in (1, 2, 3):
+        sim = build_sim(p, seed=seed)
+        sim.run()
+        totals.append(int(sim.results.seiar.cum_infections.values[-1]) + sim.seeds_day0)
+    assert abs(implied_r0(int(np.mean(totals)), N) - 2.5) / 2.5 < 0.05

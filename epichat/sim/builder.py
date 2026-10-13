@@ -108,17 +108,30 @@ def build_interventions(params: SimParamsV2) -> list:
     return out
 
 
-def _assign_ages(sim: ss.Sim, params: SimParamsV2, seed: int) -> None:
+def _draw_ages(params: SimParamsV2, n: int, seed: int) -> np.ndarray:
     """v1's age assignment: uniform ages within each share, shuffled (numpy, seed + 1; the interventions spec owns it)."""
     g = params.demographics
-    n = len(sim.people)
     n_children = round(g.age_pct_under18 / 100 * n)
     n_elderly = round(g.age_pct_over65 / 100 * n)
     n_adults = max(0, n - n_children - n_elderly)
     rng = np.random.default_rng(seed + 1)
     ages = np.concatenate([rng.uniform(0, 18, n_children), rng.uniform(18, 65, n_adults), rng.uniform(65, 95, n_elderly)])
     rng.shuffle(ages)
-    sim.people.age[:] = ages[:n]
+    return ages[:n]
+
+
+class AgedPeople(ss.People):
+    """People whose ages are written in init_vals, before any module's init_post: the day-0 seeds then draw
+    their prognoses (fatality by age) on the ages the user set (Part 2, 4.1)."""
+
+    def __init__(self, n_agents: int, ages: np.ndarray | None = None):
+        super().__init__(n_agents)
+        self._ages = ages
+
+    def init_vals(self):
+        super().init_vals()
+        if self._ages is not None:
+            self.age[:] = self._ages[:len(self)]
 
 
 def build_sim(params, seed: int | None = None) -> ss.Sim:
@@ -133,11 +146,11 @@ def build_sim(params, seed: int | None = None) -> ss.Sim:
         demographics = [ss.Births(birth_rate=ss.peryear(params.demographics.birth_rate)),
                         ss.Deaths(death_rate=ss.peryear(params.demographics.death_rate))]
     rand_seed = resolve_seed(params, seed)
-    sim = ss.Sim(n_agents=params.run.n_agents, networks=build_network(params), diseases=disease, demographics=demographics,
+    n = params.run.n_agents
+    ages = _draw_ages(params, n, rand_seed) if params.demographics.age_pct_under18 is not None else None    # on every network (Part 2, 4.1)
+    sim = ss.Sim(n_agents=n, people=AgedPeople(n, ages), networks=build_network(params), diseases=disease, demographics=demographics,
                  interventions=build_interventions(params) or None, connectors=[connector],
                  start=ss.days(0), dur=ss.days(sim_days(params.run.sim_dur_years)), dt=ss.days(1), verbose=0, rand_seed=rand_seed)
     sim.init()
-    if params.demographics.age_pct_under18 is not None:      # on every network: the disease parameters depend on ages (Part 2, 4.1)
-        _assign_ages(sim, params, rand_seed)
     sim.seeds_day0 = int(sim.diseases[0].infected.count())      # the realized day-0 seeds, for the outputs (8.6)
     return sim

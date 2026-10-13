@@ -148,12 +148,12 @@ def test_exposed_agents_transmit_only_when_rel_trans_exposed_is_set():
     loud = SimParamsV2.model_validate({"disease": {**base, "rel_trans_exposed": 1.0}, "run": {"n_agents": 2000, "sim_dur_years": 8 / 365, "rand_seed": 1}})
     sim = build_sim(loud)
     sim.run()
-    assert sim.results.seir.cum_infections.values[-1] > 100         # the exposed infected others at the full rate
-    assert set(np.unique(np.asarray(sim.diseases[0].rel_trans_base)[np.asarray(sim.diseases[0].exposed)])) == {1.0}
+    loud_total = sim.results.seir.cum_infections.values[-1]
+    assert loud_total > 100                                         # the exposed infected others at the full rate
     half = SimParamsV2.model_validate({"disease": {**base, "rel_trans_exposed": 0.5}, "run": {"n_agents": 2000, "sim_dur_years": 8 / 365, "rand_seed": 1}})
     sim = build_sim(half)
     sim.run()
-    assert set(np.unique(np.asarray(sim.diseases[0].rel_trans_base)[np.asarray(sim.diseases[0].exposed)])) == {0.5}
+    assert 0 < sim.results.seir.cum_infections.values[-1] < loud_total     # at half the value: fewer, not none
 
 
 def test_fatality_by_age_kills_only_the_groups_with_a_fatality():
@@ -170,3 +170,12 @@ def test_fatality_by_age_kills_only_the_groups_with_a_fatality():
     dead = np.isfinite(np.asarray(disease.ti_dead.raw))
     assert dead.sum() > 100
     assert np.all(ages_at_start[dead] >= 65)
+
+
+def test_the_latent_models_keep_the_exposed_silent_without_the_connector():
+    # the exposed fraction is a kernel weight, not a state the connector must carry: a bare sim transmits nothing from the exposed at the default 0
+    pars = dict(init_prev=ss.bernoulli(p=0.01), beta=ss.peryear(300), dur_exp=ss.constant(ss.days(10)), dur_inf=ss.constant(ss.days(0.5)), p_death=ss.bernoulli(p=0.0))
+    silent = run(SEIR, days=8, n=2000, **pars)
+    assert silent.results.seir.cum_infections.values[-1] == 0
+    loud = run(SEIR, days=8, n=2000, rel_trans_exposed=1.0, **pars)
+    assert loud.results.seir.cum_infections.values[-1] > 100

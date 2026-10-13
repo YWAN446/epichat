@@ -2,10 +2,11 @@
 
 Starsim transmits per contact per day with probability
 p = network_beta × (1 − exp(−beta / 365)); an agent transmits on D_eff days
-(7.4). On the random network R0 = n_contacts × p × D_eff × asymp_factor; on
-the age-structured MixingPools network the next-generation matrix is similar
-to the contact matrix, so R0 = rho(C) × p × D_eff × asymp_factor whatever the
-age shares (section 18). The v1 functions in epichat/schema.py and parser.py
+(7.4), with D_eff the infectious days scaled by the asymptomatic factor plus the
+exposed days at rel_trans_exposed (Part 2, 4.4). On the random network
+R0 = n_contacts × p × D_eff; on the age-structured MixingPools network the
+next-generation matrix is similar to the contact matrix, so R0 = rho(C) × p × D_eff
+whatever the age shares (section 18). The v1 functions in epichat/schema.py and parser.py
 keep the linear approximation for the frozen Python agent."""
 from __future__ import annotations
 
@@ -55,7 +56,8 @@ def asymp_factor(d: DiseaseParams) -> float:
     return 1.0 - d.p_asymp * (1.0 - d.rel_trans_asymp) if d.model == "seiar" else 1.0
 
 
-def effective_days(d: DiseaseParams) -> float:
+def infectious_days(d: DiseaseParams) -> float:
+    """Days an infectious agent transmits on a daily step (Part 1, 7.4)."""
     inf = d.dur_inf
     if d.model in LATENT_MODELS:
         exp = d.dur_exp
@@ -69,7 +71,13 @@ def effective_days(d: DiseaseParams) -> float:
         days = math.ceil(inf.mean_days) - 1
     else:
         days = inf.mean_days - 0.5
-    return max(0.0, float(days)) + d.rel_trans_exposed * exposed_days(d)
+    return max(0.0, float(days))
+
+
+def effective_days(d: DiseaseParams) -> float:
+    """The transmission-weighted days of one infection: the infectious days scaled by the asymptomatic factor
+    (seiar) plus the exposed days at rel_trans_exposed, whatever the agent's track (Part 2, 4.3 and 4.4)."""
+    return infectious_days(d) * asymp_factor(d) + d.rel_trans_exposed * exposed_days(d)
 
 
 def contact_scale(p: SimParamsV2) -> float:
@@ -81,7 +89,7 @@ def contact_scale(p: SimParamsV2) -> float:
     else:
         s = age_shares(p)
         contacts = n.n_contacts * sum(si * ri for si, ri in zip(s, r))
-    return contacts * n.network_beta * effective_days(p.disease) * asymp_factor(p.disease)
+    return contacts * n.network_beta * effective_days(p.disease)
 
 
 def weighted_cfr(p: SimParamsV2) -> float:

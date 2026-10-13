@@ -122,33 +122,38 @@ rel_sus   = rel_sus_base   × vaccine_protection × (1 − sis_immunity)
 The disease composes `rel_sus` in its own `step_state`, so it holds with or
 without the connector (the intervention tests build sims without one); the
 connector composes `rel_trans`. `rel_trans_base` carries the asymptomatic
-reduction and the exposed fraction;
+reduction; the exposed fraction is a kernel weight (4.3);
 `rel_sus_base` carries the age multiplier; `vaccine_protection` is a new
 per-agent state the EpiChat vaccine product writes (1 for nobody vaccinated,
 `1 − efficacy` for a leaky dose, 0 or 1 for an all-or-nothing one, restored to
 1 when protection wanes); `sis_immunity` is Starsim's SIS `immunity` state.
 Starsim's own `simple_vx` and SIS `update_immunity` write `rel_sus` in place
 and would be overwritten, so the builder uses the EpiChat product and the SIS
-subclass defers its `rel_sus` write to the connector. Recovered and dead
+subclass leaves its `rel_sus` write to the disease's own composition. Recovered and dead
 agents are not susceptible, so their `rel_sus` does not matter.
 
 ### 4.3 Presymptomatic transmission
 
 Starsim transmits from agents whose `infectious` state is set; in `SEIR` the
-exposed are not. The EpiChat SEIR family includes exposed agents among the
-sources when `rel_trans_exposed > 0`, with `rel_trans_base = rel_trans_exposed`
-during the latent period and 1 (or the asymptomatic value) once infectious.
+exposed are not. The EpiChat SEIR family weights its sources by
+`(infectious + rel_trans_exposed × exposed) × rel_trans` in the transmission
+kernel: exposed agents transmit at the fraction whatever their track (SEIAR's
+asymptomatic value applies once infectious), and the fraction holds with or
+without the connector.
 `n_infectious` keeps counting the infectious compartment only; the series
 gain nothing new.
 
 ### 4.4 The exact R0 with the multipliers
 
-Part 1's `D_eff` becomes `D_eff + rel_trans_exposed × D_exp_eff`, where
-`D_exp_eff` is the latent period's effective days by the same ceiling rules.
+Part 1's `D_eff × asymp_factor` becomes
+`D_eff × asymp_factor + rel_trans_exposed × D_exp_eff`, where `D_exp_eff` is the
+latent period's effective days by the same ceiling rules; the asymptomatic
+reduction applies to the infectious days alone, since exposed agents transmit at
+the fraction whatever their track (4.3).
 With `s_g` the share of agents in group `g` and `r_g` its susceptibility
 multiplier:
 
-- random network: `R0 = n_contacts × network_beta × p × D_eff × asymp_factor × Σ_g s_g r_g`;
+- random network: `R0 = n_contacts × network_beta × p × (D_eff × asymp_factor + rel_trans_exposed × D_exp_eff) × Σ_g s_g r_g`;
 - age-structured network: the next-generation matrix of Part 1 section 18
   with each target row `j` scaled by `r_j`; its spectral radius replaces
   `rho(C)`;

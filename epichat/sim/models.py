@@ -1,8 +1,9 @@
 """EpiChat's six compartmental models as thin subclasses of Starsim 3.7's
 SIR, SEIR and SIS (spec 7.1, phase 2 behaviour).
 
-Every model carries `rel_trans_base`, which the TransmissibilityModifiers
-connector multiplies into `rel_trans` once per step (spec 8.4), and the
+Every model carries `rel_trans_base`, which the TransmissionModifiers connector
+multiplies into `rel_trans` once per step (spec 8.4), composes its own `rel_sus`
+from the agents' ages, vaccination and SIS immunity (Part 2, 4.2), and counts the
 `new_deaths_disease` result, which counts the deaths a disease requests so the
 service never subtracts background mortality. SEIAR lowers the base, never
 `rel_trans`, for asymptomatic agents and draws `p_death` for symptomatic
@@ -16,8 +17,8 @@ import starsim as ss
 
 
 class EpiChatDisease:
-    """Mixin for every EpiChat model: the base states the TransmissionModifiers connector composes into
-    rel_trans and rel_sus (Part 1 8.4, Part 2 4.2), and a disease-death counter."""
+    """Mixin for every EpiChat model: the base states (rel_trans_base for the connector's rel_trans, rel_sus_base
+    and vaccine_protection for the disease's own rel_sus composition; Part 1 8.4, Part 2 4.2) and a disease-death counter."""
 
     def __init__(self, pars=None, rel_sus_age=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
@@ -57,9 +58,10 @@ class SIR(EpiChatDisease, ss.SIR):
 
 
 class _Presymptomatic:
-    """Part 2, 4.3: exposed agents transmit at rel_trans_exposed of the infectious value. Starsim's kernel
-    takes the infectious as sources; this one takes everyone infected (exposed or infectious), with
-    rel_trans_base carrying the exposed fraction, so the default 0 changes nothing."""
+    """Part 2, 4.3: exposed agents transmit at rel_trans_exposed of the infectious value. Starsim's kernel weights
+    the sources by infectious × rel_trans; this one by (infectious + rel_trans_exposed × exposed) × rel_trans, so
+    the default 0 changes nothing and the fraction holds with or without the connector. SEIAR's asymptomatic
+    value applies once infectious: the exposed transmit at the fraction whatever their track."""
 
     def __init__(self, pars=None, rel_trans_exposed=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
@@ -67,21 +69,10 @@ class _Presymptomatic:
         if rel_trans_exposed is not None:
             self.update_pars(rel_trans_exposed=rel_trans_exposed)
 
-    def set_infection(self, uids):
-        super().set_infection(uids)
-        self.rel_trans_base[uids] = float(self.pars.rel_trans_exposed)
-
-    def step_state(self):
-        exposed_before = np.array(self.exposed.raw, copy=True)
-        super().step_state()
-        moved = exposed_before & ~np.asarray(self.exposed.raw) & np.asarray(self.infectious.raw)
-        self.rel_trans_base.raw[moved] = 1.0                 # left the latent period this step; SEIAR then marks its asymptomatic ones
-        self.rel_trans_base[self.exposed] = float(self.pars.rel_trans_exposed)
-
     def infect(self):
         betamap = self.validate_beta()
-        sources_mask = self.exposed.raw | self.infectious.raw
-        rel_trans = self.rel_trans.asnew(sources_mask * self.rel_trans.raw, copy=False)
+        weights = (self.infectious.raw + float(self.pars.rel_trans_exposed) * self.exposed.raw) * self.rel_trans.raw
+        rel_trans = self.rel_trans.asnew(weights, copy=False)
         rel_sus = self.rel_sus.asnew(self.susceptible.raw * self.rel_sus.raw, copy=False)
         new_cases, sources, networks = [], [], []
         for i, (nkey, route) in enumerate(self.sim.networks.items()):
@@ -99,7 +90,7 @@ class SEIR(EpiChatDisease, _Presymptomatic, ss.SEIR):
 
 class SIS(EpiChatDisease, ss.SIS):
     def update_immunity(self):
-        # Starsim writes rel_sus here; the connector composes it from immunity instead (Part 2, 4.2).
+        # Starsim writes rel_sus here; compose_rel_sus derives it from immunity each step instead (Part 2, 4.2).
         waning = self.pars.waning.to_prob()
         has_imm = (self.immunity > 0).uids
         self.immunity[has_imm] *= (1 - waning)
