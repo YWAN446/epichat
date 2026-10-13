@@ -51,6 +51,17 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
         seasonality_scale: num("Seasonal forcing amplitude 0-1; adds/updates\nthe seasonality intervention."),
         network_type: str("Contact network: random (fresh contacts daily), age_structured (three age groups by a contact matrix) or hybrid (households, schools, workplaces, community; the layers interventions act on). At the same R0 the final size is close on every network."),
         household_size: num("Mean household size for the hybrid network (people)."),
+        interventions: {
+          type: ["array", "null"],
+          description: "A list of intervention entries, each with a type (vaccine, treatment, seasonality, contact_reduction, transmission_reduction) and its fields: coverage, start_day, end_day, efficacy, kind (routine or campaign), leaky, age_min, age_max, protection_days, capacity, delay_days, rel_trans_treated, symptomatic_only, scale (seasonality: the amplitude; reductions: the fraction removed, 1 closes a layer), shift or peak_day, layer (household, school, work, community or all; the hybrid network only). Each entry replaces the one of the same type (and layer).",
+          items: { type: "object", additionalProperties: true },
+        },
+        remove_interventions: { type: ["array", "null"], description: "Intervention types to drop, or type:layer for one contact reduction.", items: { type: "string" } },
+        fit: {
+          type: ["object", "null"],
+          description: "Fit the run to one outcome the user knows: {target: attack_rate | peak_day | peak_infections, value, lever?: disease.beta | network.network_beta}; attack_rate is a fraction, peak_day a day, peak_infections people when a population is known (else agents). null clears the fit.",
+          additionalProperties: true,
+        },
         advanced: {
           type: ["object", "null"],
           description: 'Any other parameter by its registry path, for example {"disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4} or {"run.n_replicates": 5}. Applied with the fields above and validated once; a CONFIG ERROR names the path. Interventions are not set here.',

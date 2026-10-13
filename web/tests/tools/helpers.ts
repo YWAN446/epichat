@@ -1,5 +1,6 @@
 import type { Adapters, ResolvedField } from "@/lib/data/types";
 import type { PreviousRun, ReportRun } from "@/lib/db/runs";
+import { lookup, type ParameterSummary } from "@/lib/disease/db";
 import type { Memory } from "@/lib/profile/about";
 import type { ReportDocument, ReportNarrative } from "@/lib/report/document";
 import type { SimClient, SimResult } from "@/lib/sim/client";
@@ -28,6 +29,7 @@ export function makeDeps(over: Partial<{
   simulate: SimResult | Error; fallback: { birth_rate: number; death_rate: number; source: string } | null; contextText: string; runId: string | null;
   reportRuns: ReportRun[]; recap: string[]; nextVersion: number; reportId: string | null;
   memoryEnabled: boolean; memories: Memory[]; memoryAdd: "full" | "not_found" | Error; previousRun: PreviousRun | null;
+  lookup: Record<string, Record<string, ParameterSummary>>;
 }> = {}): FakeDeps {
   const answer = (v: ResolvedField[] | Error | undefined) => async (q: unknown) => { deps.queries.push(q); if (v instanceof Error) throw v; return v ?? []; };
   const sim: SimClient = {
@@ -58,6 +60,12 @@ export function makeDeps(over: Partial<{
     onScenarioStart() { deps.starts++; },
     async previousRun() { deps.previousReads++; return over.previousRun ?? null; },
     onOptionChosen(runId, diagnosticId, patch) { deps.options.push({ runId, diagnosticId, patch }); },
+    lookupDisease(name) {
+      const base = lookup(name);
+      const extra = over.lookup?.[name];
+      if (!extra) return base;
+      return { ...(base ?? { key: name, display_name: name, aliases: [], summaries: {}, flat: {} }), summaries: { ...(base?.summaries ?? {}), ...extra } };
+    },
     reports: {
       async runs() { return over.reportRuns ?? []; },
       async recap() { return over.recap ?? []; },

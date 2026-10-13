@@ -8,7 +8,7 @@ import type { ReportDocument } from "@/lib/report/document";
 import type { SimParams } from "./params";
 
 /** Part 2, 5.6 and 5.7: r0_measured is the day-0 seeds' mean secondary infections (a ratio, never scaled); r0_calibration is present when the service corrected beta to it. */
-export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number; seeds_day0?: number; r0_measured?: number | null; r0_calibration?: { target: number; measured: number | null; corrections: number } | null };
+export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number; seeds_day0?: number; r0_measured?: number | null; r0_calibration?: { target: number; measured: number | null; corrections: number } | null; fit?: { target: string; wanted: number; achieved: number; lever: string; value: number; runs: number } | null };
 /** Spec 8.7: the service's replicate block, scaled to the population like stats, bands thinned like the series. */
 export type Replicates = { n: number; seeds: number[]; representative: number; stats: SimStats[]; bands: Record<string, { p10: number[]; p90: number[] }> };
 /** Spec 10: one suggested change, a patch of registry paths applied together. */

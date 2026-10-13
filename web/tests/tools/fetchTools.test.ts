@@ -210,3 +210,17 @@ describe("fetch_demographics with the bundled tables (Part 2, 5.3, 5.4, 6.1)", (
     expect(out.applied.household_size).toBeUndefined();
   });
 });
+
+describe("fetch_vaccination_coverage with a database efficacy (Part 2, 7.4)", () => {
+  it("writes a day-0 campaign with the database's vaccine efficacy when the database carries one", async () => {
+    const deps = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")], lookup: { measles: { vaccine_efficacy: { status: "ok", typical: 0.93, n_estimates: 2 } } } }), { disease: "measles" });
+    const out = JSON.parse((await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps)).content);
+    const p = deps.scenario.params!;
+    expect(p.disease.initial_immune_frac).toBe(0);
+    expect(p.interventions.find((i) => i.type === "vaccine")).toMatchObject({ kind: "campaign", coverage: 0.88, start_day: 0, end_day: 0, efficacy: 0.93 });
+    expect(out.applied).toMatchObject({ applied_vaccine_coverage: 0.88, applied_vaccine_efficacy: 0.93 });
+    const again = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
+    expect(deps.scenario.params!.interventions.filter((i) => i.type === "vaccine")).toHaveLength(1);
+    expect(again.isError).toBeFalsy();
+  });
+});

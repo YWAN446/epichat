@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { detectDisease } from "@/lib/disease/db";
+import { detectDisease, lookup } from "@/lib/disease/db";
 import { getVaccine, validateParams } from "@/lib/sim/params";
-import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources } from "./shared";
+import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources, upsertIntervention } from "./shared";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 export const FetchVaccinationCoverageInput = z.strictObject({ country_iso3: z.string(), disease: z.string() });
@@ -17,7 +17,10 @@ export const GHO_CODES: Record<string, string[]> = {
   meningococcal: ["MENGA"],
 };
 
-/** Ported from epichat/agent.py fetch_vaccination_coverage. Routine coverage is pre-existing immunity at the start (spec 6.1): disease.initial_immune_frac, not a campaign. */
+/**
+ * Ported from epichat/agent.py fetch_vaccination_coverage. Routine coverage is pre-existing immunity at the start (spec 6.1):
+ * disease.initial_immune_frac; when the database carries the vaccine's efficacy it is a day-0 campaign with that efficacy instead (Part 2, 7.4).
+ */
 export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageArgs, deps: ToolDeps): Promise<ToolOutcome> {
   const scenario = deps.scenario;
   if (!scenario.params) return errorOutcome(NEEDS_CONFIG);
@@ -32,7 +35,17 @@ export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageAr
     const cov = fields.find((f) => f.field.endsWith("_coverage"));
     if (cov && !getVaccine(scenario.params) && scenario.params.disease.initial_immune_frac === 0) {
       const coverage = Math.min(0.99, Number(cov.value) / 100);
-      const validated = validateParams({ ...scenario.params, disease: { ...scenario.params.disease, initial_immune_frac: coverage } });
+      const entry = (deps.lookupDisease ?? lookup)(canonical);
+      const efficacy = entry?.summaries.vaccine_efficacy?.typical;
+      let next: Record<string, unknown>;
+      if (typeof efficacy === "number" && efficacy > 0 && efficacy <= 1) {
+        const interventions = upsertIntervention(scenario.params.interventions as unknown as Record<string, unknown>[], "vaccine", { kind: "campaign", coverage, start_day: 0, end_day: 0, efficacy });
+        next = { ...scenario.params, interventions };
+        applied.applied_vaccine_efficacy = efficacy;
+      } else {
+        next = { ...scenario.params, disease: { ...scenario.params.disease, initial_immune_frac: coverage } };
+      }
+      const validated = validateParams(next);
       if (!validated.ok) throw new Error(validated.error);
       scenario.params = validated.params;
       applied.applied_vaccine_coverage = coverage;

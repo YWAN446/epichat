@@ -53,8 +53,11 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
 
   scenario.hasRun = true;
   scenario.reportCurrent = false; // the report, if any, no longer covers this run
-  // Part 2, 5.7: the service corrected beta to the measured R0 on an approximate network.
-  const applied = result.stats.r0_calibration ? { beta_calibrated_by_measurement: result.effective_params.disease.beta } : undefined;
+  // Part 2, 5.7 and 7.7: the service corrected beta to the measured R0, or moved a lever to the participant's known outcome.
+  const notes: Record<string, unknown> = {};
+  if (result.stats.r0_calibration) notes.beta_calibrated_by_measurement = result.effective_params.disease.beta;
+  if (result.stats.fit) notes[`${result.stats.fit.lever.split(".").pop()}_fitted_to_${result.stats.fit.target}`] = result.stats.fit.value;
+  const applied = Object.keys(notes).length > 0 ? notes : undefined;
   const agents = result.stats_agents;
   const n = agents.n_agents || params.run.n_agents || 1;
   // Agent counts: the scaled total over the real population is the same ratio.

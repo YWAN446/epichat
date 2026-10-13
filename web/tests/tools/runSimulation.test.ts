@@ -167,3 +167,15 @@ describe("run_simulation and the measured-R0 calibration (Part 2, 5.7)", () => {
     expect((plain.payload as { applied?: unknown }).applied).toBeUndefined();
   });
 });
+
+describe("run_simulation and a fitted lever (Part 2, 7.7)", () => {
+  it("notes a fitted beta", async () => {
+    const result = success();
+    result.stats = { ...result.stats, fit: { target: "attack_rate", wanted: 0.3, achieved: 0.31, lever: "disease.beta", value: 9.5, runs: 4 } };
+    result.effective_params = { ...result.effective_params, disease: { ...result.effective_params.disease, beta: 9.5 } };
+    const deps = makeDeps({ simulate: result, runId: "run-3" });
+    deps.scenario.params = params({ disease_type: "sir" });
+    const out = await runSimulation({}, deps);
+    expect((out.payload as { applied?: Record<string, unknown> }).applied).toEqual({ beta_fitted_to_attack_rate: 9.5 });
+  });
+});

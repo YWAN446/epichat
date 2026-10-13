@@ -5,6 +5,7 @@ import type { ParameterSummary } from "@/lib/disease/db";
 import type { MemoryKind, Stage } from "@/lib/enums";
 import type { Memory } from "@/lib/profile/about";
 import type { Diagnostic, RepairRecord, SimClient, SimResult, SimStats } from "@/lib/sim/client";
+import type { DiseaseEntry } from "@/lib/disease/db";
 import type { SimParams } from "@/lib/sim/params";
 import type { PathChange } from "@/lib/sim/paths";
 
@@ -134,6 +135,8 @@ export type ToolDeps = {
   previousRun: () => Promise<PreviousRun | null>;
   /** The next configuration applied a diagnostic's lever (spec 11); the handler records option_chosen. */
   onOptionChosen: (runId: string, diagnosticId: string, patch: Record<string, unknown>) => void;
+  /** The disease database as the tools read it; tests substitute entries (Part 2, 7.4: the vaccine efficacy path). */
+  lookupDisease?: (name: string) => DiseaseEntry | null;
   reports: ReportDeps;
   /** The participant's memory (profile spec, section 9); `added` counts this turn's remember calls. */
   memory: {

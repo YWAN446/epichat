@@ -344,3 +344,42 @@ describe("edited matrix cells and contact counts (review of 2B)", () => {
     expect(more.applied.beta_recalibrated_to_hold_r0).toBeUndefined();
   });
 });
+
+describe("configure_simulation interventions and fit (Part 2, 7.4, 7.7)", () => {
+  it("upserts structured entries by type and layer, removes by type, and keeps the shortcut fields", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", network_type: "hybrid", interventions: [
+      { type: "contact_reduction", layer: "school", scale: 0, start_day: 30, end_day: 72 }, { type: "transmission_reduction", scale: 0.3, start_day: 0, end_day: 90 },
+      { type: "vaccine", kind: "campaign", coverage: 0.7, start_day: 10, end_day: 40, efficacy: 0.8 }] });
+    let p = deps.scenario.params!;
+    expect(p.interventions.map((i) => `${i.type}:${i.layer}`)).toEqual(["contact_reduction:school", "transmission_reduction:all", "vaccine:all"]);
+    await run(deps, { interventions: [{ type: "contact_reduction", layer: "community", scale: 0.5 }, { type: "vaccine", kind: "campaign", coverage: 0.9, start_day: 10, end_day: 40, efficacy: 0.8 }] });
+    p = deps.scenario.params!;
+    expect(p.interventions.filter((i) => i.type === "contact_reduction").map((i) => i.layer)).toEqual(["school", "community"]);
+    expect(p.interventions.find((i) => i.type === "vaccine")).toMatchObject({ coverage: 0.9, efficacy: 0.8, kind: "campaign" });
+    const out = JSON.parse((await run(deps, { remove_interventions: ["transmission_reduction", "contact_reduction:school"], seasonality_scale: 0.2 })).content);
+    p = deps.scenario.params!;
+    expect(p.interventions.map((i) => `${i.type}:${i.layer}`)).toEqual(["contact_reduction:community", "vaccine:all", "seasonality:all"]);
+    expect(out.applied.remove_interventions).toEqual(["transmission_reduction", "contact_reduction:school"]);
+    expect(out.config.interventions).toEqual(["contact_reduction", "vaccine", "seasonality"]);
+    const bad = await run(deps, { interventions: [{ type: "contact_reduction", layer: "roads", scale: 0.5 }] });
+    expect(bad.isError).toBe(true);
+    const random = makeDeps();
+    const refused = await run(random, { disease: "measles", interventions: [{ type: "contact_reduction", layer: "school", scale: 0 }] });
+    expect(refused.content).toContain("layer school needs the hybrid network");
+  });
+
+  it("sets and clears the fit, converting a peak size in people to agents when a population is known", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", n_agents: 10000, fit: { target: "attack_rate", value: 0.3 } });
+    expect(deps.scenario.params!.run.fit).toEqual({ target: "attack_rate", value: 0.3, lever: "disease.beta" });
+    deps.scenario.totalPopulation = 1_000_000;
+    const out = JSON.parse((await run(deps, { fit: { target: "peak_infections", value: 50000 } })).content);
+    expect(deps.scenario.params!.run.fit).toEqual({ target: "peak_infections", value: 500, lever: "disease.beta" });
+    expect(out.applied.fit).toEqual({ target: "peak_infections", value: 50000, value_in_agents: 500 });
+    await run(deps, { fit: null });
+    expect(deps.scenario.params!.run.fit).toBeNull();
+    const bad = await run(deps, { fit: { target: "attack_rate", value: 3 } });
+    expect(bad.isError).toBe(true);
+  });
+});

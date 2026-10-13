@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { detectDisease } from "@/lib/disease/db";
-import { R0UnreachableError, approxR0, recalibrateBeta, validateParams, withR0, type Duration, type SimParams } from "@/lib/sim/params";
+import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, recalibrateBeta, validateParams, withR0, type Duration, type SimParams } from "@/lib/sim/params";
 import { changedPaths, type PathChange } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
 import { applyAdvanced } from "./advanced";
@@ -33,6 +33,9 @@ export const ConfigureSimulationInput = z.strictObject({
   seasonality_scale: opt(z.number()),
   network_type: opt(z.string()),
   household_size: opt(z.number()),
+  interventions: opt(z.array(z.record(z.string(), z.unknown()))),
+  remove_interventions: opt(z.array(z.string())),
+  fit: z.record(z.string(), z.unknown()).nullable().optional(),
   advanced: opt(z.record(z.string(), z.unknown())),
   start_new_scenario: opt(z.boolean()),
 });
@@ -155,7 +158,44 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     interventions = upsertIntervention(interventions, "seasonality", { scale: input.seasonality_scale });
     applied.seasonality_scale = input.seasonality_scale;
   }
+  if (given(input.interventions)) {
+    // Part 2, 7.4: structured entries, each replacing the one of its type (and layer for a contact reduction)
+    for (const raw of input.interventions) {
+      const parsed = InterventionSchema.safeParse(raw);
+      if (!parsed.success) return errorOutcome(`CONFIG ERROR: interventions entry ${JSON.stringify(raw)}: ${parsed.error.issues.map((i) => i.message).join("; ")}`);
+      const entry = parsed.data as unknown as Obj;
+      interventions = upsertIntervention(interventions, String(entry.type), entry, entry.type === "contact_reduction" ? String(entry.layer) : undefined);
+    }
+    applied.interventions = input.interventions;
+  }
+  if (given(input.remove_interventions)) {
+    for (const key of input.remove_interventions) {
+      const [type, layer] = key.split(":");
+      interventions = interventions.filter((i) => !(i.type === type && (layer === undefined || (i.layer ?? "all") === layer)));
+    }
+    applied.remove_interventions = input.remove_interventions;
+  }
   base.interventions = interventions;
+  if (input.fit !== undefined) {
+    // Part 2, 7.7: one outcome the user knows; a peak size in people becomes agents when the population is known
+    if (input.fit === null) {
+      run.fit = null;
+      applied.fit = null;
+    } else {
+      const parsed = FitSchema.safeParse(input.fit);
+      if (!parsed.success) return errorOutcome(`CONFIG ERROR: fit: ${parsed.error.issues.map((i) => i.message).join("; ")}`);
+      const fit = parsed.data;
+      const nAgents = Number(run.n_agents ?? before?.run.n_agents ?? 10000);
+      if (fit.target === "peak_infections" && scenario.totalPopulation) {
+        const agents = Math.max(1, Math.round(fit.value / (scenario.totalPopulation / nAgents)));
+        run.fit = { ...fit, value: agents };
+        applied.fit = { ...input.fit, value_in_agents: agents };
+      } else {
+        run.fit = fit;
+        applied.fit = input.fit;
+      }
+    }
+  }
 
   if (given(input.advanced) && Object.keys(input.advanced).length > 0) {
     // After the core fields, so a path given both ways takes the patch's value (spec 19); checked whole before anything is written.

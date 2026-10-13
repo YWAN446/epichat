@@ -11,8 +11,10 @@ export function given<T>(v: T | null | undefined): v is T {
 }
 
 /** epichat/agent.py _upsert_intervention: drop every intervention of the kind, append the new one. */
-export function upsertIntervention(list: Record<string, unknown>[], kind: string, fields: Record<string, unknown>): Record<string, unknown>[] {
-  return [...list.filter((i) => i.type !== kind), { type: kind, ...fields }];
+export function upsertIntervention(list: Record<string, unknown>[], kind: string, fields: Record<string, unknown>, layer?: string): Record<string, unknown>[] {
+  // one entry per type; contact reductions are one per layer (Part 2, 7.4)
+  const same = (i: Record<string, unknown>) => i.type === kind && (layer === undefined || (i.layer ?? "all") === layer);
+  return [...list.filter((i) => !same(i)), { type: kind, ...fields }];
 }
 
 /** epichat/agent.py _param_warnings, on schema v2 */
