@@ -272,11 +272,24 @@ exact R0 Part 1 has for the other two networks. Two numbers:
 ### 5.6 Measured R0
 
 After every run the builder reads Starsim's infection log (seeds have source
-−1) and reports `stats.r0_measured`: the mean number of secondary infections
-caused by the day-0 seeds; null when there were none, 0 when they infected
-nobody, and null on the age-structured network, whose `MixingPools` record no
-per-agent sources (the exact formula is checked there by the per-group final
-sizes, not the log). It is population-free, so it is the same in agent and people units.
+−1) and reports `stats.r0_measured`: for each day-0 seed, the infections it
+caused in its first infectious episode (before it was infected again), without
+what it transmitted on step 0, each weighted by alive over susceptible at the
+step before, averaged over the seeds. It is null when there were no day-0
+seeds, 0 when they infected nobody, null on the age-structured network, whose
+`MixingPools` record no per-agent sources (the exact formula is checked there
+by the per-group final sizes, not the log), and null when the mean weight
+exceeds 1.25: the population was then depleted while the seeds were still
+infectious and no weighting recovers what they would have done.
+
+Amended on 2026-10-13. The first version counted every infection whose source
+was a seed. Measured on the exact random network it read 2.60 for a configured
+2.5 with a 10-day infectious period and 3.01 with a 4-day one (a seed is
+infectious from step 0, an ordinary case from the step after its infection, so
+a seed transmits on one more step); 5.87 for a configured 12 with 2% seeded
+(the seeds' descendants exhausted the population); and 5.93 for 2.5 in SIS (a
+seed's reinfections were counted). The amended estimator reads 1.52 for 1.5
+with a 4-day period and 2.46 for 2.5 in SIS, and withholds the third case. It is population-free, so it is the same in agent and people units.
 With replicates it is the representative's value and the bands carry nothing
 for it. On the random network it checks the exact formula; on the hybrid
 network it is the number that matters. The run payload
@@ -287,19 +300,33 @@ carries it beside `approx_r0`, and the report's Parameters section shows
 
 Where the formula is approximate (the hybrid network, or a contact duration
 above zero), the child calibrates before the real run: it runs a pilot with
-the formula's beta, measures R0 (5.6), corrects beta by `target / measured`,
-and repeats until the measured value is within 5% of the target or after
+the formula's beta, measures R0, corrects beta by `target / measured`, and
+repeats until the measurement is within tolerance of the target or after
 three corrections; the real run then uses the corrected beta. The pilot is
-short: `min(sim days, 4 × (latent + infectious mean days))`, since the seeds'
-secondary infections are complete well within that window, and it uses the
-first replicate's seed. It is seeded with at least 300 day-0 infections (2% of
-the agents when that is fewer, never under 20), so the measurement's standard
-error stays near 5%, and it drops the scenario's interventions and initial
-immunity, since an R0 is measured in a susceptible population. The child
+short: `min(sim days, 4 × (latent + infectious mean days))`, and it uses the
+first replicate's seed. It drops the scenario's interventions and initial
+immunity, since an R0 is measured in a susceptible population.
+
+Amended on 2026-10-13: the pilot is a first-generation experiment. Only the
+day-0 seeds transmit, and not on step 0, so each seed transmits on exactly the
+steps an ordinary case would and the population is depleted by the seeds' own
+infections only; the measurement is 5.6's estimator counting every step. The
+seeds are 15% of the agents divided by the target, never under 20 nor over
+1000, which keeps the measurement's standard error near 3 to 4%. A correction
+is taken only when the measurement is off by more than 5% and by more than
+its own standard error; it multiplies beta by at most 2, is kept only when it
+brings the measurement nearer the target, and stops at the registry's bound
+of beta or at the joint rule of `network_beta` and beta. The first version
+let the whole epidemic run and counted the seeds' infections as they were: on
+the hybrid network it lowered a flu-like scenario's beta by 9% and multiplied
+a measles-like one's by 7.4. The amended pilot leaves the first alone (a
+fresh seed measures 1.45 for a target of 1.5) and raises the second by 53% (a
+fresh seed measures 12.5 for 12). The child
 returns `effective_params` with the corrected beta, which the service adopts. `run.calibrate_r0` (bool, default true, advanced)
 switches it off; on the exact networks nothing runs. `effective_params`
 carries the corrected beta; `stats.r0_calibration` reports
-`{target, measured, corrections}`; the run payload's `applied` notes
+`{target, measured, se, corrections, reached}`, `reached` being false when the
+network could not be brought to the target; the run payload's `applied` notes
 `beta_calibrated_by_measurement`. The agent says "beta was adjusted so the
 measured R0 matches the one you set".
 

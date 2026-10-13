@@ -9,6 +9,7 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT.startsWith((promptFile as { system: string }).system)).toBe(true);
     for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Report", "## Repairs", "## Interventions", "## Contact networks"]) expect(SYSTEM_PROMPT).toContain(heading);
     for (const phrase of ["close on every network", "measured R0", "Covasim", "expectedly null"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    for (const phrase of ["stats.r0_calibration.reached", "could not be brought to the R0 you set", "only its seeds transmit"]) expect(SYSTEM_PROMPT).toContain(phrase);
     for (const phrase of ["schools closed", "illustrative assumption", "fitted", "remove_interventions", "stats.fit"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT.indexOf("## Interventions")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Contact networks"));
     expect(SYSTEM_PROMPT).toContain("Create a report");

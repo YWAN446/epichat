@@ -507,8 +507,9 @@ migration. One browser; a phone is enough.
    `lever`, `value` and `runs`, and no `calibration` (the fit replaces the
    pilot); the two unfitted hybrid runs of steps 2 and 3 carry `calibration`;
    the random run of step 5 carries neither. Every row here carries
-   `measured`; it is null only on an age-structured run, where Starsim's
-   mixing pools do not log the source.
+   `measured`; it is null on an age-structured run, where Starsim's
+   mixing pools do not log the source, and on a run seeded so heavily that
+   the population was exhausted while the seeds were still infectious.
 
 ## 7. Simulation service (`sim/`)
 

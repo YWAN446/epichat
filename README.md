@@ -149,10 +149,12 @@ registry, schema v2, the exact R0, diagnostics and options) and
   Covasim, with the country's household size and the layers' sizes and
   transmissibilities as parameters). The R0 formula is exact on the random
   and age-structured networks and approximate on the hybrid network or with a
-  `contact_duration_days` above 0. A run reports the measured R0 (the day-0
-  seeds' mean secondary infections; null on the age-structured network,
-  where Starsim's mixing pools do not record who infected whom), and where
-  the formula is approximate a short pilot adjusts beta to it
+  `contact_duration_days` above 0. A run reports the measured R0 (the
+  infections a day-0 seed causes in its first infectious period, corrected
+  for depletion; null on the age-structured network, where Starsim's mixing
+  pools do not record who infected whom, and when the seeds were too many to
+  measure it), and where the formula is approximate a short pilot, in which
+  only the seeds transmit, adjusts beta to it
   (`applied.beta_calibrated_by_measurement`; `run.calibrate_r0` switches it
   off; a fit replaces it). At the same R0 the final size is close
   on every network: the networks differ in who meets whom and in what the
