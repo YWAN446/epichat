@@ -36,3 +36,12 @@ def test_the_readme_describes_part_2_from_the_codes_own_names():
         assert f"`{kind}`" in interventions, kind
     for field in ("efficacy", "end_day", "protection_days", "delay_days", "rel_trans_treated", "symptomatic_only", "layer", "peak_day"):
         assert f"`{field}`" in interventions, field
+
+
+def test_the_runbook_verifies_part_2_through_the_shipped_fields():
+    runbook = (Path(__file__).resolve().parent.parent / "web" / "docs" / "DEPLOY.md").read_text(encoding="utf-8")
+    section = runbook.split("## 6j.")[1].split("## 7.")[0]
+    for phrase in ("hybrid", "Household size", "beta_calibrated_by_measurement", "R₀ measured", "contact_reduction", "layer", "School contacts reduced by 100%",
+                   "fit", "attack_rate", "Fitted to", "Why were so many infected", "stats->'fit'"):
+        assert phrase in section, phrase
+    assert "fitted" in runbook.split("## 7.")[1] and "at most eight" in runbook.split("## 7.")[1]

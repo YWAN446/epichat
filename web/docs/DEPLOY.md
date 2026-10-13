@@ -457,6 +457,50 @@ Done after the sim-parameters phases 3 and 4 are pushed, with migration
    run completes and the reply reports what changed against that earlier
    run (nothing, or the seeds), then interprets.
 
+## 6j. Networks, interventions and the fit verification
+
+Done after the sim-parameters Part 2 phases (2A to 2D) are pushed. No
+migration. One browser; a phone is enough.
+
+1. New conversation: "Model seasonal influenza in a town of 50,000 people
+   with households, schools and workplaces, for six months." The configure
+   call sets `network_type: hybrid`; the panel's Parameters section shows
+   "Contact network: hybrid (households, schools, workplaces, community)" and
+   a "Household size" row; the reply says the hybrid network was chosen for
+   the setting.
+2. "Run it." The reply says in one sentence that beta was adjusted to the
+   measured R0 (the run payload carries `applied.beta_calibrated_by_measurement`
+   and `stats.r0_calibration`); the runs panel and the report show an
+   "R₀ measured" row.
+3. "Close the schools from day 30 for six weeks and run it again." The
+   configure call carries `interventions: [{type: contact_reduction, layer:
+   school, scale: 1, start_day: 30, end_day: 72}]`; the panel's
+   Interventions section reads "School contacts reduced by 100% from day 30
+   to day 72"; the reply reports what changed against the previous run before
+   interpreting, and calls the closure's effect size an illustrative
+   assumption.
+4. "Fit it so that 30% of the town is infected." The configure call carries
+   `fit: {target: attack_rate, value: 0.3}`; the panel shows a "Fitted to"
+   row ("attack rate 30% by moving the transmission rate"); the run takes
+   longer (the fit's search, at most eight runs before the replicates); the
+   reply says beta was set so that the attack rate is 30% and labels the run
+   as fitted in the limitations; the report's Parameters block shows "Fitted
+   to: attack rate 30% (reached …% in N runs)".
+5. New conversation on the random network: "Model measles in Kenya for a
+   year." Run it, then ask "Why were so many infected?": the reply explains
+   the random network (fresh contacts every day) and offers the hybrid
+   network as an option without promising that the switch alone lowers the
+   final size.
+6. In the SQL editor:
+
+       select id, stats->'fit' as fit, stats->'r0_calibration' as calibration, stats->'r0_measured' as measured
+       from runs order by created_at desc limit 4;
+
+   The fitted run's row carries `fit` with `target`, `wanted`, `achieved`,
+   `lever`, `value` and `runs`; the hybrid runs carry `calibration`; every
+   row carries `measured` (null on an age-structured run, where Starsim's
+   mixing pools do not log the source).
+
 ## 7. Simulation service (`sim/`)
 
 The second Vercel service. Private: no rewrite reaches it; the web app calls
@@ -581,6 +625,15 @@ measured R0 (the default on the hybrid network). The hybrid network builds four
 edge sets, so a 10k-agent year costs about 1.7× the random net's, 2.3× with the
 pilot. Owner: after the deploy, time a hybrid scenario through the binding as in
 step 4 and add the row to the table above.
+
+A fitted run (Part 2, 7.7) costs one full run per search step before the
+replicates, at most eight: locally (the same machine and settings, 2026-10-13)
+fitting the attack rate to 30% on the random network at 10k agents took
+8 runs and 41 s in all (the search reached 31.4%). On Vercel the per-attempt
+timeout covers eight runs of 10k agents (about a minute at the warm 10k
+time); a fit at 100k agents is the one case to keep to the local service.
+Owner: after the deploy, time a fitted scenario once from the activity's
+run duration and add it here.
 
 **Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
 Active CPU hours a month and pauses the whole project for the rest of the
