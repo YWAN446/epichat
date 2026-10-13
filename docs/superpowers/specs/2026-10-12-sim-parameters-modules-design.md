@@ -53,6 +53,12 @@ the simulation update is in.
    team and other students.
 7. Sexual and mother-to-child routes and the `Pregnancy` module are later
    rounds.
+8. The hybrid network's layer weights stay Covasim's values; they are not
+   requested per disease from the database.
+9. Two calibrations come in: beta calibrated to the measured R0 where the
+   formula is approximate (5.7), and a run fitted to an outcome the user knows
+   (7.7). Calibration to an observed case series with Starsim's `Calibration`
+   module (Optuna is already installed as its dependency) is Part 3.
 
 ## 3. Starsim 3.7.2 inventory
 
@@ -225,7 +231,7 @@ community as a random layer. Each layer has a relative transmissibility.
   transmissibilities keep Covasim's values, labelled illustrative.
 - Agent rule: the prompt offers the hybrid network for household, school and
   workplace scenarios and for a run whose attack rate looks well mixed
-  (5.7); it says that the layer weights are Covasim's calibrated values, not
+  (5.8); it says that the layer weights are Covasim's calibrated values, not
   measurements for the disease at hand.
 - User path: `network_type: "hybrid"` and `household_size` as fields, the rest
   by `advanced`.
@@ -258,16 +264,32 @@ formula; on the hybrid network it is the number that matters. The run payload
 carries it beside `approx_r0`, and the report's Parameters section shows
 "R₀ measured".
 
-### 5.7 Diagnostics
+### 5.7 Calibration to the measured R0
+
+Where the formula is approximate (the hybrid network, or a contact duration
+above zero), the child calibrates before the real run: it runs a pilot with
+the formula's beta, measures R0 (5.6), corrects beta by `target / measured`,
+and repeats until the measured value is within 5% of the target or after
+three corrections; the real run then uses the corrected beta. The pilot is
+short: `min(sim days, 4 × (latent + infectious mean days))`, since the seeds'
+secondary infections are complete well within that window, and it uses the
+first replicate's seed. `run.calibrate_r0` (bool, default true, advanced)
+switches it off; on the exact networks nothing runs. `effective_params`
+carries the corrected beta; `stats.r0_calibration` reports
+`{target, measured, corrections}`; the run payload's `applied` notes
+`beta_calibrated_by_measurement`. The agent says "beta was adjusted so the
+measured R0 matches the one you set".
+
+### 5.8 Diagnostics
 
 Two new rules in `epichat/sim/diagnostics.py`, thresholds as named constants:
 
 | id | Severity | Trigger | Levers |
 |---|---|---|---|
 | `well_mixed` | info | random network, no contact reduction, `R_eff ≥ 2`, attack rate above 0.7 | `network.network_type` to `hybrid` (rationale: with limited, repeated contacts the final size is lower than under daily random mixing); `network.contact_duration_days` to 7 |
-| `r0_gap` | info | `r0_measured` is not null and differs from `approx_r0` by more than 25% | none when the network is hybrid or has a contact duration (the gap is expected and the measured value is quoted); on the other networks, the beta recheck of Part 1 |
+| `r0_gap` | info | `r0_measured` is not null and differs from `approx_r0` by more than 25% | none when the run was calibrated by measurement (5.7, the gap is closed by construction) or the user switched the calibration off (the measured value is quoted); on the exact networks, the beta recheck of Part 1 |
 
-### 5.8 Agent and user
+### 5.9 Agent and user
 
 Core fields: `network_type`, `household_size`. The prompt gains a short
 "Contact networks" section: which network for which scenario, the well-mixed
@@ -378,6 +400,24 @@ treatment efficacy with its delay are requested from the database (section
 11); effect sizes of school closure, distancing and masks are requested as
 cited ranges to seed the illustrative defaults.
 
+### 7.7 Fitting to a known outcome
+
+A participant often knows one number from the real event: the share
+infected, or when the peak came. `run.fit` (object, optional, advanced):
+`{ target: attack_rate | peak_day | peak_infections, value, lever: disease.beta | network.network_beta }`,
+the lever defaulting to beta. The child searches the lever by bisection on a
+log scale within the registry bounds, one full-length run per step with the
+first replicate's seed, until the outcome is within tolerance (attack rate
+within 2 points, peak day within 3 days, peak infections within 5%) or after
+eight runs; the replicates, if any, then run with the fitted value.
+`effective_params` carries it, `stats.fit` reports
+`{target, wanted, achieved, lever, value, runs}`, and the agent reports
+"beta was set so that the attack rate is 30%", labelling the fit as such in
+the limitations. `configure_simulation` gains `fit` as a field; the
+diagnostics and the comparison read the fitted run like any other, and
+`final_size_gap` stands down on a fitted run. Eight runs of 10k agents cost
+about half a minute on the service; the cap applies to each run.
+
 ## 8. Run module
 
 Unchanged: `run.n_agents`, `run.sim_dur_years`, `run.n_replicates`,
@@ -427,8 +467,10 @@ or the registry changes.
 New rules: `well_mixed`, `r0_gap` (5.7). New prompt sections: "Contact
 networks" (5.8) and "Interventions" (7.4), plus one sentence in "Parameters"
 on the age groups and the illustrative label. `describe_parameters` lists the
-new leaves by module as it does today; `network_type` and `household_size`
-become fields, and `interventions` a structured field.
+new leaves by module as it does today; `network_type`, `household_size` and
+`fit` become fields, and `interventions` a structured field. The measured-R0
+calibration (5.7) and the fit (7.7) are explained in the "Contact networks"
+and "Interventions" sections respectively.
 
 ## 13. Testing
 
@@ -455,8 +497,15 @@ Python:
   restores it; a treatment with a delay and `rel_trans_treated` 0.5 halves
   transmissibility while waiting; `symptomatic_only` leaves asymptomatic
   agents untreated.
+- Measured-R0 calibration: on the hybrid network with target 2.5 at 50k
+  agents, the calibrated run's measured R0 is within 5% of the target in at
+  most three corrections, and the exact networks run no pilot.
+- Fit: on the random network, fitting the attack rate to 0.3 lands within 2
+  points in at most eight runs, and fitting the peak day to day 60 within 3
+  days; the replicates run with the fitted beta.
 - Diagnostics: `well_mixed` fires on a constructed well-mixed run and not on
-  a hybrid one; `r0_gap` fires on a mismatch and stands down on hybrid.
+  a hybrid one; `r0_gap` fires on a mismatch and stands down on a calibrated
+  run.
 - Bundled tables: the aggregation of Prem's 16 bands reproduces a published
   3×3 within rounding for two countries; every ISO3 the UN table knows has a
   pyramid row for 2024.
@@ -485,18 +534,21 @@ database migration.
 - **2B. Demographics and networks.** The bundled tables and their
   aggregation scripts, the pyramid and birth series in the builder, the three
   network types, the country matrices, the hybrid layers, the measured R0, the
-  two diagnostics, the fields and prompt section, the timings in the runbook.
-- **2C. Interventions and products.** The extended entries, the two reduction
-  interventions, the treatment product, the `interventions` field and prompt
-  section, the WHO coverage path with efficacy.
+  two diagnostics, the calibration to the measured R0, the fields and prompt
+  section, the timings in the runbook.
+- **2C. Interventions and products, and the fit.** The extended entries, the
+  two reduction interventions, the treatment product, the `interventions` and
+  `fit` fields and prompt sections, the WHO coverage path with efficacy.
 - **2D. Docs, evals and the review list.** The README and runbook sections,
   the two pending cases, `docs/data-review-requests.md` generated and
   committed.
 
 ## 15. Out of scope
 
-Testing and isolation (the next round after 2C). Sexual and mother-to-child
-routes and `Pregnancy`. Age-specific background mortality. Transmissibility by
+Testing and isolation (the next round after 2C). Calibration to an observed
+case series with Starsim's `Calibration` module (Part 3: an asynchronous job
+in the service, the data input, the likelihood, and a card for the fit).
+Sexual and mother-to-child routes and `Pregnancy`. Age-specific background mortality. Transmissibility by
 age and partial immunity after recovery. Per-disease layer weights for the
 hybrid network. Calibration to observed data. Rendering of the new payload
 fields beyond the panel rows (the workspace follow-up).
@@ -512,7 +564,6 @@ records it. The measured R0 reads a log Starsim already keeps.
 
 ## 17. Questions resolved on 2026-10-12
 
-The seven decisions of section 2. Open for the owner's review: whether the
-hybrid network's layer weights should also be offered as a per-disease
-database request (section 11 lists them as cited ranges for the defaults, not
-as per-disease fields).
+The nine decisions of section 2. The hybrid layer weights were the one open
+question and were settled as Covasim's values (decision 8); the calibration
+question raised at the review was settled as decision 9.
