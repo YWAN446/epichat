@@ -8,6 +8,7 @@ import type { Diagnostic, RepairRecord, SimClient, SimResult, SimStats } from "@
 import type { DiseaseEntry } from "@/lib/disease/db";
 import type { SimParams } from "@/lib/sim/params";
 import type { PathChange } from "@/lib/sim/paths";
+import type { ParamSource } from "./sources";
 
 export type WebSource = { title: string; url: string };
 
@@ -51,6 +52,8 @@ export type ConfigPayload = {
   new_scenario: boolean;
   /** The scenario's full parameters after this step, for the panel's Parameters section; absent on payloads stored before it existed. */
   params?: SimParams;
+  /** Follow-up spec 8.4: where each of those values came from, by registry path; absent on payloads stored before it existed. */
+  sources?: Record<string, ParamSource>;
 };
 export type DataPayload = {
   kind: "data";
@@ -62,6 +65,8 @@ export type DataPayload = {
   approx_r0?: number;
   /** The scenario's full parameters after this step (see ConfigPayload.params). */
   params?: SimParams;
+  /** Where each of those values came from (see ConfigPayload.sources). */
+  sources?: Record<string, ParamSource>;
 };
 /** Spec 11: this run against the scenario's previous successful run. */
 export type RunCompare = {
@@ -95,6 +100,8 @@ export type RunPayload = {
   compare?: RunCompare | null;
   /** Part 2, 5.7: beta_calibrated_by_measurement when the service corrected beta to the measured R0. */
   applied?: Record<string, unknown>;
+  /** Follow-up spec 8.4: where each configured value came from, by registry path: the scenario's own parameters, so a beta the run calibrated or a lever it fitted keeps the source of what was configured. */
+  sources?: Record<string, ParamSource>;
 };
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
 /** A remember call (profile spec, section 9). */

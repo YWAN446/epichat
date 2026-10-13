@@ -197,3 +197,17 @@ describe("run_simulation and the levers that keep R0 (follow-up spec 6)", () => 
     expect(await fitted({})).toBeUndefined();
   });
 });
+
+describe("run_simulation sends where each configured value came from (follow-up spec 8.4)", () => {
+  it("tags by the scenario's own parameters, so a beta the run calibrated is not the user's", async () => {
+    const result = success();
+    const configuredParams = params({ disease_type: "sir" });
+    result.effective_params = params({ disease_type: "sir", beta: 31.7 });                       // as a calibration would leave it
+    const deps = makeDeps({ simulate: result, runId: "run-5" });
+    deps.scenario.params = configuredParams;
+    const payload = (await runSimulation({}, deps)).payload as { sources?: Record<string, string>; effective_params: { disease: { beta: number } } };
+    expect(payload.effective_params.disease.beta).toBe(31.7);
+    expect(payload.sources?.["disease.beta"]).toBe("default");
+    expect(payload.sources?.["run.n_agents"]).toBe("default");
+  });
+});

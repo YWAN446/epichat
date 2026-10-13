@@ -5,6 +5,7 @@ import type { SimSuccess } from "@/lib/sim/client";
 import { changedPaths } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
 import { errorOutcome, paramWarnings, runNotes } from "./shared";
+import { scenarioSources } from "./sources";
 import type { RunCompare, RunPayload, ToolDeps, ToolOutcome } from "./types";
 
 export const RunSimulationInput = z.strictObject({});
@@ -92,6 +93,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
     compare,
     ...(applied ? { applied } : {}),
     ...(replicates ? { replicates } : {}),
+    sources: scenarioSources(deps.scenario, deps.contextText),          // follow-up spec 8.4: of the configured values, not the effective ones
   };
   return {
     content: JSON.stringify({

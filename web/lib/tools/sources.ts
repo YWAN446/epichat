@@ -4,7 +4,7 @@
  * consensus, an illustrative spread the configure tool computed, the
  * registry default, or else the user.
  */
-import { lookup, type DiseaseEntry } from "@/lib/disease/db";
+import { detectDisease, lookup, type DiseaseEntry } from "@/lib/disease/db";
 import { countryDemographics } from "@/lib/data/countryDemographics";
 import { CONTACT_PAIRS, DEFAULT_BETA, approxR0, type SimParams } from "@/lib/sim/params";
 import { flattenParams } from "@/lib/sim/paths";
@@ -18,6 +18,8 @@ export type DbRange = { min: number | null; max: number | null; typical: number 
 const DAYS_PER_UNIT: Record<string, number> = { days: 1, weeks: 7, months: 30.44, years: 365.25 };
 /** How close a configured R0 must be to the database typical to count as the database's. */
 const R0_TOLERANCE = 0.01;
+/** Follow-up spec 4.5: the coefficient of variation the agent offers is an assumption, not a value the user knows. */
+export const ILLUSTRATIVE_CV = 1;
 
 /** The database consensus for a registry db_field in simulation units: fractions of 1 and days. */
 export function dbRange(entry: DiseaseEntry | null, dbField: string | null): DbRange | null {
@@ -105,5 +107,15 @@ export function valueSources(p: SimParams, scenario: Scenario, disease: string |
       out[`disease.${name}.dist`] = "illustrative";
     }
   }
+  if (near(p.disease.rel_sus_cv, ILLUSTRATIVE_CV)) out["disease.rel_sus_cv"] = "illustrative";
   return out;
+}
+
+/**
+ * The sources of the scenario's own parameters, for the payloads that carry them (follow-up spec 8.4): the panel tags each row
+ * with where its value came from. Empty before a scenario is configured.
+ */
+export function scenarioSources(scenario: Scenario, contextText: string): Record<string, ParamSource> {
+  if (!scenario.params) return {};
+  return valueSources(scenario.params, scenario, scenario.disease ?? detectDisease(contextText || ""));
 }

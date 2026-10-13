@@ -5,6 +5,7 @@ import { countryDemographics, sharesFor } from "@/lib/data/countryDemographics";
 import { CONTACT_PAIRS, approxR0, recalibrateBeta, validateParams } from "@/lib/sim/params";
 import { pyRound } from "@/lib/sim/pyformat";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, paramWarnings, recordSources } from "./shared";
+import { scenarioSources } from "./sources";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 export const FetchDemographicsInput = z.strictObject({ country_iso3: z.string() });
@@ -103,7 +104,7 @@ export async function fetchDemographics(input: FetchDemographicsArgs, deps: Tool
     const approx_r0 = pyRound(approxR0(params), 2);
     return {
       content: JSON.stringify({ applied, approx_r0, warnings, citations }),
-      payload: { kind: "data", source, iso3, applied, citations, warnings, approx_r0, params },
+      payload: { kind: "data", source, iso3, applied, citations, warnings, approx_r0, params, sources: scenarioSources(scenario, deps.contextText) },
     };
   } catch (error) {
     return errorOutcome(`FETCH ERROR: ${errorMessage(error)}`);

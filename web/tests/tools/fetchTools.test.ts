@@ -232,3 +232,13 @@ describe("the routine-immunization indicators (follow-up spec 7.2)", () => {
     expect(Object.keys(GHO_CODES)).toContain("measles");
   });
 });
+
+describe("the fetch tools send where each value came from (follow-up spec 8.4)", () => {
+  it("tags what a fetch wrote as fetched, on the payload that carries the parameters", async () => {
+    const deps = await configured(makeDeps({ unWpp: [rf("birth_rate", 28.1), rf("death_rate", 7.9), rf("total_population", 55_000_000)] }), { disease: "measles", dur_inf_days: 8, country_iso3: "KEN" });
+    const out = await fetchDemographics({ country_iso3: "KEN" } as never, deps);
+    const payload = out.payload as { sources?: Record<string, string>; params?: unknown };
+    expect(payload.params).toBeDefined();
+    expect(payload.sources).toMatchObject({ "demographics.birth_rate": "fetch", "demographics.death_rate": "fetch", "disease.dur_inf.mean_days": "database" });
+  });
+});

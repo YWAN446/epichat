@@ -605,3 +605,17 @@ describe("configure_simulation with routine immunity and a campaign on top of it
     expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.85);                  // nothing was written
   });
 });
+
+describe("configure_simulation sends where each value came from (follow-up spec 8.4)", () => {
+  it("carries sources beside the parameters", async () => {
+    const deps = makeDeps();
+    const out = await run(deps, { disease: "measles", dur_inf_days: 8, n_agents: 5000, advanced: { "disease.rel_sus_cv": 1 } });   // 8 days is the database's typical value
+    const payload = out.payload as { sources?: Record<string, string>; params?: unknown };
+    expect(payload.params).toBeDefined();
+    expect(payload.sources).toMatchObject({ "run.n_agents": "user", "disease.dur_inf.mean_days": "database", "run.sim_dur_years": "default", "disease.rel_sus_cv": "illustrative" });
+    const typed = await run(deps, { advanced: { "disease.rel_sus_cv": 0.7 } });
+    expect((typed.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBe("user");   // not the offered value: the user's own
+    const none = await run(deps, { advanced: { "disease.rel_sus_cv": 0 } });
+    expect((none.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBe("default");
+  });
+});

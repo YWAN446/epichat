@@ -113,3 +113,19 @@ describe("deriveArtifacts and the memory", () => {
     expect(deriveArtifacts([...turns, { id: "t3", blocks: [result("configure_simulation", CONFIG(true))] }]).memoryWrites).toBe(2);
   });
 });
+
+describe("the sources follow the parameters (follow-up spec 8.4)", () => {
+  it("come from the payload that gave the parameters, and are none for a payload stored before them", () => {
+    const stats = { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366 };
+    const config = (sources?: Record<string, string>, fresh = false) => ({ kind: "config" as const, applied: {}, approx_r0: 2, config: { disease: null, disease_type: "sir", country: null, n_agents: 10000, sim_dur_years: 1, dur_inf: 10, dur_exp: null, interventions: [] }, warnings: [], new_scenario: fresh, params: params({}), ...(sources ? { sources } : {}) });
+    const block = (name: string, payload: unknown) => ({ kind: "tool_result" as const, id: name, name, ok: true, payload } as never);
+    const run = { kind: "run" as const, run_id: "r", stats, stats_agents: stats, attack_rate_pct: 1, pop_scale: 1, population: 10000, effective_params: params({}), warnings: [], repairs: [], data_sources: [], duration_ms: 1, cold_start: false, sources: { "run.n_agents": "default" } };
+    expect(emptyArtifacts().sources).toBeNull();
+    expect(deriveArtifacts([{ id: "t1", blocks: [block("configure_simulation", config({ "disease.beta": "user" }))] }]).sources).toEqual({ "disease.beta": "user" });
+    expect(deriveArtifacts([{ id: "t1", blocks: [block("configure_simulation", config({ "disease.beta": "user" })), block("run_simulation", run)] }]).sources).toEqual({ "run.n_agents": "default" });
+    expect(deriveArtifacts([{ id: "t1", blocks: [block("configure_simulation", config({ "disease.beta": "user" })), block("configure_simulation", config())] }]).sources).toBeNull();
+    const data = { kind: "data" as const, source: "un_wpp" as const, iso3: "KEN", applied: {}, citations: [], params: params({}), sources: { "demographics.birth_rate": "fetch" } };
+    expect(deriveArtifacts([{ id: "t1", blocks: [block("configure_simulation", config({ "disease.beta": "user" })), block("fetch_demographics", data)] }]).sources).toEqual({ "demographics.birth_rate": "fetch" });
+    expect(deriveArtifacts([{ id: "t1", blocks: [block("configure_simulation", config({ "disease.beta": "user" })), block("fetch_demographics", { ...data, params: undefined })] }]).sources).toEqual({ "disease.beta": "user" });
+  });
+});

@@ -34,6 +34,8 @@ export type Artifacts = {
    * their first run.
    */
   params: SimParams | null;
+  /** Where each of those values came from (follow-up spec 8.4), from the payload that gave them; null for payloads stored before the sources. */
+  sources: Record<string, string> | null;
   /** Every successful run of the conversation, oldest first. */
   runs: RunArtifact[];
   /** Every tool and web step, in order. */
@@ -45,7 +47,7 @@ export type Artifacts = {
 };
 
 export function emptyArtifacts(): Artifacts {
-  return { disease: null, config: null, data: [], params: null, runs: [], activity: [], report: null, memoryWrites: 0 };
+  return { disease: null, config: null, data: [], params: null, sources: null, runs: [], activity: [], report: null, memoryWrites: 0 };
 }
 
 export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artifacts {
@@ -70,6 +72,7 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
       else if (payload.kind === "config") {
         out.config = payload;
         out.params = coerceParams(payload.params ?? null);
+        out.sources = out.params ? (payload.sources ?? null) : null;
         if (payload.new_scenario) {
           out.data = [];
           out.report = null;
@@ -77,11 +80,17 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
       } else if (payload.kind === "data") {
         out.data.push(payload);
         const p = coerceParams(payload.params ?? null);
-        if (p) out.params = p;
+        if (p) {
+          out.params = p;
+          out.sources = payload.sources ?? null;
+        }
       } else if (payload.kind === "run") {
         const effective = coerceParams(payload.effective_params);
         out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload: effective ? { ...payload, effective_params: effective } : payload });
-        if (effective) out.params = effective;
+        if (effective) {
+          out.params = effective;
+          out.sources = payload.sources ?? null;
+        }
       }
       else if (payload.kind === "report") out.report = payload;
       else if (payload.kind === "memory") out.memoryWrites += 1;

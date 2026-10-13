@@ -10,7 +10,7 @@ import { configView } from "./configView";
 import { durationFor, type DurationName } from "./durations";
 import { matchedLevers } from "./options";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
-import { near } from "./sources";
+import { near, scenarioSources } from "./sources";
 import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
 
 const opt = <T extends z.ZodTypeAny>(t: T) => t.nullish();
@@ -327,6 +327,6 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   const config = configView(params, scenario.disease);
   return {
     content: JSON.stringify({ applied, changed, approx_r0, config, warnings }),
-    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario, params },
+    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario, params, sources: scenarioSources(scenario, deps.contextText) },
   };
 }
