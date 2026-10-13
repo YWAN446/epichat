@@ -92,6 +92,8 @@ export type RunPayload = {
   diagnostics?: Diagnostic[];
   /** Spec 11: against the previous run, or null for the scenario's first run. */
   compare?: RunCompare | null;
+  /** Part 2, 5.7: beta_calibrated_by_measurement when the service corrected beta to the measured R0. */
+  applied?: Record<string, unknown>;
 };
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
 /** A remember call (profile spec, section 9). */

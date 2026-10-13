@@ -53,6 +53,8 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
 
   scenario.hasRun = true;
   scenario.reportCurrent = false; // the report, if any, no longer covers this run
+  // Part 2, 5.7: the service corrected beta to the measured R0 on an approximate network.
+  const applied = result.stats.r0_calibration ? { beta_calibrated_by_measurement: result.effective_params.disease.beta } : undefined;
   const agents = result.stats_agents;
   const n = agents.n_agents || params.run.n_agents || 1;
   // Agent counts: the scaled total over the real population is the same ratio.
@@ -80,12 +82,13 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
     series: result.series,
     diagnostics,
     compare,
+    ...(applied ? { applied } : {}),
     ...(replicates ? { replicates } : {}),
   };
   return {
     content: JSON.stringify({
       stats: result.stats, attack_rate_pct, pop_scale, effective_params: result.effective_params,
-      warnings, repairs: result.repairs, data_sources: sources, diagnostics, compare, ...(replicates ? { replicates } : {}),
+      warnings, repairs: result.repairs, data_sources: sources, diagnostics, compare, ...(applied ? { applied } : {}), ...(replicates ? { replicates } : {}),
     }),
     payload,
   };

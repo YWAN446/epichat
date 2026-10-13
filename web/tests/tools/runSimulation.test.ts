@@ -150,3 +150,20 @@ describe("run_simulation: diagnostics and the comparison", () => {
     expect(body.compare.stats_delta).toEqual({ peak_infections: 100 * 4260, peak_day: 5, total_infected: 1000 * 4260, total_deaths: 2 * 4260 });
   });
 });
+
+describe("run_simulation and the measured-R0 calibration (Part 2, 5.7)", () => {
+  it("notes the beta the service calibrated to the measured R0", async () => {
+    const result = success();
+    result.stats = { ...result.stats, r0_measured: 2.4, r0_calibration: { target: 2.5, measured: 2.4, corrections: 2 } };
+    result.effective_params = { ...result.effective_params, disease: { ...result.effective_params.disease, beta: 31.25 } };
+    const deps = makeDeps({ simulate: result, runId: "run-1" });
+    deps.scenario.params = params({ disease_type: "sir" });
+    const out = await runSimulation({}, deps);
+    expect((out.payload as { applied?: Record<string, unknown> }).applied).toEqual({ beta_calibrated_by_measurement: 31.25 });
+    expect(JSON.parse(out.content).applied).toEqual({ beta_calibrated_by_measurement: 31.25 });
+    const other = makeDeps({ simulate: success(), runId: "run-2" });
+    other.scenario.params = params({ disease_type: "sir" });
+    const plain = await runSimulation({}, other);
+    expect((plain.payload as { applied?: unknown }).applied).toBeUndefined();
+  });
+});

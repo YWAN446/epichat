@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { getTreatment, getVaccine } from "@/lib/sim/params";
+import { approxR0, getTreatment, getVaccine } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
-import { fetchDemographics } from "@/lib/tools/fetchDemographics";
+import { BUNDLED_HOUSEHOLDS, BUNDLED_MATRICES, BUNDLED_PYRAMID, fetchDemographics } from "@/lib/tools/fetchDemographics";
 import { fetchHealthSystem } from "@/lib/tools/fetchHealthSystem";
 import { fetchVaccinationCoverage } from "@/lib/tools/fetchVaccinationCoverage";
 import { makeDeps, rf } from "./helpers";
@@ -24,13 +24,13 @@ describe("fetch_demographics", () => {
     const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", n_agents: 50000 });
     const out = JSON.parse((await fetchDemographics({ country_iso3: "ken" }, deps)).content);
     const p = deps.scenario.params!;
-    expect(p.demographics.age_pct_under18).toBe(38.6);
+    expect(p.demographics.age_pct_under18).toBe(43.9);                  // the bundled WPP 2024 share overrides the API's broad groups
     expect(p.network.network_type).toBe("age_structured");
     expect(deps.scenario.totalPopulation).toBe(213_000_000);
     expect(p.demographics.birth_rate).toBe(12.3);
     expect(p.demographics.use_demographics).toBe(true);
     expect(p.demographics.country).toBe("KEN");
-    expect(deps.scenario.dataSources).toHaveLength(4);
+    expect(deps.scenario.dataSources).toHaveLength(6);                   // the API's four, the pyramid replacing its age groups, plus the household size and the matrix
     expect(out.citations[0]).toContain("UN WPP");
     expect(out.applied.total_population).toBe(213_000_000);
     expect(deps.queries[0]).toEqual({ source: "un_wpp", indicators: [55, 59, 71, 49], locationId: 404 });
@@ -40,7 +40,7 @@ describe("fetch_demographics", () => {
     const deps = await configured(makeDeps({ unWpp: [], fallback: { birth_rate: 27.3, death_rate: 7.2, source: "UN WPP 2024 — KEN (2022)" } }), { disease: "dengue" });
     const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
     expect(deps.scenario.params?.demographics.birth_rate).toBe(27.3);
-    expect(JSON.parse(out.content).citations).toEqual(["UN WPP 2024 — KEN (2022)", "UN WPP 2024 — KEN (2022)"]);
+    expect(JSON.parse(out.content).citations).toEqual(["UN WPP 2024 — KEN (2022)", "UN WPP 2024 — KEN (2022)", BUNDLED_PYRAMID, BUNDLED_HOUSEHOLDS, BUNDLED_MATRICES]);
     expect(out.payload).toMatchObject({ kind: "data", source: "sim_fallback", iso3: "KEN" });
   });
 
@@ -78,14 +78,17 @@ describe("fetch_demographics", () => {
     expect(out.warnings.some((w: string) => w.includes("outside the literature range"))).toBe(true);
   });
 
-  it("applies partial fields without switching the network", async () => {
+  it("applies partial API fields; the bundled pyramid still switches the network and the R0 is held", async () => {
     const deps = await configured(makeDeps({ unWpp: [kenya[2], kenya[3]] }), { disease: "dengue", r0: 3 });
     const beta = deps.scenario.params!.disease.beta;
     const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
-    expect(deps.scenario.params!.network.network_type).toBe("random");
-    expect(deps.scenario.params!.disease.beta).toBe(beta);
-    expect(deps.scenario.params!.demographics.use_demographics).toBe(true);
-    expect(out.applied).toEqual({ birth_rate: 12.3, death_rate: 7.1 });
+    const p = deps.scenario.params!;
+    expect(p.network.network_type).toBe("age_structured");
+    expect(p.disease.beta).not.toBe(beta);
+    expect(approxR0(p)).toBeCloseTo(3, 6);
+    expect(p.demographics.use_demographics).toBe(true);
+    expect(Object.keys(out.applied).sort()).toEqual(["age_source", "age_structure_pct", "beta_recalibrated_to_hold_r0", "birth_rate", "contact_matrix", "death_rate", "household_size", "network_type"]);
+    expect(out.applied.birth_rate).toBe(12.3);
     expect(deps.scenario.totalPopulation).toBeNull();
   });
 
@@ -165,5 +168,45 @@ describe("fetch_vaccination_coverage", () => {
     expect(failed.content).toBe("FETCH ERROR: boom");
     const empty = await configured(makeDeps({ whoGho: [] }), { disease: "measles" });
     expect((await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "measles" }, empty)).content).toBe("FETCH ERROR: no vaccination data returned for BRA");
+  });
+});
+
+describe("fetch_demographics with the bundled tables (Part 2, 5.3, 5.4, 6.1)", () => {
+  const kenya = [
+    rf("age_distribution_pct", { "0-17": 38.6, "18-64": 57.6, "65+": 3.8 }, "UN WPP 2024, Kenya (KEN), 2024"),
+    rf("birth_rate", 12.3, "UN WPP 2024"),
+    rf("death_rate", 7.1, "UN WPP 2024"),
+  ];
+
+  it("applies the bundled pyramid shares, household size and contact matrix, holding the confirmed R0", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", r0: 2.5 });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    const p = deps.scenario.params!;
+    expect(p.demographics.age_source).toBe("un_wpp");
+    expect(p.demographics.age_pct_under18).not.toBe(38.6);                                  // the bundled WPP 2024 share, not the API's
+    expect(p.demographics.age_pct_under18! + p.demographics.age_pct_18_64! + p.demographics.age_pct_over65!).toBeCloseTo(100, 0);
+    expect(p.network.network_type).toBe("age_structured");
+    expect(p.network.household_size).toBeGreaterThan(3);
+    expect(p.network.contacts_source).toBe("prem_2021:KEN");
+    expect(p.network.contacts.adults_adults).not.toBe(9);
+    expect(out.applied.contact_matrix).toBe("prem_2021:KEN");
+    expect(out.applied.household_size).toBe(p.network.household_size);
+    expect(out.applied.age_source).toBe("un_wpp");
+    expect(out.applied.beta_recalibrated_to_hold_r0).toBe(2.5);
+    expect(approxR0(p)).toBeCloseTo(2.5, 6);
+  });
+
+  it("keeps a hybrid network and leaves the matrix alone for a country without a bundled matrix", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", network_type: "hybrid" });
+    await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(deps.scenario.params!.network.network_type).toBe("hybrid");
+    const tiny = [rf("birth_rate", 9.1, "UN WPP 2024"), rf("death_rate", 8.2, "UN WPP 2024")];
+    const other = await configured(makeDeps({ unWpp: tiny }), { disease: "dengue" });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "AIA" }, other)).content);    // Anguilla: a pyramid, no Prem matrix or household row
+    expect(other.scenario.params!.network.contacts_source).toBe("polymod_default");
+    expect(other.scenario.params!.network.network_type).toBe("age_structured");
+    expect(other.scenario.params!.demographics.birth_rate).toBe(9.1);
+    expect(out.applied.contact_matrix).toBeUndefined();
+    expect(out.applied.household_size).toBeUndefined();
   });
 });

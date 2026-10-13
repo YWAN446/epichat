@@ -49,6 +49,8 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
         vaccine_start_day: int("Day the vaccination campaign begins. 0 (the\ndefault) means pre-existing immunity at the start rather than\na campaign. Requires vaccine_coverage."),
         treatment_capacity: int("Daily treatment capacity; adds/updates the\ntreatment intervention."),
         seasonality_scale: num("Seasonal forcing amplitude 0-1; adds/updates\nthe seasonality intervention."),
+        network_type: str("Contact network: random (fresh contacts daily; overstates the final size), age_structured (three age groups by a contact matrix) or hybrid (households, schools, workplaces, community)."),
+        household_size: num("Mean household size for the hybrid network (people)."),
         advanced: {
           type: ["object", "null"],
           description: 'Any other parameter by its registry path, for example {"disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4} or {"run.n_replicates": 5}. Applied with the fields above and validated once; a CONFIG ERROR names the path. Interventions are not set here.',

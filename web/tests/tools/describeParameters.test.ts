@@ -66,7 +66,7 @@ describe("describe_parameters", () => {
     let p = byPath(await describe_(deps, { module: "demographics" }));
     expect(p["demographics.birth_rate"]).toMatchObject({ current: 27.3, source: "fetch" });
     expect(p["demographics.use_demographics"].source).toBe("fetch");
-    expect(p["demographics.age_pct_under18"]).toMatchObject({ current: 38.6, source: "fetch" });
+    expect(p["demographics.age_pct_under18"]).toMatchObject({ current: 43.9, source: "fetch" });
     expect(p["demographics.country"]).toMatchObject({ current: "KEN", source: "user" });
     expect(p["disease.beta"]).toBeUndefined();
     expect(byPath(await describe_(deps, { module: "network" }))["network.network_type"]).toMatchObject({ current: "age_structured", source: "fetch" });

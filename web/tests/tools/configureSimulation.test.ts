@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getVaccine } from "@/lib/sim/params";
+import { approxR0, getVaccine } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
 import { emptyScenario } from "@/lib/tools/types";
 import { makeDeps, params } from "./helpers";
@@ -290,5 +290,32 @@ describe("configure_simulation and the fatality by age", () => {
     expect(out.warnings.some((w: string) => w.startsWith("Fatality rate 0.1%"))).toBe(true);
     const withElderly = JSON.parse((await run(deps, { advanced: { "demographics.age_pct_under18": 40, "demographics.age_pct_18_64": 50, "demographics.age_pct_over65": 10 } })).content);
     expect(withElderly.warnings.some((w: string) => w.startsWith("Fatality rate"))).toBe(false); // 0.9 × 0.1% + 0.1 × 50% = 5.09%
+  });
+});
+
+describe("configure_simulation network fields (Part 2, 5.9)", () => {
+  it("sets the network type and household size as fields and holds the confirmed R0 across the switch", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", r0: 3 });
+    const before = deps.scenario.params!;
+    const out = JSON.parse((await run(deps, { network_type: "hybrid", household_size: 4 })).content);
+    const p = deps.scenario.params!;
+    expect(p.network.network_type).toBe("hybrid");
+    expect(p.network.household_size).toBe(4);
+    expect(out.applied.network_type).toBe("hybrid");
+    expect(out.applied.beta_recalibrated_to_hold_r0).toBe(3);
+    expect(approxR0(p)).toBeCloseTo(3, 6);
+    expect(p.disease.beta).not.toBe(before.disease.beta);
+    const bad = await run(deps, { network_type: "cluster" });
+    expect(bad.isError).toBe(true);
+    expect(bad.content).toContain("network_type");
+  });
+
+  it("marks the ages as user shares when the advanced patch edits a share", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", advanced: { "demographics.age_source": "un_wpp", "demographics.age_pct_under18": 40, "demographics.age_pct_18_64": 50, "demographics.age_pct_over65": 10 } });
+    expect(deps.scenario.params!.demographics.age_source).toBe("un_wpp");
+    await run(deps, { advanced: { "demographics.age_pct_over65": 12, "demographics.age_pct_18_64": 48 } });
+    expect(deps.scenario.params!.demographics.age_source).toBe("shares");
   });
 });

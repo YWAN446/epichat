@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { detectDisease } from "@/lib/disease/db";
-import { R0UnreachableError, approxR0, validateParams, withR0, type Duration, type SimParams } from "@/lib/sim/params";
+import { R0UnreachableError, approxR0, recalibrateBeta, validateParams, withR0, type Duration, type SimParams } from "@/lib/sim/params";
 import { changedPaths, type PathChange } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
 import { applyAdvanced } from "./advanced";
@@ -31,6 +31,8 @@ export const ConfigureSimulationInput = z.strictObject({
   vaccine_start_day: opt(z.number()),
   treatment_capacity: opt(z.number()),
   seasonality_scale: opt(z.number()),
+  network_type: opt(z.string()),
+  household_size: opt(z.number()),
   advanced: opt(z.record(z.string(), z.unknown())),
   start_new_scenario: opt(z.boolean()),
 });
@@ -67,6 +69,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   const disease = block(base, "disease");
   const run = block(base, "run");
   const demographics = block(base, "demographics");
+  const network = block(base, "network");
   const applied: Obj = {};
 
   if (given(input.disease)) {
@@ -115,6 +118,14 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     demographics.country = input.country_iso3;
     applied.country = input.country_iso3;
   }
+  if (given(input.network_type)) {
+    network.network_type = input.network_type;
+    applied.network_type = input.network_type;
+  }
+  if (given(input.household_size)) {
+    network.household_size = input.household_size;
+    applied.household_size = input.household_size;
+  }
 
   let interventions = [...((base.interventions as Obj[] | undefined) ?? [])];
   if (given(input.vaccine_coverage) || given(input.vaccine_start_day)) {
@@ -151,11 +162,28 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     const problem = applyAdvanced(base, input.advanced);
     if (problem) return errorOutcome(`CONFIG ERROR: ${problem}`);
     Object.assign(applied, input.advanced); // flat, by path, so the chat line reads them like the fields
+    // Part 2, 6.1: a share the user edits is theirs; the builder draws uniform ages within the shares from then on.
+    const keys = Object.keys(input.advanced);
+    if (keys.some((k) => k.startsWith("demographics.age_pct_")) && !keys.includes("demographics.age_source")) (base.demographics as Obj).age_source = "shares";
   }
 
   const validated = validateParams(base);
   if (!validated.ok) return errorOutcome(`CONFIG ERROR: ${validated.error}`);
   let params: SimParams = validated.params;
+  if (before && !given(input.r0)) {
+    // Part 2, 5.9: a network or age-share change alters what R0 a beta implies; hold the R0 the user confirmed when the new network can carry it.
+    const r0Before = approxR0(before);
+    const formulaInputsChanged = changedPaths(before as unknown as Obj, params as unknown as Obj).some((c) => c.path.startsWith("network.") || c.path.startsWith("demographics.age_"));
+    if (formulaInputsChanged && Math.abs(approxR0(params) - r0Before) > 1e-9 * Math.max(1, r0Before)) {
+      const held = recalibrateBeta(params, r0Before, before);
+      if (held.disease.beta !== params.disease.beta) {
+        params = held;
+        applied.beta_recalibrated_to_hold_r0 = pyRound(r0Before, 2);
+      } else {
+        applied.r0_unreachable_on_new_network = pyRound(r0Before, 2);
+      }
+    }
+  }
   if (given(input.r0)) {
     try {
       params = withR0(params, input.r0);

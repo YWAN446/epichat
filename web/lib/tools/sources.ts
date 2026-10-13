@@ -5,7 +5,8 @@
  * registry default, or else the user.
  */
 import { lookup, type DiseaseEntry } from "@/lib/disease/db";
-import { DEFAULT_BETA, approxR0, type SimParams } from "@/lib/sim/params";
+import { countryDemographics } from "@/lib/data/countryDemographics";
+import { CONTACT_PAIRS, DEFAULT_BETA, approxR0, type SimParams } from "@/lib/sim/params";
 import { flattenParams } from "@/lib/sim/paths";
 import { PARAM_REGISTRY } from "@/lib/sim/registry";
 import { illustrativeSd } from "./durations";
@@ -43,6 +44,13 @@ export function near(a: unknown, b: unknown): boolean {
 
 const sourceValue = (scenario: Scenario, field: string) => scenario.dataSources.find((f) => f.field === field)?.value;
 const ages = (scenario: Scenario) => sourceValue(scenario, "age_distribution_pct") as Record<string, number> | undefined;
+const bundledAges = (scenario: Scenario) => scenario.dataSources.find((f) => f.field === "age_distribution_pct")?.citation.includes("bundled") ?? false;
+/** The nine matrix cells fetch_demographics applied from the bundled Prem table, when it did. */
+const bundledContacts = (scenario: Scenario): number[] | undefined => {
+  const source = sourceValue(scenario, "contact_matrix");
+  const iso3 = typeof source === "string" ? source.split(":")[1] : undefined;
+  return iso3 ? (countryDemographics(iso3)?.contacts ?? undefined) : undefined;
+};
 
 /** What each fetch tool writes, by path (lib/tools/fetch*.ts): the value is a fetch only while it still equals what was fetched. */
 const FETCHED: Record<string, (scenario: Scenario) => unknown> = {
@@ -53,6 +61,10 @@ const FETCHED: Record<string, (scenario: Scenario) => unknown> = {
   "demographics.age_pct_18_64": (s) => ages(s)?.["18-64"],
   "demographics.age_pct_over65": (s) => ages(s)?.["65+"],
   "network.network_type": (s) => (ages(s) === undefined ? undefined : "age_structured"),
+  "demographics.age_source": (s) => (bundledAges(s) ? "un_wpp" : undefined),
+  "network.household_size": (s) => sourceValue(s, "household_size"),
+  "network.contacts_source": (s) => sourceValue(s, "contact_matrix"),
+  ...Object.fromEntries(CONTACT_PAIRS.map((pair, i) => [`network.contacts.${pair}`, (s: Scenario) => bundledContacts(s)?.[i]])),
   "disease.initial_immune_frac": (s) => {
     const coverage = s.dataSources.find((f) => f.field.endsWith("_coverage"));
     return coverage ? Math.min(0.99, Number(coverage.value) / 100) : undefined;
