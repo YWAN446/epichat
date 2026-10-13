@@ -133,3 +133,33 @@ def test_age_multipliers_fatality_by_age_and_exposed_transmissibility_default_an
         SimParamsV2.model_validate({"disease": {"p_death_age": {"adults": 1.5}}})
     with pytest.raises(ValidationError):
         SimParamsV2.model_validate({"disease": {"model": "seir", "dur_exp": {"mean_days": 5}, "rel_trans_exposed": -0.1}})
+
+
+def test_network_leaves_default_and_round_trip():
+    from epichat.params.schema_v2 import ContactMatrix
+    p = v2()
+    n = p.network
+    assert n.network_type == "random" and n.contacts_dist == "constant" and n.contact_duration_days == 0.0 and n.contacts_source == "polymod_default"
+    assert n.contacts.as_rows() == [[7.0, 2.5, 0.5], [2.5, 9.0, 1.5], [0.5, 1.5, 3.5]]
+    assert (n.household_size, n.school_contacts, n.work_contacts, n.community_contacts) == (2.0, 20, 16, 20)
+    assert (n.layer_beta.household, n.layer_beta.school, n.layer_beta.work, n.layer_beta.community) == (3.0, 0.6, 0.6, 0.3)
+    assert (n.school_age_min, n.school_age_max, n.work_age_min, n.work_age_max) == (6, 22, 22, 65)
+    assert p.demographics.age_source == "default" and p.run.calibrate_r0 is True
+    hybrid = v2(network={"network_type": "hybrid", "household_size": 4.5, "contacts": {"adults_adults": 12.0}})
+    assert hybrid.network.household_size == 4.5 and hybrid.network.contacts.adults_adults == 12.0 and hybrid.network.contacts.children_children == 7.0
+    assert ContactMatrix.from_rows([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).as_rows() == [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]
+
+
+def test_network_bounds_and_age_ranges_are_checked():
+    with pytest.raises(ValidationError):
+        v2(network={"household_size": 0.5})
+    with pytest.raises(ValidationError):
+        v2(network={"contacts": {"adults_adults": 60.0}})
+    with pytest.raises(ValidationError, match="school_age_min"):
+        v2(network={"school_age_min": 22, "school_age_max": 22})
+    with pytest.raises(ValidationError, match="work_age_min"):
+        v2(network={"work_age_min": 70, "work_age_max": 65})
+    with pytest.raises(ValidationError):
+        v2(network={"network_type": "cluster"})
+    with pytest.raises(ValidationError):
+        v2(demographics={"age_source": "census"})

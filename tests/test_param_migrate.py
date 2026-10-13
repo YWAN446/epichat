@@ -19,7 +19,7 @@ def test_durations_become_constant_and_seed_keeps_init_prev():
     assert p.disease.dur_inf.model_dump() == {"mean_days": 7.0, "dist": "constant", "sd_days": None}
     assert p.disease.dur_exp.mean_days == 4.0 and p.disease.dur_immune.mean_days == 90.0
     assert p.disease.seed.model_dump() == {"mode": "fraction", "value": 0.02, "day": 0}
-    assert p.run.model_dump() == {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 9, "n_replicates": 1}
+    assert p.run.model_dump() == {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 9, "n_replicates": 1, "calibrate_r0": True}
     assert p.disease.p_death == 0.1 and p.disease.sis_waning == 0.0 and p.disease.initial_immune_frac == 0.0
 
 

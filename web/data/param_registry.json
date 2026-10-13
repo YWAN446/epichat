@@ -1,5 +1,5 @@
 {
- "version": 2,
+ "version": 3,
  "params": [
   {
    "path": "disease.model",
@@ -689,19 +689,20 @@
    "path": "network.network_type",
    "module": "network",
    "label": "Contact network",
-   "description": "random: everyone has n_contacts random contacts; age_structured: three age groups mixing by a POLYMOD-like matrix.",
+   "description": "random: everyone has n_contacts fresh random contacts a day, which overstates the final size; age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's Prem 2021 matrix after fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, with limited, repeated contacts.",
    "kind": "enum",
    "unit": null,
    "default": "random",
    "bounds": null,
    "choices": [
     "random",
-    "age_structured"
+    "age_structured",
+    "hybrid"
    ],
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.RandomNet or ss.MixingPools",
+   "starsim_target": "ss.RandomNet, ss.MixingPools or ss.HybridNet",
    "affects": [
     "peak",
     "final_size"
@@ -712,7 +713,7 @@
    "path": "network.n_contacts",
    "module": "network",
    "label": "Contacts per day",
-   "description": "Mean number of contacts per person per day on the random network.",
+   "description": "Mean number of contacts per person per day on the random network; no effect on the age-structured and hybrid networks.",
    "kind": "integer",
    "unit": "per day",
    "default": 4,
@@ -725,6 +726,51 @@
    "tier": "core",
    "db_field": "average_contacts_daily",
    "starsim_target": "ss.RandomNet(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts_dist",
+   "module": "network",
+   "label": "Contacts distribution",
+   "description": "constant: everyone has exactly n_contacts a day; poisson: the daily number varies around n_contacts. Random network only; the R0 is unchanged.",
+   "kind": "enum",
+   "unit": null,
+   "default": "constant",
+   "bounds": null,
+   "choices": [
+    "constant",
+    "poisson"
+   ],
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.RandomNet(n_contacts=ss.constant or ss.poisson)",
+   "affects": [
+    "stochasticity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contact_duration_days",
+   "module": "network",
+   "label": "Contact duration",
+   "description": "Days a random-network contact lasts before it is replaced; 0 remakes every contact daily. Longer contacts slow spread by local depletion, so the R0 shown is approximate and the measured R0 is the one to quote.",
+   "kind": "number",
+   "unit": "days",
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    365.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.RandomNet(dur=ss.days(...))",
    "affects": [
     "peak",
     "final_size"
@@ -751,6 +797,502 @@
    "affects": [
     "peak",
     "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.children_children",
+   "module": "network",
+   "label": "Contacts, children (under 18) to children (under 18)",
+   "description": "Contacts per day a target among the children (under 18) has with sources among the children (under 18) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 7.0,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.children_adults",
+   "module": "network",
+   "label": "Contacts, children (under 18) to adults (18 to 64)",
+   "description": "Contacts per day a target among the adults (18 to 64) has with sources among the children (under 18) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 2.5,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.children_elderly",
+   "module": "network",
+   "label": "Contacts, children (under 18) to elderly (65 and over)",
+   "description": "Contacts per day a target among the elderly (65 and over) has with sources among the children (under 18) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 0.5,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.adults_children",
+   "module": "network",
+   "label": "Contacts, adults (18 to 64) to children (under 18)",
+   "description": "Contacts per day a target among the children (under 18) has with sources among the adults (18 to 64) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 2.5,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.adults_adults",
+   "module": "network",
+   "label": "Contacts, adults (18 to 64) to adults (18 to 64)",
+   "description": "Contacts per day a target among the adults (18 to 64) has with sources among the adults (18 to 64) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 9.0,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.adults_elderly",
+   "module": "network",
+   "label": "Contacts, adults (18 to 64) to elderly (65 and over)",
+   "description": "Contacts per day a target among the elderly (65 and over) has with sources among the adults (18 to 64) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 1.5,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.elderly_children",
+   "module": "network",
+   "label": "Contacts, elderly (65 and over) to children (under 18)",
+   "description": "Contacts per day a target among the children (under 18) has with sources among the elderly (65 and over) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 0.5,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.elderly_adults",
+   "module": "network",
+   "label": "Contacts, elderly (65 and over) to adults (18 to 64)",
+   "description": "Contacts per day a target among the adults (18 to 64) has with sources among the elderly (65 and over) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 1.5,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts.elderly_elderly",
+   "module": "network",
+   "label": "Contacts, elderly (65 and over) to elderly (65 and over)",
+   "description": "Contacts per day a target among the elderly (65 and over) has with sources among the elderly (65 and over) on the age-structured network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+   "kind": "number",
+   "unit": "per day",
+   "default": 3.5,
+   "bounds": [
+    0.0,
+    50.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.contacts_source",
+   "module": "network",
+   "label": "Contact matrix source",
+   "description": "Where the contact matrix came from: polymod_default (European), prem_2021:<ISO3> (the country's synthetic matrix) or user.",
+   "kind": "string",
+   "unit": null,
+   "default": "polymod_default",
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "expert",
+   "db_field": null,
+   "starsim_target": "fetch_demographics",
+   "affects": [],
+   "requires": []
+  },
+  {
+   "path": "network.household_size",
+   "module": "network",
+   "label": "Household size",
+   "description": "Mean household size on the hybrid network (Poisson); the country's value after fetch_demographics.",
+   "kind": "number",
+   "unit": "people",
+   "default": 2.0,
+   "bounds": [
+    1.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "core",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(household_size=ss.poisson(...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.school_contacts",
+   "module": "network",
+   "label": "School contacts",
+   "description": "Mean daily contacts in the school layer of the hybrid network (Covasim's value, illustrative).",
+   "kind": "integer",
+   "unit": "per day",
+   "default": 20,
+   "bounds": [
+    0,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(contacts=dict(s=...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.work_contacts",
+   "module": "network",
+   "label": "Workplace contacts",
+   "description": "Mean daily contacts in the workplace layer of the hybrid network (Covasim's value, illustrative).",
+   "kind": "integer",
+   "unit": "per day",
+   "default": 16,
+   "bounds": [
+    0,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(contacts=dict(w=...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.community_contacts",
+   "module": "network",
+   "label": "Community contacts",
+   "description": "Mean daily contacts in the community layer of the hybrid network (Covasim's value, illustrative).",
+   "kind": "integer",
+   "unit": "per day",
+   "default": 20,
+   "bounds": [
+    0,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(contacts=dict(c=...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.layer_beta.household",
+   "module": "network",
+   "label": "Household transmissibility",
+   "description": "Relative transmissibility of a household contact on the hybrid network (Covasim's value, illustrative).",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 3.0,
+   "bounds": [
+    0.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(beta=dict(h=...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.layer_beta.school",
+   "module": "network",
+   "label": "School transmissibility",
+   "description": "Relative transmissibility of a school contact on the hybrid network (Covasim's value, illustrative).",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 0.6,
+   "bounds": [
+    0.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(beta=dict(s=...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.layer_beta.work",
+   "module": "network",
+   "label": "Workplace transmissibility",
+   "description": "Relative transmissibility of a workplace contact on the hybrid network (Covasim's value, illustrative).",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 0.6,
+   "bounds": [
+    0.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(beta=dict(w=...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.layer_beta.community",
+   "module": "network",
+   "label": "Community transmissibility",
+   "description": "Relative transmissibility of a community contact on the hybrid network (Covasim's value, illustrative).",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 0.3,
+   "bounds": [
+    0.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(beta=dict(c=...))",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.school_age_min",
+   "module": "network",
+   "label": "School age, from",
+   "description": "Youngest age in the school layer of the hybrid network.",
+   "kind": "integer",
+   "unit": "years",
+   "default": 6,
+   "bounds": [
+    0,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(school_ages=...)",
+   "affects": [
+    "peak"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.school_age_max",
+   "module": "network",
+   "label": "School age, to",
+   "description": "Age at which agents leave the school layer (excluded).",
+   "kind": "integer",
+   "unit": "years",
+   "default": 22,
+   "bounds": [
+    0,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(school_ages=...)",
+   "affects": [
+    "peak"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.work_age_min",
+   "module": "network",
+   "label": "Working age, from",
+   "description": "Youngest age in the workplace layer of the hybrid network.",
+   "kind": "integer",
+   "unit": "years",
+   "default": 22,
+   "bounds": [
+    0,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(work_ages=...)",
+   "affects": [
+    "peak"
+   ],
+   "requires": []
+  },
+  {
+   "path": "network.work_age_max",
+   "module": "network",
+   "label": "Working age, to",
+   "description": "Age at which agents leave the workplace layer (excluded).",
+   "kind": "integer",
+   "unit": "years",
+   "default": 65,
+   "bounds": [
+    0,
+    100
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.HybridNet(work_ages=...)",
+   "affects": [
+    "peak"
    ],
    "requires": []
   },
@@ -961,6 +1503,31 @@
    "db_field": null,
    "starsim_target": "resolve_demographics",
    "affects": [],
+   "requires": []
+  },
+  {
+   "path": "demographics.age_source",
+   "module": "demographics",
+   "label": "Age source",
+   "description": "Where the simulated ages come from: default (Starsim's uniform 0 to 60), shares (uniform ages within the three shares) or un_wpp (the country's single-year age pyramid, bundled from UN WPP 2024).",
+   "kind": "enum",
+   "unit": null,
+   "default": "default",
+   "bounds": null,
+   "choices": [
+    "default",
+    "shares",
+    "un_wpp"
+   ],
+   "models": [],
+   "tier": "expert",
+   "db_field": null,
+   "starsim_target": "ss.People(age_data=...)",
+   "affects": [
+    "peak",
+    "final_size",
+    "deaths"
+   ],
    "requires": []
   },
   {
@@ -1183,6 +1750,26 @@
    "starsim_target": "ss.Sim(rand_seed=...)",
    "affects": [
     "stochasticity"
+   ],
+   "requires": []
+  },
+  {
+   "path": "run.calibrate_r0",
+   "module": "run",
+   "label": "Calibrate beta by measurement",
+   "description": "On the hybrid network, or with a contact duration above 0, the R0 formula is approximate: a short pilot run measures the seeds' secondary infections and corrects beta until the measured R0 is within 5% of the target, at most three times. Off, the formula's beta runs as it is.",
+   "kind": "bool",
+   "unit": null,
+   "default": true,
+   "bounds": null,
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "epichat.sim.calibrate",
+   "affects": [
+    "peak",
+    "final_size"
    ],
    "requires": []
   }

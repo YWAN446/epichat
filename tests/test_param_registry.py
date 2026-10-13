@@ -16,7 +16,7 @@ def test_paths_are_unique_and_in_module_order():
     assert len(paths) == len(set(paths))
     modules = [s.module for s in reg.REGISTRY]
     assert modules == sorted(modules, key=["disease", "network", "demographics", "interventions", "run"].index)
-    assert paths[0] == "disease.model" and paths[-1] == "run.rand_seed"
+    assert paths[0] == "disease.model" and paths[-1] == "run.calibrate_r0"
 
 
 def test_every_db_field_exists_in_the_database():
@@ -73,7 +73,7 @@ def test_applicable_filters_by_model():
 
 def test_export_is_a_plain_json_document_in_registry_order():
     out = reg.export()
-    assert out["version"] == 2 and [p["path"] for p in out["params"]] == [s.path for s in reg.REGISTRY]
+    assert out["version"] == 3 and [p["path"] for p in out["params"]] == [s.path for s in reg.REGISTRY]
     text = json.dumps(out)
     assert json.loads(text) == out
     first = out["params"][0]
@@ -108,4 +108,22 @@ def test_the_age_specific_leaves_and_the_exposed_transmissibility_are_registered
         assert death.default is None and death.bounds == (0.0, 1.0) and death.models == reg.DEATH_MODELS and death.tier == "advanced"
     exposed = reg.spec_for("disease.rel_trans_exposed")
     assert exposed.default == 0.0 and exposed.bounds == (0.0, 1.0) and exposed.models == reg.LATENT_MODELS
-    assert reg.export()["version"] == 2
+    assert reg.export()["version"] == 3
+
+
+def test_phase_2b_adds_the_network_demographics_and_run_leaves():
+    paths = {s.path for s in reg.REGISTRY}
+    for p in ("network.contacts_dist", "network.contact_duration_days", "network.contacts.children_children", "network.contacts.elderly_adults",
+              "network.contacts_source", "network.household_size", "network.school_contacts", "network.work_contacts", "network.community_contacts",
+              "network.layer_beta.household", "network.layer_beta.community", "network.school_age_min", "network.school_age_max",
+              "network.work_age_min", "network.work_age_max", "demographics.age_source", "run.calibrate_r0"):
+        assert p in paths, p
+    assert reg.spec_for("network.network_type").choices == ("random", "age_structured", "hybrid")
+    assert reg.spec_for("network.contacts.adults_adults").default == 9.0 and reg.spec_for("network.contacts.children_elderly").default == 0.5
+    assert reg.spec_for("network.contacts.children_adults").bounds == (0.0, 50.0) and reg.spec_for("network.contacts.children_adults").tier == "advanced"
+    assert reg.spec_for("network.household_size").tier == "core" and reg.spec_for("network.layer_beta.school").default == 0.6
+    assert reg.spec_for("network.contacts_dist").choices == ("constant", "poisson") and reg.spec_for("demographics.age_source").choices == ("default", "shares", "un_wpp")
+    assert reg.spec_for("run.calibrate_r0").default is True and reg.spec_for("run.calibrate_r0").kind == "bool"
+    assert "no effect on the age-structured" in reg.spec_for("network.n_contacts").description
+    assert reg.CONTACT_DEFAULTS == ((7.0, 2.5, 0.5), (2.5, 9.0, 1.5), (0.5, 1.5, 3.5))
+    assert reg.export()["version"] == 3

@@ -125,10 +125,62 @@ class DiseaseParams(BaseModel):
         return self
 
 
+NETWORK_TYPES = ("random", "age_structured", "hybrid")
+
+
+class ContactMatrix(BaseModel):
+    """The nine leaves network.contacts.<source>_<target> (Part 2, 5.3): rows source, columns target, as ss.MixingPools reads them."""
+    children_children: float = _field("network.contacts.children_children")
+    children_adults: float = _field("network.contacts.children_adults")
+    children_elderly: float = _field("network.contacts.children_elderly")
+    adults_children: float = _field("network.contacts.adults_children")
+    adults_adults: float = _field("network.contacts.adults_adults")
+    adults_elderly: float = _field("network.contacts.adults_elderly")
+    elderly_children: float = _field("network.contacts.elderly_children")
+    elderly_adults: float = _field("network.contacts.elderly_adults")
+    elderly_elderly: float = _field("network.contacts.elderly_elderly")
+
+    def as_rows(self) -> list[list[float]]:
+        return [[float(getattr(self, f"{s}_{t}")) for t in AGE_GROUPS] for s in AGE_GROUPS]
+
+    @classmethod
+    def from_rows(cls, rows) -> "ContactMatrix":
+        return cls(**{f"{s}_{t}": float(rows[i][j]) for i, s in enumerate(AGE_GROUPS) for j, t in enumerate(AGE_GROUPS)})
+
+
+class LayerBeta(BaseModel):
+    """Relative transmissibility of each hybrid layer (Part 2, 5.4; Covasim's values)."""
+    household: float = _field("network.layer_beta.household")
+    school: float = _field("network.layer_beta.school")
+    work: float = _field("network.layer_beta.work")
+    community: float = _field("network.layer_beta.community")
+
+
 class NetworkParams(BaseModel):
-    network_type: Literal["random", "age_structured"] = "random"
+    network_type: Literal["random", "age_structured", "hybrid"] = "random"
     n_contacts: int = _field("network.n_contacts")
     network_beta: float = _field("network.network_beta")
+    contacts_dist: Literal["constant", "poisson"] = "constant"
+    contact_duration_days: float = _field("network.contact_duration_days")
+    contacts: ContactMatrix = Field(default_factory=ContactMatrix)
+    contacts_source: str = "polymod_default"
+    household_size: float = _field("network.household_size")
+    school_contacts: int = _field("network.school_contacts")
+    work_contacts: int = _field("network.work_contacts")
+    community_contacts: int = _field("network.community_contacts")
+    layer_beta: LayerBeta = Field(default_factory=LayerBeta)
+    school_age_min: int = _field("network.school_age_min")
+    school_age_max: int = _field("network.school_age_max")
+    work_age_min: int = _field("network.work_age_min")
+    work_age_max: int = _field("network.work_age_max")
+
+    @model_validator(mode="after")
+    def check_age_ranges(self) -> "NetworkParams":
+        if self.school_age_min >= self.school_age_max:
+            raise ValueError("network.school_age_min must be below network.school_age_max")
+        if self.work_age_min >= self.work_age_max:
+            raise ValueError("network.work_age_min must be below network.work_age_max")
+        return self
 
 
 class DemographicsParams(BaseModel):
@@ -142,6 +194,7 @@ class DemographicsParams(BaseModel):
     auto_demographics: bool = True
     demographics_year: int = _field("demographics.demographics_year")
     demographics_source: Optional[str] = None
+    age_source: Literal["default", "shares", "un_wpp"] = "default"
 
     @model_validator(mode="after")
     def check_age_pcts_sum(self) -> "DemographicsParams":
@@ -166,6 +219,7 @@ class RunParams(BaseModel):
     sim_dur_years: float = _field("run.sim_dur_years")
     rand_seed: Optional[int] = None
     n_replicates: int = _field("run.n_replicates")
+    calibrate_r0: bool = True
 
 
 class SimParamsV2(BaseModel):

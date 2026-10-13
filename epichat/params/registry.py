@@ -19,6 +19,9 @@ DEATH_MODELS = ("sir", "seir", "sirs", "seirs", "seiar")
 DISTS = ("constant", "lognormal", "gamma")
 DB_FIELDS = ("r0", "incubation_days", "infectious_days", "fatality_rate",
              "average_contacts_daily", "immunity_duration", "asymptomatic_fraction")
+CONTACT_GROUPS = ("children", "adults", "elderly")
+GROUP_LABELS = {"children": "children (under 18)", "adults": "adults (18 to 64)", "elderly": "elderly (65 and over)"}
+CONTACT_DEFAULTS = ((7.0, 2.5, 0.5), (2.5, 9.0, 1.5), (0.5, 1.5, 3.5))     # POLYMOD-like; rows source, columns target (Part 2, 5.3)
 ALL_EFFECTS: tuple[Affects, ...] = ("timing", "peak", "final_size", "deaths", "duration", "endemicity", "stochasticity")
 
 
@@ -127,14 +130,65 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("disease.initial_immune_frac", "disease", "Initially immune", "Share of the non-seeded population that starts immune (a past "
               "epidemic or a vaccination campaign before day 0). In sirs and seirs this immunity wanes like everyone else's; in sis at "
               "sis_waning.", "number", "fraction", 0.0, (0.0, 0.99), None, (), "advanced", None, "InitialImmunity intervention", ("final_size",)),
-    ParamSpec("network.network_type", "network", "Contact network", "random: everyone has n_contacts random contacts; age_structured: "
-              "three age groups mixing by a POLYMOD-like matrix.", "enum", None, "random", None, ("random", "age_structured"), (), "core",
-              None, "ss.RandomNet or ss.MixingPools", ("peak", "final_size")),
-    ParamSpec("network.n_contacts", "network", "Contacts per day", "Mean number of contacts per person per day on the random network.",
-              "integer", "per day", 4, (1, 100), None, (), "core", "average_contacts_daily", "ss.RandomNet(n_contacts=...)", ("peak", "final_size")),
+    ParamSpec("network.network_type", "network", "Contact network", "random: everyone has n_contacts fresh random contacts a day, which "
+              "overstates the final size; age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's "
+              "Prem 2021 matrix after fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, with limited, "
+              "repeated contacts.", "enum", None, "random", None, ("random", "age_structured", "hybrid"), (), "core", None,
+              "ss.RandomNet, ss.MixingPools or ss.HybridNet", ("peak", "final_size")),
+    ParamSpec("network.n_contacts", "network", "Contacts per day", "Mean number of contacts per person per day on the random network; "
+              "no effect on the age-structured and hybrid networks.", "integer", "per day", 4, (1, 100), None, (), "core", "average_contacts_daily",
+              "ss.RandomNet(n_contacts=...)", ("peak", "final_size")),
+    ParamSpec("network.contacts_dist", "network", "Contacts distribution", "constant: everyone has exactly n_contacts a day; poisson: the daily "
+              "number varies around n_contacts. Random network only; the R0 is unchanged.", "enum", None, "constant", None,
+              ("constant", "poisson"), (), "advanced", None, "ss.RandomNet(n_contacts=ss.constant or ss.poisson)", ("stochasticity",)),
+    ParamSpec("network.contact_duration_days", "network", "Contact duration", "Days a random-network contact lasts before it is replaced; 0 "
+              "remakes every contact daily. Longer contacts slow spread by local depletion, so the R0 shown is approximate and the measured R0 "
+              "is the one to quote.", "number", "days", 0.0, (0.0, 365.0), None, (), "advanced", None, "ss.RandomNet(dur=ss.days(...))",
+              ("peak", "final_size")),
     ParamSpec("network.network_beta", "network", "Network transmission multiplier", "Multiplies the per-contact probability on the network; "
               "1 leaves beta as it is.", "number", None, 1.0, (0.01, 10.0), None, (), "advanced", None,
               "ss.RandomNet(beta=...) or the mixing matrix scale", ("peak", "final_size")),
+    *[ParamSpec(f"network.contacts.{s}_{t}", "network", f"Contacts, {GROUP_LABELS[s]} to {GROUP_LABELS[t]}",
+                f"Contacts per day a target among the {GROUP_LABELS[t]} has with sources among the {GROUP_LABELS[s]} on the age-structured "
+                "network (rows source, columns target; POLYMOD-like default, the country's Prem 2021 value after fetch_demographics).",
+                "number", "per day", CONTACT_DEFAULTS[i][j], (0.0, 50.0), None, (), "advanced", None, "ss.MixingPools(n_contacts=...)",
+                ("peak", "final_size"))
+      for i, s in enumerate(CONTACT_GROUPS) for j, t in enumerate(CONTACT_GROUPS)],
+    ParamSpec("network.contacts_source", "network", "Contact matrix source", "Where the contact matrix came from: polymod_default (European), "
+              "prem_2021:<ISO3> (the country's synthetic matrix) or user.", "string", None, "polymod_default", None, None, (), "expert", None,
+              "fetch_demographics", ()),
+    ParamSpec("network.household_size", "network", "Household size", "Mean household size on the hybrid network (Poisson); the country's value "
+              "after fetch_demographics.", "number", "people", 2.0, (1.0, 10.0), None, (), "core", None,
+              "ss.HybridNet(household_size=ss.poisson(...))", ("peak", "final_size")),
+    ParamSpec("network.school_contacts", "network", "School contacts", "Mean daily contacts in the school layer of the hybrid network "
+              "(Covasim's value, illustrative).", "integer", "per day", 20, (0, 100), None, (), "advanced", None,
+              "ss.HybridNet(contacts=dict(s=...))", ("peak", "final_size")),
+    ParamSpec("network.work_contacts", "network", "Workplace contacts", "Mean daily contacts in the workplace layer of the hybrid network "
+              "(Covasim's value, illustrative).", "integer", "per day", 16, (0, 100), None, (), "advanced", None,
+              "ss.HybridNet(contacts=dict(w=...))", ("peak", "final_size")),
+    ParamSpec("network.community_contacts", "network", "Community contacts", "Mean daily contacts in the community layer of the hybrid network "
+              "(Covasim's value, illustrative).", "integer", "per day", 20, (0, 100), None, (), "advanced", None,
+              "ss.HybridNet(contacts=dict(c=...))", ("peak", "final_size")),
+    ParamSpec("network.layer_beta.household", "network", "Household transmissibility", "Relative transmissibility of a household contact on the "
+              "hybrid network (Covasim's value, illustrative).", "number", "multiplier", 3.0, (0.0, 10.0), None, (), "advanced", None,
+              "ss.HybridNet(beta=dict(h=...))", ("peak", "final_size")),
+    ParamSpec("network.layer_beta.school", "network", "School transmissibility", "Relative transmissibility of a school contact on the hybrid "
+              "network (Covasim's value, illustrative).", "number", "multiplier", 0.6, (0.0, 10.0), None, (), "advanced", None,
+              "ss.HybridNet(beta=dict(s=...))", ("peak", "final_size")),
+    ParamSpec("network.layer_beta.work", "network", "Workplace transmissibility", "Relative transmissibility of a workplace contact on the hybrid "
+              "network (Covasim's value, illustrative).", "number", "multiplier", 0.6, (0.0, 10.0), None, (), "advanced", None,
+              "ss.HybridNet(beta=dict(w=...))", ("peak", "final_size")),
+    ParamSpec("network.layer_beta.community", "network", "Community transmissibility", "Relative transmissibility of a community contact on the "
+              "hybrid network (Covasim's value, illustrative).", "number", "multiplier", 0.3, (0.0, 10.0), None, (), "advanced", None,
+              "ss.HybridNet(beta=dict(c=...))", ("peak", "final_size")),
+    ParamSpec("network.school_age_min", "network", "School age, from", "Youngest age in the school layer of the hybrid network.", "integer",
+              "years", 6, (0, 100), None, (), "advanced", None, "ss.HybridNet(school_ages=...)", ("peak",)),
+    ParamSpec("network.school_age_max", "network", "School age, to", "Age at which agents leave the school layer (excluded).", "integer",
+              "years", 22, (0, 100), None, (), "advanced", None, "ss.HybridNet(school_ages=...)", ("peak",)),
+    ParamSpec("network.work_age_min", "network", "Working age, from", "Youngest age in the workplace layer of the hybrid network.", "integer",
+              "years", 22, (0, 100), None, (), "advanced", None, "ss.HybridNet(work_ages=...)", ("peak",)),
+    ParamSpec("network.work_age_max", "network", "Working age, to", "Age at which agents leave the workplace layer (excluded).", "integer",
+              "years", 65, (0, 100), None, (), "advanced", None, "ss.HybridNet(work_ages=...)", ("peak",)),
     ParamSpec("demographics.use_demographics", "demographics", "Births and deaths", "Whether people are born and die of other causes "
               "during the run.", "bool", None, False, None, None, (), "core", None, "ss.Births and ss.Deaths", ("endemicity",)),
     ParamSpec("demographics.birth_rate", "demographics", "Birth rate", "Births per 1,000 people per year.", "number", "per 1,000 per year",
@@ -157,6 +211,10 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               2022, (1950, 2100), None, (), "expert", None, "resolve_demographics", ("endemicity",)),
     ParamSpec("demographics.demographics_source", "demographics", "Demographics source", "Where the filled demographics came from.",
               "string", None, None, None, None, (), "expert", None, "resolve_demographics", ()),
+    ParamSpec("demographics.age_source", "demographics", "Age source", "Where the simulated ages come from: default (Starsim's uniform 0 to "
+              "60), shares (uniform ages within the three shares) or un_wpp (the country's single-year age pyramid, bundled from UN WPP 2024).",
+              "enum", None, "default", None, ("default", "shares", "un_wpp"), (), "expert", None, "ss.People(age_data=...)",
+              ("peak", "final_size", "deaths")),
     ParamSpec("interventions[].type", "interventions", "Intervention type", "vaccine (a routine campaign from start_day), treatment "
               "(daily capacity-limited recovery), seasonality (a yearly cycle in transmission).", "enum", None, None, None,
               ("vaccine", "treatment", "seasonality"), (), "core", None, "ss.routine_vx, SimpleTreatment, TransmissibilityModifiers", ("peak", "final_size", "timing")),
@@ -180,6 +238,10 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "integer", None, 1, (1, 5), None, (), "advanced", None, "run_replicates", ("stochasticity",)),
     ParamSpec("run.rand_seed", "run", "Random seed", "Seed of the first replicate; unset means 1.", "integer", None, None, None, None, (),
               "expert", None, "ss.Sim(rand_seed=...)", ("stochasticity",)),
+    ParamSpec("run.calibrate_r0", "run", "Calibrate beta by measurement", "On the hybrid network, or with a contact duration above 0, the R0 "
+              "formula is approximate: a short pilot run measures the seeds' secondary infections and corrects beta until the measured R0 is "
+              "within 5% of the target, at most three times. Off, the formula's beta runs as it is.", "bool", None, True, None, None, (),
+              "advanced", None, "epichat.sim.calibrate", ("peak", "final_size")),
 ])
 
 REGISTRY_BY_PATH: dict[str, ParamSpec] = {s.path: s for s in REGISTRY}
@@ -194,4 +256,4 @@ def applicable(model: str) -> tuple[ParamSpec, ...]:
 
 
 def export() -> dict:
-    return {"version": 2, "params": [s.as_dict() for s in REGISTRY]}
+    return {"version": 3, "params": [s.as_dict() for s in REGISTRY]}
