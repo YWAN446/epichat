@@ -14,6 +14,9 @@ def test_the_parameter_cases_are_pending_for_the_api_harness():
     assert "describe_parameters" in describe["checks"]["tool_called"]
     assert describe["checks"]["config"] == {"disease": "measles", "country": "KEN"}
     assert rerun["real_sim"] is True and rerun["checks"]["ran_simulation"] is True
+    # The fade-out is luck unless the seed is pinned; the harness author vets the seed (review finding).
+    assert "random seed" in rerun["turns"][0] and "seed" in rerun["pending_note"]
+    assert "early_fadeout" in rerun["checks"]["judge"][0]
     runnable, pending = split_pending(cases)
     assert {c["id"] for c in pending} == {"parameters-describe", "parameters-diagnostic-rerun"}
     assert len(runnable) == len(cases) - 2

@@ -27,9 +27,9 @@
   critical: false
   real_sim: true
   pending: api-harness
-  pending_note: "The diagnostics and the comparison come from the simulation service (spec 10, 11), which the Python agent does not call."
+  pending_note: "The diagnostics and the comparison come from the simulation service (spec 10, 11), which the Python agent does not call. The random seed is a placeholder: early_fadeout needs the index case to infect nobody (total_infected < 2 × seeds), so once the harness exists run the service with a few seeds and pin one that fades out."
   turns:
-    - "Model measles in Kenya with 20000 agents, one initial infection, R0 1.2 and no deaths."
+    - "Model measles in Kenya with 20000 agents, one initial infection, R0 1.2, no deaths, and random seed 7."
     - "Yes."
     - "Yes, run it."
     - "Take the first option and rerun."
@@ -37,6 +37,6 @@
     tool_called: [run_simulation]
     ran_simulation: true
     judge:
-      - "After the first run, says the outbreak died out early (or names the diagnostic) rather than interpreting a non-epidemic as a result"
+      - "After the first run, says the outbreak died out early (the early_fadeout diagnostic) rather than interpreting a non-epidemic as a result"
       - "Offers at most three options, one of them keeping the configuration as it is"
       - "After the second run, reports what changed against the previous run before interpreting it"
