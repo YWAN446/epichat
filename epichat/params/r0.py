@@ -20,6 +20,24 @@ CONTACT_MATRIX = np.array([[7.0, 2.5, 0.5], [2.5, 9.0, 1.5], [0.5, 1.5, 3.5]])
 CONTACT_SPECTRAL_RADIUS = float(np.linalg.eigvals(CONTACT_MATRIX).real.max())
 RANDOM_LEVERS = ("network.n_contacts", "disease.dur_inf.mean_days")
 AGE_LEVERS = ("network.network_beta", "disease.dur_inf.mean_days")
+DEFAULT_AGE_SHARES = (0.3, 0.7, 0.0)      # Starsim's default ages are uniform on 0 to 60: no elderly
+
+
+def age_shares(p: SimParamsV2) -> tuple[float, float, float]:
+    """The share of agents in each age group: the fetched shares when all three are set, else the default ages'."""
+    g = p.demographics
+    if g.age_pct_under18 is not None and g.age_pct_18_64 is not None and g.age_pct_over65 is not None:
+        return (g.age_pct_under18 / 100.0, g.age_pct_18_64 / 100.0, g.age_pct_over65 / 100.0)
+    return DEFAULT_AGE_SHARES
+
+
+def exposed_days(d: DiseaseParams) -> float:
+    """Days an exposed agent can transmit on a daily step, by the same offsets as the infectious period (0 outside the latent models)."""
+    if d.model not in LATENT_MODELS or d.dur_exp is None:
+        return 0.0
+    exp = d.dur_exp
+    days = math.ceil(exp.mean_days) - 1 if exp.dist == "constant" else exp.mean_days - 0.5
+    return max(0.0, float(days))
 
 
 class R0Unreachable(ValueError):
@@ -51,13 +69,24 @@ def effective_days(d: DiseaseParams) -> float:
         days = math.ceil(inf.mean_days) - 1
     else:
         days = inf.mean_days - 0.5
-    return max(0.0, float(days))
+    return max(0.0, float(days)) + d.rel_trans_exposed * exposed_days(d)
 
 
 def contact_scale(p: SimParamsV2) -> float:
     n = p.network
-    contacts = CONTACT_SPECTRAL_RADIUS if n.network_type == "age_structured" else n.n_contacts
+    r = p.disease.rel_sus_age.as_tuple()
+    if n.network_type == "age_structured":
+        # Each target group's row of the next-generation matrix scales by its susceptibility: rho(C · diag(r)) (Part 2, 4.4).
+        contacts = float(np.linalg.eigvals(CONTACT_MATRIX @ np.diag(r)).real.max()) if r != (1.0, 1.0, 1.0) else CONTACT_SPECTRAL_RADIUS
+    else:
+        s = age_shares(p)
+        contacts = n.n_contacts * sum(si * ri for si, ri in zip(s, r))
     return contacts * n.network_beta * effective_days(p.disease) * asymp_factor(p.disease)
+
+
+def weighted_cfr(p: SimParamsV2) -> float:
+    """The population case fatality ratio: the groups' values weighted by their shares (the scalar where a group has none)."""
+    return float(sum(s * q for s, q in zip(age_shares(p), p.disease.death_probabilities())))
 
 
 def approx_r0(p: SimParamsV2) -> float:

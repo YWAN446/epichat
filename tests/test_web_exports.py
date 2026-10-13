@@ -64,7 +64,8 @@ def test_export_parity_fixtures_is_deterministic_and_fresh(tmp_path):
     assert all(len(case["calibrate"]) == 3 for case in parity["params"])
     assert any(case["warnings"] for case in parity["warnings"])
     assert parity["adapters"]["un_wpp"] and parity["adapters"]["who_gho"] and parity["adapters"]["wb_data360"]
-    assert parity["version"] == 2
+    assert parity["version"] == 3
+    assert all("weighted_cfr" in case for case in parity["params"])
     assert all("schema_version" in case["input"] and "max_r0" in case for case in parity["params"])
     assert any(k["beta"] is None for case in parity["params"] for k in case["calibrate"])
     assert len(parity["migration"]) >= 12 and all(c["expected"]["schema_version"] == 2 for c in parity["migration"])
@@ -74,7 +75,7 @@ def test_param_registry_export_shape(tmp_path):
     mod = _load("export_web_data")
     mod.main(tmp_path)
     reg = json.loads((tmp_path / "data" / "param_registry.json").read_text(encoding="utf-8"))
-    assert reg["version"] == 1 and reg["params"][0]["path"] == "disease.model"
+    assert reg["version"] == 2 and reg["params"][0]["path"] == "disease.model"
     assert len(reg["params"]) >= 40 and all(set(p) >= {"path", "bounds", "default", "tier", "models"} for p in reg["params"])
 
 

@@ -121,9 +121,15 @@ def random_params(rng: random.Random) -> SimParamsV2 | None:
     if model == "seiar":
         disease["p_asymp"] = round(rng.uniform(0.0, 1.0), 2)
         disease["rel_trans_asymp"] = round(rng.uniform(0.0, 1.0), 2)
+    if rng.random() < 0.5:
+        disease["rel_sus_age"] = {g: round(rng.uniform(0.3, 2.5), 2) for g in ("children", "adults", "elderly") if rng.random() < 0.8}
+    if rng.random() < 0.4 and model != "sis":
+        disease["p_death_age"] = {g: round(rng.choice([0.0, 0.001, 0.05, 0.2]), 3) for g in ("children", "adults", "elderly") if rng.random() < 0.6}
+    if model in LATENT and rng.random() < 0.5:
+        disease["rel_trans_exposed"] = round(rng.uniform(0.0, 1.0), 2)
     network = {"network_type": network_type, "n_contacts": rng.randint(1, 30), "network_beta": rng.choice([1.0, 0.5, 2.0])}
     demographics = {}
-    if network_type == "age_structured" and rng.random() < 0.7:
+    if rng.random() < 0.6:
         under = round(rng.uniform(10.0, 45.0), 1)
         over = round(rng.uniform(2.0, 20.0), 1)
         demographics = {"age_pct_under18": under, "age_pct_over65": over, "age_pct_18_64": round(100.0 - under - over, 1)}
@@ -168,6 +174,7 @@ def params_cases(rng: random.Random) -> list[dict]:
             recalibrate.append({"r0_before": approx, "before": p.model_dump(mode="json"), "after_input": after.model_dump(mode="json"), "beta": rec.disease.beta})
         cases.append({
             "input": p.model_dump(mode="json"), "approx_r0": approx, "max_r0": round(r0.max_r0(p), 9),
+            "weighted_cfr": round(r0.weighted_cfr(p), 9),
             "calibrate": [{"target_r0": t, "beta": _calibrate(p, t)} for t in (1.5, 3.0, 15.0)],
             "recalibrate": recalibrate,
         })
@@ -265,7 +272,7 @@ def main(web_dir: Path = ROOT / "web") -> None:
     (fixtures / "adapters").mkdir(parents=True, exist_ok=True)
     for name, text in ADAPTER_FILES.items():
         (fixtures / "adapters" / name).write_text(text, encoding="utf-8", newline="")
-    payload = {"version": 2, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
+    payload = {"version": 3, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
     (fixtures / "parity.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
 
