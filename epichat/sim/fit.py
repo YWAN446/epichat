@@ -8,6 +8,7 @@ lower bound is above 0)."""
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from pydantic import ValidationError
@@ -21,10 +22,11 @@ from .outputs import extract
 
 TOLERANCE = {"attack_rate": 0.02, "peak_day": 3.0, "peak_infections": 0.05}
 MAX_RUNS = 8
-FADEOUT_SEED_MULTIPLE = 2       # a run whose infections or peak stayed under twice its seeds faded out: its peak day is the seeds' bump
+FADEOUT_SEED_MULTIPLE = 2       # a run that infected under twice its seeds faded out; for a peak day, so did one whose peak stayed under twice its seeds
 STEP = 2.0                      # the factor the lever moves by until the target is bracketed
 RISING = {"attack_rate": True, "peak_infections": True, "peak_day": False}       # with a lever the outcome rises with
 BETA_LEVERS = ("disease.beta", "network.network_beta")
+PILOT_LEVERS = ("disease.rel_sus_cv",)       # levers the R0 pilot depends on: each trial is calibrated at its own value
 RESPONSE_SCALE_MAX = 0.95       # a response of 1 would stop transmission outright at a high prevalence
 MIN_STEP = 0.02                 # a lever whose lower bound is 0, halved below this, goes to 0
 
@@ -108,11 +110,14 @@ def _effective_hi(p: SimParamsV2, lever: str, value: float, hi_bound: float) -> 
     return lo
 
 
-def fit_lever(p: SimParamsV2, seed: int) -> tuple[SimParamsV2, dict | None]:
+def fit_lever(p: SimParamsV2, seed: int, prepare: Callable[[SimParamsV2], SimParamsV2] | None = None) -> tuple[SimParamsV2, dict | None]:
     """The parameters to run (the lever moved when a fit is set) and {target, wanted, achieved, lever, value, runs}, or (p, None).
     The search doubles or halves the lever from its current value until the target is bracketed (stopping at the lever's bound),
     then takes midpoints. A run that faded out (under twice its seeds infected) means too little transmission: a lever the outcome
-    rises with is too low, a lever it falls with is too high."""
+    rises with is too low, a lever it falls with is too high. For a peak day a peak under twice the seeds is a fade-out too (the
+    day would be the seeds' bump); for an attack rate or a peak size it is not, since a behaviour response holds the peak down
+    while the infections go on. prepare, when given, turns each trial's parameters into the ones that run (the R0 calibration at
+    that trial's value, for a lever the pilot depends on)."""
     f = p.run.fit
     if f is None:
         return p, None
@@ -129,11 +134,14 @@ def fit_lever(p: SimParamsV2, seed: int) -> tuple[SimParamsV2, dict | None]:
     runs, achieved = 0, None
     while runs < MAX_RUNS:
         current = _with_lever(p, f.lever, value)
+        if prepare is not None:
+            current = prepare(current)
         stats = evaluate(current, seed)
         achieved = outcome(stats, f.target, p.run.n_agents)
         runs += 1
         seeds = stats.get("seeds_day0") or stats.get("seeds") or 0
-        faded = stats["total_infected"] <= FADEOUT_SEED_MULTIPLE * seeds or stats["peak_infections"] <= FADEOUT_SEED_MULTIPLE * seeds
+        faded = stats["total_infected"] <= FADEOUT_SEED_MULTIPLE * seeds or (
+            f.target == "peak_day" and stats["peak_infections"] <= FADEOUT_SEED_MULTIPLE * seeds)
         if within(f.target, achieved, f.value) and not faded:
             break
         if spec.rising:

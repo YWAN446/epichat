@@ -43,7 +43,7 @@ class Measurement:
     mean: float          # infections per seed, depletion-weighted
     se: float            # the standard error of that mean over the seeds
     seeds: int
-    weight: float        # the mean of alive / susceptible over the infections counted; 1.0 when none were
+    weight: float        # the mean depletion weight over the infections counted; 1.0 when none were
 
 
 def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
@@ -52,6 +52,10 @@ def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
     The weight is scaled by the share of the non-seed agents that was susceptible before anything spread, so agents immune from the
     start (initial_immune_frac: recovered in the SIR family) are not counted as depletion: with initial immunity the estimate reads
     the effective reproduction number, as 5.8's reference does.
+    With variation in susceptibility (follow-up spec 4) the most susceptible are infected first, so susceptibility is depleted faster
+    than the number of susceptibles: the weight is multiplied by the susceptibles' mean personal multiplier before anything spread
+    over their mean as the infection's step began (the disease records it), which makes it the ratio of the susceptibility present
+    at the start to the susceptibility left. Without variation nothing is recorded and the weight is the count's.
     count_day0 False leaves out what the seeds transmitted on step 0: a seed is infectious from step 0, an ordinary case from the step
     after its infection, so a seed transmits on one more step. True counts everything (the pilot keeps its seeds quiet on step 0).
     None without day-0 seeds or on a network that records no per-agent sources (the age-structured MixingPools)."""
@@ -75,13 +79,19 @@ def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
     by_seed = later & np.isin(source, seeds) & (t >= (0 if count_day0 else 1))
     index = np.searchsorted(seeds, source[by_seed].astype(np.int64))
     first = t[by_seed] < again[index]
-    index, when = index[first], np.maximum(t[by_seed][first].astype(int) - 1, 0)
+    index, step = index[first], t[by_seed][first].astype(int)
+    when = np.maximum(step - 1, 0)
     name = list(sim.diseases.keys())[0]
     susceptible = np.asarray(sim.results[name]["n_susceptible"].values, dtype=float)
     alive = np.asarray(sim.results["n_alive"].values, dtype=float)
     spread = np.asarray(sim.results[name]["new_infections"].values, dtype=float)
     start = min(1.0, (susceptible[0] + spread[0]) / max(alive[0] - len(seeds), 1.0))     # susceptible before step 0's transmission
     weights = start * alive[when] / np.maximum(susceptible[when], 1.0)
+    means = np.asarray(getattr(sim.diseases[0], "sus_ind_means", ()), dtype=float)
+    if len(means) and len(step):
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio = means[0] / means[np.minimum(step, len(means) - 1)]
+        weights = weights * np.where(np.isfinite(ratio) & (ratio > 0), ratio, 1.0)
     per_seed = np.bincount(index, weights=weights, minlength=len(seeds))
     se = float(per_seed.std(ddof=1) / math.sqrt(len(seeds))) if len(seeds) > 1 else 0.0
     return Measurement(float(per_seed.mean()), se, int(len(seeds)), float(weights.mean()) if len(weights) else 1.0)

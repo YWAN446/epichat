@@ -13,7 +13,12 @@ into beta. A correction is taken only when the measurement is off by more than
 5% and by more than its own standard error, multiplies beta by at most 2, is kept only when it brings the measurement nearer the
 target, and never leaves the registry's bound or the joint rule of network_beta and beta. (The first version let the whole epidemic
 run and counted the seeds' infections as they were: the seeds' extra first step read 4 to 27% high, their descendants exhausted the
-population at a high R0, and on a measles-like scenario the loop multiplied beta by 7.)"""
+population at a high R0, and on a measles-like scenario the loop multiplied beta by 7.)
+
+Follow-up spec 4.3 as amended: on the random network with fresh daily contacts the only thing the formula misses is the cap on a very
+susceptible agent's per-contact probability, and that loss is a closed form (gamma_loss). There beta is solved so that the formula less
+the loss is the target: no pilot, no noise. (A pilot there read within its noise of the closed form, but one reading at a coefficient
+of variation of 2 is off by about 5%, more than the loss it was correcting.)"""
 from __future__ import annotations
 
 import math
@@ -36,7 +41,8 @@ TOLERANCE = 0.05
 NOISE_SIGMAS = 1                # no correction within this many standard errors of the measurement
 MAX_STEP = 2.0                  # one correction multiplies beta by at most this, or divides it
 MAX_CORRECTIONS = 3
-SATURATION_LOSS = 0.02          # the share of the configured R0 lost to saturation above which the pilot runs (follow-up spec 4.3)
+SATURATION_LOSS = 0.02          # the share of the configured R0 lost to saturation above which beta is corrected (follow-up spec 4.3)
+BETA_MAX = clamp_beta(math.inf)  # the registry's upper bound
 
 
 def gamma_loss(q: float, cv: float) -> float:
@@ -60,6 +66,60 @@ def saturation_loss(p: SimParamsV2) -> float:
 
 def needs_calibration(p: SimParamsV2) -> bool:
     return bool(p.run.calibrate_r0 and (r0_is_approximate(p) or saturation_loss(p) > SATURATION_LOSS))
+
+
+def closed_form_r0(p: SimParamsV2) -> float:
+    """The R0 of a scenario whose formula is exact apart from saturation: the formula less the share the cap takes."""
+    return approx_r0(p) * (1.0 - saturation_loss(p))
+
+
+def _with_beta(p: SimParamsV2, beta: float) -> SimParamsV2 | None:
+    body = p.model_dump()
+    body["disease"]["beta"] = beta
+    try:
+        return SimParamsV2.model_validate(body)
+    except ValidationError:
+        return None                                                  # the joint rule of network_beta and beta
+
+
+def _largest_beta(p: SimParamsV2) -> SimParamsV2:
+    """p at the largest beta the registry and the joint rule allow (its own at least, which validated)."""
+    top = _with_beta(p, BETA_MAX)
+    if top is not None:
+        return top
+    low, high, best = p.disease.beta, BETA_MAX, p
+    for _ in range(60):
+        beta = clamp_beta(math.sqrt(low * high))
+        mid = _with_beta(p, beta)
+        if mid is not None:
+            low, best = beta, mid
+        else:
+            high = beta
+        if high <= low * (1 + 1e-7):
+            break
+    return best
+
+
+def calibrate_by_formula(p: SimParamsV2, target: float) -> tuple[SimParamsV2, dict]:
+    """Beta raised until the closed form gives the target, by bisection (the closed form rises with beta); a target the registry's
+    bound or the joint rule cannot give ends at the largest beta allowed. The report has the calibration's shape: measured is the
+    closed form at the beta kept, with no standard error, and reached says whether that is within tolerance of the target."""
+    current = _largest_beta(p)
+    if closed_form_r0(current) > target:
+        low, high = p.disease.beta, current.disease.beta
+        for _ in range(60):
+            mid = _with_beta(p, clamp_beta(math.sqrt(low * high)))
+            if mid is None:
+                break                                                # not below a beta that validated; never loop on it
+            if closed_form_r0(mid) < target:
+                low = mid.disease.beta
+            else:
+                high, current = mid.disease.beta, mid
+            if high <= low * (1 + 1e-9):
+                break
+    measured = closed_form_r0(current)
+    return current, {"target": round(target, 4), "measured": round(measured, 4), "se": 0.0,
+                     "corrections": int(current.disease.beta != p.disease.beta), "reached": bool(abs(measured - target) <= TOLERANCE * target)}
 
 
 def pilot_seeds(p: SimParamsV2, target: float) -> int:
@@ -93,7 +153,8 @@ def _off(m: Measurement, target: float) -> bool:
 
 def calibrate_by_measurement(p: SimParamsV2, seed: int) -> tuple[SimParamsV2, dict | None]:
     """The parameters to run (beta corrected when a pilot ran) and {target, measured, se, corrections, reached}, or (p, None) with no
-    pilot or with a pilot that could measure nothing (a network that records no sources). A correction is kept only when it brings
+    pilot or with a pilot that could measure nothing (a network that records no sources). Where the formula misses only saturation
+    the correction is the closed form's (calibrate_by_formula) and no pilot runs. A correction is kept only when it brings
     the measurement nearer the target; it never leaves the registry's bound or the joint rule of network_beta and beta. reached is
     false when the target was not met within tolerance, including when the seeds infected nobody."""
     if not needs_calibration(p):
@@ -101,6 +162,8 @@ def calibrate_by_measurement(p: SimParamsV2, seed: int) -> tuple[SimParamsV2, di
     target = approx_r0(p)
     if target <= 0:
         return p, None
+    if not r0_is_approximate(p):
+        return calibrate_by_formula(p, target)                       # only saturation is missing from the formula, and it is a closed form
     current, m, corrections = p, measure(p, seed, target), 0
     if m is None:
         return p, None

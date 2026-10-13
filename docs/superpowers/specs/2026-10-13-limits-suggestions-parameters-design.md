@@ -145,14 +145,37 @@ multiplier's mean is 1.
 The rule lives in `needs_calibration` (the service). `r0_is_approximate`, the
 web mirror and the panel's R0 label are unchanged.
 
-As shipped. The pilot this rule calls is the first-generation experiment of
-`docs/superpowers/plans/2026-10-13-pilot-measured-r0.md`, merged before this
-phase: the version that shipped with Part 2 mis-measured R0 and could not have
-carried the rule. A measles-like scenario (R0 12, 4 contacts, an 8-day period)
-has a per-contact probability of 0.40; with a coefficient of variation of 1
-its loss is e^(−2.5), 8.2%; the pilot raised beta in two corrections and a
-fresh seed measured 11.55. For a coefficient of 1 the loss is exactly
-e^(−1/q), which the tests check.
+As shipped, after the review of phase A. Two things differ from the text
+above.
+
+- On the random network with fresh daily contacts no pilot runs for
+  saturation. The loss is a closed form, so beta is solved by bisection until
+  the formula less the loss is the target (`calibrate_by_formula`); the run
+  still reports `stats.r0_calibration` (`measured` is the closed form at the
+  beta kept, `se` is 0) and `applied.beta_calibrated_by_measurement`. A target
+  the registry's bound cannot give ends at the bound with `reached` false. A
+  measles-like scenario (R0 12, 4 contacts, an 8-day period) has a per-contact
+  probability of 0.40; with a coefficient of variation of 1 its loss is
+  e^(−2.5), 8.2%, and beta rises by 16%; four pilots of the result read 11.5,
+  11.5, 12.7 and 12.3, mean 12.0. For a coefficient of 1 the loss is exactly
+  e^(−1/q), which the tests check. The pilot was tried first and dropped
+  there: one reading at a coefficient of 2 is off by about 5%, more than the
+  loss it was correcting (at R0 4 it left the run 8% high where doing nothing
+  left it 3.6% low).
+- The pilot (the first-generation experiment of
+  `docs/superpowers/plans/2026-10-13-pilot-measured-r0.md`, which still runs
+  on the hybrid network and with lasting contacts) weighs each infection by
+  the susceptibility that is left, not by the number of susceptibles. Its
+  seeds infect the most susceptible first, so a weight that counts heads read
+  0.91 of the true R0 at a coefficient of 1 and 0.75 at 2, and the
+  calibration raised beta by as much. The disease records the susceptibles'
+  mean multiplier at each step and the weight is multiplied by its ratio to
+  the starting mean. On the random network at R0 2.5, where the truth is
+  known, the pilot now reads 2.43 to 2.50 at a coefficient of 1 and 2.42 to
+  2.46 at 2 (truth 2.48). On the hybrid network at R0 2.5 the calibrated beta
+  is 5.26, 5.67 and 6.83 at coefficients of 0, 1 and 2: the rise is the loss
+  to repeated household, school and workplace contacts. Without variation the
+  weight, and so every run, is what it was.
 
 ### 4.4 The expected final size
 
@@ -243,9 +266,11 @@ a flatter baseline):
 
 The response flattens the peak, stretches the epidemic and removes the
 overshoot. Because it relaxes as cases fall, the long-run total drifts toward
-the herd immunity threshold `1 − 1/R0` (60% at R0 2.5) and cannot go below
-it. Going below the threshold is what the variation of section 4 does, which
-is why the round has both.
+the herd immunity threshold `1 − 1/R0` (60% at R0 2.5) and cannot go far
+below it (58% in the table: the last chains die out a little early). A run
+that ends well below the threshold, like the last row, has not finished.
+Going well below the threshold for good is what the variation of section 4
+does, which is why the round has both.
 
 ### 5.4 R0, the pilot and the diagnostics
 
@@ -255,7 +280,12 @@ is why the round has both.
 - The measured R0 of a run with the default 1% seeding is lower than the
   configured one, because the response is already engaged on day 0. `r0_gap`
   stands down while a behaviour response is active from day 0, as it does for
-  an early treatment.
+  an early treatment. As shipped: both stand-downs hold on a calibrated run
+  too (the review found the calibration's target returned before them), last
+  for as long as the seeds transmit (the latent plus the infectious period),
+  and a calibrated run's reference takes the day-0 seasonal factor and the
+  initial immunity like any other run's, since the pilot measures without
+  them and the live run with them.
 - `final_size_gap` stands down while a behaviour response is in the scenario:
   no closed form predicts its size.
 
@@ -294,7 +324,11 @@ who knows both R0 and the real attack rate can keep R0.
   shipped: a lever whose lower bound is 0 takes arithmetic midpoints and, when
   halved below 0.02, goes to 0; a run that faded out means such a lever is too
   high. In the tests' scenario (R0 about 2.3) a variation of 0.875 gives 61%
-  infected in four runs and a response of up to 30% gives 70% in three.
+  infected in four runs and a response of up to 30% gives 70% in three. A
+  fade-out is a run that infected under twice its seeds; the peak staying
+  under twice the seeds counts only for a peak day, because a behaviour
+  response holds the peak down while the infections go on (the review found
+  a response turned back at 0.6 for a 10% target it reaches at 0.78).
 - `behavior_response.scale` needs a behaviour-response entry in the scenario;
   without one the validator says so.
 - `peak_day` with either new lever is refused with a message naming the two
@@ -302,7 +336,16 @@ who knows both R0 and the real attack rate can keep R0.
 - A fit on a new lever does not set beta, so it does not replace the R0
   pilot: on a network where the pilot runs, the pilot runs first and the fit
   follows. (Part 2's rule, the fit supersedes the pilot, stays for the two
-  beta levers.)
+  beta levers.) As shipped: that holds for the behaviour response, which the
+  pilot runs without. The pilot and the closed form of 4.3 depend on the
+  variation, so a fit on `disease.rel_sus_cv` calibrates beta at every value
+  it tries, and the fitted run is the run a plain scenario with the fitted
+  coefficient gets. On the hybrid network at R0 2.5 a fit to 30% infected
+  with one calibration before it reported 30% at a coefficient of 2 with a
+  real R0 of 2.1; calibrated at each trial it ends at the bound with 36%
+  infected and R0 2.6 on a fresh seed, which says the target is out of reach
+  with R0 where it is. A measles-like scenario fitted to 80% infected ends at
+  a coefficient of 1.5 with beta raised from 186 to 347 and R0 12.
 - `stats.fit` is unchanged; `run_simulation` notes
   `rel_sus_cv_fitted_to_attack_rate` or `behavior_response_fitted_to_attack_rate`.
 - Agent rule: when the user gives a known attack rate or peak size and the R0
@@ -574,10 +617,13 @@ Python:
   `cv = 0` no state is drawn and the parity suite passes unchanged.
 - Final size: on the random network at 50k agents, R0 2.5 with `cv = 1`
   infects within 3 points of the closed form (60%), and `cv = 0` within 3
-  points of 89%; the measured R0 is within 10% of the configured one in both.
+  points of 89%. As shipped: the pilot's reading is the test of R0 (within 5%
+  of the known value at coefficients of 1 and 2, the mean of three seeds).
 - Saturation: the loss function reproduces the table of 4.3; a scenario with
-  a loss above 2% runs the pilot and its measured R0 lands within 5% of the
-  target; one below 2% runs none; the age-structured network never does.
+  a loss above 2% is corrected by the closed form, with no pilot, to within
+  0.5% of the target; one below 2% is left alone; the age-structured network
+  never is. As shipped: the factor after prevalence falls is within 3% of 1,
+  not 1%.
 - Behaviour response: the factor equals the formula on every step; it is 1
   with nobody infectious and outside the window; it multiplies with
   seasonality and a dated reduction; the peak and the one-year attack rate
@@ -668,7 +714,10 @@ The multiplier is one gamma draw per agent and one multiplication per step;
 the response is one mean and one multiplication per step. Neither changes the
 measured run times. A fit keeps its bound of eight runs; on a network where
 the pilot runs, a fit on a new lever adds the pilot (about 3 s locally at 10k
-agents). The Parameters section adds no data to the client: the registry is
+agents). As shipped: a fit on the variation where a pilot sets beta runs
+the pilot at every trial, two or three pilots of about 2 s each per trial at
+10k agents on the hybrid network (35 s for three trials against 24 s with one
+calibration); eight trials stay under the service's 120 s limit locally. The Parameters section adds no data to the client: the registry is
 already there. No new dependency in either language (`scipy` is already a
 dependency of Starsim).
 

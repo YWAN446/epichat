@@ -1,8 +1,9 @@
 """Part 2, 7.7: a lever bisected on a log scale until one outcome the participant knows is reached."""
 import pytest
 
+from epichat.params.r0 import with_r0
 from epichat.params.schema_v2 import SimParamsV2
-from epichat.sim import fit
+from epichat.sim import calibrate, fit
 from epichat.sim.replicates import run_replicates
 
 
@@ -127,13 +128,78 @@ def test_a_lever_at_zero_starts_at_a_half_and_the_levers_know_their_direction():
     assert seen[0] == 0.5                                                          # a variation of 0 cannot be doubled
 
 
-def test_the_pilot_runs_before_a_fit_that_does_not_move_beta():
-    body = varied("attack_rate", 0.5, "disease.rel_sus_cv", n_agents=5000).model_dump()
-    body["network"]["network_type"] = "hybrid"
-    payload = run_replicates(SimParamsV2.model_validate(body))
-    assert "fit" in payload["stats"] and "r0_calibration" in payload["stats"]      # the fit keeps R0, so the pilot still sets beta
-    assert payload["effective_params"]["disease"]["rel_sus_cv"] == payload["stats"]["fit"]["value"]
+def test_the_pilot_runs_once_before_a_response_fit_and_at_every_trial_of_a_variation_fit(monkeypatch):
+    # a fit that keeps R0 keeps the pilot: once when the pilot does not depend on the lever, at each trial when it does
+    from epichat.sim import replicates
+    calls = []
+    monkeypatch.setattr(replicates, "calibrate_by_measurement", lambda p, seed: (calls.append("pilot"), (p, {"target": 1.0}))[1])
+
+    def fake_fit(p, seed, prepare=None):
+        calls.append("fit with prepare" if prepare is not None else "fit")
+        return (p if prepare is None else prepare(p)), {"lever": p.run.fit.lever}
+
+    monkeypatch.setattr(replicates, "fit_lever", fake_fit)
+    small = {"n_agents": 500, "sim_dur_years": 20 / 365}
+    out = run_replicates(varied("attack_rate", 0.5, "behavior_response.scale", response={"scale": 0.3}, **small))
+    assert calls == ["pilot", "fit"] and out["stats"]["r0_calibration"] == {"target": 1.0}
+    calls.clear()
+    out = run_replicates(varied("attack_rate", 0.5, "disease.rel_sus_cv", **small))
+    assert calls == ["fit with prepare", "pilot"] and out["stats"]["r0_calibration"] == {"target": 1.0}
+    calls.clear()
+    out = run_replicates(scenario("attack_rate", 0.5, **small))
+    assert calls == ["fit"] and "r0_calibration" not in out["stats"]              # a fit on beta replaces the pilot
+
+
+def test_a_fit_on_beta_replaces_the_pilot_on_the_hybrid_network():
     beta_fit = scenario("attack_rate", 0.5, n_agents=5000).model_dump()
     beta_fit["network"]["network_type"] = "hybrid"
     payload = run_replicates(SimParamsV2.model_validate(beta_fit))
     assert "fit" in payload["stats"] and "r0_calibration" not in payload["stats"]  # a fit on beta still replaces the pilot
+
+
+def _flattened(scale: float, wanted: float, lever: str) -> SimParamsV2:
+    """R0 1.5 with the default 1% seeding over 120 days: a response of 0.6 holds the peak under twice the seeds while an eighth of the
+    agents are infected."""
+    body = {"disease": {"dur_inf": {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, "p_death": 0.0},
+            "interventions": [{"type": "behavior_response", "scale": scale}],
+            "run": {"n_agents": 10000, "sim_dur_years": 120 / 365, "rand_seed": 1, "fit": {"target": "attack_rate", "value": wanted, "lever": lever}}}
+    return with_r0(SimParamsV2.model_validate(body), 1.5)
+
+
+def test_a_flattened_epidemic_is_not_a_fade_out():
+    # review of the follow-up's phase A: the peak criterion exists for the peak day; on an attack rate it read the plateau a response
+    # makes as a fade-out, turned the response back at 0.6 and sent a beta fit the wrong way
+    p = _flattened(0.3, 0.10, "behavior_response.scale")
+    fitted, info = fit.fit_lever(p, 1)
+    entry = next(i for i in fitted.interventions if i.type == "behavior_response")
+    assert abs(info["achieved"] - 0.10) <= 0.02 and entry.scale > 0.6 and info["runs"] <= fit.MAX_RUNS, info
+    p = _flattened(0.6, 0.05, "disease.beta")
+    fitted, info = fit.fit_lever(p, 1)
+    assert abs(info["achieved"] - 0.05) <= 0.02 and fitted.disease.beta < p.disease.beta, info
+
+
+def test_a_fit_on_the_variation_calibrates_every_trial():
+    # review of the follow-up's phase A: the pilot depends on the coefficient the fit moves, so each trial is calibrated at its own
+    # coefficient, and the fitted run is the run a plain scenario with that coefficient gets
+    body = varied("attack_rate", 0.5, "disease.rel_sus_cv", n_agents=5000).model_dump()
+    body["network"]["network_type"] = "hybrid"
+    payload = run_replicates(SimParamsV2.model_validate(body))
+    plain = SimParamsV2.model_validate(body).model_dump()
+    plain["disease"]["rel_sus_cv"] = payload["stats"]["fit"]["value"]
+    plain["run"]["fit"] = None
+    expected, info = calibrate.calibrate_by_measurement(SimParamsV2.model_validate(plain), 1)
+    assert payload["effective_params"]["disease"]["beta"] == expected.disease.beta and payload["stats"]["r0_calibration"] == info
+    assert payload["effective_params"]["disease"]["rel_sus_cv"] == payload["stats"]["fit"]["value"], info
+
+
+def test_a_fit_on_the_variation_runs_the_pilot_its_coefficient_needs():
+    # on the random network no pilot runs without variation; at the fitted coefficient saturation takes a share of a high R0, which
+    # the pilot restores and reports
+    body = {"disease": {"dur_inf": {"mean_days": 8.0, "dist": "gamma", "sd_days": 3.0}, "p_death": 0.0, "seed": {"mode": "count", "value": 50}},
+            "run": {"n_agents": 10000, "sim_dur_years": 0.4, "rand_seed": 1, "fit": {"target": "attack_rate", "value": 0.8, "lever": "disease.rel_sus_cv"}}}
+    p = with_r0(SimParamsV2.model_validate(body), 12.0)
+    assert not calibrate.needs_calibration(p)
+    payload = run_replicates(p)
+    info = payload["stats"]["r0_calibration"]
+    assert info["target"] == pytest.approx(12.0, abs=0.01) and info["corrections"] >= 1, info
+    assert payload["effective_params"]["disease"]["beta"] > p.disease.beta and payload["stats"]["fit"]["value"] > 0.5, payload["stats"]["fit"]

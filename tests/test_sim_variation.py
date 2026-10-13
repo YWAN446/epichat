@@ -75,3 +75,17 @@ def test_the_final_size_follows_the_closed_form():
         sim.run()
         attack = extract(sim, 50000, sim.seeds_day0, False)["stats"]["total_infected"] / 50000
         assert abs(attack - expected) < 0.03, (cv, attack)
+
+
+def test_the_mean_multiplier_of_the_susceptible_is_recorded_and_falls():
+    # the R0 measurement weighs an infection by the susceptibility that is left, so each step records the susceptibles' mean multiplier
+    sim = build_sim(scenario(1.0, n=10000, years=120 / 365))
+    sim.run()
+    d = sim.diseases[0]
+    means = np.asarray(d.sus_ind_means)
+    assert len(means) == len(sim.results.timevec) and np.all(np.isfinite(means))
+    assert means[0] == pytest.approx(np.asarray(d.rel_sus_ind).mean(), rel=0.01)       # before anything spread: everyone but the seeds
+    assert means[60] < means[0] and means[-1] < 0.6 * means[0]                        # the most susceptible were infected first
+    plain = build_sim(scenario(0.0, n=2000, years=20 / 365))
+    plain.run()
+    assert plain.diseases[0].sus_ind_means == []                                       # nothing is recorded without variation

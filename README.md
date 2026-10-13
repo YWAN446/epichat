@@ -195,10 +195,14 @@ registry, schema v2, the exact R0, diagnostics and options) and
   infected first, so the epidemic ends smaller at the same R0 (60% at a
   coefficient of 1). A `behavior_response` entry makes transmission fall as
   the share infectious rises and recover as it falls: it flattens the peak
-  and removes the overshoot, and because it relaxes it cannot take the total
-  far below the herd immunity threshold. The fit can move either one instead
-  of beta (`lever: disease.rel_sus_cv` or `behavior_response.scale`), which
-  matches a known attack rate while R0 stays where it was set.
+  and removes the overshoot, and because it relaxes it cannot, in the long
+  run, take the total far below the herd immunity threshold (a run that ends
+  well below it has not finished). The fit can move either one instead of
+  beta (`lever: disease.rel_sus_cv` or `behavior_response.scale`), which
+  matches a known attack rate while R0 stays where it was set: with variation
+  the service keeps R0 by correcting beta, by a closed form on the random
+  network (where a very susceptible agent's chance per contact is capped at
+  1) and by the pilot on the hybrid one, at every value a fit tries.
 - **Diagnostics, continued.** `well_mixed` (a random-network run that a
   hybrid scenario would describe better) and `r0_gap` (the measured R0 far
   from the configured one) join the list above.
@@ -555,7 +559,10 @@ falls: people being careful, not a measure: `type: behavior_response`.
 - *"People become careful as cases rise"* → `{type: behavior_response, scale: 0.5}`
 
 It flattens the peak and removes the overshoot; because it relaxes as cases
-fall it cannot take the total below the herd immunity threshold `1 − 1/R0`.
+fall it cannot, in the long run, take the total far below the herd immunity
+threshold `1 − 1/R0` (58% against 60% at R0 2.5 with the value above). A run
+that ends well below the threshold has not finished: the response is still
+holding transmission down.
 
 Every effect size above is an illustrative assumption unless the database
 carries it (`docs/data-review-requests.md` asks for the cited ranges).

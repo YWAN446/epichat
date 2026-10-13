@@ -340,3 +340,33 @@ def test_r0_gap_stands_down_while_a_behaviour_response_is_engaged_from_the_start
     assert "r0_gap" not in ids(run(engaged, NORMAL, total=8600, seeds=500, stats_extra=low))
     later = params(**{"interventions": [{"type": "behavior_response", "scale": 0.5, "start_day": 60}]})
     assert "r0_gap" in ids(run(later, NORMAL, total=8600, seeds=500, stats_extra=low))               # the seeds had finished before it began
+
+
+def test_r0_gap_treats_a_calibrated_run_like_any_other():
+    # review of the follow-up's phase A: the calibration's target was returned before the stand-downs, the day-0 seasonal factor and
+    # the initial immunity, although the pilot measures without any of them and the live measurement with all of them
+    calibration = {"r0_calibration": {"target": 2.5, "measured": 2.48, "se": 0.08, "corrections": 1, "reached": True}}
+
+    def hybrid(**over):
+        return params(**{"network.network_type": "hybrid", **over})
+
+    def gap(p, measured):
+        return "r0_gap" in ids(run(p, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": measured, **calibration}))
+
+    assert gap(hybrid(), 1.7) and not gap(hybrid(), 2.4)
+    assert not gap(hybrid(interventions=[{"type": "behavior_response", "scale": 0.5}]), 1.7)            # the response was engaged from day 0
+    assert not gap(hybrid(interventions=[{"type": "treatment", "coverage": 1.0, "start_day": 0}]), 1.25)
+    seasonal = hybrid(interventions=[{"type": "seasonality", "scale": 0.3}])
+    assert not gap(seasonal, 3.2) and gap(seasonal, 2.3)                                                 # the seeds transmit at 1.3 times the target
+    immune = hybrid(**{"disease.initial_immune_frac": 0.3})
+    assert not gap(immune, 1.75) and gap(immune, 2.5)                                                    # the live measurement reads R_eff
+
+
+def test_r0_gap_stands_down_for_as_long_as_the_seeds_transmit_in_a_latent_model():
+    # a seed of a latent model is exposed first, so it transmits until about the latent plus the infectious period
+    latent = {"disease.model": "seir", "disease.dur_exp": {"mean_days": 6.0, "dist": "gamma", "sd_days": 2.0}}
+    low = {"r0_measured": 1.2}
+    during = params(**latent, interventions=[{"type": "behavior_response", "scale": 0.5, "start_day": 13}])
+    assert "r0_gap" not in ids(run(during, NORMAL, total=8600, seeds=500, stats_extra=low))
+    after = params(**latent, interventions=[{"type": "behavior_response", "scale": 0.5, "start_day": 40}])
+    assert "r0_gap" in ids(run(after, NORMAL, total=8600, seeds=500, stats_extra=low))

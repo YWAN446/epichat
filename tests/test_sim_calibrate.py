@@ -207,4 +207,41 @@ def test_the_saturation_loss_and_the_pilot_it_asks_for():
     assert not calibrate.needs_calibration(SimParamsV2.model_validate(off))
     calibrated, info = calibrate.calibrate_by_measurement(measles(1.0), 1)
     assert calibrated.disease.beta > measles(1.0).disease.beta * 1.05 and info["corrections"] >= 1 and info["reached"] is True, info
-    assert abs(calibrate.measure(calibrated, 2, 12.0).mean - 12.0) / 12.0 < 0.10
+    assert abs(_true_r0(calibrated) - 12.0) / 12.0 < 0.005, (calibrated.disease.beta, info)          # against the known truth, not the estimator itself
+
+
+def _varied(target: float, cv: float, dur: dict, n: int) -> SimParamsV2:
+    body = _plain(target, dur, n=n).model_dump()
+    body["disease"]["rel_sus_cv"] = cv
+    return SimParamsV2.model_validate(body)
+
+
+def _true_r0(p: SimParamsV2) -> float:
+    """The random network's R0 with variation: the formula less the share lost to the cap on a per-contact probability."""
+    return r0.approx_r0(p) * (1 - calibrate.saturation_loss(p))
+
+
+def test_the_pilot_measures_the_configured_r0_when_susceptibility_varies():
+    # review of the follow-up's phase A: the seeds infect the most susceptible first, so a weight that counts heads reads low
+    # (0.91 of the truth at a coefficient of variation of 1, 0.75 at 2); the weight follows the susceptibility that is left
+    for cv in (1.0, 2.0):
+        p = _varied(2.5, cv, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, 20000)
+        truth = _true_r0(p)
+        assert truth > 2.45
+        readings = [calibrate.measure(p, s, 2.5).mean for s in (1, 2, 3)]
+        assert abs(sum(readings) / 3 - truth) / truth < 0.05, (cv, readings)
+
+
+def test_saturation_on_the_random_network_is_corrected_by_the_closed_form(monkeypatch):
+    # R0 4 with a coefficient of variation of 2 loses 3.6% to saturation. The pilot's biased weight raised beta by a half (R0 5.4), and
+    # with the weight repaired one noisy reading still left it 8% high; the loss is a closed form there, so beta is solved, not measured
+    p = _varied(4.0, 2.0, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, 10000)
+    assert calibrate.needs_calibration(p)
+    monkeypatch.setattr(calibrate, "measure", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no pilot where the loss is a closed form")))
+    calibrated, info = calibrate.calibrate_by_measurement(p, 1)
+    assert abs(_true_r0(calibrated) - 4.0) / 4.0 < 0.005 and calibrated.disease.beta > p.disease.beta, (calibrated.disease.beta, p.disease.beta, info)
+    assert info == {"target": 4.0, "measured": pytest.approx(4.0, abs=0.02), "se": 0.0, "corrections": 1, "reached": True}
+    # a target the bound cannot give ends at the bound and says so
+    steep = _varied(5.5, 2.0, {"mean_days": 2.0, "dist": "gamma", "sd_days": 1.0}, 10000)
+    capped, info = calibrate.calibrate_by_measurement(steep, 1)
+    assert capped.disease.beta == 1000.0 and info["reached"] is False and info["measured"] < 5.5 * 0.95, info

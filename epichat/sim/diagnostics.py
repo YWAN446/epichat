@@ -371,17 +371,16 @@ def r0_gap_threshold(reference: float, seeds: int) -> float:
 
 
 def _r0_reference(run: _Run) -> float | None:
-    """What the day-0 seeds should have passed on: the calibration's target on a calibrated run; else R_eff times the day-0 seasonal
-    factor (1 + scale × cos(2π shift)); None when a treatment starting within the first infectious period cuts their transmission."""
+    """What the day-0 seeds should have passed on: R_eff (on a calibrated run the calibration's target, less the initial immunity)
+    times the day-0 seasonal factor (1 + scale × cos(2π shift)); None when a treatment or a behaviour response (follow-up spec 5.4)
+    that starts while the seeds still transmit, the latent plus the infectious period, cuts what they pass on. The pilot measures
+    without interventions or initial immunity and the live run with them, so a calibrated run takes the same adjustments as any
+    other."""
     p = run.params
-    calibration = run.stats.get("r0_calibration")
-    if calibration is not None and calibration.get("target"):
-        return float(calibration["target"])
+    transmitting = p.disease.dur_inf.mean_days + (p.disease.dur_exp.mean_days if p.disease.dur_exp is not None else 0.0)
     for i in p.interventions:
-        if i.type == "treatment" and i.start_day <= p.disease.dur_inf.mean_days:
+        if i.type in ("treatment", "behavior_response") and i.start_day <= transmitting:
             return None
-        if i.type == "behavior_response" and i.start_day <= p.disease.dur_inf.mean_days:
-            return None                         # follow-up spec 5.4: the response is already lowering what the seeds pass on
     reference = run.r_eff
     for i in p.interventions:
         if i.type == "seasonality":

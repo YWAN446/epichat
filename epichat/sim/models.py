@@ -30,6 +30,8 @@ class EpiChatDisease:
         # Follow-up spec 4.1: a personal multiplier drawn once per agent (births included) from a gamma with mean 1 and coefficient
         # of variation cv; with no variation it is the constant 1 and nothing is drawn, so no random stream is added.
         personal = ss.gamma(a=1.0 / cv ** 2, scale=cv ** 2) if cv > 0 else 1.0
+        self.varies = cv > 0
+        self.sus_ind_means: list[float] = []      # with variation: the susceptibles' mean multiplier as each step's transmission begins
         self.define_states(
             ss.FloatArr("rel_sus_ind", default=personal, label="Personal susceptibility multiplier"),
         )
@@ -66,6 +68,9 @@ class EpiChatDisease:
                 self.results.new_deaths_disease[self.ti] += len(deaths)
         super().step_state()
         self.compose_rel_sus()
+        if self.varies:       # the most susceptible are infected first, so the R0 measurement weighs by the susceptibility that is left
+            susceptible = self.susceptible.uids
+            self.sus_ind_means.append(float(np.asarray(self.rel_sus_ind[susceptible]).mean()) if len(susceptible) else float("nan"))
 
 
 class SIR(EpiChatDisease, ss.SIR):

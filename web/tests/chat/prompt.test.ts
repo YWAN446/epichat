@@ -10,6 +10,9 @@ describe("system prompt", () => {
     for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Report", "## Repairs", "## Limits on spread", "## Interventions", "## Contact networks"]) expect(SYSTEM_PROMPT).toContain(heading);
     for (const phrase of ["disease.rel_sus_cv", "behavior_response", "herd immunity threshold", "off by default", "lever: disease.rel_sus_cv", "behavior_response_min_factor"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT.indexOf("## Limits on spread")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Interventions"));
+    // review of phase A: a run that ends far below the threshold has not finished; one rule for a known attack rate; R0 is kept by a correction
+    for (const phrase of ["in the long run", "has not finished", "use the lever of Limits on spread", "by a closed form", "calibrates beta at every value it tries"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    expect(SYSTEM_PROMPT).not.toContain("because it relaxes it cannot take the total far below");
     for (const phrase of ["close on every network", "measured R0", "Covasim", "expectedly null"]) expect(SYSTEM_PROMPT).toContain(phrase);
     for (const phrase of ["stats.r0_calibration.reached", "could not be brought to the R0 you set", "only its seeds transmit", "stats.r0_calibration.measured"]) expect(SYSTEM_PROMPT).toContain(phrase);
     for (const phrase of ["schools closed", "illustrative assumption", "fitted", "remove_interventions", "stats.fit"]) expect(SYSTEM_PROMPT).toContain(phrase);
