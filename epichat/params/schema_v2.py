@@ -66,6 +66,29 @@ class Seed(BaseModel):
         return self
 
 
+AGE_GROUPS = ("children", "adults", "elderly")
+
+
+class AgeMultipliers(BaseModel):
+    """One multiplier per age group (Part 2, section 4.1); 1 leaves the group as it is."""
+    children: float = _field("disease.rel_sus_age.children")
+    adults: float = _field("disease.rel_sus_age.adults")
+    elderly: float = _field("disease.rel_sus_age.elderly")
+
+    def as_tuple(self) -> tuple[float, float, float]:
+        return (self.children, self.adults, self.elderly)
+
+
+class AgeFractions(BaseModel):
+    """One optional probability per age group; None means the scalar applies."""
+    children: Optional[float] = _field("disease.p_death_age.children")
+    adults: Optional[float] = _field("disease.p_death_age.adults")
+    elderly: Optional[float] = _field("disease.p_death_age.elderly")
+
+    def any_set(self) -> bool:
+        return any(v is not None for v in (self.children, self.adults, self.elderly))
+
+
 class DiseaseParams(BaseModel):
     model: Model = "sir"
     beta: float = _field("disease.beta")
@@ -75,10 +98,18 @@ class DiseaseParams(BaseModel):
     p_death: float = _field("disease.p_death")
     p_asymp: float = _field("disease.p_asymp")
     rel_trans_asymp: float = _field("disease.rel_trans_asymp")
+    rel_sus_age: AgeMultipliers = Field(default_factory=AgeMultipliers)
+    p_death_age: AgeFractions = Field(default_factory=AgeFractions)
+    rel_trans_exposed: float = _field("disease.rel_trans_exposed")
     sis_waning: float = _field("disease.sis_waning")
     sis_imm_boost: float = _field("disease.sis_imm_boost")
     seed: Seed = Field(default_factory=lambda: Seed(value=0.01))
     initial_immune_frac: float = _field("disease.initial_immune_frac")
+
+    def death_probabilities(self) -> tuple[float, float, float]:
+        """Each group's case fatality ratio: its own value, or the scalar."""
+        a = self.p_death_age
+        return tuple(v if v is not None else self.p_death for v in (a.children, a.adults, a.elderly))
 
     @model_validator(mode="after")
     def check_model_requirements(self) -> "DiseaseParams":

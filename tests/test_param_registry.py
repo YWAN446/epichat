@@ -73,7 +73,7 @@ def test_applicable_filters_by_model():
 
 def test_export_is_a_plain_json_document_in_registry_order():
     out = reg.export()
-    assert out["version"] == 1 and [p["path"] for p in out["params"]] == [s.path for s in reg.REGISTRY]
+    assert out["version"] == 2 and [p["path"] for p in out["params"]] == [s.path for s in reg.REGISTRY]
     text = json.dumps(out)
     assert json.loads(text) == out
     first = out["params"][0]
@@ -95,3 +95,17 @@ def test_registry_bounds_admit_every_database_consensus_value():
                 value = consensus.get(key)
                 if value is not None:
                     assert lo <= value <= hi, (name, field, key, value, (lo, hi))
+
+
+AGE_GROUPS = ("children", "adults", "elderly")
+
+
+def test_the_age_specific_leaves_and_the_exposed_transmissibility_are_registered():
+    for group in AGE_GROUPS:
+        sus = reg.spec_for(f"disease.rel_sus_age.{group}")
+        assert sus.default == 1.0 and sus.bounds == (0.0, 10.0) and sus.models == () and sus.tier == "advanced"
+        death = reg.spec_for(f"disease.p_death_age.{group}")
+        assert death.default is None and death.bounds == (0.0, 1.0) and death.models == reg.DEATH_MODELS and death.tier == "advanced"
+    exposed = reg.spec_for("disease.rel_trans_exposed")
+    assert exposed.default == 0.0 and exposed.bounds == (0.0, 1.0) and exposed.models == reg.LATENT_MODELS
+    assert reg.export()["version"] == 2

@@ -94,6 +94,23 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("disease.rel_trans_asymp", "disease", "Asymptomatic transmissibility", "Transmissibility of an asymptomatic infection relative "
               "to a symptomatic one.", "number", "fraction", 0.5, (0.0, 1.0), None, ("seiar",), "advanced", None,
               "SEIAR rel_trans_base for asymptomatic agents", ("peak", "final_size")),
+    *[ParamSpec(f"disease.rel_sus_age.{group}", "disease", f"Susceptibility, {label}",
+                f"Multiplier on the susceptibility of {label} (1 leaves it as it is). Applies through the agents' ages, so "
+                "fetch the demographics first for the elderly to exist; an illustrative assumption unless the database carries it.",
+                "number", "multiplier", 1.0, (0.0, 10.0), None, (), "advanced", None,
+                "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector", ("peak", "final_size"))
+      for group, label in (("children", "children (under 18)"), ("adults", "adults (18 to 64)"), ("elderly", "the elderly (65 and over)"))],
+    *[ParamSpec(f"disease.p_death_age.{group}", "disease", f"Case fatality ratio, {label}",
+                f"Share of cases among {label} that die; unset means the overall p_death. An illustrative assumption until the "
+                "database carries fatality by age.",
+                "number", "fraction", None, (0.0, 1.0), None, DEATH_MODELS, "advanced", None,
+                "the per-agent death draw (ss.bernoulli with an age-dependent probability)", ("deaths",))
+      for group, label in (("children", "children (under 18)"), ("adults", "adults (18 to 64)"), ("elderly", "the elderly (65 and over)"))],
+    ParamSpec("disease.rel_trans_exposed", "disease", "Presymptomatic transmissibility",
+              "Transmissibility of an agent in the latent period as a fraction of the infectious value; 0 means no transmission "
+              "before symptoms. Raises the effective infectious days the R0 formula uses.",
+              "number", "fraction", 0.0, (0.0, 1.0), None, LATENT_MODELS, "advanced", None,
+              "rel_trans_base of exposed agents, who become transmission sources", ("peak", "timing")),
     ParamSpec("disease.sis_waning", "disease", "Immunity waning (sis)", "Rate per year at which immunity after an sis infection decays; 0 "
               "reproduces the classic SIS with no immunity.", "number", "per year", 0.0, (0.0, 52.0), None, ("sis",), "advanced", None,
               "ss.SIS(waning=ss.peryear(...))", ("endemicity",)),
@@ -177,4 +194,4 @@ def applicable(model: str) -> tuple[ParamSpec, ...]:
 
 
 def export() -> dict:
-    return {"version": 1, "params": [s.as_dict() for s in REGISTRY]}
+    return {"version": 2, "params": [s.as_dict() for s in REGISTRY]}

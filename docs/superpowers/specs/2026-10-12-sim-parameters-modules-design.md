@@ -80,8 +80,8 @@ lists few defaults.
 
 | Path | Kind, unit | Default | Bounds | Models | Tier | Starsim target | Affects |
 |---|---|---|---|---|---|---|---|
-| `disease.rel_sus_age.under18`, `.18_64`, `.over65` | number, multiplier | 1 | 0 to 10 | all | advanced | `rel_sus_base` of the agents in the group (4.2) | peak, final_size |
-| `disease.p_death_age.under18`, `.18_64`, `.over65` | number, fraction | null (the scalar `p_death`) | 0 to 1 | the models with deaths | advanced | the per-agent death draw in `set_progression` | deaths |
+| `disease.rel_sus_age.children`, `.adults`, `.elderly` | number, multiplier | 1 | 0 to 10 | all | advanced | `rel_sus_base` of the agents in the group (4.2) | peak, final_size |
+| `disease.p_death_age.children`, `.adults`, `.elderly` | number, fraction | null (the scalar `p_death`) | 0 to 1 | the models with deaths | advanced | the per-agent death draw in `set_progression` | deaths |
 | `disease.rel_trans_exposed` | number, fraction of the infectious value | 0 | 0 to 1 | seir, seirs, seiar | advanced | `rel_trans_base` of exposed agents, who become sources (4.3) | peak, timing |
 
 The scalar `disease.p_death` stays and is what a group without its own value
@@ -89,7 +89,9 @@ uses. The three susceptibility multipliers apply whenever agents carry ages,
 which in Starsim is always: without a fetched pyramid the default ages are
 uniform from 0 to 60, so the elderly group is empty and the agent must say so
 when a user asks for an elderly effect, or fetch the demographics first
-(section 6).
+(section 6). Ages are assigned from the three shares on every network from
+this phase on, not only on the age-structured one, since the disease
+parameters depend on them; without shares, Starsim's default ages apply.
 
 - Automatic source: none today. `fatality_rate_by_age` is requested from the
   database (section 11); when it exists, `lookup_disease` reports it and the

@@ -115,3 +115,21 @@ def test_path_helpers():
     assert d["a"]["c"]["f"] == 3 and d["g"] == {"h": 4}
     assert paths.diff({"a": {"b": 1}, "x": 2}, {"a": {"b": 5}, "x": 2, "y": [1]}) == [
         {"field": "a.b", "from": 1, "to": 5}, {"field": "y", "from": None, "to": [1]}]
+
+
+def test_age_multipliers_fatality_by_age_and_exposed_transmissibility_default_and_validate():
+    p = SimParamsV2()
+    assert p.disease.rel_sus_age.model_dump() == {"children": 1.0, "adults": 1.0, "elderly": 1.0}
+    assert p.disease.p_death_age.model_dump() == {"children": None, "adults": None, "elderly": None}
+    assert p.disease.rel_trans_exposed == 0.0
+    q = SimParamsV2.model_validate({"disease": {"model": "seir", "dur_exp": {"mean_days": 5}, "p_death": 0.01,
+                                                "rel_sus_age": {"children": 1.5, "elderly": 0.7}, "p_death_age": {"elderly": 0.1},
+                                                "rel_trans_exposed": 0.5}})
+    assert q.disease.rel_sus_age.adults == 1.0 and q.disease.rel_sus_age.elderly == 0.7
+    assert q.disease.death_probabilities() == (0.01, 0.01, 0.1)
+    with pytest.raises(ValidationError):
+        SimParamsV2.model_validate({"disease": {"rel_sus_age": {"children": 11}}})
+    with pytest.raises(ValidationError):
+        SimParamsV2.model_validate({"disease": {"p_death_age": {"adults": 1.5}}})
+    with pytest.raises(ValidationError):
+        SimParamsV2.model_validate({"disease": {"model": "seir", "dur_exp": {"mean_days": 5}, "rel_trans_exposed": -0.1}})

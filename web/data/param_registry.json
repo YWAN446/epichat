@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "params": [
   {
    "path": "disease.model",
@@ -365,6 +365,186 @@
    "affects": [
     "peak",
     "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.rel_sus_age.children",
+   "module": "disease",
+   "label": "Susceptibility, children (under 18)",
+   "description": "Multiplier on the susceptibility of children (under 18) (1 leaves it as it is). Applies through the agents' ages, so fetch the demographics first for the elderly to exist; an illustrative assumption unless the database carries it.",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 1.0,
+   "bounds": [
+    0.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.rel_sus_age.adults",
+   "module": "disease",
+   "label": "Susceptibility, adults (18 to 64)",
+   "description": "Multiplier on the susceptibility of adults (18 to 64) (1 leaves it as it is). Applies through the agents' ages, so fetch the demographics first for the elderly to exist; an illustrative assumption unless the database carries it.",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 1.0,
+   "bounds": [
+    0.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.rel_sus_age.elderly",
+   "module": "disease",
+   "label": "Susceptibility, the elderly (65 and over)",
+   "description": "Multiplier on the susceptibility of the elderly (65 and over) (1 leaves it as it is). Applies through the agents' ages, so fetch the demographics first for the elderly to exist; an illustrative assumption unless the database carries it.",
+   "kind": "number",
+   "unit": "multiplier",
+   "default": 1.0,
+   "bounds": [
+    0.0,
+    10.0
+   ],
+   "choices": null,
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector",
+   "affects": [
+    "peak",
+    "final_size"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.p_death_age.children",
+   "module": "disease",
+   "label": "Case fatality ratio, children (under 18)",
+   "description": "Share of cases among children (under 18) that die; unset means the overall p_death. An illustrative assumption until the database carries fatality by age.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": null,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "sir",
+    "seir",
+    "sirs",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "the per-agent death draw (ss.bernoulli with an age-dependent probability)",
+   "affects": [
+    "deaths"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.p_death_age.adults",
+   "module": "disease",
+   "label": "Case fatality ratio, adults (18 to 64)",
+   "description": "Share of cases among adults (18 to 64) that die; unset means the overall p_death. An illustrative assumption until the database carries fatality by age.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": null,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "sir",
+    "seir",
+    "sirs",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "the per-agent death draw (ss.bernoulli with an age-dependent probability)",
+   "affects": [
+    "deaths"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.p_death_age.elderly",
+   "module": "disease",
+   "label": "Case fatality ratio, the elderly (65 and over)",
+   "description": "Share of cases among the elderly (65 and over) that die; unset means the overall p_death. An illustrative assumption until the database carries fatality by age.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": null,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "sir",
+    "seir",
+    "sirs",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "the per-agent death draw (ss.bernoulli with an age-dependent probability)",
+   "affects": [
+    "deaths"
+   ],
+   "requires": []
+  },
+  {
+   "path": "disease.rel_trans_exposed",
+   "module": "disease",
+   "label": "Presymptomatic transmissibility",
+   "description": "Transmissibility of an agent in the latent period as a fraction of the infectious value; 0 means no transmission before symptoms. Raises the effective infectious days the R0 formula uses.",
+   "kind": "number",
+   "unit": "fraction",
+   "default": 0.0,
+   "bounds": [
+    0.0,
+    1.0
+   ],
+   "choices": null,
+   "models": [
+    "seir",
+    "seirs",
+    "seiar"
+   ],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "rel_trans_base of exposed agents, who become transmission sources",
+   "affects": [
+    "peak",
+    "timing"
    ],
    "requires": []
   },
