@@ -185,3 +185,30 @@ def test_presymptomatic_transmission_with_asymptomatic_cases_keeps_the_calibrati
         sim.run()
         totals.append(int(sim.results.seiar.cum_infections.values[-1]) + sim.seeds_day0)
     assert abs(implied_r0(int(np.mean(totals)), N) - 2.5) / 2.5 < 0.05
+
+
+def test_measured_r0_matches_the_configured_r0_on_the_random_network():
+    # 500 seeds rather than the spec's 50: the mean of 50 secondary-infection counts has a 9% standard error at R0 2.5
+    body = scenario("sir", "gamma", 2.5).model_dump()
+    body["disease"]["seed"] = {"mode": "count", "value": 500, "day": 0}
+    body["run"]["sim_dur_years"] = 60 / 365
+    p = SimParamsV2.model_validate(body)
+    measured = []
+    for seed in (1, 2, 3):
+        sim = build_sim(p, seed=seed)
+        sim.run()
+        measured.append(extract(sim, N, sim.seeds_day0, False)["stats"]["r0_measured"])
+    assert abs(np.mean(measured) - 2.5) / 2.5 < 0.10
+
+
+def test_measured_r0_is_finite_on_the_hybrid_network_and_within_a_factor_of_two_of_the_approximation():
+    body = scenario("sir", "gamma", 2.5).model_dump()
+    body["network"].update(network_type="hybrid")
+    body["demographics"].update(SHARES)
+    body["disease"]["seed"] = {"mode": "count", "value": 500, "day": 0}
+    body["run"].update(sim_dur_years=60 / 365, calibrate_r0=False)
+    p = r0.with_r0(SimParamsV2.model_validate(body), 2.5)
+    sim = build_sim(p, seed=1)
+    sim.run()
+    measured = extract(sim, N, sim.seeds_day0, False)["stats"]["r0_measured"]
+    assert measured is not None and 1.25 < measured < 5.0

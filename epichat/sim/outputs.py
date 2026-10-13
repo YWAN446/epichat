@@ -5,6 +5,7 @@ stats carry seeds_day0 and seeds (day 0 plus delayed), the latter for spec 10.""
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 import starsim as ss
 
 from .interventions import SeedInfections
@@ -21,6 +22,31 @@ def realized_seeds(sim: ss.Sim, seeds_day0: int) -> int:
     """The day-0 seeds plus what a delayed SeedInfections infected: spec 10's `seeds`."""
     delayed = sum(int(i.n_seeded) for i in sim.interventions.values() if isinstance(i, SeedInfections))
     return int(seeds_day0) + delayed
+
+
+def infection_log(sim: ss.Sim):
+    """The first disease's infection log: on the analyzer once the run has finalized (Starsim moves it there), else on the disease."""
+    disease = sim.diseases[0]
+    analyzer = sim.analyzers.get("infection_log") if hasattr(sim.analyzers, "get") else None
+    if analyzer is not None and getattr(analyzer, "logs", None) and disease.name in analyzer.logs and analyzer.logs[disease.name] is not None:
+        return analyzer.logs[disease.name]
+    return getattr(disease, "infection_log", None)
+
+
+def measured_r0(sim: ss.Sim) -> float | None:
+    """Part 2, 5.6: the mean number of secondary infections caused by the day-0 seeds (the log's entries with source -1 at t 0);
+    None without day-0 seeds, 0.0 when they infected nobody."""
+    log = infection_log(sim)
+    if log is None or len(log) == 0:
+        return None
+    df = log.to_df()
+    source = pd.to_numeric(df["source"], errors="coerce").to_numpy(dtype=float)
+    t = np.array([float(getattr(x, "value", x)) for x in df["t"]])        # the log stores TimePars (days) on the numeric day axis
+    targets = df["target"].to_numpy()
+    seeds = targets[(t == 0) & (np.isnan(source) | (source < 0))]
+    if len(seeds) == 0:
+        return None
+    return float(np.isin(source, seeds).sum()) / len(seeds)
 
 
 def extract(sim: ss.Sim, n_agents: int, seeds_day0: int, demographics_on: bool) -> dict:
@@ -59,4 +85,5 @@ def extract(sim: ss.Sim, n_agents: int, seeds_day0: int, demographics_on: bool) 
         "seeds_day0": int(seeds_day0),
         "seeds": realized_seeds(sim, seeds_day0),
     }
+    stats["r0_measured"] = measured_r0(sim)          # Part 2, 5.6; a ratio, never scaled
     return {"stats": stats, "series": series}

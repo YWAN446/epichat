@@ -31,6 +31,7 @@ class RunResult:
     timed_out: bool
     duration_ms: int
     replicates: dict | None = None
+    effective_params: dict | None = None      # the child's parameters as run (Part 2, 5.7: a calibrated beta)
 
 
 def child_environment() -> dict[str, str]:
@@ -73,6 +74,7 @@ def run_params(params: SimParamsV2, output_path: Path, timeout: float) -> RunRes
             return RunResult(False, {}, {}, "Simulation finished but wrote no result file.", False, elapsed())
         with open(output_path, encoding="utf-8") as f:
             payload = json.load(f)
-        return RunResult(True, payload.get("stats", {}), payload.get("series", {}), None, False, elapsed(), payload.get("replicates"))
+        return RunResult(True, payload.get("stats", {}), payload.get("series", {}), None, False, elapsed(), payload.get("replicates"),
+                         payload.get("effective_params"))
     finally:
         output_path.unlink(missing_ok=True)

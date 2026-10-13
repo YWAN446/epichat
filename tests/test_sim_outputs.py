@@ -98,3 +98,24 @@ def test_seeds_stat_counts_day_zero_and_delayed_seeds():
     delayed.run()
     stats = extract(delayed, 500, delayed.seeds_day0, False)["stats"]
     assert stats["seeds_day0"] == 0 and stats["seeds"] == 30
+
+
+def test_measured_r0_counts_the_seeds_secondary_infections():
+    from epichat.sim.outputs import measured_r0
+    p = SimParamsV2.model_validate({"disease": {"beta": 100.0, "dur_inf": {"mean_days": 5}, "seed": {"mode": "count", "value": 20}},
+                                    "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    sim = build_sim(p)
+    sim.run()
+    r0 = measured_r0(sim)
+    df = sim.analyzers["infection_log"].logs["sir"].to_df()
+    seeds = df[df["source"].astype(float) < 0]["target"].to_numpy()
+    assert len(seeds) == 20 and r0 == float(df["source"].isin(seeds).sum()) / 20 and r0 > 0.5
+    assert extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] == r0
+    quiet = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    sim = build_sim(quiet)
+    sim.run()
+    assert measured_r0(sim) == 0.0                                                   # seeds, but they infected nobody
+    later = SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 20, "day": 5}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    sim = build_sim(later)
+    sim.run()
+    assert measured_r0(sim) is None                                                  # no day-0 seeds

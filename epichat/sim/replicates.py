@@ -24,7 +24,7 @@ def run_replicates(params: SimParamsV2, n: int | None = None) -> dict:
         results.append(extract(sim, params.run.n_agents, sim.seeds_day0, params.demographics.use_demographics))
     order = sorted(range(n), key=lambda i: results[i]["stats"]["total_infected"])
     rep = order[(n - 1) // 2]
-    payload = {"stats": results[rep]["stats"], "series": results[rep]["series"]}
+    payload = {"stats": results[rep]["stats"], "series": results[rep]["series"], "effective_params": params.model_dump(mode="json")}
     if n > 1:
         bands = {}
         for key in BAND_KEYS:

@@ -21,7 +21,7 @@ def test_writes_stats_and_series_for_valid_params(tmp_path):
     completed, out_path = run_child(SMALL, tmp_path)
     assert completed.returncode == 0, completed.stderr
     payload = json.loads(out_path.read_text(encoding="utf-8"))
-    assert set(payload) == {"stats", "series"}
+    assert set(payload) == {"stats", "series", "effective_params"}
     assert payload["stats"]["n_agents"] == 300 and payload["stats"]["sim_days"] == 11
     assert len(payload["series"]["day"]) == 11 and payload["series"]["cum_infections"][-1] >= 0
     assert "n_infectious" in payload["series"] and payload["stats"]["seeds_day0"] >= 0
@@ -32,7 +32,7 @@ def test_v2_params_with_replicates_write_the_replicates_block(tmp_path):
     completed, out_path = run_child(params, tmp_path)
     assert completed.returncode == 0, completed.stderr
     payload = json.loads(out_path.read_text(encoding="utf-8"))
-    assert set(payload) == {"stats", "series", "replicates"} and payload["replicates"]["seeds"] == [1, 2]
+    assert set(payload) == {"stats", "series", "replicates", "effective_params"} and payload["replicates"]["seeds"] == [1, 2]
 
 
 def test_invalid_v2_params_fail_with_the_path_on_stderr(tmp_path):

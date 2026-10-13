@@ -75,7 +75,9 @@ def simulate(params: SimParamsV2, context_text: str, settings: Settings,
         output_path = _output_path()
         result = run(params, output_path, settings.timeout_seconds)
         if result.ok:
-            return Outcome(True, 200, params, stats=result.stats, series=result.series, replicates=result.replicates,
+            # Part 2, 5.7: the child may have calibrated beta to the measured R0; its parameters are the ones that ran.
+            effective = SimParamsV2.model_validate(result.effective_params) if result.effective_params else params
+            return Outcome(True, 200, effective, stats=result.stats, series=result.series, replicates=result.replicates,
                            repairs=repairs, attempts=attempts)
         last_error = result.error or "unknown execution error"
         if result.timed_out:

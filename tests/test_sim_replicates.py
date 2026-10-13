@@ -15,7 +15,7 @@ def v2(n_replicates=1, rand_seed=5):
 
 def test_single_replicate_has_no_replicates_block():
     out = run_replicates(v2())
-    assert set(out) == {"stats", "series"} and out["stats"]["n_agents"] == 400
+    assert set(out) == {"stats", "series", "effective_params"} and out["stats"]["n_agents"] == 400
 
 
 def test_three_replicates_seed_in_order_and_report_the_lower_median():

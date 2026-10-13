@@ -182,3 +182,14 @@ def test_replicates_pass_through_the_outcome():
     rep = {"n": 2, "seeds": [1, 2], "representative": 1, "stats": [GOOD_STATS, GOOD_STATS], "bands": {"n_infectious": {"p10": [1.0, 2.0, 1.0], "p90": [1.0, 4.0, 3.0]}}}
     out = simulate(_params(n_replicates=2), "x", SETTINGS, run=FakeRunner([_ok(rep)]), repair=FakeRepairer([]))
     assert out.ok and out.replicates == rep
+
+
+def test_the_childs_effective_params_replace_the_requests():
+    params = _params()
+    corrected = params.model_dump(mode="json")
+    corrected["disease"]["beta"] = 12.5
+    run = FakeRunner([RunResult(True, GOOD_STATS, GOOD_SERIES, None, False, 10, None, corrected)])
+    outcome = simulate(params, "", SETTINGS, run=run, repair=FakeRepairer([]))
+    assert outcome.ok and outcome.effective_params.disease.beta == 12.5
+    plain = FakeRunner([_ok()])
+    assert simulate(params, "", SETTINGS, run=plain, repair=FakeRepairer([])).effective_params.disease.beta == params.disease.beta
