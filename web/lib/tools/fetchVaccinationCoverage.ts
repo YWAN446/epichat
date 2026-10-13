@@ -1,4 +1,5 @@
 import { z } from "zod";
+import indicators from "@/data/vaccine_indicators.json";
 import { detectDisease, lookup } from "@/lib/disease/db";
 import { getVaccine, validateParams } from "@/lib/sim/params";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources, upsertIntervention } from "./shared";
@@ -7,15 +8,8 @@ import type { ToolDeps, ToolOutcome } from "./types";
 export const FetchVaccinationCoverageInput = z.strictObject({ country_iso3: z.string(), disease: z.string() });
 export type FetchVaccinationCoverageArgs = z.infer<typeof FetchVaccinationCoverageInput>;
 
-export const GHO_CODES: Record<string, string[]> = {
-  measles: ["WHS8_110", "MCV2"],
-  rubella: ["WHS8_110"],
-  pertussis: ["WHS3_41"],
-  polio: ["WHS3_43"],
-  hepatitis_a: ["WHS3_45"],
-  tuberculosis: ["WHS3_40"],
-  meningococcal: ["MENGA"],
-};
+/** Follow-up spec 7.2: the diseases with a routine-immunization indicator, exported from epichat/params/indicators.py. */
+export const GHO_CODES: Record<string, string[]> = indicators.indicators;
 
 /**
  * Ported from epichat/agent.py fetch_vaccination_coverage. Routine coverage is pre-existing immunity at the start (spec 6.1):

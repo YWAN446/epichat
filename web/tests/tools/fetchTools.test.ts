@@ -4,7 +4,8 @@ import { approxR0, getTreatment, getVaccine } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
 import { BUNDLED_HOUSEHOLDS, BUNDLED_MATRICES, BUNDLED_PYRAMID, fetchDemographics } from "@/lib/tools/fetchDemographics";
 import { fetchHealthSystem } from "@/lib/tools/fetchHealthSystem";
-import { fetchVaccinationCoverage } from "@/lib/tools/fetchVaccinationCoverage";
+import indicators from "@/data/vaccine_indicators.json";
+import { GHO_CODES, fetchVaccinationCoverage } from "@/lib/tools/fetchVaccinationCoverage";
 import { makeDeps, rf } from "./helpers";
 
 async function configured(deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) {
@@ -222,5 +223,12 @@ describe("fetch_vaccination_coverage with a database efficacy (Part 2, 7.4)", ()
     const again = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
     expect(deps.scenario.params!.interventions.filter((i) => i.type === "vaccine")).toHaveLength(1);
     expect(again.isError).toBeFalsy();
+  });
+});
+
+describe("the routine-immunization indicators (follow-up spec 7.2)", () => {
+  it("come from the list the service shares", () => {
+    expect(GHO_CODES).toEqual(indicators.indicators);
+    expect(Object.keys(GHO_CODES)).toContain("measles");
   });
 });

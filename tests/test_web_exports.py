@@ -29,7 +29,7 @@ def test_export_web_data_is_deterministic_and_fresh(tmp_path):
     mod = _load("export_web_data")
     mod.main(tmp_path)
     mod.main(tmp_path / "again")
-    for name in ("disease_db.json", "system_prompt.json", "disease_refs.json", "param_registry.json"):
+    for name in ("disease_db.json", "system_prompt.json", "disease_refs.json", "param_registry.json", "vaccine_indicators.json"):
         assert (tmp_path / "data" / name).read_bytes() == (tmp_path / "again" / "data" / name).read_bytes()
         _same(tmp_path / "data" / name, WEB / "data" / name)
 

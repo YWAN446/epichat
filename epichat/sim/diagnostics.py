@@ -55,6 +55,10 @@ class Lever:
     direction: Direction
     rationale: str
     basis: Basis                 # disease_db values cite the field; rule values are illustrative
+    # Follow-up spec 7.1: a lever may also carry intervention entries (applied with configure_simulation's interventions field)
+    # and a label, a complete reply of at most LABEL_MAX characters for the button and the suggested reply.
+    interventions: list[dict[str, Any]] = field(default_factory=list)
+    label: str | None = None
 
 
 @dataclass
@@ -424,5 +428,13 @@ def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | 
 
 
 def as_dicts(diagnostics: list[Diagnostic]) -> list[dict]:
-    """The JSON form the service sends and the web app types as Diagnostic[]."""
-    return [asdict(d) for d in diagnostics]
+    """The JSON form the service sends and the web app types as Diagnostic[]. A lever without entries or without a label is sent
+    without the field, as every lever was before the follow-up."""
+    out = [asdict(d) for d in diagnostics]
+    for diagnostic in out:
+        for lever in diagnostic["levers"]:
+            if not lever["interventions"]:
+                del lever["interventions"]
+            if lever["label"] is None:
+                del lever["label"]
+    return out

@@ -1,0 +1,26 @@
+{
+ "indicators": {
+  "measles": [
+   "WHS8_110",
+   "MCV2"
+  ],
+  "rubella": [
+   "WHS8_110"
+  ],
+  "pertussis": [
+   "WHS3_41"
+  ],
+  "polio": [
+   "WHS3_43"
+  ],
+  "hepatitis_a": [
+   "WHS3_45"
+  ],
+  "tuberculosis": [
+   "WHS3_40"
+  ],
+  "meningococcal": [
+   "MENGA"
+  ]
+ }
+}

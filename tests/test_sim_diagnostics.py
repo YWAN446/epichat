@@ -370,3 +370,14 @@ def test_r0_gap_stands_down_for_as_long_as_the_seeds_transmit_in_a_latent_model(
     assert "r0_gap" not in ids(run(during, NORMAL, total=8600, seeds=500, stats_extra=low))
     after = params(**latent, interventions=[{"type": "behavior_response", "scale": 0.5, "start_day": 40}])
     assert "r0_gap" in ids(run(after, NORMAL, total=8600, seeds=500, stats_extra=low))
+
+
+def test_a_lever_may_carry_entries_and_a_label_and_serializes_as_before_without_them():
+    # follow-up spec 7.1: a suggestion is a lever, so it travels where levers travel
+    plain = dx.Lever({"disease.beta": 9.0}, {"disease.beta": 22.8}, "decrease", "why", "rule")
+    assert plain.interventions == [] and plain.label is None
+    carrying = dx.Lever({}, {}, "change", "why", "rule", interventions=[{"type": "behavior_response", "scale": 0.5}], label="Let people become careful and rerun")
+    out = dx.as_dicts([dx.Diagnostic("x", "info", "t", {}, [plain, carrying])])[0]["levers"]
+    assert out[0] == {"patch": {"disease.beta": 9.0}, "current": {"disease.beta": 22.8}, "direction": "decrease", "rationale": "why", "basis": "rule"}
+    assert out[1]["interventions"] == [{"type": "behavior_response", "scale": 0.5}] and out[1]["label"] == "Let people become careful and rerun"
+    json.dumps(out)

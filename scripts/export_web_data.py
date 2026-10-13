@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT))
 from epichat.agent import _SYSTEM  # noqa: E402
 from epichat.disease_db import _range_of, _rich_param, load_db, parameter_summary  # noqa: E402
 from epichat.params import tables  # noqa: E402
+from epichat.params.indicators import VACCINE_INDICATORS  # noqa: E402
 from epichat.params.registry import export as export_registry  # noqa: E402
 
 PARAMS = ("r0", "incubation_days", "infectious_days", "fatality_rate",
@@ -98,8 +99,9 @@ def main(web_dir: Path = ROOT / "web") -> None:
     write_json(web_dir / "data" / "disease_refs.json", references_payload())
     write_json(web_dir / "data" / "system_prompt.json", {"system": _SYSTEM})
     write_json(web_dir / "data" / "param_registry.json", export_registry())
+    write_json(web_dir / "data" / "vaccine_indicators.json", {"indicators": VACCINE_INDICATORS})        # follow-up spec 7.2: one list
 
 
 if __name__ == "__main__":
     main()
-    print("wrote web/data/disease_db.json, disease_refs.json, system_prompt.json and param_registry.json")
+    print("wrote web/data/disease_db.json, disease_refs.json, system_prompt.json, param_registry.json and vaccine_indicators.json")
