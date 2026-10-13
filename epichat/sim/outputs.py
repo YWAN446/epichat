@@ -35,7 +35,8 @@ def infection_log(sim: ss.Sim):
 
 def measured_r0(sim: ss.Sim) -> float | None:
     """Part 2, 5.6: the mean number of secondary infections caused by the day-0 seeds (the log's entries with source -1 at t 0);
-    None without day-0 seeds, 0.0 when they infected nobody."""
+    None without day-0 seeds or on a network that records no per-agent sources (the age-structured MixingPools), 0.0 when the
+    seeds infected nobody."""
     log = infection_log(sim)
     if log is None or len(log) == 0:
         return None
@@ -43,9 +44,13 @@ def measured_r0(sim: ss.Sim) -> float | None:
     source = pd.to_numeric(df["source"], errors="coerce").to_numpy(dtype=float)
     t = np.array([float(getattr(x, "value", x)) for x in df["t"]])        # the log stores TimePars (days) on the numeric day axis
     targets = df["target"].to_numpy()
-    seeds = targets[(t == 0) & (np.isnan(source) | (source < 0))]
+    seeded = (t == 0) & (np.isnan(source) | (source < 0))
+    seeds = targets[seeded]
     if len(seeds) == 0:
         return None
+    later = ~seeded
+    if later.any() and not (source[later] >= 0).any():
+        return None                     # the network records no per-agent sources (ss.MixingPools writes -999999): unknown, not zero
     return float(np.isin(source, seeds).sum()) / len(seeds)
 
 

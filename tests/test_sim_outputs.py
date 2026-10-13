@@ -119,3 +119,15 @@ def test_measured_r0_counts_the_seeds_secondary_infections():
     sim = build_sim(later)
     sim.run()
     assert measured_r0(sim) is None                                                  # no day-0 seeds
+
+
+def test_measured_r0_is_unknown_on_the_age_structured_network():
+    # Starsim's MixingPools record no per-agent sources (−999999 for every secondary infection), so the seeds' secondary infections cannot be counted
+    from epichat.sim.outputs import measured_r0
+    p = SimParamsV2.model_validate({"network": {"network_type": "age_structured"},
+                                    "demographics": {"age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8},
+                                    "disease": {"seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    sim = build_sim(p)
+    sim.run()
+    assert sim.results.sir.cum_infections.values[-1] > 100 and measured_r0(sim) is None
+    assert extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] is None
