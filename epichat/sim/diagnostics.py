@@ -16,7 +16,7 @@ from typing import Any, Literal
 import numpy as np
 
 from epichat.disease_db import _num, _range_of, lookup
-from epichat.params.r0 import R0Unreachable, approx_r0, calibrate_beta, clamp_beta
+from epichat.params.r0 import R0Unreachable, approx_r0, calibrate_beta, clamp_beta, weighted_cfr
 from epichat.params.registry import DEATH_MODELS, REGISTRY_BY_PATH, WANING_MODELS
 from epichat.params.schema_v2 import SimParamsV2
 
@@ -259,17 +259,18 @@ def _cfr_out_of_range(run: _Run) -> Diagnostic | None:
     if d.model not in DEATH_MODELS:
         return None
     rng = db_range(run.disease, "fatality_rate")
-    if not rng or rng[0] <= d.p_death <= rng[1]:
+    cfr = weighted_cfr(run.params)                 # the population-weighted ratio when a group has its own fatality (Part 2, 4.5)
+    if not rng or rng[0] <= cfr <= rng[1]:
         return None
     lo, hi, typical = rng
     levers = []
     if typical is not None:
         value, note = bounded("disease.p_death", typical, run.disease)
-        levers.append(Lever({"disease.p_death": value}, {"disease.p_death": d.p_death}, "increase" if value > d.p_death else "decrease",
+        levers.append(Lever({"disease.p_death": value}, {"disease.p_death": d.p_death}, "increase" if value > cfr else "decrease",
                             f"The database case fatality ratio for {run.disease} is {100 * typical:g}% (range {100 * lo:g}–{100 * hi:g}%){note}.",
                             "disease_db"))
     return Diagnostic("cfr_out_of_range", "warning", "The case fatality ratio is outside the literature range",
-                      {"p_death": d.p_death, "db_min": lo, "db_max": hi}, levers)
+                      {"p_death": cfr, "db_min": lo, "db_max": hi}, levers)
 
 
 def _fatality_on_all_infections(run: _Run) -> Diagnostic | None:

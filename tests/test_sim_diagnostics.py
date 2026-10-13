@@ -246,3 +246,15 @@ def test_a_normal_run_raises_no_diagnostic():
     immune = params(**{"run.n_agents": 2000, "disease.beta": clamp_beta(calibrate_beta(params(), 15)), "disease.initial_immune_frac": 0.8})
     out = run_replicates(immune)
     assert diagnose(immune, out["series"], out["stats"], None, out["stats"]["seeds"], None) == []
+
+
+def test_cfr_out_of_range_reads_the_population_weighted_fatality():
+    # measles range 0.5 to 6%: the scalar 0.1% is out, but 10% of the elderly at 50% with 0.1% elsewhere is 5.09%, in
+    p = params(**{"disease.p_death": 0.001, "disease.p_death_age": {"elderly": 0.5},
+                  "demographics.age_pct_under18": 40.0, "demographics.age_pct_18_64": 50.0, "demographics.age_pct_over65": 10.0})
+    assert "cfr_out_of_range" not in ids(run(p, NORMAL, total=8600, seeds=100, disease="measles"))
+    scalar = params(**{"disease.p_death": 0.001})
+    d = one(run(scalar, NORMAL, total=8600, seeds=100, disease="measles"), "cfr_out_of_range")
+    assert d.evidence["p_death"] == pytest.approx(0.001)
+    no_elderly = params(**{"disease.p_death": 0.001, "disease.p_death_age": {"elderly": 0.5}})   # default ages: no elderly
+    assert one(run(no_elderly, NORMAL, total=8600, seeds=100, disease="measles"), "cfr_out_of_range").evidence["p_death"] == pytest.approx(0.001)
