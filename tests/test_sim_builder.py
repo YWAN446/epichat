@@ -277,3 +277,85 @@ def test_day_zero_seeds_draw_their_fatality_on_the_assigned_ages():
     elderly = np.asarray(sim.people.age[seeds]) >= 65
     assert elderly.sum() > 50
     assert np.array_equal(np.isfinite(np.asarray(d.ti_dead[seeds])), elderly)     # every elderly seed dies, nobody else
+
+
+from epichat.params import tables  # noqa: E402
+from epichat.params.schema_v2 import ContactMatrix  # noqa: E402
+from epichat.sim.demographics import YearlyBirths  # noqa: E402
+
+
+def test_random_network_options_reach_starsim():
+    sim = build_sim(v2(network={"contacts_dist": "poisson", "contact_duration_days": 7, "n_contacts": 6, "network_beta": 0.5}))
+    net = sim.networks[0]
+    assert isinstance(net, ss.RandomNet) and isinstance(net.pars.n_contacts, ss.poisson) and net.pars.n_contacts.pars.lam == 6
+    assert float(net.pars.dur.value) == 7.0 and net.pars.beta == 0.5
+    plain = build_sim(v2()).networks[0]
+    assert isinstance(plain.pars.n_contacts, ss.constant) and float(plain.pars.dur.value) == 0.0
+
+
+def test_age_structured_network_uses_the_configured_matrix():
+    rows = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    net = build_sim(v2(network={"network_type": "age_structured", "network_beta": 2.0, "contacts": ContactMatrix.from_rows(rows).model_dump()})).networks[0]
+    assert isinstance(net, ss.MixingPools) and np.allclose(net.pars.n_contacts, 2.0 * np.array(rows))
+
+
+def test_hybrid_network_expands_into_four_layers_with_the_configured_values():
+    p = v2(network={"network_type": "hybrid", "household_size": 3.5, "school_contacts": 10, "work_contacts": 8, "community_contacts": 5,
+                    "layer_beta": {"household": 2.0, "school": 0.5, "work": 0.4, "community": 0.2}, "school_age_min": 5, "school_age_max": 18,
+                    "work_age_min": 18, "work_age_max": 60, "network_beta": 2.0},
+           demographics={"age_pct_under18": 30.0, "age_pct_18_64": 60.0, "age_pct_over65": 10.0}, run={"n_agents": 3000, "rand_seed": 1})
+    sim = build_sim(p)
+    assert list(sim.networks.keys()) == ["h", "s", "w", "c"]
+    h, s, w, c = (sim.networks[k] for k in "hswc")
+    assert isinstance(h, ss.ClusterNet) and h.pars.cluster_size.pars.lam == 3.5 and h.pars.beta == 4.0          # layer beta × network_beta
+    assert (s.pars.beta, w.pars.beta, c.pars.beta) == (1.0, 0.8, pytest.approx(0.4))
+    assert list(s.pars.age_range) == [5, 18] and list(w.pars.age_range) == [18, 60]
+    age = np.asarray(sim.people.age)                                                 # before the run: the layers are built at init
+    school = np.unique(np.concatenate([np.asarray(s.p1), np.asarray(s.p2)]))
+    work = np.unique(np.concatenate([np.asarray(w.p1), np.asarray(w.p2)]))
+    assert len(school) > 100 and np.all((age[school] >= 5) & (age[school] < 18))
+    assert len(work) > 100 and np.all((age[work] >= 18) & (age[work] < 60))
+    assert len(h) > 1000 and len(c) > 1000
+    sim.run()
+    assert sim.results.sir.cum_infections.values[-1] > 0
+    assert isinstance(build_sim(v2(network={"network_type": "hybrid"})).networks["s"], ss.RandomNet)    # no demographics: default ages fill the layers
+
+
+def test_pyramid_country_gives_un_ages_and_the_shares_path_stays():
+    sim = build_sim(v2(demographics={"country": "KEN", "age_source": "un_wpp"}, run={"n_agents": 20000, "rand_seed": 1}))
+    age = np.asarray(sim.people.age)
+    c, a, e = tables.age_shares("KEN")
+    assert abs((age < 18).mean() - c) < 0.01 and abs((age >= 65).mean() - e) < 0.01 and age.max() <= 101
+    assert (age >= 90).sum() > 0                                                      # single ages run to 100, unlike the bands
+    old = v2(demographics={"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0}, run={"n_agents": 5000, "rand_seed": 1})
+    age = np.asarray(build_sim(old).people.age)                                       # a stored scenario: shares, no age_source
+    assert abs((age < 18).mean() - 0.40) < 0.02 and age.max() < 95
+    unknown = v2(demographics={"country": "XXX", "age_source": "un_wpp"}, run={"n_agents": 2000, "rand_seed": 1})
+    assert np.asarray(build_sim(unknown).people.age).max() < 61                       # no pyramid, no shares: Starsim's defaults
+
+
+def test_births_follow_the_projected_series_for_multi_year_runs_with_a_country():
+    p = v2(demographics={"use_demographics": True, "country": "KEN", "birth_rate": 30.0, "death_rate": 0.1},
+           run={"n_agents": 2000, "sim_dur_years": 3.0, "rand_seed": 1})
+    births = build_sim(p).demographics[0]
+    series = tables.birth_rate_series("KEN", 2022, 3)
+    assert isinstance(births, YearlyBirths) and births.rates == [30.0, series[1], series[2]]      # the first year keeps the configured rate
+    one_year = v2(demographics={"use_demographics": True, "country": "KEN"}, run={"n_agents": 2000, "sim_dur_years": 1.0})
+    assert type(build_sim(one_year).demographics[0]) is ss.Births
+    no_country = v2(demographics={"use_demographics": True}, run={"n_agents": 2000, "sim_dur_years": 3.0})
+    assert type(build_sim(no_country).demographics[0]) is ss.Births
+
+
+def test_yearly_births_switch_the_rate_at_each_sim_year():
+    sim = ss.Sim(n_agents=2000, networks=ss.RandomNet(n_contacts=2), diseases=ss.SIR(beta=ss.peryear(0.001), init_prev=ss.bernoulli(p=0.0)),
+                 demographics=YearlyBirths([200.0, 0.0]), start=ss.days(0), dur=ss.days(730), dt=ss.days(1), rand_seed=1, verbose=0)
+    sim.run()
+    new = np.asarray(sim.demographics[0].results.new.values)
+    assert new[:365].sum() > 200 and new[365:].sum() == 0
+
+
+def test_every_sim_logs_its_infections():
+    sim = build_sim(v2())
+    sim.run()
+    log = sim.analyzers["infection_log"].logs["sir"]        # Starsim moves each disease's log to the analyzer when the run finalizes
+    assert log is not None and len(log) >= 10
