@@ -173,6 +173,13 @@ describe("references behind a parameter", () => {
     expect(literature).not.toContain("` (${p.n_estimates})`");
   });
 
+  it("heads the column with what it holds: the references, not a status", () => {
+    const literature = read("components/panel/LiteratureTable.tsx");
+    expect(literature).toContain(">References</th>");
+    expect(literature).not.toContain(">Status</th>");
+    for (const word of ["under review", "estimates only", "no source"]) expect(literature).toContain(word); // the status words stay beside the button
+  });
+
   it("lists the consensus source first, then every estimate with its link, value, and study line", () => {
     const list = read("components/panel/ReferenceList.tsx");
     for (const piece of ["loadReferences(", "referenceHref(", "referenceMeta(", "referenceValue(", "Consensus", "Loading references…", "References unavailable.", 'rel="noreferrer"']) {

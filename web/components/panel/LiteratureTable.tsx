@@ -30,7 +30,7 @@ export function LiteratureTable({ disease, onReferencesOpen, references = true }
             <th className="py-1 pr-2 font-medium">Parameter</th>
             <th className="py-1 pr-2 font-medium">Typical</th>
             <th className="py-1 pr-2 font-medium">Range</th>
-            <th className="py-1 font-medium">Status</th>
+            <th className="py-1 font-medium">References</th>
           </tr>
         </thead>
         <tbody>

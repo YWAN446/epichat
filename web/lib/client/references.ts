@@ -68,7 +68,7 @@ export function referenceValue(ref: Reference, unit?: string): string {
   return range ? prefix + range : "";
 }
 
-/** What the Status column's button says: the estimate count, "source" when only a consensus source exists, nothing when there is nothing to open. */
+/** What the References column's button says: the estimate count, "source" when only a consensus source exists, nothing when there is nothing to open. */
 export function referenceButtonLabel(summary: { n_estimates: number; source?: string }): string | null {
   if (summary.n_estimates > 0) return `${summary.n_estimates} ${summary.n_estimates === 1 ? "source" : "sources"}`;
   return summary.source ? "source" : null;
