@@ -95,9 +95,9 @@ export function seedText(s: Seed): string {
   return s.day > 0 ? `${size} on day ${fmtValue(s.day)}` : size;
 }
 
-const AGE_SOURCE_LABELS: Record<string, string> = { default: "Starsim's default ages", shares: "the three shares", un_wpp: "UN WPP 2024 pyramid" };
+export const AGE_SOURCE_LABELS: Record<string, string> = { default: "Starsim's default ages", shares: "the three shares", un_wpp: "UN WPP 2024 pyramid" };
 
-function networkLabel(n: SimParams["network"]): string {
+export function networkLabel(n: SimParams["network"]): string {
   return n.network_type === "hybrid" ? "hybrid (households, schools, workplaces, community)" : n.network_type.replace(/_/g, "-");
 }
 
@@ -174,7 +174,7 @@ export function effectiveParameterRows(p: SimParams): [string, string][] {
 }
 
 const FIT_TARGET_LABELS: Record<string, string> = { attack_rate: "attack rate", peak_day: "peak day", peak_infections: "peak infections" };
-const LEVER_LABELS: Record<string, string> = {
+export const LEVER_LABELS: Record<string, string> = {
   "disease.beta": "the transmission rate",
   "network.network_beta": "the network multiplier",
   "disease.rel_sus_cv": "the variation in susceptibility",
@@ -311,7 +311,7 @@ const FIELDS: Record<string, FieldSpec> = {
   hepb_prevalence: { label: "Hepatitis B prevalence", unit: "%" },
 };
 
-function ageStructure(value: unknown): string {
+export function ageStructure(value: unknown): string {
   if (typeof value !== "object" || value === null) return fmtValue(value);
   return Object.entries(value as Record<string, unknown>)
     .map(([band, share]) => `${band.replace("-", "–")}: ${Math.round(Number(share))}%`)
