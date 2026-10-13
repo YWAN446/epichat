@@ -88,8 +88,11 @@ export const InterventionSchema = z.preprocess(
     }),
 );
 export type Intervention = z.infer<typeof InterventionSchema>;
-/** Part 1 section 18 and Part 2 7.1: a day-0 vaccine at full efficacy is disease.initial_immune_frac. */
-export const isDay0Immunity = (i: Intervention): boolean => i.type === "vaccine" && i.start_day <= 0 && i.efficacy >= 1;
+/** A vaccine entry the v1 shape can express: routine, full efficacy, leaky, no window, no ages, no waning. */
+export const isV1Vaccine = (i: Intervention): boolean =>
+  i.type === "vaccine" && i.kind === "routine" && i.end_day === null && i.efficacy >= 1 && i.leaky && i.age_min === null && i.age_max === null && i.protection_days === null;
+/** Part 1 section 18 and Part 2 7.1: a v1-shaped day-0 vaccine is disease.initial_immune_frac; any other day-0 entry keeps its fields (2C review, I4). */
+export const isDay0Immunity = (i: Intervention): boolean => isV1Vaccine(i) && i.start_day <= 0;
 /** A treatment entry the v1 SimpleTreatment can run (the parity baseline depends on it). */
 export const isV1Treatment = (i: Intervention): boolean =>
   i.type === "treatment" && i.delay_days === 0 && i.efficacy >= 1 && i.rel_trans_treated >= 1 && !i.symptomatic_only && i.end_day === null;

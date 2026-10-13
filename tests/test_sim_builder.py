@@ -373,3 +373,14 @@ def test_routine_vaccines_end_on_their_end_day_and_campaigns_use_a_per_day_proba
     assert isinstance(campaign, VaccineDelivery) and campaign.prob == pytest.approx(1 - (1 - 0.6) ** (1 / 10))
     whole_run = vaccine_delivery(Intervention(type="vaccine", kind="campaign", coverage=0.6, start_day=0), run_days=100)
     assert whole_run.prob == pytest.approx(1 - (1 - 0.6) ** (1 / 101)) and whole_run.end_day == 100
+
+
+def test_a_day_zero_vaccine_that_is_not_folded_is_a_one_day_campaign_at_day_zero():
+    # review I4: a day-0 entry the fold leaves alone (ages, waning, all-or-nothing) is pre-existing protection for its group, not a year-long programme
+    from epichat.schema import Intervention
+    from epichat.sim.builder import vaccine_delivery
+    from epichat.sim.interventions import VaccineDelivery
+    aged = vaccine_delivery(Intervention(type="vaccine", coverage=0.9, start_day=0, age_min=5, age_max=18), run_days=365)
+    assert isinstance(aged, VaccineDelivery) and (aged.start_day, aged.end_day) == (0, 0) and aged.prob == pytest.approx(0.9)
+    waning = vaccine_delivery(Intervention(type="vaccine", coverage=0.9, start_day=0, protection_days=100), run_days=365)
+    assert (waning.start_day, waning.end_day) == (0, 0) and waning.prob == pytest.approx(0.9)

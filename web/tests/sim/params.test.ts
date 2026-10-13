@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ageRangeShare, ageShares, approxR0, calibrateBeta, contactRows, hybridContacts, isV1Treatment, r0IsApproximate, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, perContactProb, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
+import { isDay0Immunity, ageRangeShare, ageShares, approxR0, calibrateBeta, contactRows, hybridContacts, isV1Treatment, r0IsApproximate, clampBeta, CONTACT_MATRIX, CONTACT_SPECTRAL_RADIUS, deathProbabilities, DEFAULT_BETA, effectiveDays, exposedDays, getVaccine, maxR0, migrateV1, perContactProb, R0UnreachableError, recalibrateBeta, simDays, spectralRadius3, validateParams, weightedCfr, withR0 } from "@/lib/sim/params";
 
 function must(input: unknown) {
   const r = validateParams(input);
@@ -218,5 +218,17 @@ describe("interventions and the fit (Part 2, section 7)", () => {
     expect(validateParams({ schema_version: 2, run: { fit: { target: "attack_rate", value: 1.5 } } })).toEqual({ ok: false, error: expect.stringContaining("fraction") });
     expect(must({ schema_version: 2 }).run.fit).toBeNull();
     expect(must({ schema_version: 2, interventions: [{ type: "school_closure", layer: "school", scale: 0 }], network: { network_type: "hybrid" } }).interventions[0].type).toBe("contact_reduction");
+  });
+});
+
+describe("the day-0 fold after the 2C review (I4)", () => {
+  it("folds only the v1-shaped day-0 vaccine; ages, a window, waning and all-or-nothing keep their entry", () => {
+    for (const extra of [{ age_min: 5, age_max: 18 }, { kind: "campaign", end_day: 30 }, { protection_days: 100 }, { leaky: false }, { kind: "campaign" }]) {
+      const p = must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 0.9, start_day: 0, ...extra }] });
+      expect(p.disease.initial_immune_frac).toBe(0);
+      expect(p.interventions).toHaveLength(1);
+      expect(isDay0Immunity(p.interventions[0])).toBe(false);
+    }
+    expect(must({ schema_version: 2, interventions: [{ type: "vaccine", coverage: 0.9, start_day: 0 }] }).disease.initial_immune_frac).toBe(0.9);
   });
 });

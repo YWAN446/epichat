@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { detectDisease } from "@/lib/disease/db";
-import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, recalibrateBeta, validateParams, withR0, type Duration, type SimParams } from "@/lib/sim/params";
+import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccine, recalibrateBeta, validateParams, withR0, type Duration, type Intervention, type SimParams } from "@/lib/sim/params";
 import { changedPaths, type PathChange } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
 import { applyAdvanced } from "./advanced";
@@ -132,16 +132,25 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
 
   let interventions = [...((base.interventions as Obj[] | undefined) ?? [])];
   if (given(input.vaccine_coverage) || given(input.vaccine_start_day)) {
-    // A day-0 vaccine lives in disease.initial_immune_frac (spec 6.1, section 18); a later start is a routine campaign.
+    // A day-0 vaccine lives in disease.initial_immune_frac (spec 6.1, section 18); a later start is a routine campaign. An entry with an
+    // efficacy, a window, ages or waning (the database efficacy path, Part 2 7.4) keeps them and takes the new coverage or start (2C review, I6).
     const immune = Number(disease.initial_immune_frac ?? 0);
-    const current = interventions.find((i) => i.type === "vaccine") ?? (immune > 0 ? { coverage: immune, start_day: 0 } : {});
+    const existing = interventions.find((i) => i.type === "vaccine");
+    const current = existing ?? (immune > 0 ? { coverage: immune, start_day: 0 } : {});
     const coverage = given(input.vaccine_coverage) ? input.vaccine_coverage : (current.coverage as number | null | undefined);
     const startDay = given(input.vaccine_start_day) ? input.vaccine_start_day : ((current.start_day as number | undefined) ?? 0);
     if (!given(coverage)) {
       return errorOutcome("CONFIG ERROR: a vaccination campaign needs a coverage level — pass vaccine_coverage alongside vaccine_start_day.");
     }
     interventions = interventions.filter((i) => i.type !== "vaccine");
-    if (startDay > 0) {
+    const rich = existing !== undefined && !isV1Vaccine(existing as unknown as Intervention);
+    if (rich) {
+      // the window moves with the start: a one-day campaign stays one day, a window that would end before the new start ends on it
+      const endDay = existing.end_day as number | null | undefined;
+      const end = endDay === null || endDay === undefined ? null : Math.max(endDay, startDay);
+      interventions = upsertIntervention(interventions, "vaccine", { ...existing, coverage, start_day: startDay, end_day: end });
+      disease.initial_immune_frac = 0;
+    } else if (startDay > 0) {
       interventions = upsertIntervention(interventions, "vaccine", { coverage, start_day: startDay });
       disease.initial_immune_frac = 0;
     } else {

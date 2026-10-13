@@ -7618,7 +7618,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.63
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -7669,6 +7669,25 @@
     "interventions": [
      {
       "type": "vaccine",
+      "coverage": 0.63,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
+     {
+      "type": "vaccine",
       "coverage": 0.4,
       "start_day": 30,
       "end_day": null,
@@ -7700,7 +7719,7 @@
    "max_r0": 123.487,
    "weighted_cfr": 0.1,
    "approximate": true,
-   "n_interventions": 1,
+   "n_interventions": 2,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -7755,7 +7774,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.63
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -7804,6 +7823,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.63,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.4,
@@ -7870,7 +7908,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.63
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -7919,6 +7957,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.63,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.4,
@@ -7989,7 +8046,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.63
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -8038,6 +8095,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.63,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.4,
@@ -8104,7 +8180,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.63
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -8153,6 +8229,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.63,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.4,
@@ -8730,7 +8825,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.35
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "age_structured",
@@ -8778,7 +8873,27 @@
      "demographics_source": null,
      "age_source": "default"
     },
-    "interventions": [],
+    "interventions": [
+     {
+      "type": "vaccine",
+      "coverage": 0.35,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     }
+    ],
     "run": {
      "n_agents": 5000,
      "sim_dur_years": 1.0,
@@ -8792,7 +8907,7 @@
    "max_r0": 480.376908977,
    "weighted_cfr": 0.1,
    "approximate": false,
-   "n_interventions": 0,
+   "n_interventions": 1,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -8847,7 +8962,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.35
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -8895,7 +9010,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.35,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -8942,7 +9077,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.35
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "hybrid",
@@ -8990,7 +9125,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.35,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -9041,7 +9196,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.35
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -9089,7 +9244,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.35,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -9136,7 +9311,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.35
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -9184,7 +9359,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.35,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -10032,7 +10227,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.47
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "age_structured",
@@ -10080,7 +10275,27 @@
      "demographics_source": null,
      "age_source": "shares"
     },
-    "interventions": [],
+    "interventions": [
+     {
+      "type": "vaccine",
+      "coverage": 0.47,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "routine",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": 180,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     }
+    ],
     "run": {
      "n_agents": 50000,
      "sim_dur_years": 1.0,
@@ -10094,7 +10309,7 @@
    "max_r0": 95.556963034,
    "weighted_cfr": 0.0,
    "approximate": true,
-   "n_interventions": 0,
+   "n_interventions": 1,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -10149,7 +10364,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.47
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -10197,7 +10412,27 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.47,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 50000,
        "sim_dur_years": 1.0,
@@ -10244,7 +10479,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.47
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "hybrid",
@@ -10292,7 +10527,27 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.47,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 50000,
        "sim_dur_years": 1.0,
@@ -10343,7 +10598,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.47
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -10391,7 +10646,27 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.47,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 50000,
        "sim_dur_years": 1.0,
@@ -10438,7 +10713,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.47
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -10486,7 +10761,27 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.47,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 50000,
        "sim_dur_years": 1.0,
@@ -31027,7 +31322,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.26
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -31113,6 +31408,25 @@
       "scale": 0.48,
       "shift": 0.0,
       "layer": "all"
+     },
+     {
+      "type": "vaccine",
+      "coverage": 0.26,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
      }
     ],
     "run": {
@@ -31132,7 +31446,7 @@
    "max_r0": 144.275,
    "weighted_cfr": 0.0,
    "approximate": false,
-   "n_interventions": 2,
+   "n_interventions": 3,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -31191,7 +31505,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.26
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -31277,6 +31591,25 @@
         "scale": 0.48,
         "shift": 0.0,
         "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.26,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
        }
       ],
       "run": {
@@ -31333,7 +31666,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.26
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -31419,6 +31752,25 @@
         "scale": 0.48,
         "shift": 0.0,
         "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.26,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
        }
       ],
       "run": {
@@ -31479,7 +31831,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.26
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -31563,6 +31915,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.48,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.26,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        }
@@ -31621,7 +31992,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.26
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -31705,6 +32076,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.48,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.26,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        }
@@ -33051,7 +33441,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.14
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -33100,6 +33490,25 @@
      "age_source": "un_wpp"
     },
     "interventions": [
+     {
+      "type": "vaccine",
+      "coverage": 0.14,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": 180,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
      {
       "type": "transmission_reduction",
       "coverage": null,
@@ -33156,7 +33565,7 @@
    "max_r0": 182.0637,
    "weighted_cfr": 0.02989,
    "approximate": true,
-   "n_interventions": 2,
+   "n_interventions": 3,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33211,7 +33620,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.14
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -33260,6 +33669,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.14,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -33349,7 +33777,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.14
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -33398,6 +33826,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.14,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -33491,7 +33938,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.14
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -33540,6 +33987,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.14,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -33629,7 +34095,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.14
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -33678,6 +34144,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.14,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -33768,7 +34253,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.87
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "hybrid",
@@ -33816,7 +34301,27 @@
      "demographics_source": null,
      "age_source": "default"
     },
-    "interventions": [],
+    "interventions": [
+     {
+      "type": "vaccine",
+      "coverage": 0.87,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     }
+    ],
     "run": {
      "n_agents": 5000,
      "sim_dur_years": 1.0,
@@ -33830,7 +34335,7 @@
    "max_r0": 6160.322682894,
    "weighted_cfr": 0.01,
    "approximate": true,
-   "n_interventions": 0,
+   "n_interventions": 1,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -33881,7 +34386,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.87
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "hybrid",
@@ -33929,7 +34434,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.87,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -33972,7 +34497,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.87
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -34020,7 +34545,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.87,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -37990,7 +38535,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.76
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -38060,6 +38605,25 @@
      },
      {
       "type": "vaccine",
+      "coverage": 0.76,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "routine",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": 180,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
+     {
+      "type": "vaccine",
       "coverage": 0.82,
       "start_day": 120,
       "end_day": null,
@@ -38091,7 +38655,7 @@
    "max_r0": 8.33652,
    "weighted_cfr": 0.001,
    "approximate": true,
-   "n_interventions": 2,
+   "n_interventions": 3,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -38142,7 +38706,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.76
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -38212,6 +38776,25 @@
        },
        {
         "type": "vaccine",
+        "coverage": 0.76,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
         "coverage": 0.82,
         "start_day": 120,
         "end_day": null,
@@ -38272,7 +38855,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.76
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -38342,6 +38925,25 @@
        },
        {
         "type": "vaccine",
+        "coverage": 0.76,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
         "coverage": 0.82,
         "start_day": 120,
         "end_day": null,
@@ -38406,7 +39008,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.76
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -38476,6 +39078,25 @@
        },
        {
         "type": "vaccine",
+        "coverage": 0.76,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
         "coverage": 0.82,
         "start_day": 120,
         "end_day": null,
@@ -38536,7 +39157,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.76
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -38601,6 +39222,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.54,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.76,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        },
@@ -75749,7 +76389,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.18
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -75800,6 +76440,25 @@
     "interventions": [
      {
       "type": "vaccine",
+      "coverage": 0.18,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
+     {
+      "type": "vaccine",
       "coverage": 0.58,
       "start_day": 120,
       "end_day": null,
@@ -75831,7 +76490,7 @@
    "max_r0": 310.96,
    "weighted_cfr": 0.01,
    "approximate": false,
-   "n_interventions": 1,
+   "n_interventions": 2,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -75882,7 +76541,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.18
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -75931,6 +76590,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.58,
@@ -75993,7 +76671,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.18
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -76042,6 +76720,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.58,
@@ -76108,7 +76805,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.18
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -76157,6 +76854,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.58,
@@ -76219,7 +76935,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.18
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -76268,6 +76984,25 @@
        "age_source": "default"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.58,
@@ -80836,7 +81571,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.65
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -80922,6 +81657,25 @@
       "scale": 0.2,
       "shift": 0.0,
       "layer": "all"
+     },
+     {
+      "type": "vaccine",
+      "coverage": 0.65,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
      }
     ],
     "run": {
@@ -80937,7 +81691,7 @@
    "max_r0": 26.296,
    "weighted_cfr": 0.01,
    "approximate": true,
-   "n_interventions": 2,
+   "n_interventions": 3,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -80996,7 +81750,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.65
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -81082,6 +81836,25 @@
         "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.65,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
        }
       ],
       "run": {
@@ -81134,7 +81907,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.65
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -81220,6 +81993,25 @@
         "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.65,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
        }
       ],
       "run": {
@@ -81276,7 +82068,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.65
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -81362,6 +82154,25 @@
         "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.65,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
        }
       ],
       "run": {
@@ -81414,7 +82225,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.65
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -81493,6 +82304,25 @@
         "age_min": null,
         "age_max": null,
         "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.65,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
         "capacity": null,
         "delay_days": 0,
         "rel_trans_treated": 1.0,
@@ -82665,7 +83495,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.67
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -82713,7 +83543,27 @@
      "demographics_source": null,
      "age_source": "default"
     },
-    "interventions": [],
+    "interventions": [
+     {
+      "type": "vaccine",
+      "coverage": 0.67,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": 180,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     }
+    ],
     "run": {
      "n_agents": 1000,
      "sim_dur_years": 1.0,
@@ -82731,7 +83581,7 @@
    "max_r0": 243.3456,
    "weighted_cfr": 0.0353,
    "approximate": true,
-   "n_interventions": 0,
+   "n_interventions": 1,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -82786,7 +83636,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.67
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -82834,7 +83684,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.67,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 1000,
        "sim_dur_years": 1.0,
@@ -82885,7 +83755,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.67
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -82933,7 +83803,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.67,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 1000,
        "sim_dur_years": 1.0,
@@ -82988,7 +83878,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.67
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -83036,7 +83926,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.67,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 1000,
        "sim_dur_years": 1.0,
@@ -83087,7 +83997,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.67
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -83135,7 +84045,27 @@
        "demographics_source": null,
        "age_source": "default"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.67,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 1000,
        "sim_dur_years": 1.0,
@@ -96806,7 +97736,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.31
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "age_structured",
@@ -96892,6 +97822,25 @@
       "scale": 0.46,
       "shift": 0.0,
       "layer": "all"
+     },
+     {
+      "type": "vaccine",
+      "coverage": 0.31,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "routine",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": 180,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
      }
     ],
     "run": {
@@ -96907,7 +97856,7 @@
    "max_r0": 113.175367595,
    "weighted_cfr": 0.01,
    "approximate": true,
-   "n_interventions": 2,
+   "n_interventions": 3,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -96958,7 +97907,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.31
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -97044,6 +97993,25 @@
         "scale": 0.46,
         "shift": 0.0,
         "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.31,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
        }
       ],
       "run": {
@@ -97088,7 +98056,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.31
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "hybrid",
@@ -97174,6 +98142,25 @@
         "scale": 0.46,
         "shift": 0.0,
         "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.31,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
        }
       ],
       "run": {
@@ -97222,7 +98209,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.31
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -97306,6 +98293,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.46,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.31,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        }
@@ -97352,7 +98358,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.31
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -97436,6 +98442,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.46,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.31,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        }
@@ -101227,7 +102252,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.4
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -101296,6 +102321,25 @@
       "layer": "all"
      },
      {
+      "type": "vaccine",
+      "coverage": 0.4,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "routine",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": 180,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
+     {
       "type": "transmission_reduction",
       "coverage": null,
       "start_day": 0,
@@ -101328,7 +102372,7 @@
    "max_r0": 12.4875,
    "weighted_cfr": 0.1,
    "approximate": false,
-   "n_interventions": 2,
+   "n_interventions": 3,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -101383,7 +102427,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.4
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -101448,6 +102492,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.15,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.4,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        },
@@ -101517,7 +102580,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.4
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -101582,6 +102645,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.15,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.4,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        },
@@ -101655,7 +102737,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.4
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -101720,6 +102802,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.15,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.4,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        },
@@ -101789,7 +102890,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.4
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -101854,6 +102955,25 @@
         "rel_trans_treated": 1.0,
         "symptomatic_only": false,
         "scale": 0.15,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.4,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
         "shift": 0.0,
         "layer": "all"
        },
@@ -106161,7 +107281,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.22
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "age_structured",
@@ -106209,7 +107329,46 @@
      "demographics_source": null,
      "age_source": "shares"
     },
-    "interventions": [],
+    "interventions": [
+     {
+      "type": "vaccine",
+      "coverage": 0.18,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
+     {
+      "type": "vaccine",
+      "coverage": 0.22,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     }
+    ],
     "run": {
      "n_agents": 5000,
      "sim_dur_years": 1.0,
@@ -106223,7 +107382,7 @@
    "max_r0": 270.899917059,
    "weighted_cfr": 0.1,
    "approximate": false,
-   "n_interventions": 0,
+   "n_interventions": 2,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -106278,7 +107437,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.22
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -106326,7 +107485,46 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.22,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -106373,7 +107571,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.22
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "hybrid",
@@ -106421,7 +107619,46 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.22,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -106472,7 +107709,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.22
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -106520,7 +107757,46 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.22,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -106567,7 +107843,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.22
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -106615,7 +107891,46 @@
        "demographics_source": null,
        "age_source": "shares"
       },
-      "interventions": [],
+      "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.18,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
+       {
+        "type": "vaccine",
+        "coverage": 0.22,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       }
+      ],
       "run": {
        "n_agents": 5000,
        "sim_dur_years": 1.0,
@@ -107293,7 +108608,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.17
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -107343,6 +108658,25 @@
     },
     "interventions": [
      {
+      "type": "vaccine",
+      "coverage": 0.17,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "routine",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": 180,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
+     {
       "type": "transmission_reduction",
       "coverage": null,
       "start_day": 0,
@@ -107379,7 +108713,7 @@
    "max_r0": 192.0,
    "weighted_cfr": 0.1,
    "approximate": true,
-   "n_interventions": 1,
+   "n_interventions": 2,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -107434,7 +108768,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.17
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -107483,6 +108817,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.17,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -107553,7 +108906,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.17
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -107602,6 +108955,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.17,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -107676,7 +109048,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.17
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -107725,6 +109097,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.17,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -107795,7 +109186,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.17
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -107844,6 +109235,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.17,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "routine",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": 180,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "transmission_reduction",
         "coverage": null,
@@ -124732,7 +126142,7 @@
       "value": 0.01,
       "day": 0
      },
-     "initial_immune_frac": 0.57
+     "initial_immune_frac": 0.0
     },
     "network": {
      "network_type": "random",
@@ -124781,6 +126191,25 @@
      "age_source": "un_wpp"
     },
     "interventions": [
+     {
+      "type": "vaccine",
+      "coverage": 0.57,
+      "start_day": 0,
+      "end_day": null,
+      "efficacy": 1.0,
+      "kind": "campaign",
+      "leaky": true,
+      "age_min": null,
+      "age_max": null,
+      "protection_days": null,
+      "capacity": null,
+      "delay_days": 0,
+      "rel_trans_treated": 1.0,
+      "symptomatic_only": false,
+      "scale": 0.2,
+      "shift": 0.0,
+      "layer": "all"
+     },
      {
       "type": "vaccine",
       "coverage": 0.23,
@@ -124833,7 +126262,7 @@
    "max_r0": 1571.7362,
    "weighted_cfr": 0.1,
    "approximate": false,
-   "n_interventions": 2,
+   "n_interventions": 3,
    "calibrate": [
     {
      "target_r0": 1.5,
@@ -124892,7 +126321,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.57
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -124941,6 +126370,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.57,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.23,
@@ -125030,7 +126478,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.57
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "age_structured",
@@ -125079,6 +126527,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.57,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.23,
@@ -125172,7 +126639,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.57
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -125221,6 +126688,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.57,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.23,
@@ -125310,7 +126796,7 @@
         "value": 0.01,
         "day": 0
        },
-       "initial_immune_frac": 0.57
+       "initial_immune_frac": 0.0
       },
       "network": {
        "network_type": "random",
@@ -125359,6 +126845,25 @@
        "age_source": "un_wpp"
       },
       "interventions": [
+       {
+        "type": "vaccine",
+        "coverage": 0.57,
+        "start_day": 0,
+        "end_day": null,
+        "efficacy": 1.0,
+        "kind": "campaign",
+        "leaky": true,
+        "age_min": null,
+        "age_max": null,
+        "protection_days": null,
+        "capacity": null,
+        "delay_days": 0,
+        "rel_trans_treated": 1.0,
+        "symptomatic_only": false,
+        "scale": 0.2,
+        "shift": 0.0,
+        "layer": "all"
+       },
        {
         "type": "vaccine",
         "coverage": 0.23,

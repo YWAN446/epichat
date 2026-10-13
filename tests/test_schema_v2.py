@@ -212,3 +212,11 @@ def test_the_fit_validates_its_target_value_and_lever():
         v2(run={"fit": {"target": "attack_rate", "value": 1.5}})
     with pytest.raises(ValidationError):
         v2(run={"fit": {"target": "peak_day", "value": 0}})
+
+
+def test_the_day_zero_fold_keeps_only_the_v1_shaped_vaccine():
+    # review I4: ages, a window, waning and all-or-nothing were lost by the fold; those entries stay (and run as a day-0 campaign)
+    for extra in ({"age_min": 5, "age_max": 18}, {"kind": "campaign", "end_day": 30}, {"protection_days": 100}, {"leaky": False}, {"kind": "campaign"}):
+        p = v2(interventions=[{"type": "vaccine", "coverage": 0.9, "start_day": 0, **extra}])
+        assert p.disease.initial_immune_frac == 0.0 and len(p.interventions) == 1 and not p.interventions[0].is_day0_immunity(), extra
+    assert v2(interventions=[{"type": "vaccine", "coverage": 0.9, "start_day": 0}]).disease.initial_immune_frac == 0.9

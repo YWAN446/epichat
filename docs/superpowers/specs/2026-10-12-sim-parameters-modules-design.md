@@ -373,12 +373,21 @@ validate unchanged.
 Semantics: routine coverage is the yearly probability each eligible person
 is vaccinated (Starsim's annual probability), as today; a campaign reaches
 the target coverage uniformly over its window (the per-day probability is
-derived from the window's length). A day-0 vaccine with efficacy 1 stays
-`disease.initial_immune_frac` (Part 1 section 18); with efficacy below 1 it is
-a one-day campaign at day 0 (the builder turns a routine entry with
-`start_day` 0, no end day and efficacy below 1 into a campaign ending on day
-0), so the protection is leaky as the product says, and the vaccine product
-recomposes `rel_sus` so a repeated dose does not stack. Treatment with a delay
+derived from the window's length). A v1-shaped day-0 vaccine (routine, efficacy 1,
+leaky, no end day, no ages, no waning) stays `disease.initial_immune_frac`
+(Part 1 section 18); any other day-0 entry (an efficacy below 1, ages, a
+window, waning, all-or-nothing) keeps its fields and the builder runs a
+routine one with no end day as a one-day campaign at day 0, so the
+protection is what the product says for the group it names. A dose is not
+repeated while the last one protects (an all-or-nothing window reaches
+coverage × efficacy; a waning vaccine is given again once its protection
+ends), and the vaccine product recomposes `rel_sus` so a dose never stacks.
+Several contact reductions compose: each step every network's beta is its
+original value times the product of the active reductions' (1 − scale), so
+a reduction that ends restores only its own share. A treatment window that
+closes releases its queue (the waiting factor ends with it). A fit whose
+lever would break the joint rule `network_beta × (1 − e^(−β/365)) ≤ 1` stops
+at that effective bound. Treatment with a delay
 treats an infectious agent `delay_days` after it became infectious, cures it
 with probability `efficacy`, and lowers its `rel_trans` to
 `rel_trans_treated` while it waits; `symptomatic_only` skips asymptomatic

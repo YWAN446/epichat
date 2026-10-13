@@ -383,3 +383,19 @@ describe("configure_simulation interventions and fit (Part 2, 7.4, 7.7)", () => 
     expect(bad.isError).toBe(true);
   });
 });
+
+describe("the vaccine shortcut fields and a rich vaccine entry (2C review, I6)", () => {
+  it("keeps the entry's efficacy and window when the shortcuts change its coverage or start", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", interventions: [{ type: "vaccine", kind: "campaign", coverage: 0.88, start_day: 0, end_day: 0, efficacy: 0.93 }] });
+    const out = JSON.parse((await run(deps, { vaccine_coverage: 0.95 })).content);
+    let p = deps.scenario.params!;
+    expect(p.disease.initial_immune_frac).toBe(0);
+    expect(getVaccine(p)).toMatchObject({ kind: "campaign", coverage: 0.95, start_day: 0, end_day: 0, efficacy: 0.93 });
+    expect(out.applied).toMatchObject({ vaccine_coverage: 0.95, vaccine_start_day: 0 });
+    await run(deps, { vaccine_start_day: 60 });
+    p = deps.scenario.params!;
+    expect(getVaccine(p)).toMatchObject({ kind: "campaign", coverage: 0.95, start_day: 60, end_day: 60, efficacy: 0.93 });
+    expect(p.disease.initial_immune_frac).toBe(0);
+  });
+});

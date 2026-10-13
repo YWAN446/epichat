@@ -48,9 +48,15 @@ class Intervention(BaseModel):
             raise ValueError("interventions[].age_min must be below age_max")
         return self
 
+    def is_v1_vaccine(self) -> bool:
+        """A vaccine entry the v1 shape can express: routine, full efficacy, leaky, no window, no ages, no waning."""
+        return (self.type == "vaccine" and self.kind == "routine" and self.end_day is None and self.efficacy >= 1.0 and self.leaky
+                and self.age_min is None and self.age_max is None and self.protection_days is None)
+
     def is_day0_immunity(self) -> bool:
-        """Part 1 section 18 and Part 2 7.1: a day-0 vaccine at full efficacy is disease.initial_immune_frac."""
-        return self.type == "vaccine" and self.start_day <= 0 and self.efficacy >= 1.0
+        """Part 1 section 18 and Part 2 7.1: a v1-shaped day-0 vaccine is disease.initial_immune_frac; any other day-0 entry (an efficacy
+        below 1, ages, a window, waning, all-or-nothing) keeps its fields and runs as a one-day campaign at day 0 (review I4)."""
+        return self.is_v1_vaccine() and self.start_day <= 0
 
     def is_v1_treatment(self) -> bool:
         """A treatment entry the v1 SimpleTreatment can run (the parity baseline depends on it)."""
