@@ -49,7 +49,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
         vaccine_start_day: int("Day the vaccination campaign begins. 0 (the\ndefault) means pre-existing immunity at the start rather than\na campaign. Requires vaccine_coverage."),
         treatment_capacity: int("Daily treatment capacity; adds/updates the\ntreatment intervention."),
         seasonality_scale: num("Seasonal forcing amplitude 0-1; adds/updates\nthe seasonality intervention."),
-        network_type: str("Contact network: random (fresh contacts daily; overstates the final size), age_structured (three age groups by a contact matrix) or hybrid (households, schools, workplaces, community)."),
+        network_type: str("Contact network: random (fresh contacts daily), age_structured (three age groups by a contact matrix) or hybrid (households, schools, workplaces, community; the layers interventions act on). At the same R0 the final size is close on every network."),
         household_size: num("Mean household size for the hybrid network (people)."),
         advanced: {
           type: ["object", "null"],

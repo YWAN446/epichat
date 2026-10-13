@@ -165,15 +165,19 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     // Part 2, 6.1: a share the user edits is theirs; the builder draws uniform ages within the shares from then on.
     const keys = Object.keys(input.advanced);
     if (keys.some((k) => k.startsWith("demographics.age_pct_")) && !keys.includes("demographics.age_source")) (base.demographics as Obj).age_source = "shares";
+    // Part 2, 5.3: an edited matrix cell is the user's matrix.
+    if (keys.some((k) => k.startsWith("network.contacts.")) && !keys.includes("network.contacts_source")) (base.network as Obj).contacts_source = "user";
   }
 
   const validated = validateParams(base);
   if (!validated.ok) return errorOutcome(`CONFIG ERROR: ${validated.error}`);
   let params: SimParams = validated.params;
   if (before && !given(input.r0)) {
-    // Part 2, 5.9: a network or age-share change alters what R0 a beta implies; hold the R0 the user confirmed when the new network can carry it.
+    // Part 2, 5.9: a change of the network's structure (its type, its matrix, the age shares) alters what R0 a beta implies; hold the R0
+    // the user confirmed when the new network can carry it. A change of contact counts or multipliers keeps beta, as in Part 1.
     const r0Before = approxR0(before);
-    const formulaInputsChanged = changedPaths(before as unknown as Obj, params as unknown as Obj).some((c) => c.path.startsWith("network.") || c.path.startsWith("demographics.age_"));
+    const structural = (path: string) => path === "network.network_type" || path.startsWith("network.contacts") || path.startsWith("demographics.age_");
+    const formulaInputsChanged = changedPaths(before as unknown as Obj, params as unknown as Obj).some((c) => structural(c.path));
     if (formulaInputsChanged && Math.abs(approxR0(params) - r0Before) > 1e-9 * Math.max(1, r0Before)) {
       const held = recalibrateBeta(params, r0Before, before);
       if (held.disease.beta !== params.disease.beta) {

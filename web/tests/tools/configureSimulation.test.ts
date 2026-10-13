@@ -319,3 +319,28 @@ describe("configure_simulation network fields (Part 2, 5.9)", () => {
     expect(deps.scenario.params!.demographics.age_source).toBe("shares");
   });
 });
+
+describe("edited matrix cells and contact counts (review of 2B)", () => {
+  it("marks an edited matrix as the user's and holds the R0, but a contact-count edit keeps beta", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", r0: 3, network_type: "age_structured" });
+    const beta = deps.scenario.params!.disease.beta;
+    const out = JSON.parse((await run(deps, { advanced: { "network.contacts.adults_adults": 12 } })).content);
+    let p = deps.scenario.params!;
+    expect(p.network.contacts_source).toBe("user");
+    expect(p.network.contacts.adults_adults).toBe(12);
+    expect(approxR0(p)).toBeCloseTo(3, 6);
+    expect(out.applied.beta_recalibrated_to_hold_r0).toBe(3);
+    expect(p.disease.beta).not.toBe(beta);
+    await run(deps, { advanced: { "network.contacts.children_children": 8, "network.contacts_source": "prem_2021:KEN" } });
+    expect(deps.scenario.params!.network.contacts_source).toBe("prem_2021:KEN");                    // an explicit source wins
+    const random = makeDeps();
+    await run(random, { disease: "measles", r0: 3 });
+    const before = random.scenario.params!;
+    const more = JSON.parse((await run(random, { advanced: { "network.n_contacts": 8 } })).content);
+    p = random.scenario.params!;
+    expect(p.disease.beta).toBe(before.disease.beta);                                                // twice the contacts: twice the R0, as in Part 1
+    expect(approxR0(p)).toBeCloseTo(6, 6);
+    expect(more.applied.beta_recalibrated_to_hold_r0).toBeUndefined();
+  });
+});
