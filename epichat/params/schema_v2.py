@@ -104,7 +104,7 @@ class DiseaseParams(BaseModel):
     rel_trans_exposed: float = _field("disease.rel_trans_exposed")
     sis_waning: float = _field("disease.sis_waning")
     sis_imm_boost: float = _field("disease.sis_imm_boost")
-    seed: Seed = Field(default_factory=lambda: Seed(value=0.01))
+    seed: Seed = Field(default_factory=lambda: Seed(value=REGISTRY_BY_PATH["disease.seed.value"].default))
     initial_immune_frac: float = _field("disease.initial_immune_frac")
 
     def death_probabilities(self) -> tuple[float, float, float]:

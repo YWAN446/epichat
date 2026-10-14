@@ -19,7 +19,7 @@ def test_defaults_match_the_registry_on_every_leaf():
             continue
         assert dumped[spec.path] == spec.default, spec.path
     assert dumped["disease.dur_inf.mean_days"] == 10.0 and dumped["disease.dur_inf.dist"] == "constant"
-    assert dumped["disease.seed.value"] == 0.01 and dumped["schema_version"] == 2
+    assert dumped["disease.seed.value"] == 0.0005 and dumped["schema_version"] == 2      # 0.05% of the agents (owner's decision, 2026-10-14)
 
 
 def test_every_leaf_has_exactly_one_param_spec():

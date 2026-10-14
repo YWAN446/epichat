@@ -55,6 +55,7 @@ def test_disease_entries_follow_section_7_2():
     assert reg.spec_for("disease.p_death").models == reg.DEATH_MODELS and reg.spec_for("disease.p_death").db_field == "fatality_rate"
     assert reg.spec_for("disease.sis_waning").default == 0.0 and reg.spec_for("disease.sis_waning").models == ("sis",)
     assert reg.spec_for("disease.seed.mode").choices == ("fraction", "count")
+    assert reg.spec_for("disease.seed.value").default == 0.0005                 # 5 of the default 10,000 agents (2026-10-14)
     assert reg.spec_for("disease.initial_immune_frac").bounds == (0.0, 0.99)
     assert reg.spec_for("run.n_replicates").bounds == (1, 5) and reg.spec_for("run.rand_seed").tier == "expert"
     assert reg.spec_for("disease.dur_inf.dist").requires == ("disease.dur_inf.sd_days",)

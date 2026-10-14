@@ -16,7 +16,7 @@ describe("SimParams v2 validation", () => {
       disease: {
         model: "sir", beta: DEFAULT_BETA, dur_exp: null, dur_inf: { mean_days: 10, dist: "constant", sd_days: null }, dur_immune: null,
         p_death: 0, p_asymp: 0.3, rel_trans_asymp: 0.5, rel_sus_age: { children: 1, adults: 1, elderly: 1 }, p_death_age: { children: null, adults: null, elderly: null },
-        rel_sus_cv: 0, rel_trans_exposed: 0, sis_waning: 0, sis_imm_boost: 0, seed: { mode: "fraction", value: 0.01, day: 0 }, initial_immune_frac: 0,
+        rel_sus_cv: 0, rel_trans_exposed: 0, sis_waning: 0, sis_imm_boost: 0, seed: { mode: "fraction", value: 0.0005, day: 0 }, initial_immune_frac: 0,
       },
       network: {
         network_type: "random", n_contacts: 4, network_beta: 1, contacts_dist: "constant", contact_duration_days: 0,

@@ -174,7 +174,7 @@ export const DiseaseSchema = z
     rel_trans_exposed: withDefault("disease.rel_trans_exposed"),
     sis_waning: withDefault("disease.sis_waning"),
     sis_imm_boost: withDefault("disease.sis_imm_boost"),
-    seed: SeedSchema.prefault({ value: 0.01 }),
+    seed: SeedSchema.prefault({ value: defaultOf<number>("disease.seed.value") }),
     initial_immune_frac: withDefault("disease.initial_immune_frac"),
   })
   .superRefine((d, ctx) => {
@@ -354,7 +354,7 @@ export function migrateV1(flat: Record<string, unknown>): Record<string, unknown
       rel_trans_asymp: flat.rel_trans_asymp ?? 0.5,
       sis_waning: 0,
       sis_imm_boost: 0,
-      seed: { mode: "fraction", value: flat.init_prev ?? 0.01, day: 0 },
+      seed: { mode: "fraction", value: flat.init_prev ?? defaultOf<number>("disease.seed.value"), day: 0 },
       initial_immune_frac: day0.length > 0 ? Math.min(Number(day0[day0.length - 1].coverage ?? 0), 0.99) : 0,
     },
     network: pick(NETWORK_KEYS),

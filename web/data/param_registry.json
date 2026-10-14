@@ -673,7 +673,7 @@
    "description": "A fraction between 0 and 1 (mode fraction) or a whole number of agents from 1 to n_agents (mode count).",
    "kind": "number",
    "unit": null,
-   "default": 0.01,
+   "default": 0.0005,
    "bounds": [
     0.0,
     1000000.0
