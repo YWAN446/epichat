@@ -3,7 +3,8 @@ import json
 
 from evals.golden.run import BASELINE, CASES_DIR, load_cases, split_pending
 
-PENDING = {"parameters-describe", "parameters-diagnostic-rerun", "parameters-school-closure", "parameters-why-so-many-infected"}
+PENDING = {"parameters-describe", "parameters-diagnostic-rerun", "parameters-school-closure", "parameters-why-so-many-infected",
+           "parameters-known-attack-rate", "parameters-offer-intervention"}
 
 
 def test_the_parameter_cases_are_pending_for_the_api_harness():
@@ -46,3 +47,22 @@ def test_the_part_2_cases_cover_the_school_closure_and_the_hybrid_option():
     # follow-up spec 7.6: the answer is no longer the random network; the limits on spread come first
     assert any("variation" in c and "behaviour response" in c and "illustrative" in c for c in why["checks"]["judge"])
     assert not any("on the random network everyone meets fresh contacts" in c for c in why["checks"]["judge"])
+
+
+def test_the_follow_up_cases_cover_the_fit_that_keeps_r0_and_the_offer_of_an_intervention():
+    by_id = {c["id"]: c for c in load_cases(CASES_DIR)}
+    known = by_id["parameters-known-attack-rate"]
+    assert known["real_sim"] is True and known["checks"]["ran_simulation"] is True
+    assert {"configure_simulation", "run_simulation"} <= set(known["checks"]["tool_called"])
+    assert any("disease.rel_sus_cv" in c and "not beta" in c for c in known["checks"]["judge"])
+    assert any("R0" in c and ("stays" in c or "unchanged" in c) for c in known["checks"]["judge"])
+    assert any("illustrative" in c for c in known["checks"]["judge"])
+    offer = by_id["parameters-offer-intervention"]
+    assert offer["real_sim"] is True and offer["checks"]["config"] == {"disease": "influenza", "network_type": "hybrid"}
+    assert any("what_if" in c for c in offer["checks"]["judge"]) and any("illustrative" in c for c in offer["checks"]["judge"])
+    assert "warning" in offer["pending_note"]
+
+
+def test_the_readme_counts_the_pending_cases():
+    readme = (CASES_DIR.parent.parent / "README.md").read_text(encoding="utf-8")
+    assert "today the six\nsim-parameters cases" in readme.replace("\r\n", "\n")

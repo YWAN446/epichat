@@ -87,3 +87,43 @@
       - "Offers variation between people or a behaviour response as illustrative assumptions that limit the spread"
       - "May offer the hybrid network (households, schools, workplaces, community) as the structure that school closures and distancing act on"
       - "Does not promise that switching the network alone lowers the final size (at the same R0 the final size is close on every network)"
+
+- id: parameters-known-attack-rate
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "A web-agent rule (follow-up spec 6): when the user knows the attack rate and the R0 comes from the database, the fit moves the variation between people, not beta. Needs the deployed agent's configure_simulation with fit.lever and the service's fit. The target sits inside the lever's range: at the database's R0 of 3 on the random network a run infects 94% without variation, 66% at CV 1, 47% at CV 1.5 and 34% at the largest, CV 2 (20,000 agents, one seed, 2026-10-13); the harness author checks that again if the database's R0 changes."
+  turns:
+    - "Model RSV in a city of 20,000 people for a year, with the database's R0."
+    - "In the real outbreak 50% of the city was infected. Fit the model to that and run it."
+  checks:
+    tool_called: [configure_simulation, run_simulation]
+    ran_simulation: true
+    config:
+      disease: rsv
+    judge:
+      - "Fits the variation between people (fit lever disease.rel_sus_cv), not beta"
+      - "Says the R0 stays at the database's value (it is unchanged by the fit)"
+      - "Says the variation in susceptibility is an illustrative assumption, and labels the run as fitted in the limitations"
+      - "Reports the attack rate the fit reached (close to 50%), and the variation it ended at"
+
+- id: parameters-offer-intervention
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "A web-agent rule (follow-up spec 7.3): after a baseline run without a warning diagnostic, the agent offers up to two levers of the what_if diagnostic by their labels. If the run raises a warning (an unfinished run or an early fade-out, say) the agent must offer that diagnostic's options and no intervention; the harness author picks a seed and a duration that let the epidemic take off and finish."
+  turns:
+    - "Model seasonal influenza in a town of 20,000 people with households, schools and workplaces, for a year."
+    - "Yes, run it."
+  checks:
+    tool_called: [run_simulation]
+    ran_simulation: true
+    config:
+      disease: influenza
+      network_type: hybrid
+    judge:
+      - "After reporting the run, offers at least one intervention from the run's what_if diagnostic (a school closure, distancing, masks or a behaviour response) as a next step, by the lever's label; a dated one names the day it starts"
+      - "Says the effect sizes of the offered interventions are illustrative assumptions"
+      - "Does not state the effect of an intervention before it has been run"
