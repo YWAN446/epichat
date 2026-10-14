@@ -6,6 +6,8 @@ type Props = {
   params: SimParams | null;
   /** Where each value came from, by registry path (follow-up spec 8.4); null for a payload stored before the sources. */
   sources?: Record<string, string> | null;
+  /** The chosen references behind the reference tags, by registry path (follow-up spec 9.4). */
+  references?: Record<string, string> | null;
   /** A configuration exists. Without parameters it was stored before the payloads carried them, which is said rather than denied. */
   configured: boolean;
 };
@@ -62,6 +64,7 @@ function Rows({ rows }: { rows: ParameterRow[] }) {
                   {tag}
                 </span>
               ))}
+              {row.note && <span className="block text-xs font-normal text-ink-faint">{row.note}</span>}
             </dd>
           </div>
           {row.grid && (
@@ -80,7 +83,7 @@ function Rows({ rows }: { rows: ParameterRow[] }) {
  * or what the latest run used. Five groups; each shows its core parameters and the values that are not the default, and keeps
  * every other parameter of the scenario's model and network behind "Show all". A value's tags say where it came from.
  */
-export function ParametersSection({ params, sources, configured }: Props) {
+export function ParametersSection({ params, sources, references, configured }: Props) {
   if (!params) {
     return (
       <p className="text-ink-faint">
@@ -88,7 +91,7 @@ export function ParametersSection({ params, sources, configured }: Props) {
       </p>
     );
   }
-  const groups = parameterGroups(params, sources);
+  const groups = parameterGroups(params, sources, references);
   return (
     <div className="space-y-3">
       <p className="text-xs text-ink-faint">

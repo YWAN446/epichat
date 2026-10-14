@@ -4,7 +4,8 @@ import refs from "@/data/disease_refs.json";
 import { estimateAt } from "@/lib/disease/refs";
 import { approxR0 } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
-import { makeDeps } from "./helpers";
+import { fetchDemographics } from "@/lib/tools/fetchDemographics";
+import { makeDeps, rf } from "./helpers";
 
 const run = (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) => configureSimulation(input as never, deps);
 type Estimate = { value?: number; range?: [number, number]; special_value?: string; title: string; year?: number; url?: string; doi?: string };
@@ -132,5 +133,39 @@ describe("configure_simulation applies a chosen reference (follow-up spec 9.3)",
     expect(out.content).toContain("has no single value");
     expect(out.content).toContain("lifelong");
     expect(chosen(deps)).toEqual([]);
+  });
+});
+
+describe("a chosen reference is the value's source while the value stands (follow-up spec 9.4)", () => {
+  type Tagged = { sources: Record<string, string>; references?: Record<string, string> };
+
+  it("tags the path, names the reference, and loses the tag when the value changes", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles" });
+    const first = estimates("measles", "infectious_days")[0];
+    const out = (await run(deps, { use_reference: { parameter: "infectious_days", index: 1 } })).payload as Tagged;
+    expect(out.sources["disease.dur_inf.mean_days"]).toBe("reference");
+    expect(out.references).toEqual({ "disease.dur_inf.mean_days": `${first.title}${first.year ? ` (${first.year})` : ""}` });
+    const r0 = (await run(deps, { use_reference: { parameter: "r0", index: 2 } })).payload as Tagged;
+    expect(r0.sources["disease.beta"]).toBe("reference");                                    // beta, by the R0 it implies
+    expect(Object.keys(r0.references!).sort()).toEqual(["disease.beta", "disease.dur_inf.mean_days"]);
+    const again = (await run(deps, { r0: 9 })).payload as Tagged;
+    expect(again.sources["disease.beta"]).toBe("user");
+    expect(again.references).toEqual({ "disease.dur_inf.mean_days": out.references!["disease.dur_inf.mean_days"] });   // the other choice still stands
+    const changed = (await run(deps, { dur_inf_days: 5 })).payload as Tagged;
+    expect(changed.sources["disease.dur_inf.mean_days"]).toBe("user");
+    expect(changed.references).toBeUndefined();
+    // an R0 from a reference stands only while the scenario still has that R0: a longer infectious period at the same beta is another R0
+    await run(deps, { use_reference: { parameter: "r0", index: 2 } });
+    const longer = (await run(deps, { dur_inf_days: 12 })).payload as Tagged;
+    expect(longer.sources["disease.beta"]).not.toBe("reference");
+  });
+
+  it("keeps the fetched data's tags beside it", async () => {
+    const deps = makeDeps({ unWpp: [rf("birth_rate", 28.1), rf("death_rate", 7.9), rf("total_population", 55_000_000)] });
+    await run(deps, { disease: "measles", country_iso3: "KEN" });
+    await fetchDemographics({ country_iso3: "KEN" } as never, deps);
+    const out = (await run(deps, { use_reference: { parameter: "fatality_rate", index: 1 } })).payload as Tagged;
+    expect(out.sources).toMatchObject({ "demographics.birth_rate": "fetch", "disease.p_death": "reference" });
   });
 });

@@ -129,3 +129,14 @@ describe("the sources follow the parameters (follow-up spec 8.4)", () => {
     expect(deriveArtifacts([{ id: "t1", blocks: [block("configure_simulation", config({ "disease.beta": "user" })), block("fetch_demographics", { ...data, params: undefined })] }]).sources).toEqual({ "disease.beta": "user" });
   });
 });
+
+describe("the references follow the sources (follow-up spec 9.4)", () => {
+  it("come from the payload that gave the parameters", () => {
+    const config = (extra: Record<string, unknown>) => ({ kind: "config" as const, applied: {}, approx_r0: 2, config: { disease: null, disease_type: "sir", country: null, n_agents: 10000, sim_dur_years: 1, dur_inf: 10, dur_exp: null, interventions: [] }, warnings: [], new_scenario: false, params: params({}), ...extra });
+    const block = (payload: unknown) => ({ kind: "tool_result" as const, id: "t", name: "configure_simulation", ok: true, payload } as never);
+    const noted = { sources: { "disease.beta": "reference" }, references: { "disease.beta": "A review (2017)" } };
+    expect(emptyArtifacts().references).toBeNull();
+    expect(deriveArtifacts([{ id: "t1", blocks: [block(config(noted))] }]).references).toEqual({ "disease.beta": "A review (2017)" });
+    expect(deriveArtifacts([{ id: "t1", blocks: [block(config(noted)), block(config({ sources: { "disease.beta": "user" } }))] }]).references).toBeNull();
+  });
+});

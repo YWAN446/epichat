@@ -244,3 +244,14 @@ describe("the limits on spread in the panel (follow-up spec 4.5, 5.5, 6)", () =>
     expect(describeField("beta_fitted_to_attack_rate", 9.5)).toEqual({ label: "Transmission rate fitted to attack rate", value: "9.5" });
   });
 });
+
+describe("a chosen reference among the data sources (follow-up spec 9.4)", () => {
+  it("is named by its parameter, with the value in the unit it was applied in", () => {
+    expect(describeField("ref:fatality_rate", 0.015)).toEqual({ label: "Case fatality (literature)", value: "1.5%" });
+    expect(describeField("ref:asymptomatic_fraction", 0.441)).toEqual({ label: "Asymptomatic share (literature)", value: "44.1%" });
+    expect(describeField("ref:r0", 14)).toEqual({ label: "R₀ (literature)", value: "14" });
+    expect(describeField("ref:incubation_days", 12)).toEqual({ label: "Incubation period (literature)", value: "12 days" });
+    expect(describeField("ref:immunity_duration", 7300)).toEqual({ label: "Immunity duration (literature)", value: "7,300 days" });
+    expect(describeField("ref:average_contacts_daily", 9)).toEqual({ label: "Contacts per day (literature)", value: "9" });
+  });
+});

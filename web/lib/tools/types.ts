@@ -54,6 +54,8 @@ export type ConfigPayload = {
   params?: SimParams;
   /** Follow-up spec 8.4: where each of those values came from, by registry path; absent on payloads stored before it existed. */
   sources?: Record<string, ParamSource>;
+  /** Follow-up spec 9.4: for a path tagged reference, the chosen reference's title and year; absent when none stands. */
+  references?: Record<string, string>;
 };
 export type DataPayload = {
   kind: "data";
@@ -67,6 +69,8 @@ export type DataPayload = {
   params?: SimParams;
   /** Where each of those values came from (see ConfigPayload.sources). */
   sources?: Record<string, ParamSource>;
+  /** The chosen references behind the reference tags (see ConfigPayload.references). */
+  references?: Record<string, string>;
 };
 /** Spec 11: this run against the scenario's previous successful run. */
 export type RunCompare = {
@@ -102,6 +106,8 @@ export type RunPayload = {
   applied?: Record<string, unknown>;
   /** Follow-up spec 8.4: where each configured value came from, by registry path: the scenario's own parameters, so a beta the run calibrated or a lever it fitted keeps the source of what was configured. */
   sources?: Record<string, ParamSource>;
+  /** The chosen references behind the reference tags that survive the run (see ConfigPayload.references). */
+  references?: Record<string, string>;
 };
 export type ToolErrorPayload = { kind: "tool_error"; message: string };
 /** A remember call (profile spec, section 9). */

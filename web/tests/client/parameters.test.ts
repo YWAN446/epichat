@@ -228,3 +228,16 @@ describe("a covered parameter is a displayed parameter (review of phase C)", () 
     expect(rows(base("random"))["Initial infections"]).toBe("20 agents on day 3");
   });
 });
+
+describe("a chosen reference in the section (follow-up spec 9.4)", () => {
+  it("names the reference on the row it set, and nowhere else", () => {
+    const p = params({ schema_version: 2, disease: { dur_inf: { mean_days: 8 } } });
+    const sources = { "disease.dur_inf.mean_days": "reference", "disease.beta": "user" };
+    const notes = { "disease.dur_inf.mean_days": "Clinical Overview of Measles (2026)" };
+    const rows = Object.fromEntries(parameterGroups(p, sources, notes).flatMap((g) => g.rows).map((r) => [r.label, r]));
+    expect(rows["Infectious period"]).toMatchObject({ sources: ["reference"], note: "Clinical Overview of Measles (2026)" });
+    expect(rows["Transmission rate (β)"].note).toBeUndefined();
+    expect(parameterGroups(p, sources).flatMap((g) => g.rows).every((r) => r.note === undefined)).toBe(true);    // a payload without the notes
+    expect(parameterGroups(p, { "disease.beta": "user" }, notes).flatMap((g) => g.rows).every((r) => r.note === undefined)).toBe(true);   // a note without the tag is stale
+  });
+});

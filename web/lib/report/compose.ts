@@ -141,7 +141,7 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
       columns: ["Source", "Field", "Value", "Citation"],
       rows: scenario.dataSources.map((f) => {
         const d = describeField(f.field, f.value);
-        return [sourceOf(f.citation), d.label, d.value, f.citation];
+        return [f.field.startsWith("ref:") ? "Literature" : sourceOf(f.citation), d.label, d.value, f.citation];
       }),
     });
   } else {

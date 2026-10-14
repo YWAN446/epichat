@@ -5,7 +5,7 @@ import type { SimSuccess } from "@/lib/sim/client";
 import { changedPaths } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
 import { errorOutcome, paramWarnings, runNotes } from "./shared";
-import { scenarioSources } from "./sources";
+import { scenarioReferences, scenarioSources } from "./sources";
 import type { RunCompare, RunPayload, ToolDeps, ToolOutcome } from "./types";
 
 export const RunSimulationInput = z.strictObject({});
@@ -81,6 +81,9 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   if (deps.scenario.params) {
     for (const change of changedPaths(deps.scenario.params as unknown as Record<string, unknown>, result.effective_params as unknown as Record<string, unknown>)) valueTags[change.path] = "run";
   }
+  // a chosen reference's note goes with its tag: not for a path the run then changed
+  const stillReferenced = Object.entries(scenarioReferences(deps.scenario) ?? {}).filter(([path]) => valueTags[path] === "reference");
+  const runReferences = stillReferenced.length > 0 ? Object.fromEntries(stillReferenced) : undefined;
   const payload: RunPayload = {
     kind: "run",
     run_id: runId,
@@ -101,6 +104,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
     ...(applied ? { applied } : {}),
     ...(replicates ? { replicates } : {}),
     sources: valueTags,
+    ...(runReferences ? { references: runReferences } : {}),
   };
   return {
     content: JSON.stringify({

@@ -32,6 +32,8 @@ export type ParameterRow = {
   shown: boolean;
   /** Every source its values have; only the ones that are not a default when there is one. Empty without sources. */
   sources: SourceTag[];
+  /** For a row tagged reference: the chosen reference's title and year (follow-up spec 9.4). */
+  note?: string;
   grid?: ParameterGrid;
 };
 export type GroupId = "disease" | "network" | "demographics" | "interventions" | "run";
@@ -188,7 +190,7 @@ export function sourceTags(paths: string[], sources?: Record<string, string> | n
 }
 
 /** The scenario's parameters in five groups, every row that applies to its model and network. */
-export function parameterGroups(p: SimParams, sources?: Record<string, string> | null): ParameterGroup[] {
+export function parameterGroups(p: SimParams, sources?: Record<string, string> | null, references?: Record<string, string> | null): ParameterGroup[] {
   const flat = flattenParams(p as unknown as Record<string, unknown>);
   const model = p.disease.model;
   const network = p.network.network_type;
@@ -207,8 +209,11 @@ export function parameterGroups(p: SimParams, sources?: Record<string, string> |
             // an absent block (no latent period set, no fit) holds its defaults
             return entry.tier === "core" || !same(path in flat ? flat[path] : entry.default, entry.default);
           });
+      const tags = sourceTags(covered, sources);
+      // the title of a chosen reference, only beside its tag: a note whose tag is gone is stale
+      const notes = tags.includes("reference") && references ? covered.filter((path) => sources?.[path] === "reference" && Object.hasOwn(references, path)).map((path) => references[path]) : [];
       rows.push({
-        label: spec.label, value: spec.text(p), paths: covered, shown, sources: sourceTags(covered, sources),
+        label: spec.label, value: spec.text(p), paths: covered, shown, sources: tags, ...(notes.length > 0 ? { note: [...new Set(notes)].join("; ") } : {}),
         ...(spec.detail ? { detail: spec.detail(p) } : {}), ...(spec.grid ? { grid: spec.grid(p) } : {}),
       });
     }

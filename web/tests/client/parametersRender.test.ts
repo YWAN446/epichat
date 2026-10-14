@@ -52,3 +52,14 @@ describe("a value with two sources shows both (review of phase C)", () => {
     expect(row).toContain("</span>assumption</span>");
   });
 });
+
+describe("a chosen reference as it renders (follow-up spec 9.4)", () => {
+  it("shows the tag and the reference's title under the value", () => {
+    const p = params({ schema_version: 2, disease: { dur_inf: { mean_days: 8 } } });
+    const html = render({ params: p, sources: { "disease.dur_inf.mean_days": "reference" }, references: { "disease.dur_inf.mean_days": "Clinical Overview of Measles (2026)" }, configured: true });
+    const row = html.slice(html.indexOf("Infectious period</dt>"), html.indexOf("</dd>", html.indexOf("Infectious period</dt>")));
+    expect(row).toContain("</span>reference</span>");
+    expect(row).toContain("Clinical Overview of Measles (2026)");
+    expect(render({ params: p, sources: { "disease.dur_inf.mean_days": "reference" }, configured: true })).not.toContain("Clinical Overview");
+  });
+});

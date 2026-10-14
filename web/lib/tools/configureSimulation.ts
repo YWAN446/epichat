@@ -12,7 +12,7 @@ import { configView } from "./configView";
 import { durationFor, type DurationName } from "./durations";
 import { matchedLevers } from "./options";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
-import { near, scenarioSources } from "./sources";
+import { near, scenarioReferences, scenarioSources } from "./sources";
 import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
 
 const opt = <T extends z.ZodTypeAny>(t: T) => t.nullish();
@@ -65,6 +65,7 @@ const block = (base: Obj, key: string): Obj => {
  * spec 7.3.
  */
 const BETA_FIT_LEVERS = ["disease.beta", "network.network_beta"];
+const noted = (references: Record<string, string> | undefined) => (references ? { references } : {});
 
 /**
  * The scenario with its fit ended and the value the fitted run found written into the lever, or null when the last run was not a
@@ -363,6 +364,6 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   const config = configView(params, scenario.disease);
   return {
     content: JSON.stringify({ applied, changed, approx_r0, config, warnings }),
-    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario, params, sources: scenarioSources(scenario, deps.contextText) },
+    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario, params, sources: scenarioSources(scenario, deps.contextText), ...noted(scenarioReferences(scenario)) },
   };
 }

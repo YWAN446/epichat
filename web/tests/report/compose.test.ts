@@ -192,3 +192,17 @@ describe("the appendix across networks, with interventions (review of phase C)",
     expect(all.rows.find((r) => r[0] === "Interventions")).toEqual(["Interventions", "none", "Seasonality: amplitude 0.3, shift 0"]);
   });
 });
+
+describe("a chosen reference in the report (follow-up spec 9.4)", () => {
+  it("is a literature row of the data sources", () => {
+    const citation = "The basic reproduction number (R0) of measles: a systematic review (2017). https://pubmed.ncbi.nlm.nih.gov/28757186/";
+    const scenario = { ...FIXTURE.scenario, dataSources: [...FIXTURE.scenario.dataSources, { field: "ref:r0", value: 14, citation, description: "Chosen from the literature table", alternatives: [] }] };
+    const doc = composeReport({ ...FIXTURE, scenario }, NOW);
+    const tables = doc.sections.flatMap((s) => s.blocks).filter((b) => b.kind === "table" && b.caption === "Data sources");
+    expect(tables).toHaveLength(1);
+    const table = tables[0];
+    if (table.kind !== "table") throw new Error("table");
+    expect(table.rows).toContainEqual(["Literature", "R₀ (literature)", "14", citation]);
+    expect(table.rows.filter((row) => row[0] === "Literature")).toHaveLength(1);
+  });
+});

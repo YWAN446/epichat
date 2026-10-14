@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getTreatment, validateParams } from "@/lib/sim/params";
 import { pyRound } from "@/lib/sim/pyformat";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources } from "./shared";
-import { scenarioSources } from "./sources";
+import { scenarioReferences, scenarioSources } from "./sources";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 export const FetchHealthSystemInput = z.strictObject({ country_iso3: z.string() });
@@ -31,7 +31,7 @@ export async function fetchHealthSystem(input: FetchHealthSystemArgs, deps: Tool
       applied.applied_treatment_capacity = capacity;
     }
     const citations = recordSources(scenario, fields);
-    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "wb_data360", iso3, applied, citations, params: scenario.params, sources: scenarioSources(scenario, deps.contextText) } };
+    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "wb_data360", iso3, applied, citations, params: scenario.params, sources: scenarioSources(scenario, deps.contextText), ...(scenarioReferences(scenario) ? { references: scenarioReferences(scenario) } : {}) } };
   } catch (error) {
     return errorOutcome(`FETCH ERROR: ${errorMessage(error)}`);
   }

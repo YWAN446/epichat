@@ -266,6 +266,9 @@ function fitFieldText(value: unknown): string {
   return fitText(f.target, f.value);
 }
 
+/** The simulation's unit of each database parameter a chosen reference sets (lib/tools/chosenReference.ts converts into it). */
+const REFERENCE_UNITS: Record<string, string> = { incubation_days: "days", infectious_days: "days", immunity_duration: "days", fatality_rate: "fraction", asymptomatic_fraction: "fraction" };
+
 /** A label and a readable value for a field a data tool applied; unknown fields fall back to the key in words. */
 export function describeField(key: string, value: unknown): { label: string; value: string } {
   const vaccine = /^([a-z0-9]+)_coverage$/.exec(key);
@@ -274,6 +277,12 @@ export function describeField(key: string, value: unknown): { label: string; val
   if (fitted) {
     const label = `${LEVER_NAMES[fitted[1]] ?? words(fitted[1])} fitted to ${FIT_TARGET_LABELS[fitted[2]] ?? words(fitted[2]).toLowerCase()}`;
     return { label, value: fitted[1] === "behavior_response" ? `${plain(Number(value) * 100)}%` : fmtValue(value) };      // the response's scale is a share
+  }
+  const chosen = /^ref:(\w+)$/.exec(key);
+  if (chosen) {
+    // follow-up spec 9.4: a literature reference the participant chose, its value in the unit it was applied in
+    const unit = REFERENCE_UNITS[chosen[1]];
+    return { label: `${parameterLabel(chosen[1])} (literature)`, value: unit && typeof value === "number" ? formatQuantity(value, unit) : fmtValue(value) };
   }
   const spec = FIELDS[key];
   if (!spec) return { label: words(key), value: fmtValue(value) };

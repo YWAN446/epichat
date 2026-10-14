@@ -37,6 +37,8 @@ export type Artifacts = {
   params: SimParams | null;
   /** Where each of those values came from (follow-up spec 8.4), from the payload that gave them; null for payloads stored before the sources. */
   sources: Record<string, string> | null;
+  /** The chosen references behind the reference tags (follow-up spec 9.4), from the same payload; null when it carried none. */
+  references: Record<string, string> | null;
   /** Every successful run of the conversation, oldest first. */
   runs: RunArtifact[];
   /** Every tool and web step, in order. */
@@ -48,7 +50,7 @@ export type Artifacts = {
 };
 
 export function emptyArtifacts(): Artifacts {
-  return { disease: null, config: null, data: [], params: null, sources: null, runs: [], activity: [], report: null, memoryWrites: 0 };
+  return { disease: null, config: null, data: [], params: null, sources: null, references: null, runs: [], activity: [], report: null, memoryWrites: 0 };
 }
 
 export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artifacts {
@@ -74,6 +76,7 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
         out.config = payload;
         out.params = coerceParams(payload.params ?? null);
         out.sources = out.params ? (payload.sources ?? null) : null;
+        out.references = out.params ? (payload.references ?? null) : null;
         if (payload.new_scenario) {
           out.data = [];
           out.report = null;
@@ -84,6 +87,7 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
         if (p) {
           out.params = p;
           out.sources = payload.sources ?? null;
+          out.references = payload.references ?? null;
         }
       } else if (payload.kind === "run") {
         const effective = coerceParams(payload.effective_params);
@@ -91,6 +95,7 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
         if (effective) {
           out.params = effective;
           out.sources = payload.sources ?? null;
+          out.references = payload.references ?? null;
         }
       }
       else if (payload.kind === "report") out.report = payload;

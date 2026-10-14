@@ -9,11 +9,12 @@ import { countryDemographics } from "@/lib/data/countryDemographics";
 import { CONTACT_PAIRS, DEFAULT_BETA, approxR0, type SimParams } from "@/lib/sim/params";
 import { flattenParams } from "@/lib/sim/paths";
 import { PARAM_REGISTRY } from "@/lib/sim/registry";
+import { REFERENCE_TARGETS } from "./chosenReference";
 import { illustrativeSd } from "./durations";
 import type { Scenario } from "./types";
 
 /** run: a value the run itself changed from what was configured (a calibrated beta, a fitted lever, demographics the service filled); only a run's payload carries it. */
-export type ParamSource = "user" | "database" | "fetch" | "default" | "illustrative" | "run";
+export type ParamSource = "user" | "database" | "fetch" | "default" | "illustrative" | "run" | "reference";
 export type DbRange = { min: number | null; max: number | null; typical: number | null; unit: string | null; source: string };
 
 const DAYS_PER_UNIT: Record<string, number> = { days: 1, weeks: 7, months: 30.44, years: 365.25 };
@@ -76,6 +77,24 @@ const FETCHED: Record<string, (scenario: Scenario) => unknown> = {
 
 const DURATIONS = ["dur_exp", "dur_inf", "dur_immune"] as const;
 
+/**
+ * Follow-up spec 9.4: the paths whose value is still the one a chosen literature reference set (the data source
+ * ref:<parameter>, in the unit it was applied in; beta by the R0 it implies), each with the reference's title and year.
+ */
+export function referenceNotes(p: SimParams, scenario: Scenario): Record<string, string> {
+  const flat = flattenParams(p as unknown as Record<string, unknown>);
+  const notes: Record<string, string> = {};
+  for (const source of scenario.dataSources) {
+    if (!source.field.startsWith("ref:") || typeof source.value !== "number") continue;
+    const name = source.field.slice(4);
+    if (!Object.hasOwn(REFERENCE_TARGETS, name)) continue;
+    const path = REFERENCE_TARGETS[name as keyof typeof REFERENCE_TARGETS].path;
+    const stands = name === "r0" ? Math.abs(approxR0(p) - source.value) <= R0_TOLERANCE * source.value : near(flat[path], source.value);
+    if (stands) notes[path] = source.citation.replace(/\.( https?:\/\/\S+)?$/, "");
+  }
+  return notes;
+}
+
 /** One source per set path of the scenario's parameters. */
 export function valueSources(p: SimParams, scenario: Scenario, disease: string | null): Record<string, ParamSource> {
   const entry = disease ? lookup(disease) : null;
@@ -109,7 +128,16 @@ export function valueSources(p: SimParams, scenario: Scenario, disease: string |
     }
   }
   if (near(p.disease.rel_sus_cv, ILLUSTRATIVE_CV)) out["disease.rel_sus_cv"] = "illustrative";
+  // a value a chosen reference set is the reference's for as long as it stands, whatever else it happens to equal
+  for (const path of Object.keys(referenceNotes(p, scenario))) out[path] = "reference";
   return out;
+}
+
+/** The titles behind the reference tags, for the payloads that carry the sources; undefined when no chosen reference stands. */
+export function scenarioReferences(scenario: Scenario): Record<string, string> | undefined {
+  if (!scenario.params) return undefined;
+  const notes = referenceNotes(scenario.params, scenario);
+  return Object.keys(notes).length > 0 ? notes : undefined;
 }
 
 /**
