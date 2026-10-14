@@ -26,12 +26,12 @@ Direction = Literal["increase", "decrease", "change"]
 Basis = Literal["disease_db", "rule", "user"]
 
 # Section 10's thresholds; starting points, tuned from pilot data.
-FADEOUT_SEED_MULTIPLE = 2            # early_fadeout and the faded-out share: total_infected < 2 × seeds
+FADEOUT_SEED_MULTIPLE = 2            # early_fadeout and the faded-out share: total_infected < max(2 × seeds, ANCHOR_SHARE × agents)
 FADEOUT_SEED_FACTOR = 5              # suggested seeds: max(5 × seeds, 10), at most n_agents
 FADEOUT_SEED_FLOOR = 10
 FADEOUT_REPLICATES = 5
 INSTANT_PEAK_DAY = 3
-INSTANT_PEAK_SEED_SHARE = 0.02       # above the realized noise of the 1% default
+INSTANT_PEAK_SEED_SHARE = 0.02       # forty times the 0.05% default; above the realized noise of a 1% seeding
 INSTANT_PEAK_SEEDS = 10
 UNFINISHED_TAIL_SHARE = 0.05         # n_infectious[-1] >= 0.05 × peak
 UNFINISHED_WINDOW_SHARE = 0.1        # the last ceil(0.1 T) days against the ceil(0.1 T) before them
@@ -195,22 +195,32 @@ def _r0_recheck(run: _Run) -> Lever | None:
                  "disease_db")
 
 
+def _faded_out(total: float, seeds: int, n: int) -> bool:
+    """The outbreak ended below twice its seeds or before ANCHOR_SHARE of the agents (the day it would have been noticed), whichever
+    is larger: with the default seeding of 0.05% a handful of seeds can infect a few dozen and die out, which the seed rule alone misses."""
+    return total < max(FADEOUT_SEED_MULTIPLE * seeds, ANCHOR_SHARE * n)
+
+
 def _early_fadeout(run: _Run) -> Diagnostic | None:
-    if not (run.days and run.r_eff > 1 and run.infectious[-1] == 0 and run.total < FADEOUT_SEED_MULTIPLE * run.seeds):
+    if not run.days or run.infectious[-1] != 0:
+        return None
+    nobody = run.seeds == 0 and run.total == 0          # a fraction seeding is a draw per agent: 0.05% of 10,000 gives nobody in 0.7% of runs
+    if not nobody and not (run.r_eff > 1 and _faded_out(run.total, run.seeds, run.n)):
         return None
     p = run.params
     seeds_to = min(max(FADEOUT_SEED_FACTOR * run.seeds, FADEOUT_SEED_FLOOR), p.run.n_agents)
+    why = (f"The seeding infected nobody: {p.disease.seed.value:g} ({p.disease.seed.mode}) reached no agent of the {p.run.n_agents}; "
+           f"seed {seeds_to} agents instead." if nobody else f"More seeds make an early fade-out less likely: {seeds_to} instead of {run.seeds}.")
     levers = [
         Lever({"disease.seed.mode": "count", "disease.seed.value": seeds_to},
-              {"disease.seed.mode": p.disease.seed.mode, "disease.seed.value": p.disease.seed.value}, "increase",
-              f"More seeds make an early fade-out less likely: {seeds_to} instead of {run.seeds}.", "rule"),
+              {"disease.seed.mode": p.disease.seed.mode, "disease.seed.value": p.disease.seed.value}, "increase", why, "rule"),
         Lever({"run.n_replicates": FADEOUT_REPLICATES}, {"run.n_replicates": p.run.n_replicates}, "increase",
               "Several replicates show how often the outbreak takes off at all.", "rule"),
     ]
     recheck = _r0_recheck(run)
     if recheck:
         levers.append(recheck)
-    return Diagnostic("early_fadeout", "warning", "The outbreak died out early",
+    return Diagnostic("early_fadeout", "warning", "The seeding infected nobody" if nobody else "The outbreak died out early",
                       {"r_eff": round(run.r_eff, 2), "seeds": run.seeds, "total_infected": int(run.total), "last_infectious": 0}, levers)
 
 
@@ -356,7 +366,7 @@ def _high_variance(run: _Run) -> Diagnostic | None:
     spread = (p90 - p10) / median
     if spread <= HIGH_VARIANCE_SPREAD:
         return None
-    faded = sum(1 for t in totals if t < FADEOUT_SEED_MULTIPLE * run.seeds)
+    faded = sum(1 for t in totals if _faded_out(t, run.seeds, run.n))
     return Diagnostic("high_variance", "info", "The replicates disagree widely",
                       {"p10_total_infected": p10, "p90_total_infected": p90, "median_total_infected": median, "spread": round(spread, 2),
                        "faded_out_share": round(faded / len(totals), 2), "n_replicates": len(totals)}, [])

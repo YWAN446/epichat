@@ -67,7 +67,7 @@ def test_early_fadeout_suggests_more_seeds_replicates_and_the_database_r0():
     assert d.severity == "warning" and d.evidence["seeds"] == 10 and d.evidence["total_infected"] == 15 and d.evidence["r_eff"] > 1
     assert [lever.patch for lever in d.levers] == [{"disease.seed.mode": "count", "disease.seed.value": 50}, {"run.n_replicates": 5}]
     assert d.levers[0].basis == "rule" and d.levers[0].direction == "increase"
-    assert d.levers[0].current == {"disease.seed.mode": "fraction", "disease.seed.value": 0.01}
+    assert d.levers[0].current == {"disease.seed.mode": "fraction", "disease.seed.value": 0.0005}
     beta = one(run(p, FADED, total=15, seeds=10, disease="measles"), "early_fadeout").levers[2]
     assert beta.basis == "disease_db" and beta.patch == {"disease.beta": clamp_beta(calibrate_beta(p, 15))}
     assert "15" in beta.rationale and "measles" in beta.rationale and beta.current == {"disease.beta": p.disease.beta}
@@ -82,7 +82,33 @@ def test_early_fadeout_caps_the_seed_suggestion_at_the_agents_and_skips_a_matchi
     assert len(one(run(tuned, FADED, total=15, seeds=10, disease="measles"), "early_fadeout").levers) == 2
 
 
-def test_instant_peak_fires_above_two_percent_seeding_and_not_at_the_one_percent_default():
+def test_early_fadeout_names_a_seeding_that_infected_nobody():
+    """A fraction seeding is a Bernoulli draw per agent: 0.05% of 10,000 gives nobody in 0.7% of runs (total 0 < 2 × 0 is false)."""
+    p = params()
+    found = run(p, [0.0] * DAYS, total=0, seeds=0)
+    assert "early_fadeout" in ids(found) and "final_size_gap" not in ids(found)
+    d = one(found, "early_fadeout")
+    assert d.severity == "warning" and d.evidence["seeds"] == 0 and d.evidence["total_infected"] == 0
+    assert d.title == "The seeding infected nobody"
+    assert d.levers[0].patch == {"disease.seed.mode": "count", "disease.seed.value": 10}
+    assert "nobody" in d.levers[0].rationale and "10" in d.levers[0].rationale
+    assert d.levers[1].patch == {"run.n_replicates": 5}
+    assert one(run(p, FADED, total=15, seeds=10), "early_fadeout").title == "The outbreak died out early"
+
+
+def test_early_fadeout_also_fires_when_a_few_seeds_die_out_before_one_percent_were_infected():
+    """Five seeds that infect sixty and die out are a fade-out (sixty is below 1% of 10,000) though sixty is well above twice the seeds."""
+    p = params()
+    gone = [5.0, 12.0, 20.0, 15.0, 6.0, 2.0] + [0.0] * (DAYS - 6)
+    small = run(p, gone, total=60, seeds=5)
+    assert "early_fadeout" in ids(small) and "final_size_gap" not in ids(small)
+    assert one(small, "early_fadeout").levers[0].patch == {"disease.seed.mode": "count", "disease.seed.value": 25}
+    bigger = run(p, gone, total=150, seeds=5)                          # 1.5% infected before it ended: not a fade-out by this rule
+    assert "early_fadeout" not in ids(bigger) and "final_size_gap" in ids(bigger)
+    assert dx._faded_out(150, 100, N) and not dx._faded_out(250, 100, N)       # a 1% seeding keeps the old rule, twice its seeds
+
+
+def test_instant_peak_fires_above_two_percent_seeding_and_not_at_a_one_percent_seeding():
     p = params()
     found = run(p, [300.0, 320.0, 250.0] + curve(200, 20, 60)[3:], total=8600, seeds=300)
     d = one(found, "instant_peak")
@@ -229,7 +255,7 @@ def test_realized_seeds_prefers_the_stat_and_falls_back_sensibly():
     p = params()
     assert realized_seeds({"seeds": 7, "seeds_day0": 3}, p) == 7
     assert realized_seeds({"seeds_day0": 3}, p) == 3
-    assert realized_seeds({}, p) == 100
+    assert realized_seeds({}, p) == 5                       # the default fraction 0.0005 of 10,000 agents
     delayed = params(**{"disease.seed": {"mode": "count", "value": 30, "day": 4}})
     assert realized_seeds({"seeds_day0": 0}, delayed) == 30
 
@@ -242,10 +268,11 @@ def test_the_thresholds_are_named_constants():
 
 def test_a_normal_run_raises_well_mixed_and_the_interventions_to_try():
     from epichat.sim.replicates import run_replicates
-    p = params(**{"run.n_agents": 2000})
+    seeded = {"mode": "count", "value": 20}            # the default 0.05% of 2,000 agents is one expected seed: a coin flip, not a normal run
+    p = params(**{"run.n_agents": 2000, "disease.seed": seeded})
     out = run_replicates(p)
     assert ids(diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["well_mixed", "what_if"]   # nearly everyone was infected, and interventions to try (follow-up spec 7.2)
-    immune = params(**{"run.n_agents": 2000, "disease.beta": clamp_beta(calibrate_beta(params(), 15)), "disease.initial_immune_frac": 0.8})
+    immune = params(**{"run.n_agents": 2000, "disease.seed": seeded, "disease.beta": clamp_beta(calibrate_beta(params(), 15)), "disease.initial_immune_frac": 0.8})
     out = run_replicates(immune)
     assert ids(diagnose(immune, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["what_if"]   # the fifth still susceptible had their epidemic
 

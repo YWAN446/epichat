@@ -384,3 +384,15 @@ def test_a_day_zero_vaccine_that_is_not_folded_is_a_one_day_campaign_at_day_zero
     assert isinstance(aged, VaccineDelivery) and (aged.start_day, aged.end_day) == (0, 0) and aged.prob == pytest.approx(0.9)
     waning = vaccine_delivery(Intervention(type="vaccine", coverage=0.9, start_day=0, protection_days=100), run_days=365)
     assert (waning.start_day, waning.end_day) == (0, 0) and waning.prob == pytest.approx(0.9)
+
+
+def test_a_fraction_seeding_that_infects_nobody_runs_and_reports_no_seeds():
+    """The default 0.05% of 10,000 agents is five expected seeds, drawn per agent: none in 0.7% of runs. The run completes and says so."""
+    from epichat.params.schema_v2 import SimParamsV2
+    from epichat.sim.run_params import run
+    p = SimParamsV2.model_validate({"disease": {"seed": {"mode": "fraction", "value": 1e-9}},
+                                    "run": {"n_agents": 1000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    out = run(p)
+    stats = out["stats"]
+    assert stats["seeds_day0"] == 0 and stats["seeds"] == 0 and stats["total_infected"] == 0 and stats["r0_measured"] is None
+    assert max(out["series"]["n_infectious"]) == 0 and stats["peak_infections"] == 0
