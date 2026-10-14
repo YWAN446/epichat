@@ -154,3 +154,21 @@ describe("run labels and the limits on spread (follow-up spec 4 and 5)", () => {
     expect(runLabels([withResponse, base])).toEqual(["Run 1", "Run 2, no behaviour response"]);
   });
 });
+
+describe("the appendix lists the Parameters section's rows (follow-up spec 8.5)", () => {
+  it("shows what differs from the defaults, the variation and the fit among it, and nothing a run's network does not have", () => {
+    const base = FIXTURE.runs[0];
+    const varied = { ...base, effectiveParams: { ...base.effectiveParams, disease: { ...base.effectiveParams.disease, rel_sus_cv: 1 }, run: { ...base.effectiveParams.run, fit: { target: "attack_rate" as const, value: 0.3, lever: "disease.rel_sus_cv" as const } } } };
+    const doc = composeReport({ ...FIXTURE, runs: [base, varied] }, NOW);
+    const table = doc.sections.find((s) => s.id === "appendix")!.blocks[0];
+    if (table.kind !== "table") throw new Error("table");
+    expect(table.caption).toBe("Effective parameters");
+    expect(table.columns[0]).toBe("Parameter");
+    const row = (label: string) => table.rows.find((r) => r[0] === label);
+    expect(row("Variation in susceptibility")).toEqual(["Variation in susceptibility", "none", "CV 1"]);
+    expect(row("Fitted to")).toEqual(["Fitted to", "not fitted", "attack rate 30% by moving the variation in susceptibility"]);
+    expect(row("Model")).toEqual(["Model", "SIR", "SIR"]);
+    for (const absent of ["Household size", "Contact duration", "Contact matrix"]) expect(row(absent)).toBeUndefined();   // the old list printed these on every run
+    expect(table.rows.every((r) => r.length === 3 && r.every((cell) => typeof cell === "string"))).toBe(true);
+  });
+});

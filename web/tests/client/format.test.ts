@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { configurationRows, countryName, describeField, effectiveParameterLabel, effectiveParameterRows, formatQuantity, formatRange, interventionLines, parameterLabel, scenarioRows } from "@/lib/client/format";
+import { configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, scenarioRows } from "@/lib/client/format";
 import { defaultRows, parameterGroups } from "@/lib/client/parameters";
 import type { SimParams } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
@@ -114,20 +114,6 @@ describe("parameter rows", () => {
     expect(interventionLines(params({}))).toEqual([]);
     expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.8, start_day: 60 }] }))).toEqual(["Vaccination: 80% coverage from day 60"]);
     expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.5, start_day: 0 }] }))).toEqual([]); // day 0 is initial immunity, never a line
-  });
-});
-
-describe("effective parameter rows", () => {
-  it("lists the v2 paths a run used by their registry labels, skipping unset ones", () => {
-    const rows = effectiveParameterRows(params({ disease_type: "seir", dur_exp: 11, rand_seed: 4 }));
-    expect(rows).toContainEqual(["Model", "seir"]);
-    expect(rows).toContainEqual(["Latent period (mean)", "11"]);
-    expect(rows).toContainEqual(["Random seed", "4"]);
-    expect(rows).toContainEqual(["Agents", "10,000"]);
-    expect(rows.map(([k]) => k)).not.toContain("Immunity duration (mean)");
-    expect(rows.map(([k]) => k)).not.toContain("disease.model");
-    expect(effectiveParameterLabel("disease.p_death")).toBe("Case fatality ratio");
-    expect(effectiveParameterLabel("not.a.path")).toBe("not.a.path");
   });
 });
 

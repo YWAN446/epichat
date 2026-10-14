@@ -199,3 +199,19 @@ export function defaultRows(p: SimParams): [string, string][] {
 export function coveredPaths(p: SimParams): string[] {
   return parameterGroups(p).flatMap((group) => group.rows.flatMap((row) => row.paths));
 }
+
+/**
+ * The report's "Effective parameters" table (spec 8.5): every row at least one run shows by default, in group order, with each
+ * run's own value; null where the row is not a parameter of that run's model or network.
+ */
+export function parameterTable(runs: SimParams[]): { label: string; values: (string | null)[] }[] {
+  const perRun = runs.map((p) => parameterGroups(p));
+  const table: { label: string; values: (string | null)[] }[] = [];
+  GROUPS.forEach((group, index) => {
+    for (const spec of group.specs) {
+      const rows = perRun.map((groups) => groups[index].rows.find((row) => row.label === spec.label));
+      if (rows.some((row) => row?.shown)) table.push({ label: spec.label, values: rows.map((row) => row?.value ?? null) });
+    }
+  });
+  return table;
+}

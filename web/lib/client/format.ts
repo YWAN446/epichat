@@ -5,8 +5,6 @@
  */
 import names from "@/data/country_names.json";
 import type { Duration, Seed, SimParams } from "@/lib/sim/params";
-import { getPath } from "@/lib/sim/paths";
-import { specFor } from "@/lib/sim/registry";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
 import type { ConfigPayload, DataPayload } from "@/lib/tools/types";
 
@@ -107,28 +105,6 @@ export function contactsSourceLabel(source: string): string {
   const prem = /^prem_2021:([A-Z]{3})$/.exec(source);
   if (prem) return `Prem 2021, ${countryName(prem[1])}`;
   return source === "user" ? "user-set" : source;
-}
-
-/** The v2 paths a run's effective parameters are listed by, in the runs panel and the report appendix. */
-export const EFFECTIVE_PARAM_PATHS = [
-  "disease.model", "run.n_agents", "run.sim_dur_years", "disease.beta", "network.n_contacts", "network.network_type", "network.household_size",
-  "network.contact_duration_days", "network.contacts_source",
-  "disease.seed.value", "disease.seed.mode", "disease.dur_inf.mean_days", "disease.dur_inf.dist", "disease.dur_exp.mean_days",
-  "disease.dur_immune.mean_days", "disease.p_death", "disease.initial_immune_frac", "demographics.use_demographics",
-  "demographics.birth_rate", "demographics.death_rate", "run.n_replicates", "run.rand_seed",
-] as const;
-
-/** The registry's label for a v2 path, or the path itself for one the registry does not know. */
-export function effectiveParameterLabel(path: string): string {
-  return specFor(path)?.label ?? path;
-}
-
-export function effectiveParameterRows(p: SimParams): [string, string][] {
-  const obj = p as unknown as Record<string, unknown>;
-  return EFFECTIVE_PARAM_PATHS.flatMap((path) => {
-    const value = getPath(obj, path);
-    return value === null || value === undefined ? [] : [[effectiveParameterLabel(path), fmtValue(value)] as [string, string]];
-  });
 }
 
 const FIT_TARGET_LABELS: Record<string, string> = { attack_rate: "attack rate", peak_day: "peak day", peak_infections: "peak infections" };

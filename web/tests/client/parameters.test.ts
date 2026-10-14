@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { coveredPaths, defaultRows, parameterGroups, sourceTag } from "@/lib/client/parameters";
+import { coveredPaths, defaultRows, parameterGroups, parameterTable, sourceTag } from "@/lib/client/parameters";
 import { approxR0 } from "@/lib/sim/params";
 import { PARAM_REGISTRY, appliesOn, appliesTo } from "@/lib/sim/registry";
 import { params } from "../tools/helpers";
@@ -122,5 +122,26 @@ describe("where each value came from (follow-up spec 8.4)", () => {
     expect(Object.values(rows(undefined)).every((tag) => tag === null)).toBe(true);
     expect(rows({ "disease.gone": "user", "disease.beta": "weird" })["Transmission rate (β)"]).toBeNull();
     expect(sourceTag(["a", "b"], { a: "default", b: "reference" })).toBe("reference");
+  });
+});
+
+describe("the same rows in the report (follow-up spec 8.5)", () => {
+  it("unites the runs' rows in group order, with each run's own value and a gap where a row does not apply", () => {
+    const first = params({ schema_version: 2, disease: { rel_sus_cv: 1 } });
+    const second = params({ schema_version: 2, network: { network_type: "hybrid", household_size: 4.9 } });
+    const table = parameterTable([first, second]);
+    const row = (label: string) => table.find((r) => r.label === label)?.values;
+    expect(row("Variation in susceptibility")).toEqual(["CV 1", "none"]);                    // shown for one run: the other run's own value beside it
+    expect(row("Contacts per day")).toEqual(["4", null]);                                    // not a parameter of the hybrid network
+    expect(row("Household size")).toEqual([null, "4.9 people"]);
+    expect(row("Contact network")).toEqual(["random", "hybrid (households, schools, workplaces, community)"]);
+    expect(row("Agents")).toEqual(["10,000", "10,000"]);
+    const labels = table.map((r) => r.label);
+    expect(labels[0]).toBe("R₀ (approx.)");
+    expect(labels.indexOf("Variation in susceptibility")).toBeLessThan(labels.indexOf("Contact network"));
+    expect(labels.indexOf("Household size")).toBeLessThan(labels.indexOf("Agents"));
+    for (const absent of ["Contact matrix", "Layers", "Fitted to", "Random seed", "Contact duration"]) expect(labels).not.toContain(absent);   // default or not on these networks
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(parameterTable([])).toEqual([]);
   });
 });

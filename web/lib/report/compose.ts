@@ -3,12 +3,12 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { EFFECTIVE_PARAM_PATHS, SOURCE_LABELS, configurationRows, countryName, describeField, effectiveParameterLabel, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { SOURCE_LABELS, configurationRows, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { parameterTable } from "@/lib/client/parameters";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
 import { DOCUMENT_VERSION, SECTION_HEADINGS, figureLine, narrativeBlocks, type ReportBlock, type ReportDocument, type ReportNarrative, type ReportSection, type SectionId } from "@/lib/report/document";
 import { approxR0 } from "@/lib/sim/params";
-import { getPath } from "@/lib/sim/paths";
 import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { configView } from "@/lib/tools/configView";
 import type { DiseasePayload, Scenario } from "@/lib/tools/types";
@@ -153,9 +153,9 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
 function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayload | null, starsimVersion: string | null): ReportBlock[] {
   const blocks: ReportBlock[] = [];
   if (runs.length > 0) {
-    const at = (run: ReportRun, path: string) => getPath(run.effectiveParams as unknown as Record<string, unknown>, path);
-    const present = EFFECTIVE_PARAM_PATHS.filter((path) => runs.some((run) => at(run, path) !== undefined && at(run, path) !== null));
-    blocks.push({ kind: "table", caption: "Effective parameters", columns: ["Parameter", ...labels], rows: present.map((path) => [effectiveParameterLabel(path), ...runs.map((run) => fmtValue(at(run, path) ?? null))]) });
+    // follow-up spec 8.5: the Parameters section's rows (core, and whatever a run changed from the defaults), not a fixed list of paths
+    const table = parameterTable(runs.map((run) => run.effectiveParams));
+    blocks.push({ kind: "table", caption: "Effective parameters", columns: ["Parameter", ...labels], rows: table.map((row) => [row.label, ...row.values.map((value) => value ?? "—")]) });
     const repairs = runs.flatMap((run, i) => run.repairs.map((r) => [labels[i], String(r.attempt), r.error, (r.changes ?? []).map((c) => `${c.field}: ${fmtValue(c.from)} → ${fmtValue(c.to)}`).join("; ")]));
     if (repairs.length > 0) blocks.push({ kind: "table", caption: "Repairs", columns: ["Run", "Attempt", "Error", "Changes"], rows: repairs });
   }
