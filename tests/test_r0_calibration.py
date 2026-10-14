@@ -84,7 +84,8 @@ def test_age_structured_group_attack_rates_follow_the_heterogeneous_final_size_s
 
 
 def test_age_structured_without_shares_calibrates_and_runs():
-    p = r0.with_r0(SimParamsV2.model_validate({"network": {"network_type": "age_structured"}, "run": {"n_agents": 5000, "sim_dur_years": 0.5}}), 2.0)
+    p = r0.with_r0(SimParamsV2.model_validate({"network": {"network_type": "age_structured"}, "disease": {"seed": {"mode": "count", "value": 50}},
+                                               "run": {"n_agents": 5000, "sim_dur_years": 0.5}}), 2.0)      # the default 0.05% would be two or three seeds
     sim = build_sim(p)
     sim.run()
     assert sim.results.sir.cum_infections.values[-1] > 1000

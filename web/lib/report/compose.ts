@@ -120,8 +120,9 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
   if (scenario.params) {
     const rows = configurationRows(configView(scenario.params, scenario.disease), approxR0(scenario.params), name);
     if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
-    // Part 2, 5.6 as amended: the latest run's measured R0 beside the configured one, never an earlier run's (a withheld value is
-    // expected at a high R0); when the live value was withheld and a pilot ran, the pilot's first-generation measurement.
+    // Part 2, 5.6 as amended: the latest run's measured R0 beside the configured one, never an earlier run's (the live value is
+    // withheld under 30 day-0 seeds, which the default 0.05% seeding is, and when the seeds exhausted the population); when it was
+    // withheld and a pilot ran, the pilot's first-generation measurement over 20 to 1,000 seeds.
     const latest = runs.at(-1)?.stats;
     const pilot = latest?.r0_calibration?.measured;
     const measured = typeof latest?.r0_measured === "number" ? latest.r0_measured : typeof pilot === "number" ? pilot : null;

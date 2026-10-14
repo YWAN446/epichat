@@ -14,6 +14,9 @@ describe("system prompt", () => {
     for (const phrase of ["in the long run", "has not finished", "use the lever of Limits on spread", "by a closed form", "calibrates beta at every value it tries"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).not.toContain("because it relaxes it cannot take the total far below");
     for (const phrase of ["close on every network", "measured R0", "Covasim", "expectedly null"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    // the seed default of 2026-10-14: 0.05% drawn per agent, seed_count below 10,000 agents, and no sentence about a withheld measured R0
+    for (const phrase of ["0.05% of the agents", "pass seed_count (at least 5)", "withheld under 30 of them"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    expect(SYSTEM_PROMPT).not.toContain("expected at a high R0 with the default seeding");
     for (const phrase of ["stats.r0_calibration.reached", "could not be brought to the R0 you set", "only its seeds transmit", "stats.r0_calibration.measured"]) expect(SYSTEM_PROMPT).toContain(phrase);
     for (const phrase of ["schools closed", "illustrative assumption", "fitted", "remove_interventions", "stats.fit"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT.indexOf("## Interventions")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Contact networks"));

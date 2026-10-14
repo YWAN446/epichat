@@ -14,6 +14,7 @@ import starsim as ss
 from .interventions import SeedInfections
 
 MEASURED_MAX_WEIGHT = 1.25       # a live run's seeds were no longer in a susceptible population above this mean depletion weight
+MEASURED_MIN_SEEDS = 30          # a live run's measured R0 is a mean over its day-0 seeds: under 30 (the default seeds 5) it is noise, withheld
 
 SERIES_KEYS = ("n_susceptible", "n_exposed", "n_infectious", "n_infected", "n_asymptomatic", "n_recovered",
                "new_infections", "cum_infections", "new_deaths", "cum_deaths", "new_deaths_all", "cum_deaths_all")
@@ -99,9 +100,11 @@ def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
 
 def measured_r0(sim: ss.Sim) -> float | None:
     """The R0 a live run shows: measure_r0 without the seeds' step-0 transmissions, withheld (None) when the population was already
-    depleted while the seeds were infectious (too many seeds for the R0), where no weighting recovers what the seeds would have done."""
+    depleted while the seeds were infectious (too many seeds for the R0), where no weighting recovers what the seeds would have done,
+    and when fewer than MEASURED_MIN_SEEDS were seeded (the standard error over five seeds is about √(R0/5)); the pilot, which seeds
+    20 to 1,000, is the measurement then."""
     m = measure_r0(sim, count_day0=False)
-    if m is None or m.weight > MEASURED_MAX_WEIGHT:
+    if m is None or m.seeds < MEASURED_MIN_SEEDS or m.weight > MEASURED_MAX_WEIGHT:
         return None
     return m.mean
 

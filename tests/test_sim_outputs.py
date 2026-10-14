@@ -134,11 +134,16 @@ def test_a_measurement_carries_its_standard_error_and_the_edge_cases_hold():
     from epichat.sim.outputs import measure_r0, measured_r0
     m = measure_r0(_live("sir", 2.5, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, 100), count_day0=False)
     assert m.seeds == 100 and 0 < m.se < 0.5 and 1.0 <= m.weight < 1.25 and abs(m.mean - 2.5) < 4 * m.se + 0.15, m
-    quiet = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    quiet = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 30}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
     sim = build_sim(quiet)
     sim.run()
     assert measured_r0(sim) == 0.0 and measure_r0(sim, count_day0=False).se == 0.0             # seeds, but they infected nobody
     assert extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] == 0.0
+    few = SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 29}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
+    sim = build_sim(few)
+    sim.run()
+    m = measure_r0(sim, count_day0=False)                                                        # measured, but withheld: a mean over 29 seeds is noise
+    assert m is not None and m.seeds == 29 and measured_r0(sim) is None and extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] is None
     later = SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 20, "day": 5}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
     sim = build_sim(later)
     sim.run()

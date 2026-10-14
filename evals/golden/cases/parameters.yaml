@@ -27,7 +27,7 @@
   critical: false
   real_sim: true
   pending: api-harness
-  pending_note: "The diagnostics and the comparison come from the simulation service (spec 10, 11), which the Python agent does not call. The random seed is a placeholder: early_fadeout needs the index case to infect nobody (total_infected < 2 × seeds), so once the harness exists run the service with a few seeds and pin one that fades out."
+  pending_note: "The diagnostics and the comparison come from the simulation service (spec 10, 11), which the Python agent does not call. The random seed is a placeholder: early_fadeout needs the outbreak to end below twice the seeds or, with nothing holding it down from day 0, below 1% of the agents, so once the harness exists run the service with a few seeds and pin one that fades out."
   turns:
     - "Model measles in Kenya with 20000 agents, one initial infection, R0 1.2, no deaths, and random seed 7."
     - "Yes."

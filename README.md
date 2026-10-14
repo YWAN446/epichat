@@ -154,8 +154,9 @@ registry, schema v2, the exact R0, diagnostics and options) and
   `contact_duration_days` above 0. A run reports the measured R0 (the
   infections a day-0 seed causes in its first infectious period, corrected
   for depletion; null on the age-structured network, where Starsim's mixing
-  pools do not record who infected whom, and when the seeds were too many to
-  measure it), and where the formula is approximate a short pilot, in which
+  pools do not record who infected whom, when the seeds were too many to
+  measure it, and when fewer than 30 were seeded, which the default 0.05%
+  seeding is), and where the formula is approximate a short pilot, in which
   only the seeds transmit, adjusts beta to it
   (`applied.beta_calibrated_by_measurement`; `run.calibrate_r0` switches it
   off; a fit on beta replaces it, a fit that keeps R0 does not). At the same

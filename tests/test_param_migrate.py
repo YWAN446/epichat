@@ -25,7 +25,7 @@ def test_durations_become_constant_and_seed_keeps_init_prev():
 
 def test_missing_optional_v1_fields_take_v2_defaults():
     p = coerce_params({"beta": 22.8125})
-    assert p.disease.dur_inf.mean_days == 10.0 and p.disease.seed.value == 0.0005 and p.run.n_agents == 10000   # the registry's, not v1's 1%
+    assert p.disease.dur_inf.mean_days == 10.0 and p.disease.seed.value == 0.01 and p.run.n_agents == 10000   # the seed is v1's own 1%, not the registry's 0.05%
     assert p.disease.dur_exp is None and p.network.n_contacts == 4 and p.demographics.use_demographics is False
 
 

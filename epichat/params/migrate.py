@@ -2,10 +2,9 @@
 migrateV1 by web/tests/fixtures/parity.json."""
 from __future__ import annotations
 
-from .registry import REGISTRY_BY_PATH
 from .schema_v2 import SimParamsV2
 
-_SEED_DEFAULT = REGISTRY_BY_PATH["disease.seed.value"].default      # a v1 row without init_prev takes the registry's default
+_V1_INIT_PREV = 0.01        # v1's own default (epichat/schema.py), like the other disease fallbacks below: a v1 row without init_prev meant 1%
 _VACCINE = ("vaccine", "vaccination", "vaccinate")
 _NETWORK_KEYS = ("network_type", "n_contacts", "network_beta")
 _DEMOGRAPHICS_KEYS = ("use_demographics", "birth_rate", "death_rate", "age_pct_under18", "age_pct_18_64", "age_pct_over65",
@@ -46,7 +45,7 @@ def migrate_v1(flat: dict) -> dict:
         "rel_trans_asymp": _get(f, "rel_trans_asymp", 0.5),
         "sis_waning": 0.0,
         "sis_imm_boost": 0.0,
-        "seed": {"mode": "fraction", "value": _get(f, "init_prev", _SEED_DEFAULT), "day": 0},
+        "seed": {"mode": "fraction", "value": _get(f, "init_prev", _V1_INIT_PREV), "day": 0},
         "initial_immune_frac": min(float(day0[-1].get("coverage") or 0.0), 0.99) if day0 else 0.0,
     }
     return {

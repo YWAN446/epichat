@@ -147488,7 +147488,7 @@
      "sis_imm_boost": 0.0,
      "seed": {
       "mode": "fraction",
-      "value": 0.0005,
+      "value": 0.01,
       "day": 0
      },
      "initial_immune_frac": 0.0
@@ -147707,7 +147707,7 @@
      "sis_imm_boost": 0.0,
      "seed": {
       "mode": "fraction",
-      "value": 0.0005,
+      "value": 0.01,
       "day": 0
      },
      "initial_immune_frac": 0.0
@@ -147812,7 +147812,7 @@
      "sis_imm_boost": 0.0,
      "seed": {
       "mode": "fraction",
-      "value": 0.0005,
+      "value": 0.01,
       "day": 0
      },
      "initial_immune_frac": 0.4
@@ -147927,7 +147927,7 @@
      "sis_imm_boost": 0.0,
      "seed": {
       "mode": "fraction",
-      "value": 0.0005,
+      "value": 0.01,
       "day": 0
      },
      "initial_immune_frac": 0.99
@@ -148069,7 +148069,7 @@
      "sis_imm_boost": 0.0,
      "seed": {
       "mode": "fraction",
-      "value": 0.0005,
+      "value": 0.01,
       "day": 0
      },
      "initial_immune_frac": 0.0
@@ -148229,7 +148229,7 @@
      "sis_imm_boost": 0.0,
      "seed": {
       "mode": "fraction",
-      "value": 0.0005,
+      "value": 0.01,
       "day": 0
      },
      "initial_immune_frac": 0.2

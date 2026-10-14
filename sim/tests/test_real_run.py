@@ -75,7 +75,7 @@ def test_demographics_add_the_all_causes_deaths_and_keep_disease_deaths_apart(cl
 
 
 def test_two_replicates_run_for_real(client):
-    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"beta": 0.05}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 2}}, "pop_scale": 1}, headers=AUTH).json()
+    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"beta": 0.05, "seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 2}}, "pop_scale": 1}, headers=AUTH).json()
     rep = body["replicates"]
     assert rep["seeds"] == [1, 2] and len(rep["stats"]) == 2 and rep["representative"] in (1, 2)
     assert len(rep["bands"]["cum_infections"]["p90"]) == len(body["series"]["day"]) == 31

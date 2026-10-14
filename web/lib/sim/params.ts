@@ -354,7 +354,7 @@ export function migrateV1(flat: Record<string, unknown>): Record<string, unknown
       rel_trans_asymp: flat.rel_trans_asymp ?? 0.5,
       sis_waning: 0,
       sis_imm_boost: 0,
-      seed: { mode: "fraction", value: flat.init_prev ?? defaultOf<number>("disease.seed.value"), day: 0 },
+      seed: { mode: "fraction", value: flat.init_prev ?? 0.01, day: 0 },      // v1's own default: a v1 row without init_prev meant 1% (migrate.py)
       initial_immune_frac: day0.length > 0 ? Math.min(Number(day0[day0.length - 1].coverage ?? 0), 0.99) : 0,
     },
     network: pick(NETWORK_KEYS),

@@ -31,7 +31,8 @@ describe("SimParams v2 validation", () => {
       interventions: [],
       run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1, calibrate_r0: true, fit: null },
     });
-    expect(must({})).toEqual(must({ schema_version: 2 })); // a v1 row with nothing in it migrates to the same defaults
+    const v2 = must({ schema_version: 2 });   // a v1 row with nothing in it migrates to the same defaults but the seed, which keeps v1's 1%
+    expect(must({})).toEqual({ ...v2, disease: { ...v2.disease, seed: { mode: "fraction", value: 0.01, day: 0 } } });
   });
 
   it("enforces registry bounds and names the dotted path like pydantic", () => {

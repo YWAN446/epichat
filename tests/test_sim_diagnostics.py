@@ -91,7 +91,7 @@ def test_early_fadeout_names_a_seeding_that_infected_nobody():
     assert d.severity == "warning" and d.evidence["seeds"] == 0 and d.evidence["total_infected"] == 0
     assert d.title == "The seeding infected nobody"
     assert d.levers[0].patch == {"disease.seed.mode": "count", "disease.seed.value": 10}
-    assert "nobody" in d.levers[0].rationale and "10" in d.levers[0].rationale
+    assert "nobody" in d.levers[0].rationale and "0.05% of the 10,000 agents" in d.levers[0].rationale and "seed 10 agents" in d.levers[0].rationale
     assert d.levers[1].patch == {"run.n_replicates": 5}
     assert one(run(p, FADED, total=15, seeds=10), "early_fadeout").title == "The outbreak died out early"
 
@@ -105,7 +105,23 @@ def test_early_fadeout_also_fires_when_a_few_seeds_die_out_before_one_percent_we
     assert one(small, "early_fadeout").levers[0].patch == {"disease.seed.mode": "count", "disease.seed.value": 25}
     bigger = run(p, gone, total=150, seeds=5)                          # 1.5% infected before it ended: not a fade-out by this rule
     assert "early_fadeout" not in ids(bigger) and "final_size_gap" in ids(bigger)
-    assert dx._faded_out(150, 100, N) and not dx._faded_out(250, 100, N)       # a 1% seeding keeps the old rule, twice its seeds
+    assert "early_fadeout" in ids(run(p, gone, total=150, seeds=100)) and "early_fadeout" not in ids(run(p, gone, total=250, seeds=100))   # a 1% seeding keeps the old rule, twice its seeds
+
+
+def test_an_outbreak_held_down_from_day_zero_is_not_a_fade_out():
+    """Review of the seed default: R0 2.3 with a 70% contact cut from day 0 has R about 0.7; five seeds infect some twenty and the run
+    ends, which the 1% rule alone would call a broken baseline. Only the old rule, twice the seeds, applies while something cuts what
+    the seeds pass on from the start: a reduction, a treatment, a response, or a vaccine entry (a campaign is not initial immunity)."""
+    gone = [5.0, 12.0, 20.0, 15.0, 6.0, 2.0] + [0.0] * (DAYS - 6)
+    for entry in ({"type": "contact_reduction", "layer": "all", "scale": 0.7, "start_day": 0, "end_day": 120},
+                  {"type": "transmission_reduction", "scale": 0.7, "start_day": 0},
+                  {"type": "vaccine", "coverage": 0.7, "efficacy": 0.9, "kind": "campaign", "start_day": 0, "end_day": 30},
+                  {"type": "behavior_response", "scale": 0.5}):
+        held = run(params(interventions=[entry]), gone, total=20, seeds=5)
+        assert "early_fadeout" not in ids(held), entry
+        assert "early_fadeout" in ids(run(params(interventions=[entry]), gone, total=8, seeds=5)), entry     # under twice the seeds still counts
+    late = {"type": "contact_reduction", "layer": "all", "scale": 0.7, "start_day": 60, "end_day": 120}         # after the seeds had finished
+    assert "early_fadeout" in ids(run(params(interventions=[late]), gone, total=20, seeds=5))
 
 
 def test_instant_peak_fires_above_two_percent_seeding_and_not_at_a_one_percent_seeding():
@@ -428,7 +444,8 @@ def test_r0_gap_stands_down_while_a_dated_reduction_covers_the_seeds():
     low = {"r0_measured": 1.5}
     assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra=low))
     for entry in ({"type": "contact_reduction", "layer": "all", "scale": 0.3, "start_day": 0, "end_day": 56},
-                  {"type": "transmission_reduction", "scale": 0.2, "start_day": 1, "end_day": 91}):
+                  {"type": "transmission_reduction", "scale": 0.2, "start_day": 1, "end_day": 91},
+                  {"type": "vaccine", "coverage": 0.7, "efficacy": 0.9, "kind": "campaign", "start_day": 0, "end_day": 30}):     # a campaign protects while the seeds transmit
         assert "r0_gap" not in ids(run(params(interventions=[entry]), NORMAL, total=8600, seeds=500, stats_extra=low)), entry
     later = params(interventions=[{"type": "transmission_reduction", "scale": 0.2, "start_day": 60, "end_day": 150}])
     assert "r0_gap" in ids(run(later, NORMAL, total=8600, seeds=500, stats_extra=low))               # the seeds had finished before it began

@@ -472,12 +472,16 @@ migration. One browser; a phone is enough.
    section shows, in its Contact network group, "Contact network" as
    "hybrid (households, schools, workplaces, community)" and a
    "Household size" row; the reply says the hybrid network was chosen for
-   the setting.
+   the setting. The default seeding (0.05% of the agents: six of the 10,000
+   under the service's seed 1, measured by probe on 2026-10-14) takes off
+   here; the peak comes near day 90 and the run infects about 44%.
 2. "Run it." The reply says in one sentence that beta was adjusted to the
    measured R0 (the run payload carries `applied.beta_calibrated_by_measurement`
    and `stats.r0_calibration`). Then "Create a report": its "What was
    modelled" block shows an "R₀ measured" row under the configured R₀ (the
-   report is the only place that row appears; the panel has none).
+   report is the only place that row appears; the panel has none). The row
+   is the pilot's measurement, `stats.r0_calibration.measured`: the live
+   run's own is withheld under 30 seeds.
 3. "Close the schools from day 30 for six weeks and run it again." The
    configure call carries `interventions: [{type: contact_reduction, layer:
    school, scale: 1, start_day: 30, end_day: 72}]`; the Parameters
@@ -517,21 +521,27 @@ migration. One browser; a phone is enough.
    `lever`, `value` and `runs`, and no `calibration` (the fit replaces the
    pilot); the two unfitted hybrid runs of steps 2 and 3 carry `calibration`;
    the random run of step 5 carries neither. Every row here carries
-   `measured`; it is null on an age-structured run, where Starsim's
-   mixing pools do not log the source, and on a run seeded so heavily that
-   the population was exhausted while the seeds were still infectious.
+   `measured`, and since the seed default of 2026-10-14 (0.05% of the
+   agents, five of 10,000) it is null on all four: a live run's measured R0
+   is withheld under 30 day-0 seeds, as it is on an age-structured run,
+   where Starsim's mixing pools do not log the source, and on a run seeded
+   so heavily that the population was exhausted while the seeds were still
+   infectious. The hybrid rows' `calibration.measured` is the pilot's
+   measurement over 20 to 1,000 seeds, which the report's "R₀ measured" row
+   shows in its place.
 
 ## 6k. Limits on spread, suggested interventions, the Parameters section and chosen references verification
 
 Done after the follow-up round (the pilot fix and its phases A to E) is
 pushed. No migration. One browser at desktop width. The percentages were
-measured on 2026-10-13 with 10,000 agents, no seed set, and the SEIR model
+measured on 2026-10-14 with 10,000 agents, no seed set (the default seeding
+of 0.05% drew six seeds under the service's seed 1), and the SEIR model
 (the database carries RSV's incubation period, so the agent normally sets a
 latent period); expect them within a few points. If the Parameters section
-shows SIR instead, steps 1 to 4 read the same and step 5 lands near 34%.
+shows SIR instead, steps 1 to 4 read the same and step 5 lands a little lower.
 
 1. New conversation: "Model RSV in a city of 10,000 people for a year, with
-   the database's R0." Confirm and run it. The attack rate is about 93%
+   the database's R0." Confirm and run it. The attack rate is about 94%
    (R0 3.0). Under the run sits a row "Try next" with up to three buttons,
    the labels of the run's `what_if` levers: a cut in contacts, masks, and
    "Let people become careful as cases rise and rerun". The reply reports
@@ -547,7 +557,7 @@ shows SIR instead, steps 1 to 4 read the same and step 5 lands near 34%.
    `disease.rel_sus_cv` to 1. In the panel's Parameters section the Disease
    group gains "Variation in susceptibility" at "CV 1" with the tag
    "assumption", and "R₀ (approx.)" still reads 3.0. The run infects about
-   68%; the reply reports the change against the first run and says that R0
+   67%; the reply reports the change against the first run and says that R0
    did not change.
 4. "In the real outbreak 50% of the city was infected. Fit the model to
    that and run it." The configure call carries `fit: {target: attack_rate,
@@ -567,7 +577,7 @@ shows SIR instead, steps 1 to 4 read the same and step 5 lands near 34%.
    default view. "Variation in susceptibility" keeps its fitted value and
    its tag changes from "set by the run" to "set in chat": the configure
    call wrote the fitted value into the scenario. The run infects about
-   39%, below the fitted 50%: the response is compared with the fitted
+   36%, below the fitted 50%: the response is compared with the fitted
    baseline, it is not fitted away. The reply gives the strongest reduction
    the response reached.
 6. The Parameters section, on this conversation: five groups, Disease,
