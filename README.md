@@ -255,8 +255,11 @@ registry, schema v2, the exact R0, diagnostics and options) and
   `docs/data-review-requests.md`: for every disease, the status of every
   database field the registry names, the fields the database does not have
   yet (fatality by age, vaccine and treatment efficacy, presymptomatic
-  transmission, the school-closure, distancing and mask effects) with what a
-  reviewer should find, and the bundled tables' checks. A test keeps the
+  transmission, the school-closure, distancing and mask effects, the
+  variation in susceptibility and the behaviour response) with what a
+  reviewer should find, the entries that contradict themselves (an estimate
+  outside its own range, a consensus range none of its estimates is in), and
+  the bundled tables' checks. A test keeps the
   committed file equal to the script's output; regenerate it with
   `.venv/Scripts/python.exe scripts/review_requests.py --write docs/data-review-requests.md`
   whenever the database or the registry changes.
