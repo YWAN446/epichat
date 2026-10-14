@@ -98,6 +98,7 @@ describe("parameter rows", () => {
     expect(rows).toContainEqual(["Random seed", "42"]);
     expect(parameterRows(params({ disease_type: "sir" })).map(([label]) => label)).not.toContain("Asymptomatic share");
     const v2 = params({ schema_version: 2, disease: { dur_inf: { mean_days: 8, dist: "gamma", sd_days: 2.4 }, seed: { mode: "count", value: 20, day: 5 }, initial_immune_frac: 0.4 }, run: { n_replicates: 3 } });
+    expect(parameterRows(params({ schema_version: 2 }))).toContainEqual(["Initial infections", "0.05%"]);     // the default seeding, as a share
     expect(parameterRows(v2)).toEqual(expect.arrayContaining([["Infectious period", "8 days, gamma (sd 2.4)"], ["Initial infections", "20 agents on day 5"], ["Initially immune", "40%"], ["Replicates", "3"]]));
   });
 

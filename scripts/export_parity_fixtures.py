@@ -323,8 +323,8 @@ def adapter_cases() -> dict:
 
 
 def what_if_cases() -> list[dict]:
-    """The levers of what_if and well_mixed after a synthetic epidemic on each network, with the anchor on day 20 and on day 0 (the
-    default seeding), exactly as the service sends them. The Python tests prove the Python validator takes the entries; the web's
+    """The levers of what_if and well_mixed after a synthetic epidemic on each network, with the anchor on day 20 and on day 0 (a
+    1% seeding), exactly as the service sends them. The Python tests prove the Python validator takes the entries; the web's
     test feeds these through configure_simulation, whose validator is the TypeScript one (review of the follow-up's phase B)."""
     n, days, total = 10000, 366, 8600
     cases = []

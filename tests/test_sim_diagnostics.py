@@ -373,7 +373,7 @@ def test_a_calibrated_runs_r0_is_its_target():
 
 
 def test_r0_gap_stands_down_while_a_behaviour_response_is_engaged_from_the_start():
-    # follow-up spec 5.4: with the default seeding the response is already lowering transmission on day 0, so the seeds pass on less
+    # follow-up spec 5.4: with 500 seeds (5%) the response is already lowering transmission on day 0, so the seeds pass on less
     low = {"r0_measured": 1.2}
     assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra=low))
     engaged = params(**{"interventions": [{"type": "behavior_response", "scale": 0.5}]})
@@ -424,7 +424,7 @@ def test_a_lever_may_carry_entries_and_a_label_and_serializes_as_before_without_
 
 
 def test_r0_gap_stands_down_while_a_dated_reduction_covers_the_seeds():
-    # review of phase B: what_if's windows start the day 1% were infected, day 0 with the default seeding, so the seeds pass on less
+    # review of phase B: what_if's windows start the day 1% were infected, day 0 with 500 seeds, so the seeds pass on less
     low = {"r0_measured": 1.5}
     assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra=low))
     for entry in ({"type": "contact_reduction", "layer": "all", "scale": 0.3, "start_day": 0, "end_day": 56},

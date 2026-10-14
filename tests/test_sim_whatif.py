@@ -100,7 +100,7 @@ def test_it_waits_for_an_epidemic():
     assert what_if(params(), total=600)[0] is not None
 
 
-def test_the_anchor_is_the_day_one_percent_were_infected_and_the_default_seeding_is_day_zero():
+def test_the_anchor_is_the_day_one_percent_were_infected_and_a_one_percent_seeding_is_day_zero():
     assert what_if(params(), anchor=45)[0].evidence["anchor_day"] == 45
     seeded = what_if(params(**{"disease.seed": {"mode": "fraction", "value": 0.01}}), anchor=0, seeds=100)[0]
     assert seeded.evidence["anchor_day"] == 0 and entries(seeded)[0]["start_day"] == 0 and entries(seeded)[0]["end_day"] == 56

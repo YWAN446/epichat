@@ -16,7 +16,7 @@ const stats = { peak_infections: 800, peak_day: 60, total_infected: 8600, total_
  * takes them; this proves the TypeScript one does, field for field.
  */
 describe("the service's levers through configure_simulation (follow-up spec 7.1, 7.5)", () => {
-  it("covers the three networks, a campaign and the default seeding's day 0", () => {
+  it("covers the three networks, a campaign and a 1% seeding's day 0", () => {
     expect(CASES.map((c) => [c.network, c.anchor])).toEqual([["random", 20], ["hybrid", 20], ["age_structured", 20], ["hybrid", 0], ["random", 0]]);
     const types = new Set(CASES.flatMap((c) => c.diagnostics).flatMap((d) => d.levers).flatMap((l) => (l.interventions ?? []).map((i) => `${i.type}${i.layer ? `:${i.layer}` : ""}`)));
     for (const type of ["vaccine", "contact_reduction:school", "contact_reduction:community", "contact_reduction:all", "transmission_reduction", "behavior_response"]) expect(types).toContain(type);

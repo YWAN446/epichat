@@ -415,7 +415,7 @@ def _r0_reference(run: _Run) -> float | None:
     """What the day-0 seeds should have passed on: R_eff (on a calibrated run the calibration's target, less the initial immunity)
     times the day-0 seasonal factor (1 + scale × cos(2π shift)); None when a treatment, a behaviour response (follow-up spec 5.4)
     or a dated contact or transmission reduction that starts while the seeds still transmit, the latent plus the infectious period,
-    cuts what they pass on (what_if's windows start the day 1% were infected, which is day 0 with the default seeding). The pilot
+    cuts what they pass on (what_if's windows start the day 1% were infected, which is day 0 with a 1% seeding). The pilot
     measures without interventions or initial immunity and the live run with them, so a calibrated run takes the same adjustments as
     any other."""
     p = run.params

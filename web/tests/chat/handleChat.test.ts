@@ -567,7 +567,7 @@ describe("golden flows: the sim-parameters cases of spec section 1 (evals/golden
   });
 
   it("parameters-diagnostic-rerun: an early fade-out returns a diagnostic, the chosen option is recorded, and the rerun compares with the previous run", async () => {
-    const seeds = { patch: { "disease.seed.mode": "count", "disease.seed.value": 50 }, current: { "disease.seed.mode": "fraction", "disease.seed.value": 0.01 }, direction: "increase" as const, rationale: "More seeds make an early fade-out less likely: 50 instead of 10.", basis: "rule" as const };
+    const seeds = { patch: { "disease.seed.mode": "count", "disease.seed.value": 50 }, current: { "disease.seed.mode": "fraction", "disease.seed.value": 0.0005 }, direction: "increase" as const, rationale: "More seeds make an early fade-out less likely: 50 instead of 10.", basis: "rule" as const };
     const replicates = { patch: { "run.n_replicates": 5 }, current: { "run.n_replicates": 1 }, direction: "increase" as const, rationale: "Several replicates show how often the outbreak takes off at all.", basis: "rule" as const };
     const diagnostics = [{ id: "early_fadeout", severity: "warning" as const, title: "The outbreak died out early", evidence: { r_eff: 1.2, seeds: 10, total_infected: 15, last_infectious: 0 }, levers: [seeds, replicates] }];
     const fadedStats = { ...STATS, total_infected: 15, peak_infections: 10, peak_day: 0 };
@@ -594,7 +594,7 @@ describe("golden flows: the sim-parameters cases of spec section 1 (evals/golden
     await third.run({ conversationId: CONVERSATION, text: "Run it" });
     const payload = (third.emitted[2] as { payload: RunPayload }).payload;
     expect(payload.compare).toMatchObject({ previous_run_id: "run-1", pop_scale: { from: 1, to: 1 } });
-    expect(payload.compare?.changed).toEqual(expect.arrayContaining([{ path: "disease.seed.mode", from: "fraction", to: "count" }, { path: "disease.seed.value", from: 0.01, to: 50 }]));
+    expect(payload.compare?.changed).toEqual(expect.arrayContaining([{ path: "disease.seed.mode", from: "fraction", to: "count" }, { path: "disease.seed.value", from: 0.0005, to: 50 }]));   // the default 0.05%
     expect(payload.compare?.stats_delta.total_infected).toBe(STATS.total_infected - 15);
   });
 
