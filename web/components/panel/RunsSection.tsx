@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatDuration } from "@/lib/client/activity";
-import { effectiveParameterRows } from "@/lib/client/format";
+import { defaultRows } from "@/lib/client/parameters";
 import type { RunArtifact } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
 import { CHART_VIEWS } from "@/lib/enums";
@@ -51,7 +51,7 @@ function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact;
           <details>
             <summary className="cursor-pointer text-xs font-semibold tracking-wide text-ink-faint uppercase">Effective parameters</summary>
             <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs">
-              {effectiveParameterRows(p.effective_params).map(([key, value]) => (
+              {defaultRows(p.effective_params).map(([key, value]) => (
                 <div key={key} className="contents">
                   <dt className="text-ink-faint">{key}</dt>
                   <dd>{value}</dd>

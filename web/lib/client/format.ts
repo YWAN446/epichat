@@ -4,7 +4,7 @@
  * Values are formatted the way the Python app prints them (lib/sim/pyformat).
  */
 import names from "@/data/country_names.json";
-import { AGE_GROUPS, approxR0, deathProbabilities, type Duration, type Seed, type SimParams } from "@/lib/sim/params";
+import type { Duration, Seed, SimParams } from "@/lib/sim/params";
 import { getPath } from "@/lib/sim/paths";
 import { specFor } from "@/lib/sim/registry";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
@@ -107,48 +107,6 @@ export function contactsSourceLabel(source: string): string {
   const prem = /^prem_2021:([A-Z]{3})$/.exec(source);
   if (prem) return `Prem 2021, ${countryName(prem[1])}`;
   return source === "user" ? "user-set" : source;
-}
-
-/**
- * The scenario's current parameters as label and value pairs for the panel's
- * Parameters section: what the next run uses, in words with units. Rows a
- * model or a data step does not bring are left out.
- */
-export function parameterRows(p: SimParams): [string, string][] {
-  const d = p.disease;
-  const g = p.demographics;
-  const asymptomatic = d.model === "seiar";
-  const ages = g.age_pct_under18 !== null && g.age_pct_18_64 !== null && g.age_pct_over65 !== null;
-  const row = (label: string, value: string): [string, string][] => [[label, value]];
-  return [
-    ["R₀ (approx.)", approxR0(p).toFixed(1)],
-    ["Transmission rate (β)", fmtValue(d.beta)],
-    ...(p.run.fit ? row("Fitted to", `${fitText(p.run.fit.target, p.run.fit.value)} by moving ${LEVER_LABELS[p.run.fit.lever] ?? p.run.fit.lever}`) : []),
-    ...(p.network.network_type === "random" ? row("Contacts per day", fmtValue(p.network.n_contacts)) : []),
-    ["Contact network", networkLabel(p.network)],
-    ...(p.network.network_type === "random" && p.network.contacts_dist === "poisson" ? row("Contacts distribution", "Poisson") : []),
-    ...(p.network.network_type === "random" && p.network.contact_duration_days > 0 ? row("Contact duration", formatQuantity(p.network.contact_duration_days, "days")) : []),
-    ...(p.network.network_type === "age_structured" ? row("Contact matrix", contactsSourceLabel(p.network.contacts_source)) : []),
-    ...(p.network.network_type === "hybrid" ? row("Household size", `${fmtValue(p.network.household_size)} people`) : []),
-    ["Initial infections", seedText(d.seed)],
-    ...(d.initial_immune_frac > 0 ? row("Initially immune", formatQuantity(d.initial_immune_frac, "fraction")) : []),
-    ["Infectious period", durationText(d.dur_inf)],
-    ...(d.dur_exp ? row("Exposed period", durationText(d.dur_exp)) : []),
-    ...(d.dur_immune ? row("Immunity duration", durationText(d.dur_immune)) : []),
-    ...(d.model === "sis" && d.sis_waning > 0 ? row("Immunity waning", `${fmtValue(d.sis_waning)} per year`) : []),
-    ...(d.model !== "sis" ? row("Death probability", formatQuantity(d.p_death, "fraction")) : []),
-    ...(asymptomatic ? [...row("Asymptomatic share", formatQuantity(d.p_asymp, "fraction")), ...row("Asymptomatic transmission", `${formatQuantity(d.rel_trans_asymp, "fraction")} of symptomatic`)] : []),
-    ...(d.rel_sus_cv > 0 ? row("Variation in susceptibility", `CV ${fmtValue(d.rel_sus_cv)}`) : []),
-    ...(Object.values(d.rel_sus_age).some((v) => v !== 1) ? row("Susceptibility by age", `children ×${fmtValue(d.rel_sus_age.children)}, adults ×${fmtValue(d.rel_sus_age.adults)}, elderly ×${fmtValue(d.rel_sus_age.elderly)}`) : []),
-    ...(Object.values(d.p_death_age).some((v) => v !== null) ? row("Fatality by age", deathProbabilities(d).map((q, i) => `${AGE_GROUPS[i]} ${formatQuantity(q, "fraction")}`).join(", ")) : []),
-    ...(d.rel_trans_exposed > 0 ? row("Presymptomatic transmission", `${formatQuantity(d.rel_trans_exposed, "fraction")} of the infectious value`) : []),
-    ["Agents", commaInt(p.run.n_agents)],
-    ["Duration", formatQuantity(p.run.sim_dur_years, "years")],
-    ...(p.run.n_replicates > 1 ? row("Replicates", fmtValue(p.run.n_replicates)) : []),
-    ["Births and deaths", g.use_demographics ? `${fmtValue(g.birth_rate)} and ${fmtValue(g.death_rate)} per 1,000 per year` : "not modelled"],
-    ...(ages ? row("Age structure", ageStructure({ "0-17": g.age_pct_under18!, "18-64": g.age_pct_18_64!, "65+": g.age_pct_over65! })) : []),
-    ...(p.run.rand_seed !== null ? row("Random seed", fmtValue(p.run.rand_seed)) : []),
-  ];
 }
 
 /** The v2 paths a run's effective parameters are listed by, in the runs panel and the report appendix. */

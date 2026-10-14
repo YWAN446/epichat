@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { configurationRows, countryName, describeField, effectiveParameterLabel, effectiveParameterRows, formatQuantity, formatRange, interventionLines, parameterLabel, parameterRows, scenarioRows } from "@/lib/client/format";
-import { approxR0 } from "@/lib/sim/params";
+import { configurationRows, countryName, describeField, effectiveParameterLabel, effectiveParameterRows, formatQuantity, formatRange, interventionLines, parameterLabel, scenarioRows } from "@/lib/client/format";
+import { defaultRows, parameterGroups } from "@/lib/client/parameters";
+import type { SimParams } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
 
 describe("country names", () => {
@@ -78,31 +79,18 @@ describe("applied data fields", () => {
   });
 });
 
-describe("parameter rows", () => {
-  it("writes the current parameters in words with units, R₀ first", () => {
-    const p = params({ disease_type: "seir", beta: 171.09375, n_contacts: 4, init_prev: 0.01, dur_inf: 8, dur_exp: 11, p_death: 0.001, n_agents: 10000, sim_dur_years: 1 });
-    expect(parameterRows(p)).toEqual([
-      ["R₀ (approx.)", approxR0(p).toFixed(1)],
-      ["Transmission rate (β)", "171.1"],
-      ["Contacts per day", "4"],
-      ["Contact network", "random"],
-      ["Initial infections", "1%"],
-      ["Infectious period", "8 days"],
-      ["Exposed period", "11 days"],
-      ["Death probability", "0.1%"],
-      ["Agents", "10,000"],
-      ["Duration", "1 year"],
-      ["Births and deaths", "not modelled"],
-    ]);
-  });
+/** Every row of the Parameters section that applies to the scenario, shown by default or not; the default view is tested in parameters.test.ts. */
+const parameterRows = (p: SimParams): [string, string][] => parameterGroups(p).flatMap((group) => group.rows.map((row) => [row.label, row.value] as [string, string]));
 
+describe("parameter rows", () => {
   it("adds the rows a model or a data step brings: immunity, the asymptomatic share, vital rates, the age structure, the seed", () => {
     const rows = parameterRows(params({
       disease_type: "seiar", dur_exp: 5, dur_immune: 180, p_asymp: 0.3, rel_trans_asymp: 0.5, use_demographics: true, birth_rate: 28.1, death_rate: 7.9,
       network_type: "age_structured", age_pct_under18: 38.6, age_pct_18_64: 57.6, age_pct_over65: 3.8, rand_seed: 42,
     }));
     expect(rows).toContainEqual(["Contact network", "age-structured"]);
-    expect(rows).toContainEqual(["Immunity duration", "180 days"]);
+    expect(rows.map(([label]) => label)).not.toContain("Immunity duration");               // not a parameter of the seiar model, whatever the scenario carries
+    expect(parameterRows(params({ disease_type: "sirs", dur_immune: 180 }))).toContainEqual(["Immunity duration", "180 days"]);
     expect(rows).toContainEqual(["Asymptomatic share", "30%"]);
     expect(rows).toContainEqual(["Asymptomatic transmission", "50% of symptomatic"]);
     expect(rows).toContainEqual(["Births and deaths", "28.1 and 7.9 per 1,000 per year"]);
@@ -163,7 +151,7 @@ describe("configuration rows", () => {
 
 describe("parameter rows for the age-specific values", () => {
   it("shows the age multipliers, the fatality by age and the presymptomatic share only when set", () => {
-    const plain = parameterRows(params({ schema_version: 2 })).map(([label]) => label);
+    const plain = defaultRows(params({ schema_version: 2 })).map(([label]) => label);
     expect(plain).not.toContain("Susceptibility by age");
     expect(plain).not.toContain("Fatality by age");
     expect(plain).not.toContain("Presymptomatic transmission");
@@ -234,10 +222,9 @@ describe("intervention lines, the fit row and the applied-field labels (Part 2, 
     const fitted = params({ schema_version: 2, run: { fit: { target: "attack_rate", value: 0.3 } } });
     const rows = parameterRows(fitted);
     expect(rows).toContainEqual(["Fitted to", "attack rate 30% by moving the transmission rate"]);
-    expect(rows.map(([label]) => label).indexOf("Fitted to")).toBe(rows.map(([label]) => label).indexOf("Transmission rate (\u03b2)") + 1);
     expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_day", value: 60, lever: "network.network_beta" } } }))).toContainEqual(["Fitted to", "peak day 60 by moving the network multiplier"]);
     expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_infections", value: 500 } } }))).toContainEqual(["Fitted to", "peak infections 500 agents by moving the transmission rate"]);
-    expect(parameterRows(params({})).map(([label]) => label)).not.toContain("Fitted to");
+    expect(defaultRows(params({})).map(([label]) => label)).not.toContain("Fitted to");
     expect(describeField("applied_vaccine_efficacy", 0.93)).toEqual({ label: "Vaccine efficacy applied", value: "93%" });
     expect(describeField("fit", { target: "attack_rate", value: 0.3 })).toEqual({ label: "Fit", value: "attack rate 30%" });
     expect(describeField("fit", { target: "peak_infections", value: 50000, value_in_agents: 500 })).toEqual({ label: "Fit", value: "peak infections 50,000 people (500 agents)" });
@@ -257,7 +244,7 @@ describe("the limits on spread in the panel (follow-up spec 4.5, 5.5, 6)", () =>
       "Seasonality: amplitude 0.2, shift 0",
     ]);
     expect(parameterRows(p)).toContainEqual(["Variation in susceptibility", "CV 1"]);
-    expect(parameterRows(params({})).map(([label]) => label)).not.toContain("Variation in susceptibility");
+    expect(defaultRows(params({})).map(([label]) => label)).not.toContain("Variation in susceptibility");
     const windowed = params({ schema_version: 2, interventions: [{ type: "behavior_response", scale: 0.6, half_prevalence: 0.005, memory_days: 14, start_day: 20, end_day: 80 }] });
     expect(interventionLines(windowed)).toEqual(["Behaviour response: transmission falls by up to 60% as infections rise (half of that at 0.5% infectious, 14-day memory), days 20\u201380"]);
   });

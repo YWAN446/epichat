@@ -59,7 +59,7 @@ describe("the details panel", () => {
 
   it("shows the current parameters in words, with the interventions, and opens when they change after a run", () => {
     const section = read("components/panel/ParametersSection.tsx");
-    for (const piece of ["parameterRows(", "interventionLines(", "No interventions.", "the next run"]) expect(section).toContain(piece);
+    for (const piece of ["parameterGroups(", "group.lines", "No interventions.", "the next run", "Show all ("]) expect(section).toContain(piece);
     const panel = read("components/panel/DetailsPanel.tsx");
     for (const piece of ["artifacts.params", "parameters: true", "PARAMETER_TOOLS", "artifacts.runs.length > 0"]) expect(panel).toContain(piece);
   });
@@ -70,6 +70,9 @@ describe("the details panel", () => {
     expect(section).toContain("This scenario's parameters were not recorded; they appear after the next change or run.");
     expect(read("components/panel/DetailsPanel.tsx")).toContain("configured={artifacts.config !== null}");
     expect(read("components/SharedConversation.tsx")).toContain("configured={artifacts.config !== null}");
+    // follow-up spec 8.4: both pages hand the section the sources that came with the parameters
+    expect(read("components/panel/DetailsPanel.tsx")).toContain("sources={artifacts.sources}");
+    expect(read("components/SharedConversation.tsx")).toContain("sources={artifacts.sources}");
   });
 
   it("keeps the literature table out of Scenario and puts it at the top of Data", () => {
