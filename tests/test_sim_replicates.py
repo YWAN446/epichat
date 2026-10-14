@@ -2,7 +2,7 @@
 from epichat.params.migrate import coerce_params
 from epichat.sim.replicates import run_replicates
 
-SMALL = {"disease_type": "sir", "beta": 22.8125, "n_agents": 400, "sim_dur_years": 20 / 365, "rand_seed": 5}
+SMALL = {"disease_type": "sir", "beta": 22.8125, "n_agents": 400, "sim_dur_years": 20 / 365, "rand_seed": 5, "init_prev": 0.05}   # 20 seeds of 400
 
 
 def v2(n_replicates=1, rand_seed=5):

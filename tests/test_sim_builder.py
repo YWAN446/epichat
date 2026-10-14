@@ -208,7 +208,7 @@ def test_age_structured_network_scales_the_contact_matrix_and_assigns_age_shares
 
 
 def test_age_structured_network_without_shares_builds_and_runs():
-    sim = build_sim(params(network_type="age_structured", n_agents=2000))
+    sim = build_sim(params(network_type="age_structured", n_agents=2000, init_prev=0.01))     # 20 seeds: the default 0.05% would be one
     sim.run()
     assert int((np.asarray(sim.people.age.values) >= 65).sum()) == 0       # Starsim's default ages are 0 to 60 (section 18)
     assert sim.results.sir.cum_infections.values[-1] > 0
@@ -303,7 +303,8 @@ def test_hybrid_network_expands_into_four_layers_with_the_configured_values():
     p = v2(network={"network_type": "hybrid", "household_size": 3.5, "school_contacts": 10, "work_contacts": 8, "community_contacts": 5,
                     "layer_beta": {"household": 2.0, "school": 0.5, "work": 0.4, "community": 0.2}, "school_age_min": 5, "school_age_max": 18,
                     "work_age_min": 18, "work_age_max": 60, "network_beta": 2.0},
-           demographics={"age_pct_under18": 30.0, "age_pct_18_64": 60.0, "age_pct_over65": 10.0}, run={"n_agents": 3000, "rand_seed": 1})
+           demographics={"age_pct_under18": 30.0, "age_pct_18_64": 60.0, "age_pct_over65": 10.0}, run={"n_agents": 3000, "rand_seed": 1},
+           disease={"seed": {"mode": "count", "value": 30}})                            # the default 0.05% of 3,000 would be one or two seeds
     sim = build_sim(p)
     assert list(sim.networks.keys()) == ["h", "s", "w", "c"]
     h, s, w, c = (sim.networks[k] for k in "hswc")
@@ -355,7 +356,7 @@ def test_yearly_births_switch_the_rate_at_each_sim_year():
 
 
 def test_every_sim_logs_its_infections():
-    sim = build_sim(v2())
+    sim = build_sim(v2(disease={"seed": {"mode": "count", "value": 20}}))             # the default 0.05% of 1,000 agents may seed nobody
     sim.run()
     log = sim.analyzers["infection_log"].logs["sir"]        # Starsim moves each disease's log to the analyzer when the run finalizes
     assert log is not None and len(log) >= 10

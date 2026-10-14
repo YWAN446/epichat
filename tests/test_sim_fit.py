@@ -158,9 +158,9 @@ def test_a_fit_on_beta_replaces_the_pilot_on_the_hybrid_network():
 
 
 def _flattened(scale: float, wanted: float, lever: str) -> SimParamsV2:
-    """R0 1.5 with the default 1% seeding over 120 days: a response of 0.6 holds the peak under twice the seeds while an eighth of the
-    agents are infected."""
-    body = {"disease": {"dur_inf": {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, "p_death": 0.0},
+    """R0 1.5 with a 1% seeding over 120 days: a response of 0.6 holds the peak under twice the seeds while an eighth of the
+    agents are infected. The seeding is explicit: with the default 0.05% a response of 0.45 already reaches a tenth."""
+    body = {"disease": {"dur_inf": {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, "p_death": 0.0, "seed": {"mode": "fraction", "value": 0.01}},
             "interventions": [{"type": "behavior_response", "scale": scale}],
             "run": {"n_agents": 10000, "sim_dur_years": 120 / 365, "rand_seed": 1, "fit": {"target": "attack_rate", "value": wanted, "lever": lever}}}
     return with_r0(SimParamsV2.model_validate(body), 1.5)
