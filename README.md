@@ -224,6 +224,19 @@ registry, schema v2, the exact R0, diagnostics and options) and
   change to the interventions after the fitted run ends the fit and keeps the
   fitted value, so the next run shows the intervention against the fitted
   baseline (it used to be fitted away).
+- **The Parameters section.** The panel lists every parameter the scenario
+  has, generated from the registry (`web/lib/client/parameters.ts`): five
+  groups (Disease, Contact network, Demographics, Interventions, Run), one
+  row per parameter or natural bundle (a duration, the seeding, the contact
+  matrix as a grid, the hybrid layers as a table). A group shows its core
+  parameters and every value that is not the registry default; "Show all"
+  opens the rest of what applies to the scenario's model and network. A
+  test walks the registry and fails when a parameter has no row. Each value
+  is tagged with where each value came from (database, fetched, default,
+  assumption, you), sent with the payloads that carry the parameters. The
+  runs panel and the report's appendix list the same rows, and
+  `describe_parameters` lists by network as well as by model, with the
+  fields of an intervention entry on request.
 - **The review list.** `scripts/review_requests.py` renders
   `docs/data-review-requests.md`: for every disease, the status of every
   database field the registry names, the fields the database does not have

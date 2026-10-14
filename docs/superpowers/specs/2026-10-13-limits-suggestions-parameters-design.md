@@ -1,8 +1,8 @@
 # EpiChat Simulation Parameters, Part 2 Follow-up: Limits on Spread, Suggested Interventions, the Parameters Section and Chosen References (Design)
 
 Date: 2026-10-13. Status: confirmed by the owner on 2026-10-13 (the proposals of
-section 17 included); phases A and B shipped, with the amendments marked "as
-shipped".
+section 17 included); phases A, B and C shipped, with the amendments marked
+"as shipped".
 Builds on Part 1, `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
 and Part 2, `docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md`
 (phases 2A to 2D shipped on 2026-10-13). Where this document and either part
@@ -548,6 +548,28 @@ Payloads stored before this round have none and render without tags.
 - The report's appendix lists the same rows (core and non-default, by group)
   instead of `EFFECTIVE_PARAM_PATHS`, which today prints Household size,
   Contact duration and Contact matrix on every run.
+
+As shipped (phase C).
+
+- The rows live in `web/lib/client/parameters.ts`: 39 rows (one of them the derived R₀) over the 74
+  parameters that are not fields of an intervention entry. The labels of
+  rows that existed are kept ("Exposed period", "Death probability").
+- "Show all (N)" is a `details` element per group, so it works on the share
+  page without script; N is the group's row count.
+- A row appears only when its parameter applies to the model: a seiar
+  scenario that carries an immunity duration no longer lists it.
+- A row with several paths is tagged "you" as soon as the user set one of
+  them, otherwise by its first path that is not a default. The payloads carry
+  the whole map of sources (about 65 paths, 2.5 KB). A run's sources are
+  those of the scenario's own parameters, so a calibrated beta or a fitted
+  lever keeps the source of what was configured. The coefficient of variation
+  the agent offers (1) reads as an assumption.
+- In the report's table a row that any run shows carries every run's own
+  value, and a dash only where the row is not a parameter of that run's
+  model or network. The runs panel lists the default view of the run's
+  effective parameters.
+- `describe_parameters` with `module: interventions` lists the fields of an
+  intervention entry, which no listing gave before.
 
 ## 9. Choosing a reference
 

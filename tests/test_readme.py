@@ -51,7 +51,7 @@ def test_the_runbook_verifies_part_2_through_the_shipped_fields():
     # every string the section quotes from the product exists in the file that produces it (2D review, Important 7)
     quoted = {
         "contacts reduced by": ("web", "lib", "client", "format.ts"),
-        "Fitted to": ("web", "lib", "client", "format.ts"),
+        "Fitted to": ("web", "lib", "client", "parameters.ts"),
         "Household size": ("web", "lib", "client", "format.ts"),
         "households, schools, workplaces, community": ("web", "lib", "client", "format.ts"),
         "R₀ measured": ("web", "lib", "report", "compose.ts"),
@@ -131,3 +131,9 @@ def test_the_readme_describes_the_suggested_interventions():
     for phrase in ("what_if", "Try next", "epichat/params/indicators.py", "interventions field", "on every network"):
         assert phrase in web, phrase
     assert "a random-network run that a" not in web                 # well_mixed no longer blames the random network
+
+
+def test_the_readme_describes_the_parameters_section():
+    web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
+    for phrase in ("Parameters section", "Show all", "web/lib/client/parameters.ts", "where each value came from", "by network"):
+        assert phrase in web, phrase
