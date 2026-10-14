@@ -105,7 +105,8 @@ def test_hybrid_run_calibrates_beta_and_reports_the_measured_r0(client):
 
 
 def test_a_fitted_run_reports_the_fit_and_the_fitted_beta(client):
-    params = {"schema_version": 2, "run": {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 1, "fit": {"target": "attack_rate", "value": 0.4}}}
+    params = {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 20}},           # the default 0.05% of 2,000 seeds nobody here
+              "run": {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 1, "fit": {"target": "attack_rate", "value": 0.4}}}
     r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
     assert r.status_code == 200, r.text
     body = r.json()
