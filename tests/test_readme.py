@@ -47,7 +47,7 @@ def test_the_readme_describes_part_2_from_the_codes_own_names():
 
 def test_the_runbook_verifies_part_2_through_the_shipped_fields():
     runbook = source("web", "docs", "DEPLOY.md")
-    section = runbook.split("## 6j.")[1].split("## 7.")[0]
+    section = runbook.split("## 6j.")[1].split("## 6k.")[0]
     # every string the section quotes from the product exists in the file that produces it (2D review, Important 7)
     quoted = {
         "contacts reduced by": ("web", "lib", "client", "format.ts"),
@@ -143,3 +143,57 @@ def test_the_readme_describes_the_chosen_references():
     web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
     for phrase in ("Use this value", "use_reference", "ref:", "web/lib/tools/chosenReference.ts"):
         assert phrase in web, phrase
+
+
+def test_the_runbook_verifies_the_follow_up_through_the_shipped_strings():
+    runbook = source("web", "docs", "DEPLOY.md")
+    section = " ".join(runbook.split("## 6k.")[1].split("## 7.")[0].split())      # a quoted string may wrap
+    quoted = {
+        "Try next": ("web", "components", "RunSummary.tsx"),
+        "Interventions to try": ("epichat", "sim", "diagnostics.py"),
+        "Let people become careful as cases rise and rerun": ("epichat", "sim", "diagnostics.py"),
+        "Add variation between people (CV": ("epichat", "sim", "diagnostics.py"),
+        "Variation in susceptibility": ("web", "lib", "client", "parameters.ts"),
+        "Behaviour response: transmission falls by up to": ("web", "lib", "client", "format.ts"),
+        "by moving": ("web", "lib", "client", "parameters.ts"),
+        "the variation in susceptibility": ("web", "lib", "client", "format.ts"),
+        "ended the fit": ("web", "lib", "tools", "configureSimulation.ts"),
+        "Show all (": ("web", "components", "panel", "ParametersSection.tsx"),
+        "set in chat": ("web", "lib", "client", "parameters.ts"),
+        "set by the run": ("web", "lib", "client", "parameters.ts"),
+        "assumption": ("web", "lib", "client", "parameters.ts"),
+        "Transmission rate (β)": ("web", "lib", "client", "parameters.ts"),
+        "Use this value": ("web", "components", "panel", "ReferenceList.tsx"),
+        "R0 moved from": ("web", "lib", "tools", "configureSimulation.ts"),
+        "use_reference": ("web", "lib", "tools", "configureSimulation.ts"),
+        "Literature": ("web", "lib", "report", "compose.ts"),
+        "what_if": ("epichat", "sim", "diagnostics.py"),
+        "suggestion_used": ("web", "lib", "enums.ts"),
+        "option_chosen": ("web", "lib", "enums.ts"),
+    }
+    for phrase, path in quoted.items():
+        assert phrase in section, phrase
+        assert phrase in source(*path), (phrase, path)
+    # the five groups, under the titles the section renders
+    groups = source("web", "lib", "client", "parameters.ts")
+    for title in ("Disease", "Contact network", "Demographics", "Interventions", "Run"):
+        assert f'title: "{title}"' in groups and title in section, title
+    # the message of the button, in the form the panel sends it
+    assert "Use Measles reference" in section and "Use ${disease" in source("web", "lib", "client", "references.ts")
+    # the sources of a pressed button and of a chosen reference
+    enums = source("web", "lib", "enums.ts")
+    assert '"option", "reference"' in enums and '{"source": "option"}' in section and '{"source": "reference"}' in section
+    # the earlier sections say nothing the round made untrue
+    earlier = " ".join(runbook.split("## 6h.")[1].split("## 6k.")[0].split())
+    for stale in ("explains the random network (fresh contacts every day)", "offers the hybrid network as an option", "the initial prevalence",
+                  "Interventions section reads", '"Replicates:'):
+        assert stale not in earlier, stale
+    step_4 = " ".join(runbook.split("## 6j.")[1].split("## 6k.")[0].split("\n4. ")[1].split("\n5. ")[0].split())
+    # a known attack rate with a database R0 is now fitted with the variation (follow-up spec 6): the beta fit needs the R0 said to be unknown
+    assert "R0 is not known" in step_4 and "by moving the transmission rate" in step_4
+    assert "R0 itself is unknown" in source("web", "lib", "chat", "prompt.ts")
+    step_5 = " ".join(runbook.split("## 6j.")[1].split("## 6k.")[0].split("\n5. ")[1].split("\n6. ")[0].split())
+    assert "depletion of susceptibles" in step_5 and "depletion of susceptibles" in source("epichat", "sim", "diagnostics.py")
+    # what a fit that keeps R0 costs, beside the beta fit's numbers
+    keeps = runbook.split("## 7.")[1].split("A fit that keeps R0")[1].split("\n\n")[0]
+    assert "disease.rel_sus_cv" in keeps and "every trial" in keeps and "PILOT_LEVERS" in source("epichat", "sim", "fit.py")

@@ -413,9 +413,10 @@ pushed. No migration. One browser at desktop width and one phone.
    Disease, Model, Country, Duration, Interventions; Data starts with
    "Measles in the literature" (the table with the reference buttons) above
    "Real data appears here once it is fetched."; Parameters sits between
-   Data and Runs and lists R₀, the transmission rate, contacts per day, the
-   initial prevalence, the periods, the death probability, the agents, the
-   duration, "Births and deaths: not modelled", and "No interventions.".
+   Data and Runs and lists, in five groups (section 6k, step 6), R₀, the
+   transmission rate, the periods, the death probability, the initial
+   infections, contacts per day, "Births and deaths" as "not modelled",
+   "No interventions.", the agents and the duration.
 5. "Fetch the data": Parameters now reads the births and deaths, the age
    structure, and "age-structured" for the contact network. "Run it", then
    "Set the vaccine coverage to 90%": the Parameters section opens by
@@ -435,8 +436,9 @@ Done after the sim-parameters phases 3 and 4 are pushed, with migration
    usual, then ask "What can I change?": the activity shows a Parameter
    list call, and the reply names parameters with their current values and
    where each came from (database, default, …), not from memory.
-2. "Use five replicates." The panel's Parameters section shows "Replicates:
-   5" and the configured card's line carries `run.n_replicates: 5`.
+2. "Use five replicates." The panel's Parameters section shows
+   "Replicates" at 5 in its Run group, with the tag "set in chat", and the
+   configured card's line carries `run.n_replicates: 5`.
 3. "Run it." Measles with the default fatality ratio of 0 is outside the
    literature range (0.5 to 6%), so the reply says so and offers at most
    three options, one of them keeping things as they are. Press the option
@@ -467,9 +469,9 @@ migration. One browser; a phone is enough.
    10,000 agents: step 4 fits this scenario, and a fitted hybrid run with
    more agents does not fit the service's timeout on Vercel; see section 7.)
    The configure call sets `network_type: hybrid`; the panel's Parameters
-   section shows
-   "Contact network: hybrid (households, schools, workplaces, community)" and
-   a "Household size" row; the reply says the hybrid network was chosen for
+   section shows, in its Contact network group, "Contact network" as
+   "hybrid (households, schools, workplaces, community)" and a
+   "Household size" row; the reply says the hybrid network was chosen for
    the setting.
 2. "Run it." The reply says in one sentence that beta was adjusted to the
    measured R0 (the run payload carries `applied.beta_calibrated_by_measurement`
@@ -478,26 +480,34 @@ migration. One browser; a phone is enough.
    report is the only place that row appears; the panel has none).
 3. "Close the schools from day 30 for six weeks and run it again." The
    configure call carries `interventions: [{type: contact_reduction, layer:
-   school, scale: 1, start_day: 30, end_day: 72}]`; the panel's
-   Interventions section reads "School contacts reduced by 100% from day 30
-   to day 72"; the reply reports what changed against the previous run before
+   school, scale: 1, start_day: 30, end_day: 72}]`; the Parameters
+   section's Interventions group reads "School contacts reduced by 100% from
+   day 30 to day 72"; the reply reports what changed against the previous run before
    interpreting, and calls the closure's effect size an illustrative
    assumption.
-4. "Fit it so that 30% of the town is infected, and run it." The configure
-   call carries `fit: {target: attack_rate, value: 0.3}`; the panel shows a
-   "Fitted to" row ("attack rate 30% by moving the transmission rate"); the
-   run takes longer (the fit's search, at most eight runs before the
-   replicates); the reply says beta was set so that the attack rate is 30%
-   and labels the run as fitted in the limitations. "Create a report" again:
+4. "The R0 is not known here. Fit the transmission rate so that 30% of the
+   town is infected, and run it." (Say that the R0 is not known: since the
+   follow-up round a known attack rate with a database R0 is fitted with the
+   variation between people, which section 6k checks, and beta is the lever
+   only when the R0 itself is in doubt.) The configure call carries
+   `fit: {target: attack_rate, value: 0.3}` with no lever or with
+   `lever: disease.beta`; the panel's Run group shows a "Fitted to" row
+   ("attack rate 30% by moving the transmission rate"). The run takes
+   longer (the fit's search, at most eight runs before the replicates); the
+   reply says beta was set so that the attack rate is 30% and labels the
+   run as fitted in the limitations. "Create a report" again:
    its "What was modelled" block shows "Fitted to: attack rate 30% (reached
    …% in N runs)".
 5. New conversation: "Model measles in a city of 20,000 people for a year."
    Name no country here: a country brings the demographics fetch, which
    moves the scenario to the age-structured network, and this step checks
    the random one. Run it, then ask "Why were so many infected?": the reply
-   explains the random network (fresh contacts every day) and offers the
-   hybrid network as an option without promising that the switch alone
-   lowers the final size.
+   says that at this R0 nearly everyone is infected on any network, because
+   only the depletion of susceptibles limits the epidemic, and offers
+   variation between people or a behaviour response as illustrative
+   assumptions (section 6k). It may add the hybrid network, as the
+   structure that school closures and distancing act on, without promising
+   that the switch alone lowers the final size.
 6. In the SQL editor:
 
        select id, stats->'fit' as fit, stats->'r0_calibration' as calibration, stats->'r0_measured' as measured
@@ -510,6 +520,89 @@ migration. One browser; a phone is enough.
    `measured`; it is null on an age-structured run, where Starsim's
    mixing pools do not log the source, and on a run seeded so heavily that
    the population was exhausted while the seeds were still infectious.
+
+## 6k. Limits on spread, suggested interventions, the Parameters section and chosen references verification
+
+Done after the follow-up round (the pilot fix and its phases A to E) is
+pushed. No migration. One browser at desktop width. The percentages were
+measured on 2026-10-13 with 10,000 agents and no seed set; expect them
+within a few points.
+
+1. New conversation: "Model RSV in a city of 10,000 people for a year, with
+   the database's R0." Confirm and run it. The attack rate is about 93%
+   (R0 3.0). Under the run sits a row "Try next" with up to three buttons,
+   the levers of the run's `what_if` diagnostic ("Interventions to try"): a
+   cut in contacts, masks, and "Let people become careful as cases rise and
+   rerun". The reply reports the run, offers at most two changes, and says
+   that their sizes are illustrative.
+2. "Why were so many infected?" The reply says that nearly everyone is
+   infected at this R0 because only the depletion of susceptibles limits
+   the epidemic, and offers variation between people and a behaviour
+   response, both as illustrative assumptions. The "Try next" buttons are
+   gone: they stay only while the run is the latest turn.
+3. Send "Add variation between people (CV 1) and rerun" (a suggested reply
+   after step 1 or 2, or typed). The configure call sets
+   `disease.rel_sus_cv` to 1. In the panel's Parameters section the Disease
+   group gains "Variation in susceptibility" at "CV 1" with the tag
+   "assumption", and "R₀ (approx.)" still reads 3.0. The run infects about
+   68%; the reply reports the change against the first run and says that R0
+   did not change.
+4. "In the real outbreak 50% of the city was infected. Fit the model to
+   that and run it." The configure call carries `fit: {target: attack_rate,
+   value: 0.5, lever: disease.rel_sus_cv}`, not a fit on beta. The Run
+   group shows "Fitted to" as "attack rate 50% by moving the variation in
+   susceptibility", with the tag "set in chat". The run takes longer (a
+   handful of trial runs, at most eight). It infects about 51%; the reply
+   says the variation was set so that 50% are infected and that R0 stays
+   3.0, and labels the run as fitted in the limitations. After the run
+   "Variation in susceptibility" reads its fitted value, near CV 1.4, with
+   the tag "set by the run".
+5. Press "Let people become careful as cases rise and rerun" under that
+   run. The message is sent in your name. The configure result warns that
+   the change "ended the fit" and kept the fitted variation, and the reply
+   says so in one sentence. The Interventions group reads "Behaviour
+   response: transmission falls by up to 50% as infections rise (half of
+   that at 1% infectious, 7-day memory)", the "Fitted to" row is gone, and
+   the variation keeps its fitted value. The run infects about 39%, below
+   the fitted 50%: the response is compared with the fitted baseline, it is
+   not fitted away. The reply gives the strongest reduction the response
+   reached.
+6. The Parameters section, on this conversation: five groups, Disease,
+   Contact network, Demographics, Interventions and Run. A group shows its
+   main values and every value that is not a default, and keeps its other
+   parameters behind "Show all (N)", N being the group's count. Every
+   value carries a tag that says where it came from; this conversation
+   shows "database", "assumption", "default", "set in chat" and "set by the
+   run". On the hybrid conversation of section 6j, "Show all" in the
+   Contact network group holds the Layers table: the contacts per day and
+   the transmissibility of each layer.
+7. New conversation: "Model measles in a city of 20,000 people for a year."
+   In the Data section, "Measles in the literature" lists the parameters.
+   Press the sources button in the References column of R₀: every estimate
+   that is one number has a "Use this value" button. Press one whose value
+   is near 15 but not 15. The message "Use Measles reference N for R₀:
+   <value> (<title>, <year>)." is sent in your name; the configure call
+   carries `use_reference` with the disease, the parameter, the number and
+   the value; "R₀ (approx.)" reads the estimate's value, and
+   "Transmission rate (β)" carries the tag "reference" with the paper's
+   title and year under it. Then open the sources of "Contacts per day" and
+   press "Use this value" on an estimate of 9: the configure result says
+   "R0 moved from" the value just chosen to more than twice it (the
+   reference keeps beta), the reply says so and offers to set R0 again,
+   and the tag "reference" is now on "Contacts per day" and no longer on
+   the transmission rate. Run it and "Create a report": the "Data sources"
+   table has a row whose source is "Literature", with the paper's citation,
+   and the report still says that no real data was fetched.
+8. In the SQL editor:
+
+       select kind, tool, meta from step_events
+       where kind in ('option_chosen', 'suggestion_used') order by at desc limit 10;
+
+   An `option_chosen` row carries the `diagnostic_id` `what_if` and, under
+   `interventions`, the behaviour response of step 5; another carries
+   `well_mixed` with the patch of step 3. The `suggestion_used` rows carry
+   `{"source": "option"}` for the button of step 5 and
+   `{"source": "reference"}` for each press of step 7.
 
 ## 7. Simulation service (`sim/`)
 
@@ -648,6 +741,14 @@ not: keep fitted scenarios to 10k agents on Vercel (section 6j's first step
 does), or run larger ones against the local service. Owner: after the
 deploy, time a fitted scenario once from the activity's run duration and add
 it here.
+
+A fit that keeps R0 (the lever `disease.rel_sus_cv` or
+`behavior_response.scale`; follow-up spec 6) costs more per step where a
+pilot sets beta, because beta is calibrated again at every trial: on the
+hybrid network at 10k agents three trials took 35 s locally, against 24 s
+with one calibration. The random network has no pilot: section 6k's fit
+(10k agents, a year, the attack rate to 50%) took 5 runs and 33 s. The same
+rule holds: 10k agents for a fitted scenario on Vercel.
 
 **Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
 Active CPU hours a month and pauses the whole project for the rest of the
