@@ -340,7 +340,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
             setTab(next);
             if (next === "profile") onSectionOpen("profile");
           }}
-          details={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} onReferencesOpen={onReferencesOpen} onExport={onExport} preferredFormat={profile.reportFormat} />}
+          details={<DetailsPanel artifacts={artifacts} onSectionOpen={onSectionOpen} onChartView={onChartView} onReferencesOpen={onReferencesOpen} onUseReference={(message) => void send(message, "reference")} busy={live !== null} onExport={onExport} preferredFormat={profile.reportFormat} />}
           profile={<ProfilePanel profile={profile} diseases={diseases} memoryWrites={artifacts.memoryWrites} onProfileChange={setProfile} onSectionOpen={onSectionOpen} />}
         />
       }

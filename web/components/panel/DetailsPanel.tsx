@@ -23,13 +23,17 @@ type Props = {
   onSectionOpen: (section: PanelSection) => void;
   onChartView: (view: ChartView, turnId: string) => void;
   onReferencesOpen: (parameter: string) => void;
+  /** Follow-up spec 9.2: a "Use this value" button of the reference list sends this message in the participant's name. */
+  onUseReference: (message: string) => void;
+  /** A reply is streaming: the buttons that send a message wait. */
+  busy: boolean;
   onExport: (format: ExportFormat) => void;
   /** The participant's preferred report format, offered first. */
   preferredFormat: ExportFormat;
 };
 
 /** The Details tab: the present scenario, the literature and the data applied, the current parameters, every run, the report, and every step. The newest run opens its section. */
-export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onExport, preferredFormat }: Props) {
+export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onUseReference, busy, onExport, preferredFormat }: Props) {
   const [open, setOpen] = useState<Record<DetailsSection, boolean>>({ scenario: true, data: false, parameters: false, runs: true, report: false, activity: false });
   const runCount = useRef(artifacts.runs.length);
   const reportId = useRef(artifacts.report?.report_id ?? null);
@@ -65,7 +69,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
         <ScenarioSection config={artifacts.config} disease={artifacts.disease} />
       </Section>
       <Section id="panel-data" title="Data" count={artifacts.data.length} open={open.data} onToggle={toggle("data")}>
-        <DataSection data={artifacts.data} disease={artifacts.disease} onReferencesOpen={onReferencesOpen} />
+        <DataSection data={artifacts.data} disease={artifacts.disease} onReferencesOpen={onReferencesOpen} onUseReference={onUseReference} busy={busy} />
       </Section>
       <Section id="panel-parameters" title="Parameters" open={open.parameters} onToggle={toggle("parameters")}>
         <ParametersSection params={artifacts.params} sources={artifacts.sources} references={artifacts.references} configured={artifacts.config !== null} />

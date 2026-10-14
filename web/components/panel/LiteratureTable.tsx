@@ -9,10 +9,19 @@ import { ReferenceList } from "./ReferenceList";
 const STATUS: Record<string, string> = { ok: "", under_review: "under review", estimates_only: "estimates only", no_source: "no source" };
 const COUNT = "rounded-full border border-line px-2 py-0.5 text-xs font-medium text-accent hover:border-accent hover:bg-accent-wash";
 
-type Props = { disease: DiseasePayload; onReferencesOpen?: (parameter: string) => void; /** False on the public share page, where the references route is out of reach. */ references?: boolean };
+type Props = {
+  disease: DiseasePayload;
+  onReferencesOpen?: (parameter: string) => void;
+  /** False on the public share page, where the references route is out of reach. */
+  references?: boolean;
+  /** Follow-up spec 9.2: sends the message that applies one estimate; absent on the share page. */
+  onUseReference?: (message: string) => void;
+  /** A reply is streaming. */
+  busy?: boolean;
+};
 
 /** The literature parameters behind the disease, each with its references a press away. The top of the Data section. */
-export function LiteratureTable({ disease, onReferencesOpen, references = true }: Props) {
+export function LiteratureTable({ disease, onReferencesOpen, references = true, onUseReference, busy }: Props) {
   const [open, setOpen] = useState<string | null>(null);
 
   function toggle(parameter: string) {
@@ -52,7 +61,7 @@ export function LiteratureTable({ disease, onReferencesOpen, references = true }
               {open === name && (
                 <tr>
                   <td colSpan={4} id={`refs-${name}`} className="pb-2 pl-2">
-                    <ReferenceList key={disease.canonical_name} diseaseKey={disease.canonical_name} parameter={name} unit={p.unit} />
+                    <ReferenceList key={disease.canonical_name} diseaseKey={disease.canonical_name} parameter={name} unit={p.unit} onUse={onUseReference} busy={busy} />
                   </td>
                 </tr>
               )}

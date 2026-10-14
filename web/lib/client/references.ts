@@ -1,5 +1,5 @@
 /** The literature behind a disease's parameters comes from GET /api/diseases/[key]/references, fetched on first open. */
-import { formatQuantity, formatRange } from "./format";
+import { formatQuantity, formatRange, parameterLabel } from "./format";
 
 export type Reference = {
   title: string;
@@ -72,4 +72,25 @@ export function referenceValue(ref: Reference, unit?: string): string {
 export function referenceButtonLabel(summary: { n_estimates: number; source?: string }): string | null {
   if (summary.n_estimates > 0) return `${summary.n_estimates} ${summary.n_estimates === 1 ? "source" : "sources"}`;
   return summary.source ? "source" : null;
+}
+
+/** Follow-up spec 9.2: an estimate can be applied when it is one number; a range alone or a special value such as "lifelong" cannot. */
+export function referenceUsable(ref: Reference): boolean {
+  return typeof ref.value === "number" && Number.isFinite(ref.value) && !ref.special_value;
+}
+
+const TITLE_MAX = 80;
+const MESSAGE_MAX = 240;
+
+/**
+ * The message a "Use this value" button sends in the participant's name: "Use reference 3 for R₀: 14 (title, 2017)." The number
+ * is the one the list shows; the agent passes it to configure_simulation, which reads the value itself. The title is the paper's
+ * own text, so it is put on one line, stripped of control characters and cut short before it goes into a message.
+ */
+export function referenceMessage(parameter: string, index: number, ref: Reference, unit?: string): string {
+  const title = ref.title.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+  const short = title.length > TITLE_MAX ? `${title.slice(0, TITLE_MAX - 1).trimEnd()}…` : title;
+  const paper = ref.year !== undefined ? `${short}, ${ref.year}` : short;
+  const value = typeof ref.value === "number" ? formatQuantity(ref.value, unit) : "";
+  return `Use reference ${index} for ${parameterLabel(parameter)}: ${value} (${paper}).`.slice(0, MESSAGE_MAX);
 }

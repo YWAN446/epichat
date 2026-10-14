@@ -11,13 +11,17 @@ type Props = {
   onReferencesOpen?: (parameter: string) => void;
   /** False on the public share page, where the references route is out of reach. */
   references?: boolean;
+  /** Follow-up spec 9.2: sends the message that applies one literature estimate; absent on the share page. */
+  onUseReference?: (message: string) => void;
+  /** A reply is streaming. */
+  busy?: boolean;
 };
 
 /** The literature behind the disease, then every data fetch applied to the current scenario, each field in words with its unit. */
-export function DataSection({ data, disease, onReferencesOpen, references }: Props) {
+export function DataSection({ data, disease, onReferencesOpen, references, onUseReference, busy }: Props) {
   return (
     <div className="space-y-4">
-      {disease && <LiteratureTable disease={disease} onReferencesOpen={onReferencesOpen} references={references} />}
+      {disease && <LiteratureTable disease={disease} onReferencesOpen={onReferencesOpen} references={references} onUseReference={onUseReference} busy={busy} />}
       {data.length === 0 ? (
         <p className="text-ink-faint">Real data appears here once it is fetched.</p>
       ) : (
