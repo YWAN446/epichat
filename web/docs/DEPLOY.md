@@ -525,16 +525,18 @@ migration. One browser; a phone is enough.
 
 Done after the follow-up round (the pilot fix and its phases A to E) is
 pushed. No migration. One browser at desktop width. The percentages were
-measured on 2026-10-13 with 10,000 agents and no seed set; expect them
-within a few points.
+measured on 2026-10-13 with 10,000 agents, no seed set, and the SEIR model
+(the database carries RSV's incubation period, so the agent normally sets a
+latent period); expect them within a few points. If the Parameters section
+shows SIR instead, steps 1 to 4 read the same and step 5 lands near 34%.
 
 1. New conversation: "Model RSV in a city of 10,000 people for a year, with
    the database's R0." Confirm and run it. The attack rate is about 93%
    (R0 3.0). Under the run sits a row "Try next" with up to three buttons,
-   the levers of the run's `what_if` diagnostic ("Interventions to try"): a
-   cut in contacts, masks, and "Let people become careful as cases rise and
-   rerun". The reply reports the run, offers at most two changes, and says
-   that their sizes are illustrative.
+   the labels of the run's `what_if` levers: a cut in contacts, masks, and
+   "Let people become careful as cases rise and rerun". The reply reports
+   the run, offers at most two changes, and says that their sizes are
+   illustrative.
 2. "Why were so many infected?" The reply says that nearly everyone is
    infected at this R0 because only the depletion of susceptibles limits
    the epidemic, and offers variation between people and a behaviour
@@ -554,45 +556,52 @@ within a few points.
    susceptibility", with the tag "set in chat". The run takes longer (a
    handful of trial runs, at most eight). It infects about 51%; the reply
    says the variation was set so that 50% are infected and that R0 stays
-   3.0, and labels the run as fitted in the limitations. After the run
-   "Variation in susceptibility" reads its fitted value, near CV 1.4, with
-   the tag "set by the run".
+   3.0. After the run "Variation in susceptibility" reads its fitted value,
+   near CV 1.4, with the tag "set by the run".
 5. Press "Let people become careful as cases rise and rerun" under that
    run. The message is sent in your name. The configure result warns that
    the change "ended the fit" and kept the fitted variation, and the reply
    says so in one sentence. The Interventions group reads "Behaviour
    response: transmission falls by up to 50% as infections rise (half of
-   that at 1% infectious, 7-day memory)", the "Fitted to" row is gone, and
-   the variation keeps its fitted value. The run infects about 39%, below
-   the fitted 50%: the response is compared with the fitted baseline, it is
-   not fitted away. The reply gives the strongest reduction the response
-   reached.
+   that at 1% infectious, 7-day memory)". The "Fitted to" row leaves the
+   default view. "Variation in susceptibility" keeps its fitted value and
+   its tag changes from "set by the run" to "set in chat": the configure
+   call wrote the fitted value into the scenario. The run infects about
+   39%, below the fitted 50%: the response is compared with the fitted
+   baseline, it is not fitted away. The reply gives the strongest reduction
+   the response reached.
 6. The Parameters section, on this conversation: five groups, Disease,
    Contact network, Demographics, Interventions and Run. A group shows its
    main values and every value that is not a default, and keeps its other
-   parameters behind "Show all (N)", N being the group's count. Every
-   value carries a tag that says where it came from; this conversation
-   shows "database", "assumption", "default", "set in chat" and "set by the
-   run". On the hybrid conversation of section 6j, "Show all" in the
+   parameters behind "Show all (N)", N being the group's count. The tag
+   after a value says where it came from (a derived row such as
+   "R₀ (approx.)" and the intervention lines carry none); at this point the
+   conversation shows "database", "assumption", "default" and "set in
+   chat". On the hybrid conversation of section 6j, "Show all" in the
    Contact network group holds the Layers table: the contacts per day and
    the transmissibility of each layer.
 7. New conversation: "Model measles in a city of 20,000 people for a year."
    In the Data section, "Measles in the literature" lists the parameters.
    Press the sources button in the References column of R₀: every estimate
    that is one number has a "Use this value" button. Press one whose value
-   is near 15 but not 15. The message "Use Measles reference N for R₀:
+   is not the scenario's R₀ and not far from it (the list holds an outlier
+   the tool may refuse). The message "Use Measles reference N for R₀:
    <value> (<title>, <year>)." is sent in your name; the configure call
    carries `use_reference` with the disease, the parameter, the number and
    the value; "R₀ (approx.)" reads the estimate's value, and
    "Transmission rate (β)" carries the tag "reference" with the paper's
    title and year under it. Then open the sources of "Contacts per day" and
-   press "Use this value" on an estimate of 9: the configure result says
-   "R0 moved from" the value just chosen to more than twice it (the
-   reference keeps beta), the reply says so and offers to set R0 again,
-   and the tag "reference" is now on "Contacts per day" and no longer on
-   the transmission rate. Run it and "Create a report": the "Data sources"
-   table has a row whose source is "Literature", with the paper's citation,
-   and the report still says that no real data was fetched.
+   press "Use this value" on an estimate that is not the scenario's
+   contacts per day (4 unless the agent set another; again not the
+   outlier): the configure result
+   says "R0 moved from" the value just chosen to a new one, roughly in
+   proportion to the contacts (the reference keeps beta), the reply says so
+   and offers to set R0 again, and the tag "reference" is now on "Contacts
+   per day" and no longer on the transmission rate. Run it and "Create a
+   report": the "Data sources" table has a row whose source is
+   "Literature", with the paper's citation, and the report still says
+   "No real data was fetched; every value is a literature value or an
+   assumption."
 8. In the SQL editor:
 
        select kind, tool, meta from step_events
@@ -742,13 +751,21 @@ does), or run larger ones against the local service. Owner: after the
 deploy, time a fitted scenario once from the activity's run duration and add
 it here.
 
-A fit that keeps R0 (the lever `disease.rel_sus_cv` or
-`behavior_response.scale`; follow-up spec 6) costs more per step where a
-pilot sets beta, because beta is calibrated again at every trial: on the
-hybrid network at 10k agents three trials took 35 s locally, against 24 s
-with one calibration. The random network has no pilot: section 6k's fit
-(10k agents, a year, the attack rate to 50%) took 5 runs and 33 s. The same
-rule holds: 10k agents for a fitted scenario on Vercel.
+A fit that keeps R0 (follow-up spec 6) moves `disease.rel_sus_cv` or
+`behavior_response.scale` instead of beta. Where a pilot sets beta (the
+hybrid network), the variation's fit calibrates beta again at every trial,
+because the pilot depends on the variation; the response's fit calibrates
+once, before the search. Locally (2026-10-13; hybrid, 10k agents, R0 2.5, a
+year): the variation to an attack rate of 50% took 6 runs and 63 s, the
+response's scale to 70% took 5 runs and 52 s, and a beta fit to 50% took 6
+runs and 58 s, so a trial costs about 10 s whatever the lever. A search that
+needs all eight trials would then take about 85 s locally and about 125 s at
+Vercel's 1.5×, past the 120 s timeout: a year-long hybrid fit at 10k agents
+is at the limit, with any lever. Six months is not (50 s for the same six
+runs of the variation). The random network has no pilot: section 6k's fit
+(10k agents, a year, the attack rate to 50%) took 5 runs and 33 s. Owner:
+time one year-long hybrid fit after the deploy; if it is cut off, raise
+`SIM_TIMEOUT_SECONDS` (the function allows 300 s) or fit over six months.
 
 **Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
 Active CPU hours a month and pauses the whole project for the rest of the

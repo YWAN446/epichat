@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from epichat.disease_db import _num, _rich_param, load_db, parameter_summary  # noqa: E402
+from epichat.disease_db import _num, _rich_param, listed_estimates, load_db, parameter_summary  # noqa: E402
 from epichat.params.registry import DB_FIELDS  # noqa: E402
 
 REQUESTED_FIELDS = {
@@ -27,8 +27,8 @@ REQUESTED_FIELDS = {
     "school_closure_effect": "The reduction in school-age contacts or transmission while schools are closed, as a cited range (a systematic review or a modelling study with data), seeding the illustrative default of a full closure; the registry's interventions[].scale on the school layer.",
     "distancing_effect": "The reduction in community contacts under distancing measures, as a cited range, seeding the illustrative default; the registry's interventions[].scale on the community layer.",
     "mask_effect": "The reduction in per-contact transmission from mask use, as a cited range, seeding the illustrative default of a transmission reduction; the registry's interventions[].scale.",
-    "susceptibility_variation": "The coefficient of variation of susceptibility or exposure between people, as a cited range with the population and the method (a household study, a serosurvey, a fitted model), seeding the illustrative default of 1; the registry's disease.rel_sus_cv.",
-    "behaviour_response_effect": "The reduction in contacts or transmission observed as prevalence or deaths rose, without or before formal measures, as a cited range (mobility data, contact surveys), seeding the illustrative default of a response of up to 50%; the registry's interventions[].scale, half_prevalence and memory_days of a behavior_response entry.",
+    "susceptibility_variation": "The coefficient of variation of susceptibility or exposure between people, as a cited range with the population and the method (a household study, a serosurvey, a fitted model), seeding the illustrative value of 1 the agent offers (the default is 0, no variation); the registry's disease.rel_sus_cv.",
+    "behaviour_response_effect": "The reduction in contacts or transmission observed as prevalence or deaths rose, without or before formal measures, as a cited range with the prevalence at which it was observed and the delay before people responded (mobility data, contact surveys), seeding the illustrative values the agent offers (up to 50%, half of it at 1% infectious, a 7-day memory); the registry's interventions[].scale, half_prevalence and memory_days of a behavior_response entry.",
 }
 
 EXISTING_NOTES = {
@@ -63,10 +63,11 @@ def review_table() -> list[dict]:
 
 
 def entries_to_check(db: dict | None = None) -> list[dict]:
-    """Entries that contradict themselves: an estimate outside its own range, a consensus range none of its estimates is in.
+    """Entries worth a second look: an estimate outside its own range, a consensus range none of its estimates is in.
 
     An estimate outside the consensus is not one: the consensus leaves out narrow populations and single outbreaks on
-    purpose. `estimate` is the place in the parameter's list, as the app's reference list numbers it.
+    purpose. `estimate` is the place in the app's reference list (the estimates with a title, as the export writes
+    them); None for an estimate the app does not list and for a consensus row.
     """
     db = load_db() if db is None else db
     checks = []
@@ -76,22 +77,35 @@ def entries_to_check(db: dict | None = None) -> list[dict]:
             if not isinstance(rich, dict):
                 continue
             unit = f" ({rich['unit']})" if isinstance(rich.get("unit"), str) else ""
-            estimates = rich.get("estimates") or []
-            for place, estimate in enumerate(estimates, start=1):
+            estimates = [e for e in rich.get("estimates") or [] if isinstance(e, dict)]
+            places = {id(e): place for place, e in enumerate(listed_estimates(rich), start=1)}
+            for estimate in estimates:
                 value, bounds = _num(estimate.get("value")), estimate.get("range")
                 if value is None or not isinstance(bounds, list) or len(bounds) != 2 or any(_num(b) is None for b in bounds):
                     continue
                 if not min(bounds) <= value <= max(bounds):
-                    problem = f"the value {value:g} lies outside its own range, {min(bounds):g} to {max(bounds):g}{unit}."
-                    checks.append({"disease": disease, "field": field, "estimate": place, "problem": problem})
+                    checks.append({"disease": disease, "field": field, "kind": "estimate", "estimate": places.get(id(estimate)),
+                                   "title": estimate.get("title") or None, "year": estimate.get("year"), "value": value,
+                                   "problem": f"the value {value:g} lies outside its own range, {min(bounds):g} to {max(bounds):g}{unit}."})
             consensus = rich.get("consensus") if isinstance(rich.get("consensus"), dict) else {}
             low, high = _num(consensus.get("min")), _num(consensus.get("max"))
             values = [v for v in (_num(e.get("value")) for e in estimates) if v is not None]
             if values and low is not None and high is not None and not any(low <= v <= high for v in values):
                 listed = ", ".join(f"{v:g}" for v in values)
-                problem = f"the consensus range, {low:g} to {high:g}{unit}, holds none of its {len(values)} estimate{'' if len(values) == 1 else 's'} ({listed})."
-                checks.append({"disease": disease, "field": field, "estimate": None, "problem": problem})
+                held = f"does not hold its only estimate ({listed})" if len(values) == 1 else f"holds none of its {len(values)} estimates ({listed})"
+                checks.append({"disease": disease, "field": field, "kind": "consensus", "estimate": None,
+                               "problem": f"the consensus range, {low:g} to {high:g}{unit}, {held}."})
     return checks
+
+
+def _check_line(check: dict) -> str:
+    where, cited = f"{check['disease']}, {check['field']}", ""
+    if check["kind"] == "estimate" and check["estimate"] is None:
+        where, cited = where + ", an estimate without a title", " (not in the app's list)"
+    elif check["kind"] == "estimate":
+        title = check["title"] if len(check["title"]) <= 80 else check["title"][:79].rstrip() + "…"
+        where, cited = where + f", estimate {check['estimate']}", f" ({title}{', ' + str(check['year']) if check.get('year') else ''})"
+    return f"- **{where}**{cited}: {check['problem']}"
 
 
 def render(rows: list[dict], checks: list[dict] | None = None) -> str:
@@ -106,8 +120,8 @@ def render(rows: list[dict], checks: list[dict] | None = None) -> str:
         lines.append(f"| {disease} | " + " | ".join(mine[f] for f in fields) + " |")
     lines += ["", "What each existing field should hold:", ""]
     lines += [f"- **{field}**: {note}" for field, note in EXISTING_NOTES.items()]
-    lines += ["", "## Entries to check", "", "Found by the script: an estimate whose value lies outside its own range, and a consensus range that holds none of its parameter's estimates. The number is the estimate's place in the parameter's list, as the app's reference list numbers it.", ""]
-    lines += [f"- **{c['disease']}, {c['field']}" + (f", estimate {c['estimate']}" if c["estimate"] else "") + f"**: {c['problem']}" for c in checks] or ["None today."]
+    lines += ["", "## Entries to check", "", "Found by the script: an estimate whose value lies outside its own range, and a consensus range that holds none of its parameter's estimates. The number is the estimate's place in the app's reference list for that parameter.", ""]
+    lines += [_check_line(c) for c in checks] or ["None today."]
     lines += ["", "## Bundled tables", ""]
     lines += [f"- **{name}**: check {check}." for name, check in BUNDLED_CHECKS]
     return "\n".join(lines) + "\n"

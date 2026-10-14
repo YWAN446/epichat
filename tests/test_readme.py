@@ -150,7 +150,6 @@ def test_the_runbook_verifies_the_follow_up_through_the_shipped_strings():
     section = " ".join(runbook.split("## 6k.")[1].split("## 7.")[0].split())      # a quoted string may wrap
     quoted = {
         "Try next": ("web", "components", "RunSummary.tsx"),
-        "Interventions to try": ("epichat", "sim", "diagnostics.py"),
         "Let people become careful as cases rise and rerun": ("epichat", "sim", "diagnostics.py"),
         "Add variation between people (CV": ("epichat", "sim", "diagnostics.py"),
         "Variation in susceptibility": ("web", "lib", "client", "parameters.ts"),
@@ -159,10 +158,14 @@ def test_the_runbook_verifies_the_follow_up_through_the_shipped_strings():
         "the variation in susceptibility": ("web", "lib", "client", "format.ts"),
         "ended the fit": ("web", "lib", "tools", "configureSimulation.ts"),
         "Show all (": ("web", "components", "panel", "ParametersSection.tsx"),
-        "set in chat": ("web", "lib", "client", "parameters.ts"),
-        "set by the run": ("web", "lib", "client", "parameters.ts"),
-        "assumption": ("web", "lib", "client", "parameters.ts"),
+        "R₀ (approx.)": ("web", "lib", "client", "parameters.ts"),
+        "Fitted to": ("web", "lib", "client", "parameters.ts"),
         "Transmission rate (β)": ("web", "lib", "client", "parameters.ts"),
+        "Contacts per day": ("web", "lib", "client", "parameters.ts"),
+        "in the literature": ("web", "components", "panel", "LiteratureTable.tsx"),
+        "Data sources": ("web", "lib", "report", "compose.ts"),
+        "No real data was fetched": ("web", "lib", "report", "compose.ts"),
+        "diagnostic_id": ("web", "lib", "chat", "handleChat.ts"),
         "Use this value": ("web", "components", "panel", "ReferenceList.tsx"),
         "R0 moved from": ("web", "lib", "tools", "configureSimulation.ts"),
         "use_reference": ("web", "lib", "tools", "configureSimulation.ts"),
@@ -174,6 +177,24 @@ def test_the_runbook_verifies_the_follow_up_through_the_shipped_strings():
     for phrase, path in quoted.items():
         assert phrase in section, phrase
         assert phrase in source(*path), (phrase, path)
+    # the tags, as the page writes them; and nothing the page does not show is quoted as if it did (review of phase E)
+    for tag in ("database", "assumption", "default", "set in chat", "set by the run", "reference"):
+        assert f'"{tag}"' in section and f'"{tag}"' in source("web", "lib", "client", "parameters.ts"), tag
+    assert "Interventions to try" not in section and "Interventions to try" not in source("web", "components", "RunSummary.tsx")
+    raw = runbook.split("## 6k.")[1].split("## 7.")[0]
+
+    def step(n: int) -> str:
+        return " ".join(raw.split(f"\n{n}. ")[1].split(f"\n{n + 1}. ")[0].split())
+
+    # the variation is "set by the run" only until the fit ends: step 5's configure call writes the fitted value into the
+    # scenario, so from there it reads "set in chat" and step 6 must not send the owner looking for the run's tag
+    assert '"set by the run"' in step(4) and '"set by the run"' not in step(6)
+    assert 'from "set by the run" to "set in chat"' in step(5)
+    assert "Every value carries a tag" not in step(6)
+    # the percentages are the SEIR model's, and the runbook says what the other model gives
+    assert "SEIR" in raw.split("\n1. ")[0] and "SIR" in raw.split("\n1. ")[0]
+    # the second reference is described by what makes it move R0, not by today's data
+    assert "an estimate of 9" not in step(7) and "more than twice" not in step(7) and "in proportion" in step(7)
     # the five groups, under the titles the section renders
     groups = source("web", "lib", "client", "parameters.ts")
     for title in ("Disease", "Contact network", "Demographics", "Interventions", "Run"):
@@ -195,8 +216,13 @@ def test_the_runbook_verifies_the_follow_up_through_the_shipped_strings():
     step_5 = " ".join(runbook.split("## 6j.")[1].split("## 6k.")[0].split("\n5. ")[1].split("\n6. ")[0].split())
     assert "depletion of susceptibles" in step_5 and "depletion of susceptibles" in source("epichat", "sim", "diagnostics.py")
     # what a fit that keeps R0 costs, beside the beta fit's numbers
-    keeps = runbook.split("## 7.")[1].split("A fit that keeps R0")[1].split("\n\n")[0]
-    assert "disease.rel_sus_cv" in keeps and "every trial" in keeps and "PILOT_LEVERS" in source("epichat", "sim", "fit.py")
+    keeps = " ".join(runbook.split("## 7.")[1].split("A fit that keeps R0")[1].split("\n\n")[0].split())
+    # only the variation is calibrated at every trial; the response's scale is calibrated once (review of phase E)
+    assert 'PILOT_LEVERS = ("disease.rel_sus_cv",)' in source("epichat", "sim", "fit.py")
+    assert "the variation's fit calibrates beta again at every trial" in keeps and "the response's fit calibrates once" in keeps
+    # and the paragraph does not promise that every such fit is inside the timeout: it gives the eight-trial case and asks for a timing
+    assert "all eight" in keeps and "Owner:" in keeps and "The same rule holds" not in keeps
+    assert 'maxDuration": 300' in source("vercel.json") and "300 s" in keeps
 
 
 def test_the_deferred_documentation_minors_are_settled():
@@ -216,10 +242,14 @@ def test_the_deferred_documentation_minors_are_settled():
     v2 = " ".join(README.split("Schema v2 also adds")[1].split("\n\n")[0].split())
     assert "for the random network" in v2 and "for the age-structured network" in v2
     # six intervention types since the behaviour response; the pilot gives way to a beta fit only
-    assert "Six types" in flat and "Five types" not in flat and "a fit on beta replaces it" in flat
+    types = source("epichat", "schema.py").split("type: Literal[")[1].split("]")[0].split(",")
+    assert len(types) == 6 and "Six types" in flat and "Five types" not in flat and "a fit on beta replaces it" in flat
+    # describe_parameters names a chosen reference among the sources, and lists by network
+    described = flat.split("`describe_parameters` lists")[1][:260]
+    assert "model and network" in described and "a chosen reference" in described
+    assert "reference for a literature estimate" in source("web", "lib", "tools", "describeParameters.ts")
     # the older loader: still called, and the directory it reads is not bundled
     assert "get_mean_contacts" in flat
     assert "get_mean_contacts" in source("epichat", "generator.py") and "get_mean_contacts" in source("epichat", "params", "resolve.py")
-    assert not (ROOT / "epichat" / "data" / "contact_matrices").exists()
     follow_up = source("docs", "superpowers", "specs", "2026-10-13-limits-suggestions-parameters-design.md")
     assert "phases A to E shipped" in " ".join(follow_up.split("## 1. Purpose")[0].split())

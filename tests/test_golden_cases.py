@@ -61,8 +61,16 @@ def test_the_follow_up_cases_cover_the_fit_that_keeps_r0_and_the_offer_of_an_int
     assert offer["real_sim"] is True and offer["checks"]["config"] == {"disease": "influenza", "network_type": "hybrid"}
     assert any("what_if" in c for c in offer["checks"]["judge"]) and any("illustrative" in c for c in offer["checks"]["judge"])
     assert "warning" in offer["pending_note"]
+    # review of phase E: a judge line asks what the shipped prompt asks, in its words; not the fitted value, which the prompt
+    # does not ask the agent to state, and not a label the prompt asks for on a beta fit
+    prompt = (CASES_DIR.parents[2] / "web" / "lib" / "chat" / "prompt.ts").read_text(encoding="utf-8")
+    assert "was set so that" in prompt and any("was set so that" in c for c in known["checks"]["judge"])
+    assert not any("ended at" in c or "fitted in the limitations" in c for c in known["checks"]["judge"])
+    assert "20,000 agents" in known["pending_note"] and "no pilot" in known["pending_note"]
+    assert not any("the effect of an intervention" in c for c in offer["checks"]["judge"])
 
 
 def test_the_readme_counts_the_pending_cases():
     readme = (CASES_DIR.parent.parent / "README.md").read_text(encoding="utf-8")
-    assert "today the six\nsim-parameters cases" in readme.replace("\r\n", "\n")
+    count = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}[len(PENDING)]
+    assert f"today the {count} sim-parameters cases" in " ".join(readme.split())

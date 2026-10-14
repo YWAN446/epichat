@@ -93,7 +93,7 @@
   critical: false
   real_sim: true
   pending: api-harness
-  pending_note: "A web-agent rule (follow-up spec 6): when the user knows the attack rate and the R0 comes from the database, the fit moves the variation between people, not beta. Needs the deployed agent's configure_simulation with fit.lever and the service's fit. The target sits inside the lever's range: at the database's R0 of 3 on the random network a run infects 94% without variation, 66% at CV 1, 47% at CV 1.5 and 34% at the largest, CV 2 (20,000 agents, one seed, 2026-10-13); the harness author checks that again if the database's R0 changes."
+  pending_note: "A web-agent rule (follow-up spec 6): when the user knows the attack rate and the R0 comes from the database, the fit moves the variation between people, not beta. Needs the deployed agent's configure_simulation with fit.lever and the service's fit. The target sits inside the lever's range: at the database's R0 of 3 on the random network a run infects 94% without variation, 66% at CV 1, 47% at CV 1.5 and 34% at the largest, CV 2 (20,000 agents, one seed, 2026-10-13); the harness author checks that again if the database's R0 changes. The case runs 20,000 agents although fitted scenarios on the hybrid network stay at 10,000: the random network has no pilot, so a trial is one plain run and the eight-run search stays inside the service's timeout."
   turns:
     - "Model RSV in a city of 20,000 people for a year, with the database's R0."
     - "In the real outbreak 50% of the city was infected. Fit the model to that and run it."
@@ -105,8 +105,8 @@
     judge:
       - "Fits the variation between people (fit lever disease.rel_sus_cv), not beta"
       - "Says the R0 stays at the database's value (it is unchanged by the fit)"
-      - "Says the variation in susceptibility is an illustrative assumption, and labels the run as fitted in the limitations"
-      - "Reports the attack rate the fit reached (close to 50%), and the variation it ended at"
+      - "Says the variation between people is an illustrative assumption"
+      - "Says what the fit did in plain words: the variation between people was set so that about 50% are infected"
 
 - id: parameters-offer-intervention
   category: parameters
@@ -126,4 +126,4 @@
     judge:
       - "After reporting the run, offers at least one intervention from the run's what_if diagnostic (a school closure, distancing, masks or a behaviour response) as a next step, by the lever's label; a dated one names the day it starts"
       - "Says the effect sizes of the offered interventions are illustrative assumptions"
-      - "Does not state the effect of an intervention before it has been run"
+      - "Does not predict what an offered intervention would do to the attack rate or the peak before it has been run"

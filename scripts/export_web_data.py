@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from epichat.agent import _SYSTEM  # noqa: E402
-from epichat.disease_db import _range_of, _rich_param, load_db, parameter_summary  # noqa: E402
+from epichat.disease_db import _range_of, _rich_param, listed_estimates, load_db, parameter_summary  # noqa: E402
 from epichat.params import tables  # noqa: E402
 from epichat.params.indicators import VACCINE_INDICATORS  # noqa: E402
 from epichat.params.registry import export as export_registry  # noqa: E402
@@ -72,11 +72,7 @@ def references_payload() -> dict:
         for p in PARAMS:
             rich = _rich_param(entry, p) or {}
             summary = parameter_summary(entry, p) or {}
-            estimates = [
-                {k: est[k] for k in ESTIMATE_KEYS if est.get(k) not in (None, "", "N/A")}
-                for est in rich.get("estimates") or []
-                if est.get("title")
-            ]
+            estimates = [{k: est[k] for k in ESTIMATE_KEYS if est.get(k) not in (None, "", "N/A")} for est in listed_estimates(rich)]
             parameters[p] = {"source": summary.get("source") or None, "estimates": estimates}
         diseases[key] = {"display_name": entry.get("display_name"), "parameters": parameters}
     return {"diseases": diseases}

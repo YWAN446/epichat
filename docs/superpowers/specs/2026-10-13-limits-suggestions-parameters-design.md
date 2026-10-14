@@ -821,9 +821,9 @@ database migration.
   2D: spec section 13 of Part 2 (a closure at scale 0, a peak-day fit to day
   60), the count in `evals/README.md`, and in the README the connector
   sentence, the stray rule and the three wordings. As shipped: the review
-  list also names the entries that contradict themselves (an estimate
-  outside its own range, a consensus range none of its estimates is in),
-  which the review of phase D had found by hand; the known-attack-rate case
+  list also names the entries worth a second look (an estimate outside its
+  own range, a consensus range none of its estimates is in), which the
+  review of phase D had found by hand; the known-attack-rate case
   is RSV at 50%, because at measles' R0 the largest variation still leaves
   67% infected and a 60% target could only test the out-of-reach branch;
   the runbook's fit step of section 6j now says the R0 is not known, which

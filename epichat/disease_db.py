@@ -178,6 +178,15 @@ def _rich_param(entry: dict, param: str) -> dict | None:
     return (default.get("parameters") or {}).get(param)
 
 
+def listed_estimates(rich: dict | None) -> list[dict]:
+    """The estimates the app's reference list shows for a parameter, in its order: the ones with a title.
+
+    The export writes that list and the review list cites its numbers, so both read it here.
+    """
+    estimates = rich.get("estimates") if isinstance(rich, dict) else None
+    return [e for e in estimates or [] if isinstance(e, dict) and e.get("title")]
+
+
 def parameter_summary(entry: dict, param: str) -> dict | None:
     """Uncertainty-aware view of one parameter, for the agent's lookup tool.
 
