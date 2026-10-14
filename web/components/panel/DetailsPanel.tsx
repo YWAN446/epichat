@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Artifacts } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
+import { canUseReferences } from "@/lib/client/references";
 import type { ExportFormat, PanelSection } from "@/lib/enums";
 import { ActivitySection } from "./ActivitySection";
 import { DataSection } from "./DataSection";
@@ -69,7 +70,14 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
         <ScenarioSection config={artifacts.config} disease={artifacts.disease} />
       </Section>
       <Section id="panel-data" title="Data" count={artifacts.data.length} open={open.data} onToggle={toggle("data")}>
-        <DataSection data={artifacts.data} disease={artifacts.disease} onReferencesOpen={onReferencesOpen} onUseReference={onUseReference} busy={busy} />
+        <DataSection
+          data={artifacts.data}
+          disease={artifacts.disease}
+          onReferencesOpen={onReferencesOpen}
+          // the list on show is the last disease looked up; its values are this scenario's to apply only when that is the scenario's disease
+          onUseReference={canUseReferences(artifacts.disease?.canonical_name ?? null, artifacts.config?.config.disease ?? null) ? onUseReference : undefined}
+          busy={busy}
+        />
       </Section>
       <Section id="panel-parameters" title="Parameters" open={open.parameters} onToggle={toggle("parameters")}>
         <ParametersSection params={artifacts.params} sources={artifacts.sources} references={artifacts.references} configured={artifacts.config !== null} />

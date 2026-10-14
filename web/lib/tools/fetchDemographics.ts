@@ -5,7 +5,7 @@ import { countryDemographics, sharesFor } from "@/lib/data/countryDemographics";
 import { CONTACT_PAIRS, approxR0, recalibrateBeta, validateParams } from "@/lib/sim/params";
 import { pyRound } from "@/lib/sim/pyformat";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, paramWarnings, recordSources } from "./shared";
-import { scenarioReferences, scenarioSources } from "./sources";
+import { pruneReferences, scenarioReferences, scenarioSources } from "./sources";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 export const FetchDemographicsInput = z.strictObject({ country_iso3: z.string() });
@@ -101,6 +101,7 @@ export async function fetchDemographics(input: FetchDemographicsArgs, deps: Tool
     scenario.countryIso3 = iso3;
     const warnings = paramWarnings(scenario, params, deps.contextText);
     const citations = recordSources(scenario, fields);
+    pruneReferences(scenario);                                        // a fetch can change what a chosen reference stood on (the network, say)
     const approx_r0 = pyRound(approxR0(params), 2);
     return {
       content: JSON.stringify({ applied, approx_r0, warnings, citations }),

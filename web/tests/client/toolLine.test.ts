@@ -38,6 +38,14 @@ describe("tool lines", () => {
     const advanced = { ...CONFIG, applied: { "run.n_replicates": 5 } };
     expect(toolLine("configure_simulation", advanced, true).detail).toBe("applied: run.n_replicates: 5; approx_r0: 12; config: disease: measles, disease_type: sir, country: KEN; warnings: r0 high");
     expect(toolLine("configure_simulation", CONFIG, true).detail).not.toContain("[object Object]");
+    // review of phase D: a field that is an object (a chosen reference, a fit) or a list (interventions) is written out
+    const reference = { ...CONFIG, applied: { use_reference: { parameter: "r0", index: 2, value: 15, title: "A review" } } };
+    expect(toolLine("configure_simulation", reference, true).detail).toContain("applied: use_reference: parameter r0, index 2, value 15");
+    const nested = { ...CONFIG, applied: { fit: { target: "attack_rate", value: 0.3 }, interventions: [{ type: "seasonality", scale: 0.2 }, { type: "vaccine" }] } };
+    const line = toolLine("configure_simulation", nested, true).detail;
+    expect(line).toContain("fit: target attack_rate, value 0.3");
+    expect(line).toContain("interventions: 2 items");
+    for (const payload of [reference, nested]) expect(toolLine("configure_simulation", payload, true).detail).not.toContain("[object Object]");
   });
 
   it("cuts a long line as Python does (157 characters and an ellipsis) and marks an error", () => {

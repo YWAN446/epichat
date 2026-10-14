@@ -7,12 +7,12 @@ import { changedPaths, setPath, type PathChange } from "@/lib/sim/paths";
 import { fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { referenceHref } from "@/lib/client/references";
 import { applyAdvanced } from "./advanced";
-import { chosenReference, type ChosenReference } from "./chosenReference";
+import { REFERENCE_TARGETS, chosenReference, type ChosenReference } from "./chosenReference";
 import { configView } from "./configView";
 import { durationFor, type DurationName } from "./durations";
 import { matchedLevers } from "./options";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
-import { near, scenarioReferences, scenarioSources } from "./sources";
+import { near, pruneReferences, referenceNotes, scenarioReferences, scenarioSources } from "./sources";
 import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
 
 const opt = <T extends z.ZodTypeAny>(t: T) => t.nullish();
@@ -41,7 +41,7 @@ export const ConfigureSimulationInput = z.strictObject({
   interventions: opt(z.array(z.record(z.string(), z.unknown()))),
   remove_interventions: opt(z.array(z.string())),
   fit: z.record(z.string(), z.unknown()).nullable().optional(),
-  use_reference: opt(z.strictObject({ parameter: z.string(), index: z.number() })),
+  use_reference: opt(z.strictObject({ parameter: z.string(), index: z.number(), disease: opt(z.string()), value: opt(z.number()) })),
   advanced: opt(z.record(z.string(), z.unknown())),
   start_new_scenario: opt(z.boolean()),
 });
@@ -96,7 +96,19 @@ function keepFittedValue(params: SimParams, previous: PreviousRun): { params: Si
   };
 }
 
+/**
+ * A failed call does not rename the scenario's disease (review of the follow-up's phase D): the disease is written before the
+ * rest is validated, and a scenario left with another disease's name would read that disease's reference list on its own
+ * parameters. A call that starts a new scenario keeps today's behaviour: the scenario is new whatever follows.
+ */
 export async function configureSimulation(input: ConfigureSimulationArgs, deps: ToolDeps): Promise<ToolOutcome> {
+  const diseaseBefore = deps.scenario.disease;
+  const outcome = await configure(input, deps);
+  if (outcome.isError && input.start_new_scenario !== true) deps.scenario.disease = diseaseBefore;
+  return outcome;
+}
+
+async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promise<ToolOutcome> {
   if (given(input.seed_fraction) && given(input.seed_count)) return errorOutcome("CONFIG ERROR: seed_fraction and seed_count are mutually exclusive; pass one of them.");
   const newScenario = input.start_new_scenario === true;
   if (newScenario) {
@@ -172,9 +184,15 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   // reference data itself; a refusal says what to do and writes nothing.
   let chosen: ChosenReference | null = null;
   if (given(input.use_reference)) {
-    const result = chosenReference(input.use_reference, scenario.disease, String(disease.model ?? "sir"), String(network.network_type ?? "random"));
+    // the model and the network the same call sets through advanced count; the disease may come from the conversation, as it does for the other tools
+    const patch = (given(input.advanced) ? input.advanced : {}) as Record<string, unknown>;
+    const result = chosenReference(input.use_reference, scenario.disease ?? detectDisease(deps.contextText || ""),
+      String(patch["disease.model"] ?? disease.model ?? "sir"), String(patch["network.network_type"] ?? network.network_type ?? "random"));
     if (typeof result === "string") return errorOutcome(`CONFIG ERROR: ${result}.`);
-    if (result.parameter === "r0" && given(input.r0)) return errorOutcome("CONFIG ERROR: pass one of r0 and use_reference for r0, not both.");
+    // one value from one place: a field or a patch for the same value beside the reference would be applied or recorded wrongly
+    const target = REFERENCE_TARGETS[result.parameter];
+    const beside = target.field !== null && given((input as Record<string, unknown>)[target.field]) ? target.field : Object.hasOwn(patch, target.path) ? `advanced["${target.path}"]` : null;
+    if (beside) return errorOutcome(`CONFIG ERROR: pass one of ${beside} and use_reference for ${result.parameter}, not both.`);
     chosen = result;
     if (chosen.parameter === "incubation_days") disease.dur_exp = durationFor(disease.dur_exp as Duration | null | undefined, chosen.value, "dur_exp", scenario.disease);
     else if (chosen.parameter === "infectious_days") disease.dur_inf = durationFor(disease.dur_inf as Duration | null | undefined, chosen.value, "dur_inf", scenario.disease);
@@ -346,6 +364,16 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   if (r0Target !== undefined && Math.abs(approx_r0 - r0Target) > R0_CLAMP_TOLERANCE * r0Target) {
     warnings.push(`beta was clamped at ${params.disease.beta}, so the run's R0 is ${approx_r0} rather than the requested ${r0Target}; more contacts or a longer infectious period would reach it.`);
   }
+  if (chosen && chosen.parameter !== "r0" && before) {
+    // Review of phase D: a reference for the infectious period, the contacts or the asymptomatic share keeps beta, as a typed value
+    // does, so R0 moves; one press must not do that silently, least of all to an R0 the user chose from the same list.
+    const r0Before = approxR0(before);
+    if (Math.abs(approxR0(params) - r0Before) > R0_CLAMP_TOLERANCE * r0Before) {
+      const earlier = scenario.dataSources.find((f) => f.field === "ref:r0");
+      const lost = earlier && !Object.hasOwn(referenceNotes(params, scenario), "disease.beta") ? ` The R0 reference chosen earlier (${fmtValue(earlier.value)}) no longer stands.` : "";
+      warnings.push(`Applying this reference kept beta, so R0 moved from ${pyRound(r0Before, 2)} to ${approx_r0}.${lost} Pass r0, or choose an R0 reference again, to set it.`);
+    }
+  }
   if (chosen) {
     // Follow-up spec 9.4: the choice is a data source, replacing an earlier choice for the same parameter; its value is in the
     // unit it was applied in, so the tag can tell whether the value still stands.
@@ -355,6 +383,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     scenario.dataSources = scenario.dataSources.filter((f) => f.field !== field);
     scenario.dataSources.push({ field, value: chosen.value, citation: `${e.title}${e.year !== undefined ? ` (${e.year})` : ""}.${link ? ` ${link}` : ""}`, description: "Chosen from the literature table", alternatives: [] });
   }
+  pruneReferences(scenario);                                          // a reference is cited only while its value stands
   const changed: PathChange[] = before ? changedPaths(before as unknown as Obj, params as unknown as Obj) : [];
   if (scenario.hasRun && changed.length > 0) {
     // Spec 11: a lever is taken when the applied patch carries every one of its paths with its value.

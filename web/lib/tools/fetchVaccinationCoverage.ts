@@ -3,7 +3,7 @@ import indicators from "@/data/vaccine_indicators.json";
 import { detectDisease, lookup } from "@/lib/disease/db";
 import { getVaccine, validateParams } from "@/lib/sim/params";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources, upsertIntervention } from "./shared";
-import { scenarioReferences, scenarioSources } from "./sources";
+import { pruneReferences, scenarioReferences, scenarioSources } from "./sources";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 export const FetchVaccinationCoverageInput = z.strictObject({ country_iso3: z.string(), disease: z.string() });
@@ -46,6 +46,7 @@ export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageAr
       applied.applied_vaccine_coverage = coverage;
     }
     const citations = recordSources(scenario, fields);
+    pruneReferences(scenario);                                        // a fetch can change what a chosen reference stood on (the network, say)
     return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "who_gho", iso3, applied, citations, params: scenario.params, sources: scenarioSources(scenario, deps.contextText), ...(scenarioReferences(scenario) ? { references: scenarioReferences(scenario) } : {}) } };
   } catch (error) {
     return errorOutcome(`FETCH ERROR: ${errorMessage(error)}`);

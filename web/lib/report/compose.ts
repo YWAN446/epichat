@@ -144,7 +144,9 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
         return [f.field.startsWith("ref:") ? "Literature" : sourceOf(f.citation), d.label, d.value, f.citation];
       }),
     });
-  } else {
+  }
+  // a chosen literature reference is a row of that table, and still no real data
+  if (!scenario.dataSources.some((f) => !f.field.startsWith("ref:"))) {
     blocks.push({ kind: "paragraph", text: "No real data was fetched; every value is a literature value or an assumption." });
   }
   return blocks;

@@ -656,10 +656,31 @@ As shipped (phase D).
   units is `web/lib/tools/chosenReference.ts`, shared by the tool and the
   tags. The recorded value is in the unit it was applied in (a fraction, days,
   a whole number of contacts), so the tag can tell whether it still stands.
-- The message is "Use reference 3 for R₀: 14 (title, 2017)." with the
-  estimate's one value. The paper's title is put on one line, stripped of
-  control characters and cut to 80 characters, and the prompt tells the agent
-  to treat it as a label.
+- The message is "Use Measles reference 3 for R₀: 14 (title, 2017)." with
+  the disease whose list it is and the estimate's one value. The paper's
+  title is put on one line, stripped of control characters and cut to 80
+  characters, and the prompt tells the agent to treat it as a label.
+- `use_reference` also takes the disease and the value of the message, as
+  checks. The panel lists the last disease looked up, which need not be the
+  scenario's: the review applied a measles estimate from a press on the
+  mumps list. The tool refuses a number from another disease's list, and a
+  value the data does not have at that number (a list cached before a data
+  update). The buttons show only when the list is the scenario's disease.
+  The value applied is always the data's own.
+- A reference for the infectious period, the contacts or the asymptomatic
+  share keeps beta, as a typed value does, so R0 moves (measles at 9
+  contacts a day: 15 to 34). The tool's result says so, with the old and the
+  new R0, and the agent offers to set R0 again. Holding R0 instead would
+  change Part 1's rule and is left to the owner.
+- A chosen reference stays among the data sources only while its value
+  stands. One the user overrode, or whose parameter the network no longer
+  has, is dropped, so the run card and the report do not cite it for a
+  scenario that runs on another value. It is not fetched data: it does not
+  move the stage to "ground", and the report keeps its sentence that no real
+  data was fetched.
+- A field or a patch for the same value in the same call is refused, and
+  the model and the network the same call sets through `advanced` count. A
+  failed call no longer renames the scenario's disease.
 - Contacts per day can be applied on the random network only; the other
   networks take their contacts from a matrix or from layers, and the tool
   says so.

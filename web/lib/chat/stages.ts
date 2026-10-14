@@ -1,5 +1,6 @@
 /** Parent spec 10.1: the stage is derived from the scenario, never declared by the model. */
 import { STAGES, type Stage } from "@/lib/enums";
+import { isChosenReference } from "@/lib/tools/sources";
 import type { Scenario } from "@/lib/tools/types";
 
 export const STAGE_INDEX = Object.fromEntries(STAGES.map((s, i) => [s, i])) as Record<Stage, number>;
@@ -8,7 +9,8 @@ export function deriveStage(scenario: Pick<Scenario, "params" | "dataSources" | 
   if (running) return "run";
   if (scenario.reportCurrent) return "report";
   if (scenario.hasRun) return "interpret";
-  if (scenario.dataSources.length > 0) return "ground";
+  // a chosen literature reference is a parameter's source, not real data applied (review of the follow-up's phase D)
+  if (scenario.dataSources.some((f) => !isChosenReference(f.field))) return "ground";
   if (scenario.params) return "configure";
   return "understand";
 }

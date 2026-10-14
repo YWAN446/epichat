@@ -23,7 +23,7 @@ function hostOf(url: string): string {
 }
 
 /** The loaded references of one parameter: the consensus source, then the numbered estimates, each with a "Use this value" button when it is one number and something can be applied. */
-export function ReferenceItems({ param, parameter, unit, onUse, busy }: { param: ParameterReferences; parameter: string; unit?: string } & Use) {
+export function ReferenceItems({ param, parameter, unit, disease, onUse, busy }: { param: ParameterReferences; parameter: string; unit?: string; /** The display name of the disease whose list this is. */ disease?: string } & Use) {
   return (
     <div className="space-y-1.5 text-xs">
       {param.source && (
@@ -51,7 +51,7 @@ export function ReferenceItems({ param, parameter, unit, onUse, busy }: { param:
                 {detail && <span className="block text-ink-faint">{detail}</span>}
                 {ref.notes && <span className="block text-ink-faint">{ref.notes}</span>}
                 {onUse && referenceUsable(ref) && (
-                  <button type="button" disabled={busy} onClick={() => onUse(referenceMessage(parameter, index + 1, ref, unit))} className={USE}>
+                  <button type="button" disabled={busy} onClick={() => onUse(referenceMessage(parameter, index + 1, ref, unit, disease))} className={USE}>
                     Use this value
                   </button>
                 )}
@@ -83,5 +83,5 @@ export function ReferenceList({ diseaseKey, parameter, unit, onUse, busy }: Prop
   const param = refs.parameters[parameter];
   if (!param || (param.estimates.length === 0 && !param.source)) return <p className="text-ink-faint">No references for this parameter.</p>;
 
-  return <ReferenceItems param={param} parameter={parameter} unit={unit} onUse={onUse} busy={busy} />;
+  return <ReferenceItems param={param} parameter={parameter} unit={unit} disease={refs.display_name} onUse={onUse} busy={busy} />;
 }

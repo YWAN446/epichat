@@ -42,3 +42,13 @@ describe("stages", () => {
     expect(s.stageReached).toBe("report");
   });
 });
+
+describe("a chosen reference is not fetched data (review of phase D)", () => {
+  it("leaves the stage at configure", () => {
+    const reference = { field: "ref:r0", value: 14, citation: "A review (2017).", description: "Chosen from the literature table", alternatives: [] };
+    const fetched = { field: "birth_rate", value: 28.1, citation: "UN WPP", description: "", alternatives: [] };
+    const base = { params: {} as never, hasRun: false, reportCurrent: false };
+    expect(deriveStage({ ...base, dataSources: [reference] })).toBe("configure");
+    expect(deriveStage({ ...base, dataSources: [reference, fetched] })).toBe("ground");
+  });
+});

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import refs from "@/data/disease_refs.json";
-import { estimateAt } from "@/lib/disease/refs";
+import { referenceMessage, referenceUsable } from "@/lib/client/references";
+import { estimateAt, references } from "@/lib/disease/refs";
+import { chosenReference, referenceUnit, toSimulationUnit } from "@/lib/tools/chosenReference";
 import { approxR0 } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
 import { fetchDemographics } from "@/lib/tools/fetchDemographics";
@@ -167,5 +169,138 @@ describe("a chosen reference is the value's source while the value stands (follo
     await fetchDemographics({ country_iso3: "KEN" } as never, deps);
     const out = (await run(deps, { use_reference: { parameter: "fatality_rate", index: 1 } })).payload as Tagged;
     expect(out.sources).toMatchObject({ "demographics.birth_rate": "fetch", "disease.p_death": "reference" });
+  });
+});
+
+describe("the reference belongs to the list the participant saw (review of phase D)", () => {
+  it("refuses a number from another disease's list, and a value the list does not have at that number", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles" });
+    const before = structuredClone(deps.scenario.params);
+    // the panel can show the list of the last disease looked up while the scenario is another one
+    const mumps = await run(deps, { use_reference: { disease: "mumps", parameter: "r0", index: 2 } });
+    expect(mumps.isError).toBe(true);
+    expect(mumps.content).toContain("mumps");
+    expect(mumps.content).toContain("measles");
+    const stale = await run(deps, { use_reference: { disease: "measles", parameter: "r0", index: 2, value: 999 } });
+    expect(stale.isError).toBe(true);
+    expect(stale.content).toContain("does not match");
+    expect(deps.scenario.params).toEqual(before);
+    expect(chosen(deps)).toEqual([]);
+    const second = estimates("measles", "r0")[1];
+    const ok = await run(deps, { use_reference: { disease: "Measles", parameter: "r0", index: 2, value: second.value } });
+    expect(ok.isError, ok.content).toBeFalsy();
+    const fatality = estimates("measles", "fatality_rate")[0];
+    const percent = await run(deps, { use_reference: { disease: "measles", parameter: "fatality_rate", index: 1, value: fatality.value } });   // the value as the list shows it, a percentage
+    expect(percent.isError, percent.content).toBeFalsy();
+    expect(deps.scenario.params!.disease.p_death).toBeCloseTo(fatality.value! / 100, 9);
+  });
+
+  it("finds the disease in the conversation when the scenario has none, and a failed call does not rename the scenario's disease", async () => {
+    const context = makeDeps({ contextText: "an outbreak of measles in a city" });
+    await run(context, { n_agents: 5000 });
+    expect(context.scenario.disease).toBeNull();
+    const out = await run(context, { use_reference: { parameter: "r0", index: 2 } });
+    expect(out.isError, out.content).toBeFalsy();
+    const deps = makeDeps();
+    await run(deps, { disease: "measles" });
+    const failed = await run(deps, { disease: "mumps", use_reference: { parameter: "r0", index: 99 } });
+    expect(failed.isError).toBe(true);
+    expect(deps.scenario.disease).toBe("measles");                                            // or the next reference would read the mumps list on measles parameters
+  });
+
+  it("refuses a field or a patch for the same value in the same call, and reads the model and network the call sets", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles" });
+    const before = structuredClone(deps.scenario.params);
+    for (const [input, word] of [
+      [{ dur_inf_days: 5, use_reference: { parameter: "infectious_days", index: 1 } }, "dur_inf_days"],
+      [{ p_death: 0.2, use_reference: { parameter: "fatality_rate", index: 1 } }, "p_death"],
+      [{ advanced: { "disease.p_death": 0.2 }, use_reference: { parameter: "fatality_rate", index: 1 } }, "disease.p_death"],
+      [{ advanced: { "network.network_type": "hybrid" }, use_reference: { parameter: "average_contacts_daily", index: 1 } }, "random network"],
+    ] as [Record<string, unknown>, string][]) {
+      const out = await run(deps, input);
+      expect(out.isError, JSON.stringify(input)).toBe(true);
+      expect(out.content, JSON.stringify(input)).toContain(word);
+    }
+    expect(deps.scenario.params).toEqual(before);
+    const seir = await run(deps, { advanced: { "disease.model": "seir" }, use_reference: { parameter: "incubation_days", index: 1 } });   // the model the same call sets has a latent period
+    expect(seir.isError, seir.content).toBeFalsy();
+    expect(deps.scenario.params!.disease.dur_exp!.mean_days).toBe(estimates("measles", "incubation_days")[0].value);
+  });
+});
+
+describe("R0 after a reference that is not an R0 (review of phase D)", () => {
+  it("says that R0 moved, and forgets an R0 reference that no longer stands", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", dur_inf_days: 6 });                                 // four contacts over six days can carry an R0 of 15
+    expect((await run(deps, { use_reference: { parameter: "r0", index: 2 } })).isError).toBeFalsy();
+    expect(chosen(deps).map((f) => f.field)).toEqual(["ref:r0"]);
+    const out = JSON.parse((await run(deps, { use_reference: { parameter: "infectious_days", index: 1 } })).content) as { warnings: string[]; approx_r0: number };
+    const warning = out.warnings.find((w) => w.includes("R0 moved"))!;
+    expect(warning).toContain("15");                                                          // from the R0 the reference had set
+    expect(warning).toContain(String(out.approx_r0));
+    expect(warning).toContain("no longer stands");
+    expect(chosen(deps).map((f) => f.field)).toEqual(["ref:infectious_days"]);                // the R0 reference is not cited for a scenario that runs at another R0
+    const quiet = JSON.parse((await run(deps, { use_reference: { parameter: "fatality_rate", index: 1 } })).content) as { warnings: string[] };
+    expect(quiet.warnings.some((w) => w.includes("R0 moved"))).toBe(false);                   // a fatality ratio does not move R0
+  });
+
+  it("forgets a reference the user overrides or the network no longer has", async () => {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles" });
+    await run(deps, { use_reference: { parameter: "r0", index: 2 } });
+    await run(deps, { use_reference: { parameter: "average_contacts_daily", index: 2 } });
+    await run(deps, { use_reference: { parameter: "r0", index: 2 } });
+    expect(chosen(deps).map((f) => f.field).sort()).toEqual(["ref:average_contacts_daily", "ref:r0"]);
+    await run(deps, { network_type: "hybrid" });                                             // contacts per day is not a parameter of the hybrid network; R0 is held
+    expect(chosen(deps).map((f) => f.field)).toEqual(["ref:r0"]);
+    await run(deps, { r0: 9 });
+    expect(chosen(deps)).toEqual([]);
+  });
+});
+
+describe("units, on every estimate of the database (review of phase D)", () => {
+  it("converts weeks, months and years, a share in either unit, and a contact count that is not whole, without float noise", () => {
+    expect(toSimulationUnit("immunity_duration", 2, "weeks")).toBe(14);
+    expect(toSimulationUnit("immunity_duration", 10, "months")).toBe(304.4);
+    expect(toSimulationUnit("immunity_duration", 20, "years")).toBe(7305);
+    expect(toSimulationUnit("immunity_duration", 7300, undefined)).toBe(7300);
+    expect(toSimulationUnit("immunity_duration", 3, "fortnights")).toBeNull();                // a unit the table does not know is refused, not guessed
+    expect(toSimulationUnit("fatality_rate", 2.21, "percentage")).toBe(0.0221);
+    expect(toSimulationUnit("asymptomatic_fraction", 0.75, "fraction")).toBe(0.75);
+    expect(toSimulationUnit("asymptomatic_fraction", 44.1, "percentage")).toBe(0.441);
+    expect(toSimulationUnit("average_contacts_daily", 16.5, "contacts/day")).toBe(17);
+    expect(toSimulationUnit("average_contacts_daily", 3.4, "contacts/day")).toBe(3);
+    expect(toSimulationUnit("r0", 14, "dimensionless")).toBe(14);
+  });
+
+  it("gives the tool the estimate the list numbers, for every disease, parameter and estimate", () => {
+    const MODEL: Record<string, string> = { incubation_days: "seir", asymptomatic_fraction: "seiar", immunity_duration: "sirs" };
+    let usable = 0;
+    for (const [disease, entry] of Object.entries(ALL)) {
+      const name = references(disease)!.display_name;
+      for (const [parameter, list] of Object.entries(entry.parameters)) {
+        list.estimates.forEach((estimate, i) => {
+          const index = i + 1;
+          expect(estimateAt(disease, parameter, index)).toBe(references(disease)!.parameters[parameter].estimates[i]);
+          const result = chosenReference({ disease, parameter, index, value: estimate.value }, disease, MODEL[parameter] ?? "sir", "random");
+          if (!referenceUsable(estimate as never)) {
+            expect(typeof result, `${disease} ${parameter} ${index}`).toBe("string");
+            return;
+          }
+          usable += 1;
+          expect(typeof result, `${disease} ${parameter} ${index}: ${String(result)}`).toBe("object");
+          if (typeof result === "string") return;
+          expect(result.estimate).toBe(estimateAt(disease, parameter, index));
+          expect(Number.isFinite(result.value) && result.value >= 0, `${disease} ${parameter} ${index}`).toBe(true);
+          expect(result.value, `${disease} ${parameter} ${index}: float noise`).toBe(Number(result.value.toPrecision(12)));
+          const message = referenceMessage(parameter, index, estimate as never, referenceUnit(disease, parameter), name);
+          expect(message.startsWith(`Use ${name} reference ${index} for `), message).toBe(true);
+          expect(message.length).toBeLessThanOrEqual(240);
+        });
+      }
+    }
+    expect(usable).toBeGreaterThan(150);
   });
 });

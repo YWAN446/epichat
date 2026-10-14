@@ -206,3 +206,15 @@ describe("a chosen reference in the report (follow-up spec 9.4)", () => {
     expect(table.rows.filter((row) => row[0] === "Literature")).toHaveLength(1);
   });
 });
+
+describe("a chosen reference alone is not real data (review of phase D)", () => {
+  it("keeps the sentence that no real data was fetched beside the literature row", () => {
+    const citation = "A review (2017). https://example.org/paper";
+    const scenario = { ...FIXTURE.scenario, dataSources: [{ field: "ref:r0", value: 14, citation, description: "Chosen from the literature table", alternatives: [] }] };
+    const blocks = composeReport({ ...FIXTURE, scenario }, NOW).sections.flatMap((section) => section.blocks);
+    const table = blocks.find((b) => b.kind === "table" && b.caption === "Data sources");
+    if (!table || table.kind !== "table") throw new Error("table");
+    expect(table.rows).toEqual([["Literature", "R₀ (literature)", "14", citation]]);
+    expect(blocks).toContainEqual({ kind: "paragraph", text: "No real data was fetched; every value is a literature value or an assumption." });
+  });
+});

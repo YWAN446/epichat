@@ -65,7 +65,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
         use_reference: {
           type: ["object", "null"],
           description: "Apply one literature estimate from the Data section's reference list: {parameter, index}, the parameter's database name (r0, incubation_days, infectious_days, fatality_rate, average_contacts_daily, immunity_duration, asymptomatic_fraction) and the number shown in the list. The tool reads the value and the citation from the reference data itself, converts the unit, and records the reference as the value's source; a CONFIG ERROR says what to change first.",
-          properties: { parameter: { type: "string" }, index: { type: "integer" } },
+          properties: { parameter: { type: "string" }, index: { type: "integer" }, disease: { type: ["string", "null"], description: "The disease whose list the number came from, as a check: the tool refuses a number from another disease's list." }, value: { type: ["number", "null"], description: "The value that list shows at that number, as a check only; the tool applies the data's own value." } },
           required: ["parameter", "index"],
           additionalProperties: false,
         },

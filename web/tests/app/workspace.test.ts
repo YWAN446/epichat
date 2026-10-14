@@ -23,7 +23,8 @@ describe("the reply in the middle column", () => {
 
   it("lets the participant apply a literature estimate from the reference list, not on the share page (follow-up spec 9.2)", () => {
     const list = read("components/panel/ReferenceList.tsx");
-    for (const piece of ["Use this value", "referenceUsable(", "referenceMessage(parameter, index + 1, ref, unit)", "disabled={busy}"]) expect(list).toContain(piece);
+    for (const piece of ["Use this value", "referenceUsable(", "referenceMessage(parameter, index + 1, ref, unit, disease)", "disabled={busy}"]) expect(list).toContain(piece);
+    expect(read("components/panel/DetailsPanel.tsx")).toContain("canUseReferences(");
     for (const file of ["components/panel/LiteratureTable.tsx", "components/panel/DataSection.tsx", "components/panel/DetailsPanel.tsx"]) expect(read(file)).toContain("onUseReference");
     const chat = read("components/Chat.tsx");
     for (const piece of ['send(message, "reference")', "busy={live !== null}"]) expect(chat).toContain(piece);

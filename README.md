@@ -246,7 +246,9 @@ registry, schema v2, the exact R0, diagnostics and options) and
   tool reads the value and the citation from the reference data itself
   (`web/lib/tools/chosenReference.ts`), so neither can be mistyped. It converts
   the unit, refuses what the model or the registry cannot take with what to
-  do, and records the choice as the data source `ref:<parameter>`. The value
+  do, and records the choice as the data source `ref:<parameter>` for as long
+  as the value stands. The message names the disease and the value as a
+  check, so a number from another disease's list is refused. The value
   carries the tag "reference" with the paper's title for as long as it
   stands, and the report lists it among its data sources as literature.
 - **The review list.** `scripts/review_requests.py` renders

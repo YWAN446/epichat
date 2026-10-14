@@ -8,7 +8,7 @@ import { detectDisease, lookup, type DiseaseEntry } from "@/lib/disease/db";
 import { countryDemographics } from "@/lib/data/countryDemographics";
 import { CONTACT_PAIRS, DEFAULT_BETA, approxR0, type SimParams } from "@/lib/sim/params";
 import { flattenParams } from "@/lib/sim/paths";
-import { PARAM_REGISTRY } from "@/lib/sim/registry";
+import { PARAM_REGISTRY, appliesOn, appliesTo, specFor } from "@/lib/sim/registry";
 import { REFERENCE_TARGETS } from "./chosenReference";
 import { illustrativeSd } from "./durations";
 import type { Scenario } from "./types";
@@ -89,10 +89,31 @@ export function referenceNotes(p: SimParams, scenario: Scenario): Record<string,
     const name = source.field.slice(4);
     if (!Object.hasOwn(REFERENCE_TARGETS, name)) continue;
     const path = REFERENCE_TARGETS[name as keyof typeof REFERENCE_TARGETS].path;
-    const stands = name === "r0" ? Math.abs(approxR0(p) - source.value) <= R0_TOLERANCE * source.value : near(flat[path], source.value);
+    const spec = specFor(path);
+    // it stands while the value is still the recorded one and the path is still a parameter of the scenario's model and network
+    const applies = spec !== null && appliesTo(spec, p.disease.model) && appliesOn(spec, p.network.network_type);
+    const stands = applies && (name === "r0" ? Math.abs(approxR0(p) - source.value) <= R0_TOLERANCE * source.value : near(flat[path], source.value));
     if (stands) notes[path] = source.citation.replace(/\.( https?:\/\/\S+)?$/, "");
   }
   return notes;
+}
+
+/** A data source that is a chosen literature reference, not fetched data: it does not ground a scenario in real data. */
+export const isChosenReference = (field: string): boolean => field.startsWith("ref:");
+
+/**
+ * Review of the follow-up's phase D: a chosen reference stays among the data sources only while its value stands. One the user
+ * overrode, or whose parameter the network no longer has, would otherwise still be cited by the run card and the report for a
+ * scenario that runs on another value.
+ */
+export function pruneReferences(scenario: Scenario): void {
+  if (!scenario.params || !scenario.dataSources.some((f) => isChosenReference(f.field))) return;
+  const standing = new Set(Object.keys(referenceNotes(scenario.params, scenario)));
+  scenario.dataSources = scenario.dataSources.filter((f) => {
+    if (!isChosenReference(f.field)) return true;
+    const name = f.field.slice(4);
+    return Object.hasOwn(REFERENCE_TARGETS, name) && standing.has(REFERENCE_TARGETS[name as keyof typeof REFERENCE_TARGETS].path);
+  });
 }
 
 /** One source per set path of the scenario's parameters. */

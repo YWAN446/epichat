@@ -99,6 +99,16 @@ export function commaInt(n: number): string {
   return (n < 0 ? "-" : "") + s;
 }
 
+/**
+ * A value inside a formatted object, on one level: an object's first three fields, a list's length. Python prints a dict or a
+ * list there; String() would print "[object Object]" (a chosen reference, a fit, the interventions).
+ */
+function brief(v: unknown): string {
+  if (typeof v !== "object" || v === null) return String(v);
+  if (Array.isArray(v)) return `${v.length} ${v.length === 1 ? "item" : "items"}`;
+  return Object.entries(v as Record<string, unknown>).slice(0, 3).map(([k, x]) => `${k} ${typeof x === "object" && x !== null ? "…" : String(x)}`).join(", ");
+}
+
 /** epichat.chat_controller._fmt_value, with JavaScript's one number type: integers format as Python ints. */
 export function fmtValue(v: unknown): string {
   if (typeof v === "boolean") return v ? "True" : "False";
@@ -115,8 +125,8 @@ export function fmtValue(v: unknown): string {
   if (typeof v === "object" && !Array.isArray(v)) {
     return Object.entries(v as Record<string, unknown>)
       .slice(0, 3)
-      .map(([k, vv]) => `${k}: ${String(vv)}`)
+      .map(([k, vv]) => `${k}: ${brief(vv)}`)
       .join(", ");
   }
-  return String(v);
+  return Array.isArray(v) ? v.map(brief).join(",") : String(v);
 }

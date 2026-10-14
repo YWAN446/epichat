@@ -58,7 +58,7 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT).toContain("every parameter of the current model and contact network");
     expect(SYSTEM_PROMPT).toContain("change network.network_type first");
     // follow-up spec 9.2 and 9.3: a chosen reference goes through the tool, which reads the value itself
-    for (const phrase of ['begins "Use reference', "use_reference {parameter", "never retype the value", "what the estimate measured", "a chosen literature reference"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    for (const phrase of ['reference N for <parameter>', "use_reference {disease", "as a check", "what the estimate measured", "a chosen literature reference", "R0 moved"]) expect(SYSTEM_PROMPT).toContain(phrase);
     // review of phase B: a slot for the other info levers, the fitted baseline, and only the dated entries start on the anchor day
     for (const phrase of ["give one of those replies to its first lever", "ends the fit and keeps the fitted value", "the dated ones start the day 1%"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).not.toContain("offers the hybrid network as that structure");

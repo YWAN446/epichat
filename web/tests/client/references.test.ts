@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearReferencesCache, loadReferences, referenceButtonLabel, referenceHref, referenceMessage, referenceMeta, referenceUsable, referenceValue, type Reference } from "@/lib/client/references";
+import { canUseReferences, clearReferencesCache, loadReferences, referenceButtonLabel, referenceHref, referenceMessage, referenceMeta, referenceUsable, referenceValue, type Reference } from "@/lib/client/references";
 
 const BODY = { display_name: "Measles", parameters: { r0: { source: "https://pubmed.ncbi.nlm.nih.gov/28757186/", estimates: [{ title: "A review", value: 15 }] } } };
 
@@ -90,5 +90,19 @@ describe("the message a Use this value button sends (follow-up spec 9.2)", () =>
     expect(referenceUsable({ title: "t", range: [1, 2] })).toBe(false);
     expect(referenceUsable({ title: "t", special_value: "lifelong" })).toBe(false);
     expect(referenceUsable({ title: "t", value: 2, special_value: "lifelong" })).toBe(false);
+  });
+});
+
+describe("the message names the disease whose list it came from (review of phase D)", () => {
+  it("puts the disease before the number", () => {
+    expect(referenceMessage("r0", 3, { title: "A review", value: 14, year: 2017 }, undefined, "Measles")).toBe("Use Measles reference 3 for R₀: 14 (A review, 2017).");
+    expect(referenceMessage("r0", 3, { title: "A review", value: 14 })).toBe("Use reference 3 for R₀: 14 (A review).");
+  });
+
+  it("offers the buttons only when the list is the scenario's disease", () => {
+    expect(canUseReferences("measles", "measles")).toBe(true);
+    expect(canUseReferences("mumps", "measles")).toBe(false);                                 // the list of the last disease looked up, on another disease's scenario
+    expect(canUseReferences("measles", null)).toBe(false);                                   // no scenario yet
+    expect(canUseReferences(null, "measles")).toBe(false);
   });
 });

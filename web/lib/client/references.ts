@@ -83,14 +83,20 @@ const TITLE_MAX = 80;
 const MESSAGE_MAX = 240;
 
 /**
- * The message a "Use this value" button sends in the participant's name: "Use reference 3 for R₀: 14 (title, 2017)." The number
+ * The message a "Use this value" button sends in the participant's name: "Use Measles reference 3 for R₀: 14 (title, 2017)." The number
  * is the one the list shows; the agent passes it to configure_simulation, which reads the value itself. The title is the paper's
  * own text, so it is put on one line, stripped of control characters and cut short before it goes into a message.
  */
-export function referenceMessage(parameter: string, index: number, ref: Reference, unit?: string): string {
+export function referenceMessage(parameter: string, index: number, ref: Reference, unit?: string, disease?: string): string {
   const title = ref.title.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
   const short = title.length > TITLE_MAX ? `${title.slice(0, TITLE_MAX - 1).trimEnd()}…` : title;
   const paper = ref.year !== undefined ? `${short}, ${ref.year}` : short;
   const value = typeof ref.value === "number" ? formatQuantity(ref.value, unit) : "";
-  return `Use reference ${index} for ${parameterLabel(parameter)}: ${value} (${paper}).`.slice(0, MESSAGE_MAX);
+  // the disease whose list this is: the panel lists the last disease looked up, which need not be the scenario's
+  return `Use ${disease ? `${disease} ` : ""}reference ${index} for ${parameterLabel(parameter)}: ${value} (${paper}).`.slice(0, MESSAGE_MAX);
+}
+
+/** The buttons are offered when the list on show is the scenario's own disease: an estimate of another disease is not this scenario's to apply. */
+export function canUseReferences(listed: string | null, scenarioDisease: string | null): boolean {
+  return listed !== null && scenarioDisease !== null && listed === scenarioDisease;
 }
