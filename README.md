@@ -239,6 +239,16 @@ registry, schema v2, the exact R0, diagnostics and options) and
   runs panel and the report's appendix list the same rows, and
   `describe_parameters` lists by network as well as by model, with the
   fields of an intervention entry on request.
+- **Chosen references.** In the Data section's reference list every literature
+  estimate that is one number has a "Use this value" button. It sends a
+  message in the participant's name; the agent then calls
+  `configure_simulation` with `use_reference: {parameter, index}`, and the
+  tool reads the value and the citation from the reference data itself
+  (`web/lib/tools/chosenReference.ts`), so neither can be mistyped. It converts
+  the unit, refuses what the model or the registry cannot take with what to
+  do, and records the choice as the data source `ref:<parameter>`. The value
+  carries the tag "reference" with the paper's title for as long as it
+  stands, and the report lists it among its data sources as literature.
 - **The review list.** `scripts/review_requests.py` renders
   `docs/data-review-requests.md`: for every disease, the status of every
   database field the registry names, the fields the database does not have

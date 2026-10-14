@@ -173,3 +173,14 @@ describe("describe_parameters says which network it lists (review of phase C)", 
     expect(out.interventions).toEqual(["seasonality"]);
   });
 });
+
+describe("describe_parameters names a chosen reference as a source (follow-up spec 9.4)", () => {
+  it("reports reference for the value a chosen estimate set, and lists it among the sources it names", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles" });
+    await configure(deps, { use_reference: { parameter: "infectious_days", index: 1 } });
+    const body = await describe_(deps);
+    expect(byPath(body)["disease.dur_inf.mean_days"].source).toBe("reference");
+    expect(body.note).toContain("reference");
+  });
+});

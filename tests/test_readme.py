@@ -137,3 +137,9 @@ def test_the_readme_describes_the_parameters_section():
     web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
     for phrase in ("Parameters section", "Show all", "web/lib/client/parameters.ts", "where each value came from", "by network"):
         assert phrase in web, phrase
+
+
+def test_the_readme_describes_the_chosen_references():
+    web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
+    for phrase in ("Use this value", "use_reference", "ref:", "web/lib/tools/chosenReference.ts"):
+        assert phrase in web, phrase

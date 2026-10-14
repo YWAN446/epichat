@@ -64,7 +64,7 @@ export async function describeParameters(input: DescribeParametersArgs, deps: To
   const note = entryFields
     ? ENTRY_FIELDS_NOTE
     : params
-      ? `Parameters of the current ${model} scenario${disease ? ` (${disease})` : ""}: current values with their source (user, database, fetch, default, illustrative). ${networkNote(network)} ${INTERVENTIONS_NOTE}`
+      ? `Parameters of the current ${model} scenario${disease ? ` (${disease})` : ""}: current values with their source (user, database, fetch, default, illustrative, or reference for a literature estimate chosen from the reference list). ${networkNote(network)} ${INTERVENTIONS_NOTE}`
       : `No scenario is configured yet: these are the registry defaults for the ${model} model. Call configure_simulation to start one. ${networkNote(network)} ${INTERVENTIONS_NOTE}`;
   const interventions = params ? params.interventions.map((i) => i.type) : [];
   return {

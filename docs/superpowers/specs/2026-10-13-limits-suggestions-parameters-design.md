@@ -1,8 +1,8 @@
 # EpiChat Simulation Parameters, Part 2 Follow-up: Limits on Spread, Suggested Interventions, the Parameters Section and Chosen References (Design)
 
 Date: 2026-10-13. Status: confirmed by the owner on 2026-10-13 (the proposals of
-section 17 included); phases A, B and C shipped, with the amendments marked
-"as shipped".
+section 17 included); phases A to D shipped, with the amendments marked "as
+shipped".
 Builds on Part 1, `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
 and Part 2, `docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md`
 (phases 2A to 2D shipped on 2026-10-13). Where this document and either part
@@ -649,6 +649,27 @@ still equals the recorded one (beta by the R0 it implies), exactly as a
 fetched value is a fetch only while it still equals what was fetched. The
 Parameters section shows the tag with the reference's title; the report's
 data-sources table lists it as a literature reference.
+
+As shipped (phase D).
+
+- The mapping of the seven database parameters to their paths, models and
+  units is `web/lib/tools/chosenReference.ts`, shared by the tool and the
+  tags. The recorded value is in the unit it was applied in (a fraction, days,
+  a whole number of contacts), so the tag can tell whether it still stands.
+- The message is "Use reference 3 for R₀: 14 (title, 2017)." with the
+  estimate's one value. The paper's title is put on one line, stripped of
+  control characters and cut to 80 characters, and the prompt tells the agent
+  to treat it as a label.
+- Contacts per day can be applied on the random network only; the other
+  networks take their contacts from a matrix or from layers, and the tool
+  says so.
+- An R0 from a reference stands while the scenario still has that R0. A
+  later change of the infectious period at the same beta is another R0 and
+  drops the tag. After a run that calibrated beta, beta reads "set by the
+  run"; the report's data sources still list the reference.
+- An asymptomatic share is read in its disease's unit (a percentage for some
+  diseases, a fraction for others).
+- The button was tested by rendering the list to markup, not in a browser.
 
 ## 10. Registry, schema and migration
 
