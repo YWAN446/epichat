@@ -62,6 +62,13 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
           description: "Fit the run to one outcome the user knows: {target: attack_rate | peak_day | peak_infections, value, lever?: disease.beta | network.network_beta | disease.rel_sus_cv | behavior_response.scale}; the last two keep R0 and fit an attack rate or a peak size, not a peak day (behavior_response.scale needs a behavior_response entry); attack_rate is a fraction, peak_day a day, peak_infections people when a population is known (else agents). null clears the fit.",
           additionalProperties: true,
         },
+        use_reference: {
+          type: ["object", "null"],
+          description: "Apply one literature estimate from the Data section's reference list: {parameter, index}, the parameter's database name (r0, incubation_days, infectious_days, fatality_rate, average_contacts_daily, immunity_duration, asymptomatic_fraction) and the number shown in the list. The tool reads the value and the citation from the reference data itself, converts the unit, and records the reference as the value's source; a CONFIG ERROR says what to change first.",
+          properties: { parameter: { type: "string" }, index: { type: "integer" } },
+          required: ["parameter", "index"],
+          additionalProperties: false,
+        },
         advanced: {
           type: ["object", "null"],
           description: 'Any other parameter by its registry path, for example {"disease.dur_inf.dist": "gamma", "disease.dur_inf.sd_days": 2.4} or {"run.n_replicates": 5}. Applied with the fields above and validated once; a CONFIG ERROR names the path. Interventions are not set here.',

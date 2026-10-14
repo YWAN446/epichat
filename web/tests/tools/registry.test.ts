@@ -22,8 +22,8 @@ describe("tool registry", () => {
       expect(tool.description?.length).toBeGreaterThan(80);
     }
     const configure = TOOLS[0].input_schema as { properties: Record<string, { description: string }>; required?: string[] };
-    expect(Object.keys(configure.properties)).toHaveLength(25);
-    expect(Object.keys(configure.properties)).toEqual(["disease", "country_iso3", "model", "disease_type", "n_agents", "sim_dur_years", "r0", "dur_inf_days", "dur_exp_days", "dur_immune_days", "p_death", "p_asymp", "seed_fraction", "seed_count", "vaccine_coverage", "vaccine_start_day", "treatment_capacity", "seasonality_scale", "network_type", "household_size", "interventions", "remove_interventions", "fit", "advanced", "start_new_scenario"]);
+    expect(Object.keys(configure.properties)).toHaveLength(26);
+    expect(Object.keys(configure.properties)).toEqual(["disease", "country_iso3", "model", "disease_type", "n_agents", "sim_dur_years", "r0", "dur_inf_days", "dur_exp_days", "dur_immune_days", "p_death", "p_asymp", "seed_fraction", "seed_count", "vaccine_coverage", "vaccine_start_day", "treatment_capacity", "seasonality_scale", "network_type", "household_size", "interventions", "remove_interventions", "fit", "use_reference", "advanced", "start_new_scenario"]);
     const advanced = configure.properties.advanced as unknown as { type: string[]; additionalProperties: boolean };
     expect(advanced.type).toEqual(["object", "null"]);
     expect(advanced.additionalProperties).toBe(true);

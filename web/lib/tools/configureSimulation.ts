@@ -5,7 +5,9 @@ import { detectDisease } from "@/lib/disease/db";
 import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccine, recalibrateBeta, validateParams, withR0, type Duration, type Intervention, type SimParams } from "@/lib/sim/params";
 import { changedPaths, setPath, type PathChange } from "@/lib/sim/paths";
 import { fmtValue, pyRound } from "@/lib/sim/pyformat";
+import { referenceHref } from "@/lib/client/references";
 import { applyAdvanced } from "./advanced";
+import { chosenReference, type ChosenReference } from "./chosenReference";
 import { configView } from "./configView";
 import { durationFor, type DurationName } from "./durations";
 import { matchedLevers } from "./options";
@@ -39,6 +41,7 @@ export const ConfigureSimulationInput = z.strictObject({
   interventions: opt(z.array(z.record(z.string(), z.unknown()))),
   remove_interventions: opt(z.array(z.string())),
   fit: z.record(z.string(), z.unknown()).nullable().optional(),
+  use_reference: opt(z.strictObject({ parameter: z.string(), index: z.number() })),
   advanced: opt(z.record(z.string(), z.unknown())),
   start_new_scenario: opt(z.boolean()),
 });
@@ -164,6 +167,30 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     applied.household_size = input.household_size;
   }
 
+  // Follow-up spec 9.3: one literature estimate from the reference list. The tool reads the value and the citation from the
+  // reference data itself; a refusal says what to do and writes nothing.
+  let chosen: ChosenReference | null = null;
+  if (given(input.use_reference)) {
+    const result = chosenReference(input.use_reference, scenario.disease, String(disease.model ?? "sir"), String(network.network_type ?? "random"));
+    if (typeof result === "string") return errorOutcome(`CONFIG ERROR: ${result}.`);
+    if (result.parameter === "r0" && given(input.r0)) return errorOutcome("CONFIG ERROR: pass one of r0 and use_reference for r0, not both.");
+    chosen = result;
+    if (chosen.parameter === "incubation_days") disease.dur_exp = durationFor(disease.dur_exp as Duration | null | undefined, chosen.value, "dur_exp", scenario.disease);
+    else if (chosen.parameter === "infectious_days") disease.dur_inf = durationFor(disease.dur_inf as Duration | null | undefined, chosen.value, "dur_inf", scenario.disease);
+    else if (chosen.parameter === "immunity_duration") disease.dur_immune = durationFor(disease.dur_immune as Duration | null | undefined, chosen.value, "dur_immune", scenario.disease);
+    else if (chosen.parameter === "fatality_rate") disease.p_death = chosen.value;
+    else if (chosen.parameter === "asymptomatic_fraction") disease.p_asymp = chosen.value;
+    else if (chosen.parameter === "average_contacts_daily") network.n_contacts = chosen.value;
+    const e = chosen.estimate;
+    applied.use_reference = {
+      parameter: chosen.parameter, index: chosen.index, value: chosen.value, title: e.title,
+      ...(e.year !== undefined ? { year: e.year } : {}), ...(e.metric ? { metric: e.metric } : {}), ...(e.population ? { population: e.population } : {}),
+      ...(e.country ? { country: e.country } : {}), ...(e.notes ? { notes: e.notes } : {}),
+    };
+  }
+  // an R0 from the field or from a chosen reference is applied the same way
+  const r0Target = given(input.r0) ? input.r0 : chosen?.parameter === "r0" ? chosen.value : undefined;
+
   let interventions = [...((base.interventions as Obj[] | undefined) ?? [])];
   if (given(input.vaccine_coverage) || given(input.vaccine_start_day)) {
     // A day-0 vaccine lives in disease.initial_immune_frac (spec 6.1, section 18); a later start is a routine campaign. An entry with an
@@ -266,7 +293,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   const validated = validateParams(base);
   if (!validated.ok) return errorOutcome(`CONFIG ERROR: ${validated.error}`);
   let params: SimParams = validated.params;
-  if (before && !given(input.r0)) {
+  if (before && r0Target === undefined) {
     // Part 2, 5.9: a change of the network's structure (its type, its matrix, the age shares) alters what R0 a beta implies; hold the R0
     // the user confirmed when the new network can carry it. A change of contact counts or multipliers keeps beta, as in Part 1.
     const r0Before = approxR0(before);
@@ -282,9 +309,9 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
       }
     }
   }
-  if (given(input.r0)) {
+  if (r0Target !== undefined) {
     try {
-      params = withR0(params, input.r0);
+      params = withR0(params, r0Target);
     } catch (error) {
       if (error instanceof R0UnreachableError) return errorOutcome(`CONFIG ERROR: ${error.message}.`);
       throw error;
@@ -292,7 +319,7 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
     const revalidated = validateParams(params);
     if (!revalidated.ok) return errorOutcome(`CONFIG ERROR: ${revalidated.error}`);
     params = revalidated.params;
-    applied.r0 = input.r0;
+    if (given(input.r0)) applied.r0 = input.r0;
   }
 
   // Review of the follow-up's phase B: the scenario keeps its fit, so the next run would fit an added intervention away (a baseline
@@ -315,8 +342,17 @@ export async function configureSimulation(input: ConfigureSimulationArgs, deps: 
   const warnings = paramWarnings(scenario, params, deps.contextText);
   if (fitEnded) warnings.push(fitEnded);
   const approx_r0 = pyRound(approxR0(params), 2);
-  if (given(input.r0) && Math.abs(approx_r0 - input.r0) > R0_CLAMP_TOLERANCE * input.r0) {
-    warnings.push(`beta was clamped at ${params.disease.beta}, so the run's R0 is ${approx_r0} rather than the requested ${input.r0}; more contacts or a longer infectious period would reach it.`);
+  if (r0Target !== undefined && Math.abs(approx_r0 - r0Target) > R0_CLAMP_TOLERANCE * r0Target) {
+    warnings.push(`beta was clamped at ${params.disease.beta}, so the run's R0 is ${approx_r0} rather than the requested ${r0Target}; more contacts or a longer infectious period would reach it.`);
+  }
+  if (chosen) {
+    // Follow-up spec 9.4: the choice is a data source, replacing an earlier choice for the same parameter; its value is in the
+    // unit it was applied in, so the tag can tell whether the value still stands.
+    const e = chosen.estimate;
+    const link = referenceHref(e);
+    const field = `ref:${chosen.parameter}`;
+    scenario.dataSources = scenario.dataSources.filter((f) => f.field !== field);
+    scenario.dataSources.push({ field, value: chosen.value, citation: `${e.title}${e.year !== undefined ? ` (${e.year})` : ""}.${link ? ` ${link}` : ""}`, description: "Chosen from the literature table", alternatives: [] });
   }
   const changed: PathChange[] = before ? changedPaths(before as unknown as Obj, params as unknown as Obj) : [];
   if (scenario.hasRun && changed.length > 0) {
