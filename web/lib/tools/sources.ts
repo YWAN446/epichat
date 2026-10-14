@@ -12,7 +12,8 @@ import { PARAM_REGISTRY } from "@/lib/sim/registry";
 import { illustrativeSd } from "./durations";
 import type { Scenario } from "./types";
 
-export type ParamSource = "user" | "database" | "fetch" | "default" | "illustrative";
+/** run: a value the run itself changed from what was configured (a calibrated beta, a fitted lever, demographics the service filled); only a run's payload carries it. */
+export type ParamSource = "user" | "database" | "fetch" | "default" | "illustrative" | "run";
 export type DbRange = { min: number | null; max: number | null; typical: number | null; unit: string | null; source: string };
 
 const DAYS_PER_UNIT: Record<string, number> = { days: 1, weeks: 7, months: 30.44, years: 365.25 };
@@ -113,9 +114,11 @@ export function valueSources(p: SimParams, scenario: Scenario, disease: string |
 
 /**
  * The sources of the scenario's own parameters, for the payloads that carry them (follow-up spec 8.4): the panel tags each row
- * with where its value came from. Empty before a scenario is configured.
+ * with where its value came from. Only what is not a default is sent, a tenth of the whole map; with sources present, a path
+ * that is not among them is a default. Empty before a scenario is configured.
  */
 export function scenarioSources(scenario: Scenario, contextText: string): Record<string, ParamSource> {
   if (!scenario.params) return {};
-  return valueSources(scenario.params, scenario, scenario.disease ?? detectDisease(contextText || ""));
+  const all = valueSources(scenario.params, scenario, scenario.disease ?? detectDisease(contextText || ""));
+  return Object.fromEntries(Object.entries(all).filter(([, source]) => source !== "default"));
 }

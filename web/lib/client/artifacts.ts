@@ -9,7 +9,8 @@ import { coerceParams, type SimParams } from "@/lib/sim/params";
 import type { ConfigPayload, DataPayload, DiseasePayload, RunPayload } from "@/lib/tools/types";
 import { toolLabel, toolLine } from "./toolLine";
 
-export type RunArtifact = { turnId: string; index: number; payload: RunPayload };
+/** effective: the run's parameters as today's schema reads them, or null for a stored run they no longer validate against (the payload then keeps its stored form, which nothing may read as SimParams). */
+export type RunArtifact = { turnId: string; index: number; payload: RunPayload; effective: SimParams | null };
 export type ActivityItem = {
   turnId: string;
   kind: "tool" | "web_search" | "web_fetch";
@@ -86,7 +87,7 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
         }
       } else if (payload.kind === "run") {
         const effective = coerceParams(payload.effective_params);
-        out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload: effective ? { ...payload, effective_params: effective } : payload });
+        out.runs.push({ turnId: turn.id, index: out.runs.length + 1, payload: effective ? { ...payload, effective_params: effective } : payload, effective });
         if (effective) {
           out.params = effective;
           out.sources = payload.sources ?? null;

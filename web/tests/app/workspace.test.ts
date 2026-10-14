@@ -87,7 +87,7 @@ describe("the details panel", () => {
 
   it("gives every run its tiles, a chart with the four views, its parameters, repairs, and sources", () => {
     const runs = read("components/panel/RunsSection.tsx");
-    for (const piece of ["<StatTiles", "<Chart", "CHART_VIEWS", "useRunSeries(", "effective_params", "repairs", "data_sources", "onChartView("]) expect(runs).toContain(piece);
+    for (const piece of ["<StatTiles", "<Chart", "CHART_VIEWS", "useRunSeries(", "run.effective", "defaultRows(", "repairs", "data_sources", "onChartView("]) expect(runs).toContain(piece);
   });
 });
 

@@ -612,10 +612,11 @@ describe("configure_simulation sends where each value came from (follow-up spec 
     const out = await run(deps, { disease: "measles", dur_inf_days: 8, n_agents: 5000, advanced: { "disease.rel_sus_cv": 1 } });   // 8 days is the database's typical value
     const payload = out.payload as { sources?: Record<string, string>; params?: unknown };
     expect(payload.params).toBeDefined();
-    expect(payload.sources).toMatchObject({ "run.n_agents": "user", "disease.dur_inf.mean_days": "database", "run.sim_dur_years": "default", "disease.rel_sus_cv": "illustrative" });
+    expect(payload.sources).toMatchObject({ "run.n_agents": "user", "disease.dur_inf.mean_days": "database", "disease.rel_sus_cv": "illustrative" });
+    expect(payload.sources!["run.sim_dur_years"]).toBeUndefined();                             // a default is not sent: its absence says so
     const typed = await run(deps, { advanced: { "disease.rel_sus_cv": 0.7 } });
     expect((typed.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBe("user");   // not the offered value: the user's own
     const none = await run(deps, { advanced: { "disease.rel_sus_cv": 0 } });
-    expect((none.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBe("default");
+    expect((none.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBeUndefined();
   });
 });

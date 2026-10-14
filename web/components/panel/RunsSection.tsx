@@ -51,16 +51,21 @@ function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact;
           <details>
             <summary className="cursor-pointer text-xs font-semibold tracking-wide text-ink-faint uppercase">Effective parameters</summary>
             <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs">
-              {defaultRows(p.effective_params).map(([key, value]) => (
-                <div key={key} className="contents">
-                  <dt className="text-ink-faint">{key}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-              {p.effective_params.interventions.length > 0 && (
+              {run.effective === null ? (
+                // review of phase C: a run stored before today's bounds (a ten-year infectious period was legal once) still opens
+                <div className="col-span-2 font-sans text-ink-faint">{"This run's parameters were stored in a form that can no longer be listed."}</div>
+              ) : (
+                defaultRows(run.effective).map(([key, value]) => (
+                  <div key={key} className="contents">
+                    <dt className="text-ink-faint">{key}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))
+              )}
+              {run.effective !== null && run.effective.interventions.length > 0 && (
                 <div className="contents">
                   <dt className="text-ink-faint">interventions</dt>
-                  <dd>{p.effective_params.interventions.map((i) => `${i.type}${i.coverage !== null && i.coverage !== undefined ? ` ${Math.round(i.coverage * 100)}%` : ""}`).join(", ")}</dd>
+                  <dd>{run.effective.interventions.map((i) => `${i.type}${i.coverage !== null && i.coverage !== undefined ? ` ${Math.round(i.coverage * 100)}%` : ""}`).join(", ")}</dd>
                 </div>
               )}
               <div className="contents">

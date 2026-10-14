@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { parameterGroups, type ParameterGrid, type ParameterRow } from "@/lib/client/parameters";
 import type { SimParams } from "@/lib/sim/params";
 
@@ -11,14 +12,15 @@ type Props = {
 
 const HEADING = "mb-1 text-xs font-semibold tracking-wide text-ink-faint uppercase";
 const LIST = "grid grid-cols-[auto_1fr] gap-x-3 gap-y-1";
+const TAG = "ml-1.5 rounded bg-paper-2 px-1.5 py-px text-[0.6875rem] font-normal text-ink-soft";
 
 function Grid({ grid }: { grid: ParameterGrid }) {
   return (
-    <table className="mt-1 text-xs font-normal">
+    <table className="text-xs">
       <thead>
         <tr>
-          {grid.columns.map((column, index) => (
-            <th key={index} scope="col" className="pr-3 text-left font-normal text-ink-faint">
+          {grid.columns.map((column) => (
+            <th key={column} scope="col" className="pr-3 text-left font-normal text-ink-faint">
               {column}
             </th>
           ))}
@@ -49,14 +51,25 @@ function Rows({ rows }: { rows: ParameterRow[] }) {
   return (
     <dl className={LIST}>
       {rows.map((row) => (
-        <div key={row.label} className="contents">
-          <dt className="text-ink-faint">{row.label}</dt>
-          <dd className="font-medium">
-            {row.value}
-            {row.source && <span className="ml-1.5 rounded bg-paper-2 px-1.5 py-px text-[0.6875rem] font-normal text-ink-faint">{row.source}</span>}
-            {row.grid && <Grid grid={row.grid} />}
-          </dd>
-        </div>
+        <Fragment key={row.label}>
+          <div className="contents">
+            <dt className="text-ink-faint">{row.label}</dt>
+            <dd className="font-medium">
+              {row.value}
+              {row.sources.map((tag) => (
+                <span key={tag} className={TAG}>
+                  <span className="sr-only">source: </span>
+                  {tag}
+                </span>
+              ))}
+            </dd>
+          </div>
+          {row.grid && (
+            <div className="col-span-2 overflow-x-auto pb-1">
+              <Grid grid={row.grid} />
+            </div>
+          )}
+        </Fragment>
       ))}
     </dl>
   );
@@ -65,7 +78,7 @@ function Rows({ rows }: { rows: ParameterRow[] }) {
 /**
  * The scenario's current parameters in words with units, generated from the registry (follow-up spec 8): what the next run uses,
  * or what the latest run used. Five groups; each shows its core parameters and the values that are not the default, and keeps
- * every other parameter of the scenario's model and network behind "Show all". A value's tag says where it came from.
+ * every other parameter of the scenario's model and network behind "Show all". A value's tags say where it came from.
  */
 export function ParametersSection({ params, sources, configured }: Props) {
   if (!params) {
@@ -79,7 +92,7 @@ export function ParametersSection({ params, sources, configured }: Props) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-ink-faint">
-        The values the next run uses; after a run, the values it used.{sources ? " Each value is tagged with where it came from." : ""}
+        The values the next run uses; after a run, the values it used.{sources ? " The tag after a value says where it came from." : ""}
       </p>
       {groups.map((group) => {
         const shown = group.rows.filter((row) => row.shown);
@@ -102,7 +115,9 @@ export function ParametersSection({ params, sources, configured }: Props) {
                 <Rows rows={shown} />
                 {hidden.length > 0 && (
                   <details className="mt-1">
-                    <summary className="cursor-pointer text-xs text-ink-faint">Show all ({group.rows.length})</summary>
+                    <summary className="cursor-pointer text-xs text-ink-faint">
+                      Show all ({group.rows.length})<span className="sr-only"> {group.title.toLowerCase()} parameters</span>
+                    </summary>
                     <div className="mt-1">
                       <Rows rows={hidden} />
                     </div>

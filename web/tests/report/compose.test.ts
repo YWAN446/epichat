@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { composeReport, runLabels } from "@/lib/report/compose";
+import { params } from "../tools/helpers";
 import { FIXTURE } from "./fixture";
 
 const NOW = new Date("2026-10-09T15:00:00Z");
@@ -170,5 +171,24 @@ describe("the appendix lists the Parameters section's rows (follow-up spec 8.5)"
     expect(row("Model")).toEqual(["Model", "SIR", "SIR"]);
     for (const absent of ["Household size", "Contact duration", "Contact matrix"]) expect(row(absent)).toBeUndefined();   // the old list printed these on every run
     expect(table.rows.every((r) => r.length === 3 && r.every((cell) => typeof cell === "string"))).toBe(true);
+  });
+});
+
+describe("the appendix across networks, with interventions (review of phase C)", () => {
+  it("shows a dash where a row is not a parameter of that run, the interventions as a row, and no derived R₀", () => {
+    const base = FIXTURE.runs[0];
+    const hybrid = { ...base, effectiveParams: { ...base.effectiveParams, network: { ...base.effectiveParams.network, network_type: "hybrid" as const, household_size: 4.9 } } };
+    const doc = composeReport({ ...FIXTURE, runs: [base, hybrid] }, NOW);
+    const table = doc.sections.find((s) => s.id === "appendix")!.blocks[0];
+    if (table.kind !== "table") throw new Error("table");
+    const row = (label: string) => table.rows.find((r) => r[0] === label);
+    expect(row("Household size")).toEqual(["Household size", "—", "4.9 people"]);
+    expect(row("Contacts per day")?.[2]).toBe("—");
+    expect(row("R₀ (approx.)")).toBeUndefined();
+    expect(row("Interventions")).toBeUndefined();                                            // neither run has any
+    const seasonal = { ...base, effectiveParams: params({ schema_version: 2, interventions: [{ type: "seasonality", scale: 0.3 }] }) };
+    const all = composeReport({ ...FIXTURE, runs: [base, seasonal] }, NOW).sections.find((s) => s.id === "appendix")!.blocks[0];
+    if (all.kind !== "table") throw new Error("table");
+    expect(all.rows.find((r) => r[0] === "Interventions")).toEqual(["Interventions", "none", "Seasonality: amplitude 0.3, shift 0"]);
   });
 });

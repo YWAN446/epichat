@@ -198,16 +198,18 @@ describe("run_simulation and the levers that keep R0 (follow-up spec 6)", () => 
   });
 });
 
-describe("run_simulation sends where each configured value came from (follow-up spec 8.4)", () => {
-  it("tags by the scenario's own parameters, so a beta the run calibrated is not the user's", async () => {
+describe("run_simulation sends where each value came from (follow-up spec 8.4)", () => {
+  it("says the run set what it changed, and keeps the configured sources for the rest", async () => {
     const result = success();
-    const configuredParams = params({ disease_type: "sir" });
-    result.effective_params = params({ disease_type: "sir", beta: 31.7 });                       // as a calibration would leave it
+    const configured = params({ schema_version: 2, disease: { model: "sir", dur_inf: { mean_days: 8 } }, run: { n_agents: 5000 } });
+    // as a calibration and the service's demographics leave it: beta corrected, births and deaths filled
+    result.effective_params = params({ schema_version: 2, disease: { model: "sir", beta: 31.7, dur_inf: { mean_days: 8 } }, demographics: { use_demographics: true, birth_rate: 27.4, death_rate: 5.3 }, run: { n_agents: 5000 } });
     const deps = makeDeps({ simulate: result, runId: "run-5" });
-    deps.scenario.params = configuredParams;
+    deps.scenario.params = configured;
     const payload = (await runSimulation({}, deps)).payload as { sources?: Record<string, string>; effective_params: { disease: { beta: number } } };
     expect(payload.effective_params.disease.beta).toBe(31.7);
-    expect(payload.sources?.["disease.beta"]).toBe("default");
-    expect(payload.sources?.["run.n_agents"]).toBe("default");
+    expect(payload.sources).toMatchObject({ "disease.beta": "run", "demographics.use_demographics": "run", "demographics.birth_rate": "run", "demographics.death_rate": "run", "run.n_agents": "user" });
+    expect(payload.sources!["disease.dur_inf.mean_days"]).toBe("user");
+    expect(payload.sources!["run.sim_dur_years"]).toBeUndefined();                            // unchanged and a default
   });
 });

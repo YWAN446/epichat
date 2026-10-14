@@ -241,4 +241,14 @@ describe("the fetch tools send where each value came from (follow-up spec 8.4)",
     expect(payload.params).toBeDefined();
     expect(payload.sources).toMatchObject({ "demographics.birth_rate": "fetch", "demographics.death_rate": "fetch", "disease.dur_inf.mean_days": "database" });
   });
+
+  it("does so for the vaccination and the health-system fetches too", async () => {
+    const vaccinated = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")] }), { disease: "measles" });
+    const coverage = (await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" } as never, vaccinated)).payload as { sources?: Record<string, string> };
+    expect(coverage.sources).toMatchObject({ "disease.initial_immune_frac": "fetch" });
+    const beds = [{ ...rf("treatment_capacity", 2.52, "WB WDI, KEN, 2021"), description: "hospital beds/1,000", alternatives: [] }];
+    const treated = await configured(makeDeps({ wbData360: beds }), { disease: "measles", n_agents: 5000, treatment_capacity: 10 });
+    const health = (await fetchHealthSystem({ country_iso3: "KEN" } as never, treated)).payload as { sources?: Record<string, string> };
+    expect(health.sources).toMatchObject({ "run.n_agents": "user" });
+  });
 });

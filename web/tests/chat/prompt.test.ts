@@ -54,6 +54,9 @@ describe("system prompt", () => {
     for (const phrase of ["what_if", "by the lever's label", "through the interventions field as they are", "A warning diagnostic fired", "Offer no intervention then",
       "only the depletion of susceptibles limits the epidemic", "contact and transmission reductions", "never tell the user to press"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).not.toContain("## Diagnostics and options");
+    // review of phase C: the listing is by network now, and the prompt says so
+    expect(SYSTEM_PROMPT).toContain("every parameter of the current model and contact network");
+    expect(SYSTEM_PROMPT).toContain("change network.network_type first");
     // review of phase B: a slot for the other info levers, the fitted baseline, and only the dated entries start on the anchor day
     for (const phrase of ["give one of those replies to its first lever", "ends the fit and keeps the fitted value", "the dated ones start the day 1%"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).not.toContain("offers the hybrid network as that structure");

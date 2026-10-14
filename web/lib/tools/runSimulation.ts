@@ -74,6 +74,13 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   const replicates = result.replicates ? { n: result.replicates.n, seeds: result.replicates.seeds, representative: result.replicates.representative, stats: result.replicates.stats } : undefined;
   const diagnostics = result.diagnostics ?? [];
   const compare = previous ? compareRuns(previous, result, popScale) : null;
+  // Follow-up spec 8.4, as reviewed: the panel shows the run's effective values after a run, so a value the run changed from what
+  // was configured (a calibrated beta, a fitted lever, demographics the service filled, a repair) is tagged as the run's, and
+  // every other value keeps the source of what was configured.
+  const valueTags = scenarioSources(deps.scenario, deps.contextText);
+  if (deps.scenario.params) {
+    for (const change of changedPaths(deps.scenario.params as unknown as Record<string, unknown>, result.effective_params as unknown as Record<string, unknown>)) valueTags[change.path] = "run";
+  }
   const payload: RunPayload = {
     kind: "run",
     run_id: runId,
@@ -93,7 +100,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
     compare,
     ...(applied ? { applied } : {}),
     ...(replicates ? { replicates } : {}),
-    sources: scenarioSources(deps.scenario, deps.contextText),          // follow-up spec 8.4: of the configured values, not the effective ones
+    sources: valueTags,
   };
   return {
     content: JSON.stringify({

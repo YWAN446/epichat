@@ -26,6 +26,9 @@ export type DescribedParam = {
 };
 
 export const INTERVENTIONS_NOTE = "Interventions (vaccine, treatment, seasonality, contact_reduction, transmission_reduction, behavior_response) are entries of configure_simulation's interventions field and are listed in its config; call describe_parameters with module interventions for their fields.";
+/** The listing is by network (follow-up spec 8.5), so it says which one and where the others' parameters are. */
+const networkNote = (network: string): string => `Listed for the ${network.replace(/_/g, "-")} network: the parameters of the other contact networks (random, age_structured, hybrid) are not in this list; to see or set them, change network.network_type first.`;
+const ENTRY_FIELDS_NOTE = "The fields of an intervention entry (vaccine, treatment, seasonality, contact_reduction, transmission_reduction, behavior_response): they are set through configure_simulation's interventions field, not through advanced, and have no current value of their own; the scenario's entries are named in interventions and listed in configure_simulation's config.";
 
 /**
  * Spec 9.2: the registry for the current model, each parameter with its value and where it came from. Follow-up spec 8.5: for the
@@ -58,12 +61,14 @@ export async function describeParameters(input: DescribeParametersArgs, deps: To
       requires: s.requires,
       db_range: dbRange(entry, s.db_field),
     }));
-  const note = params
-    ? `Parameters of the current ${model} scenario${disease ? ` (${disease})` : ""}: current values with their source (user, database, fetch, default, illustrative). ${INTERVENTIONS_NOTE}`
-    : `No scenario is configured yet: these are the registry defaults for the ${model} model. Call configure_simulation to start one. ${INTERVENTIONS_NOTE}`;
+  const note = entryFields
+    ? ENTRY_FIELDS_NOTE
+    : params
+      ? `Parameters of the current ${model} scenario${disease ? ` (${disease})` : ""}: current values with their source (user, database, fetch, default, illustrative). ${networkNote(network)} ${INTERVENTIONS_NOTE}`
+      : `No scenario is configured yet: these are the registry defaults for the ${model} model. Call configure_simulation to start one. ${networkNote(network)} ${INTERVENTIONS_NOTE}`;
   const interventions = params ? params.interventions.map((i) => i.type) : [];
   return {
-    content: JSON.stringify({ note, model, disease, interventions, parameters }),
+    content: JSON.stringify({ note, model, network, disease, interventions, parameters }),
     payload: { kind: "parameters", model, disease, count: parameters.length },
   };
 }

@@ -231,9 +231,11 @@ registry, schema v2, the exact R0, diagnostics and options) and
   matrix as a grid, the hybrid layers as a table). A group shows its core
   parameters and every value that is not the registry default; "Show all"
   opens the rest of what applies to the scenario's model and network. A
-  test walks the registry and fails when a parameter has no row. Each value
-  is tagged with where each value came from (database, fetched, default,
-  assumption, you), sent with the payloads that carry the parameters. The
+  test walks the registry and fails when a parameter has no row, and another
+  changes every parameter and fails when its row does not move. A tag after
+  a value says where each value came from (database, fetched, default,
+  assumption, set in chat, set by the run), sent with the payloads that carry
+  the parameters. The
   runs panel and the report's appendix list the same rows, and
   `describe_parameters` lists by network as well as by model, with the
   fields of an intervention entry on request.

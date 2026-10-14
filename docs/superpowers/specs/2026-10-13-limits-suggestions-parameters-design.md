@@ -558,16 +558,33 @@ As shipped (phase C).
   page without script; N is the group's row count.
 - A row appears only when its parameter applies to the model: a seiar
   scenario that carries an immunity duration no longer lists it.
-- A row with several paths is tagged "you" as soon as the user set one of
-  them, otherwise by its first path that is not a default. The payloads carry
-  the whole map of sources (about 65 paths, 2.5 KB). A run's sources are
-  those of the scenario's own parameters, so a calibrated beta or a fitted
-  lever keeps the source of what was configured. The coefficient of variation
-  the agent offers (1) reads as an assumption.
+- The tags, as the review of phase C left them. The word for a value set in
+  the conversation is "set in chat", not "you": the page cannot tell what
+  the user typed from what the agent chose or a tool computed (the beta that
+  holds an R0, a fitted value that was kept), and "you" claimed the first. A
+  value the run itself changed (a calibrated beta, a fitted lever,
+  demographics the service filled) is "set by the run". A row whose values
+  have several sources shows each one, so a database mean with an assumed
+  spread reads "database, assumption". The payloads send only the sources
+  that are not defaults (a tenth of the whole map); with sources present, a
+  path that was not sent is a default. The coefficient of variation the
+  agent offers (1) reads as an assumption.
+- The contact matrix is in the default view on the age-structured network
+  whatever its values: it is the only description of the contacts there.
+- "Random seed" reads "1 (not set)" when unset: the service runs seed 1.
 - In the report's table a row that any run shows carries every run's own
   value, and a dash only where the row is not a parameter of that run's
-  model or network. The runs panel lists the default view of the run's
-  effective parameters.
+  model or network. The interventions are one row when a run has any. A row
+  the section draws as a grid (the matrix, the layers) is written out in
+  full there and in the runs panel. Neither list has the derived R₀: the
+  formula on a run's own, possibly calibrated, beta is not the R0 the
+  report states. A second test changes every parameter and fails when its
+  row does not move.
+- A stored run whose parameters no longer validate (a ten-year infectious
+  period was legal in the first schema) still opens in the runs panel, with
+  a sentence in place of its list.
+- `describe_parameters` names the network it lists and says the other
+  networks' parameters appear once `network.network_type` changes.
 - `describe_parameters` with `module: interventions` lists the fields of an
   intervention entry, which no listing gave before.
 

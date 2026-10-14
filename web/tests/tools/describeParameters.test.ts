@@ -7,7 +7,7 @@ import { valueSources } from "@/lib/tools/sources";
 import { emptyScenario } from "@/lib/tools/types";
 import { makeDeps, params, rf } from "./helpers";
 
-type Body = { note: string; model: string; disease: string | null; interventions: string[]; parameters: DescribedParam[] };
+type Body = { note: string; model: string; network: string; disease: string | null; interventions: string[]; parameters: DescribedParam[] };
 const configure = (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) => configureSimulation(input as never, deps);
 const describe_ = async (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown> = {}): Promise<Body> => JSON.parse((await describeParameters(input as never, deps)).content);
 const byPath = (body: Body) => Object.fromEntries(body.parameters.map((p) => [p.path, p]));
@@ -146,5 +146,30 @@ describe("describe_parameters by network (follow-up spec 8.5)", () => {
     expect(out.note).toContain("interventions field");
     expect((await describe_(deps)).parameters.map((p) => p.path).some((path) => path.startsWith("interventions[]"))).toBe(false);
     expect((await describe_(deps, { module: "interventions", tier: "core" })).parameters.map((p) => p.path)).not.toContain("interventions[].half_prevalence");
+  });
+});
+
+describe("describe_parameters says which network it lists (review of phase C)", () => {
+  it("names the network and says the other networks' parameters are not in the list", async () => {
+    const before = await describe_(makeDeps());
+    expect(before.network).toBe("random");
+    expect(before.note).toContain("random network");
+    expect(before.note).toContain("other contact networks");
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles", network_type: "hybrid" });
+    const hybrid = await describe_(deps);
+    expect(hybrid.network).toBe("hybrid");
+    expect(hybrid.note).toContain("hybrid network");
+    expect(hybrid.note).toContain("network.network_type");
+  });
+
+  it("does not promise current values or the advanced patch for the fields of an intervention entry", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles", interventions: [{ type: "seasonality", scale: 0.3 }] });
+    const out = await describe_(deps, { module: "interventions" });
+    expect(out.note).toContain("no current value of their own");
+    expect(out.note).toContain("not through advanced");
+    expect(out.note).not.toContain("current values with their source");
+    expect(out.interventions).toEqual(["seasonality"]);
   });
 });
