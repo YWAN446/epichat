@@ -574,7 +574,7 @@ Python:
   measured).
 - Hybrid: four layers exist with Covasim's defaults; school and work layers
   hold only agents in their age ranges; a `contact_reduction` on the school
-  layer at scale 0 removes its transmission for the window.
+  layer at scale 1 removes its transmission for the window.
 - Pyramid: with a known country the agents' ages match the bundled histogram
   (shares within a point); without it the shares path works as today.
 - Interventions: a campaign reaches its coverage within the window; a leaky
@@ -586,7 +586,7 @@ Python:
   agents, the calibrated run's measured R0 is within 5% of the target in at
   most three corrections, and the exact networks run no pilot.
 - Fit: on the random network, fitting the attack rate to 0.3 lands within 2
-  points in at most eight runs, and fitting the peak day to day 60 within 3
+  points in at most eight runs, and fitting the peak day to day 45 within 3
   days; the replicates run with the fitted beta.
 - Diagnostics: `well_mixed` fires on a constructed well-mixed run and not on
   a hybrid one; `r0_gap` fires on a mismatch and stands down on a calibrated

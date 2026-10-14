@@ -197,3 +197,29 @@ def test_the_runbook_verifies_the_follow_up_through_the_shipped_strings():
     # what a fit that keeps R0 costs, beside the beta fit's numbers
     keeps = runbook.split("## 7.")[1].split("A fit that keeps R0")[1].split("\n\n")[0]
     assert "disease.rel_sus_cv" in keeps and "every trial" in keeps and "PILOT_LEVERS" in source("epichat", "sim", "fit.py")
+
+
+def test_the_deferred_documentation_minors_are_settled():
+    part2 = source("docs", "superpowers", "specs", "2026-10-12-sim-parameters-modules-design.md")
+    testing = part2.split("## 13.")[1].split("## 14.")[0]
+    assert "layer at scale 0" not in testing and "layer at scale 1 removes" in testing          # a full closure is scale 1 (7.1)
+    assert "peak day to day 60" not in testing and "peak day to day 45" in testing              # the day the test fits
+    assert 'scenario("peak_day", 45)' in source("tests", "test_sim_fit.py")
+    flat = " ".join(README.split())
+    # who composes what (Part 2, 4.2): the disease its own susceptibility, the connector the transmissibility
+    assert "a connector composes `rel_sus` and `rel_trans`" not in flat
+    assert "composes its own `rel_sus`" in flat and "composes `rel_trans`" in flat
+    assert "def compose_rel_sus" in source("epichat", "sim", "models.py") and "disease.rel_trans[:]" in source("epichat", "sim", "connectors.py")
+    interventions = README.split("## Interventions")[1].split("## Natural Language Query Tips")[0]
+    assert "\n---\n" not in interventions.split("### Seasonality")[1].split("### Contact reduction")[0]
+    assert "they have a window and a layer" not in flat
+    v2 = " ".join(README.split("Schema v2 also adds")[1].split("\n\n")[0].split())
+    assert "for the random network" in v2 and "for the age-structured network" in v2
+    # six intervention types since the behaviour response; the pilot gives way to a beta fit only
+    assert "Six types" in flat and "Five types" not in flat and "a fit on beta replaces it" in flat
+    # the older loader: still called, and the directory it reads is not bundled
+    assert "get_mean_contacts" in flat
+    assert "get_mean_contacts" in source("epichat", "generator.py") and "get_mean_contacts" in source("epichat", "params", "resolve.py")
+    assert not (ROOT / "epichat" / "data" / "contact_matrices").exists()
+    follow_up = source("docs", "superpowers", "specs", "2026-10-13-limits-suggestions-parameters-design.md")
+    assert "phases A to E shipped" in " ".join(follow_up.split("## 1. Purpose")[0].split())

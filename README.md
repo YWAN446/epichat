@@ -137,10 +137,11 @@ registry, schema v2, the exact R0, diagnostics and options) and
   can be tuned from the pilot.
 - **Disease extensions (Part 2).** Susceptibility by age (`rel_sus_age`:
   children under 18, adults, the elderly), fatality by age (`p_death_age`)
-  and presymptomatic transmissibility (`rel_trans_exposed`); a connector
-  composes `rel_sus` and `rel_trans` from every factor (age, vaccine,
-  seasonality, treatment) on every step, and the exact R0 carries the
-  multipliers.
+  and presymptomatic transmissibility (`rel_trans_exposed`). On every step
+  the disease composes its own `rel_sus` (age, the personal multiplier,
+  vaccine protection, the SIS model's immunity) and a connector composes
+  `rel_trans` (treatment, seasonality, the transmission reductions, the
+  behaviour response); the exact R0 carries the multipliers.
 - **Networks.** `network_type` is `random` (fresh contacts daily, constant or
   Poisson, optionally lasting `contact_duration_days`), `age_structured`
   (three age groups mixing by a 3×3 contact matrix: POLYMOD's European
@@ -156,7 +157,8 @@ registry, schema v2, the exact R0, diagnostics and options) and
   measure it), and where the formula is approximate a short pilot, in which
   only the seeds transmit, adjusts beta to it
   (`applied.beta_calibrated_by_measurement`; `run.calibrate_r0` switches it
-  off; a fit replaces it). At the same R0 the final size is close
+  off; a fit on beta replaces it, a fit that keeps R0 does not). At the same
+  R0 the final size is close
   on every network: the networks differ in who meets whom and in what the
   interventions act on.
 - **Demographics.** Once `fetch_demographics` has run for a country (it sets
@@ -168,13 +170,18 @@ registry, schema v2, the exact R0, diagnostics and options) and
   from the UN household database (`un_household_size.csv`) and the contact
   matrix from Prem 2021 (`contact_matrices.csv`). `scripts/fetch_un_wpp_tables.py`,
   `scripts/fetch_household_size.py` and `scripts/fetch_contact_matrices.py`
-  rebuild the tables.
-- **Interventions.** Five types: a vaccine (routine or a campaign over a
+  rebuild the tables. The older per-country loader
+  (`epichat/data_loaders/contact_matrices.py`), which `generator.py` and
+  `params/resolve.py` still call through `get_mean_contacts` for a country's
+  mean number of contacts, reads a directory of per-source files that is not
+  bundled; it finds nothing, and `n_contacts` keeps its value.
+- **Interventions.** Six types: a vaccine (routine or a campaign over a
   window, with an efficacy, an age range and a protection duration), a
   treatment (with a delay, an efficacy and a transmissibility while waiting,
   optionally symptomatic cases only), seasonality, a contact reduction on one
-  layer (a school closure is the school layer at scale 1) and a transmission
-  reduction (masks). `configure_simulation` takes them as structured entries
+  layer (a school closure is the school layer at scale 1), a transmission
+  reduction (masks) and a behaviour response (below). `configure_simulation`
+  takes them as structured entries
   (`interventions`, `remove_interventions`) beside the shortcut fields; every
   effect size is an illustrative assumption unless the database carries it,
   and `fetch_vaccination_coverage` writes a day-0 campaign with the database's
@@ -476,8 +483,9 @@ above.
   `work_contacts`, `community_contacts`, `layer_beta.household` and so on, the
   school and working age ranges). The structure a school closure or
   distancing acts on. Schema v2 also adds `contacts_dist` (constant or
-  Poisson), `contact_duration_days`, the nine `contacts.<group>_<group>` cells
-  and `contacts_source` for the age-structured network.
+  Poisson) and `contact_duration_days` for the random network, and the nine
+  `contacts.<group>_<group>` cells and `contacts_source` for the
+  age-structured network.
 
 **`n_contacts` guidance:**
 
@@ -497,7 +505,7 @@ above.
 
 Schema v2 prefers a `transmission_reduction` (masks) or a `contact_reduction`
 (distancing, a school closure) intervention over a hand-set `network_beta`:
-they have a window and a layer.
+both have a window, and a contact reduction names its layer.
 
 ### Demographics Parameters
 
@@ -567,8 +575,6 @@ Modulates transmission rate sinusoidally over the year.
 **Examples in natural language:**
 - *"Seasonal winter transmission"* → `scale=0.3, shift=0.0`
 - *"Mild seasonal variation with summer peak"* → `scale=0.2, shift=0.5`
-
----
 
 ### Contact reduction (schema v2)
 

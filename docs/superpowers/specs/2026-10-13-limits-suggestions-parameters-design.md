@@ -1,7 +1,7 @@
 # EpiChat Simulation Parameters, Part 2 Follow-up: Limits on Spread, Suggested Interventions, the Parameters Section and Chosen References (Design)
 
 Date: 2026-10-13. Status: confirmed by the owner on 2026-10-13 (the proposals of
-section 17 included); phases A to D shipped, with the amendments marked "as
+section 17 included); phases A to E shipped, with the amendments marked "as
 shipped".
 Builds on Part 1, `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
 and Part 2, `docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md`
@@ -820,7 +820,14 @@ database migration.
   regenerated review list. Also the documentation minors deferred from 2C and
   2D: spec section 13 of Part 2 (a closure at scale 0, a peak-day fit to day
   60), the count in `evals/README.md`, and in the README the connector
-  sentence, the stray rule and the three wordings.
+  sentence, the stray rule and the three wordings. As shipped: the review
+  list also names the entries that contradict themselves (an estimate
+  outside its own range, a consensus range none of its estimates is in),
+  which the review of phase D had found by hand; the known-attack-rate case
+  is RSV at 50%, because at measles' R0 the largest variation still leaves
+  67% infected and a 60% target could only test the out-of-reach branch;
+  the runbook's fit step of section 6j now says the R0 is not known, which
+  keeps beta as the lever.
 
 A is first because B's behaviour-response candidate needs it. C and D are
 independent of A and B.
