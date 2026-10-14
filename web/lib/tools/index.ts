@@ -168,12 +168,12 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "describe_parameters",
     description:
-      "List the simulation parameters of the current model (or the defaults before a scenario exists): for each one its path, label, meaning, unit, bounds, current value and where that value came from (user, database, fetch, default, illustrative), what it affects, and the literature range when the disease is known. Call it when the user asks what can be changed or what a parameter means, or when a diagnostic names a parameter, instead of answering from memory. Every path it lists can be set through configure_simulation's fields or its advanced patch.",
+      "List the simulation parameters of the current model and contact network (or the defaults before a scenario exists): for each one its path, label, meaning, unit, bounds, current value and where that value came from (user, database, fetch, default, illustrative), what it affects, and the literature range when the disease is known. Call it when the user asks what can be changed or what a parameter means, or when a diagnostic names a parameter, instead of answering from memory. Every path it lists can be set through configure_simulation's fields or its advanced patch.",
     eager_input_streaming: true,
     input_schema: {
       type: "object",
       properties: {
-        module: { type: ["string", "null"], enum: [...MODULES, null], description: "Only this module: disease, network, demographics, interventions, or run." },
+        module: { type: ["string", "null"], enum: [...MODULES, null], description: "Only this module: disease, network, demographics, run, or interventions (the fields of an intervention entry, which are listed only on request)." },
         tier: { type: ["string", "null"], enum: [...TIERS, null], description: "Only this tier: core, advanced, or expert." },
       },
       required: [],

@@ -25,9 +25,13 @@ export type DescribedParam = {
   db_range: DbRange | null;
 };
 
-export const INTERVENTIONS_NOTE = "Interventions (vaccine, treatment, seasonality) are set through configure_simulation's own fields and listed in its config.";
+export const INTERVENTIONS_NOTE = "Interventions (vaccine, treatment, seasonality, contact_reduction, transmission_reduction, behavior_response) are entries of configure_simulation's interventions field and are listed in its config; call describe_parameters with module interventions for their fields.";
 
-/** Spec 9.2: the registry for the current model, each parameter with its value and where it came from. */
+/**
+ * Spec 9.2: the registry for the current model, each parameter with its value and where it came from. Follow-up spec 8.5: for the
+ * scenario's network too (the random one before a scenario), so a random-network scenario is not shown the hybrid layers; and with
+ * module interventions, the fields of an intervention entry, which have no current value of their own.
+ */
 export async function describeParameters(input: DescribeParametersArgs, deps: ToolDeps): Promise<ToolOutcome> {
   const scenario = deps.scenario;
   const params = scenario.params;
@@ -36,8 +40,10 @@ export async function describeParameters(input: DescribeParametersArgs, deps: To
   const entry = disease ? lookup(disease) : null;
   const flat = params ? flattenParams(params as unknown as Record<string, unknown>) : null;
   const sources = params ? valueSources(params, scenario, disease) : null;
-  const parameters: DescribedParam[] = applicableSpecs(model)
-    .filter((s) => s.module !== "interventions" && (!input.module || s.module === input.module) && (!input.tier || s.tier === input.tier))
+  const network = params?.network.network_type ?? "random";
+  const entryFields = input.module === "interventions";
+  const parameters: DescribedParam[] = applicableSpecs(model, network)
+    .filter((s) => (entryFields ? s.module === "interventions" : s.module !== "interventions" && (!input.module || s.module === input.module)) && (!input.tier || s.tier === input.tier))
     .map((s) => ({
       path: s.path,
       label: s.label,
@@ -46,8 +52,8 @@ export async function describeParameters(input: DescribeParametersArgs, deps: To
       bounds: s.bounds,
       choices: s.choices,
       tier: s.tier,
-      current: flat ? (flat[s.path] ?? null) : s.default,
-      source: sources ? (sources[s.path] ?? null) : null,
+      current: entryFields ? null : flat ? (flat[s.path] ?? null) : s.default,
+      source: entryFields ? null : sources ? (sources[s.path] ?? null) : null,
       affects: s.affects,
       requires: s.requires,
       db_range: dbRange(entry, s.db_field),

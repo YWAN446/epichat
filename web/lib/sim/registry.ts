@@ -43,8 +43,9 @@ export function appliesOn(spec: ParamSpec, network: string): boolean {
   return spec.networks.length === 0 || spec.networks.includes(network);
 }
 
-export function applicableSpecs(model: string): ParamSpec[] {
-  return PARAM_REGISTRY.filter((s) => appliesTo(s, model));
+/** The parameters of a model and, when one is given, of a network (follow-up spec 8.5). */
+export function applicableSpecs(model: string, network?: string): ParamSpec[] {
+  return PARAM_REGISTRY.filter((s) => appliesTo(s, model) && (network === undefined || appliesOn(s, network)));
 }
 
 export function boundsOf(path: string): [number, number] {
