@@ -1,0 +1,69 @@
+# Seed Default Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** The default initial prevalence of a scenario is 0.05% of the agents (5 of the default 10,000), not 1%. A default run then starts from a handful of cases, the what-if windows anchor on the day 1% had been infected instead of day 0, and the live run's measured R0 is no longer withheld at a high R0 for exhausting the population with its seeds.
+
+**Architecture:** The registry (`epichat/params/registry.py`) is the one place the default is written; the pydantic schema and the zod schema read it from there, as they do for every other leaf, instead of carrying their own literal. The exported `web/data/param_registry.json` follows. The v1 migration keeps its own fallback of 1% (`epichat/schema.py` is v1's default, and a v1 scenario without `init_prev` meant 1% when it was written). The fade-out diagnostic learns the one new case a smaller seed creates: a fraction-mode seeding can infect nobody (0.7% of default runs at 10,000 agents), and such a run must say so rather than show a flat line without a word.
+
+**Tech Stack:** Python (registry, schema, diagnostics, export script), TypeScript (zod schema, prompt), the existing test suites. No Starsim change.
+
+**Spec:** Owner's decision of 2026-10-14. The sim-parameters spec `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`, section 8.3 and its table, records 0.01; this plan supersedes that one value.
+
+## Global Constraints
+
+- The parity baseline `tests/fixtures/sim_baseline_v1.json` is not re-captured. Its cases set `init_prev` explicitly, so it does not move.
+- The seeding mechanism does not change: fraction mode stays a per-agent Bernoulli draw (`ss.bernoulli`), count mode stays `ss.choose_n`. Only the default value changes.
+- No database migration, no new npm dependency, `npm --prefix web ci` only. The registry version does not change: a stored scenario carries its own seed value and is not re-read.
+- The v1 fallbacks (`epichat/params/migrate.py` and the flat-config branch of `web/lib/sim/params.ts`) keep 0.01.
+
+## Review Focus
+
+- With five expected seeds the early fade-out is no longer rare at a low R0 (about 13% of runs at R0 1.5, 1% at R0 2.5). Does the `early_fadeout` diagnostic fire on every such run, and does its lever read well with these numbers?
+- A fraction-mode seeding that infects nobody: does the run complete, does `measure_r0` return None rather than divide by zero, and does the diagnostic name the case?
+- `stats.r0_measured` of a live run is now the mean over about five seeds. Where does the prompt or a diagnostic quote it as if it were precise? (`r0_gap` already widens its tolerance when the seeds are few.)
+- Every place that still describes the default as 1%: the prompt's sentence on the withheld measured R0, the diagnostics' comment on the instant-peak threshold, test names, the fixture script's comment.
+- Nothing else in the Python suite depends on the default implicitly: tests that build `SimParamsV2.model_validate({})` and assert an outcome.
+
+---
+
+### Task 1: The default, in one place
+
+**Files:**
+- Modify: `epichat/params/registry.py` (the `disease.seed.value` default)
+- Modify: `epichat/params/schema_v2.py` (the `Seed` default reads the registry)
+- Modify: `web/lib/sim/params.ts` (the `seed` prefault reads `defaultOf`)
+- Regenerate: `web/data/param_registry.json` (`.venv/Scripts/python.exe scripts/export_web_data.py`)
+- Test: `tests/test_schema_v2.py`, `tests/test_param_registry.py`, `web/tests/sim/params.test.ts`
+
+**Steps:**
+1. Write the failing tests: the registry's default is 0.0005; a validated empty v2 body dumps `disease.seed.value` 0.0005 and the schema's `Seed` default equals the registry's; the zod `validateParams({})` default equals the export's; the v1 migration of a flat config without `init_prev` still gives 0.01 (both sides).
+2. Change the registry default; make the two schemas read it; regenerate the export.
+3. Run `tests/test_schema_v2.py tests/test_param_registry.py tests/test_param_migrate.py tests/test_web_exports.py tests/test_readme.py` and `web/tests/sim/params.test.ts web/tests/client/parameters.test.ts web/tests/tools`.
+
+### Task 2: A run that seeds nobody
+
+**Files:**
+- Modify: `epichat/sim/diagnostics.py` (`_early_fadeout`)
+- Test: `tests/test_sim_diagnostics.py`, `tests/test_sim_builder.py` (one real zero-seed run)
+
+**Steps:**
+1. Failing tests: a run whose realized seeds are 0 (fraction mode, `total_infected` 0, nobody infectious) raises `early_fadeout` with the seed lever at the floor of 10 and a message that says nobody was infected at the start; a real run built with a vanishing fraction completes with `seeds_day0` 0 and `r0_measured` None.
+2. Extend the condition so `seeds == 0` qualifies without the `total < 2 × seeds` test (0 < 0 is false today), and word the lever for that case.
+3. Run `tests/test_sim_diagnostics.py tests/test_sim_builder.py`.
+
+### Task 3: The words that still say 1%
+
+**Files:**
+- Modify: `web/lib/chat/prompt.ts` (the withheld measured R0 is no longer "expected with the default seeding")
+- Modify: `epichat/sim/diagnostics.py` (the comment on `INSTANT_PEAK_SEED_SHARE`), `scripts/export_parity_fixtures.py` (the comment on the day-0 cases), `tests/test_sim_diagnostics.py` and `tests/test_sim_whatif.py` (test names that call 1% the default)
+- Modify: `README.md` if any sentence outside the v1 table states the default seeding
+
+**Steps:**
+1. Grep for `1%`, `default seeding`, `init_prev` and `0.01` across `web/lib`, `web/docs`, `epichat`, `scripts`, `tests`, `README.md`; change what describes the default; leave what describes v1 or a chosen value.
+2. Run `web/tests/chat`, `tests/test_readme.py`, `tests/test_web_exports.py` (the fixture script's output must not change).
+
+### Final
+
+- Full suites one at a time: Python `tests/` in chunks, `tests/test_r0_calibration.py`, `sim/tests`, vitest, typecheck, lint.
+- One fresh reviewer on the whole range with the Review Focus above; one fix pass.
