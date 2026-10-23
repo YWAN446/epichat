@@ -407,7 +407,7 @@
 
             {
               "value": 2.21,
-              "range": [0.07, 2.08],
+              "range": "N/A",
               "population": "General",
               "source_type": "systematic_review",
               "title": "Attack rate, case fatality rate and determinants of measles infection during a measles outbreak in Ethiopia: systematic review and meta-analysis",
@@ -1689,9 +1689,9 @@
           "fatality_rate": {
               "unit": "percentage",
               "consensus":{
-                "min": 0.005,
-                "max": 0.005,
-                "typical": 0.005,
+                "min": 0.0005,
+                "max": 0.0005,
+                "typical": 0.0005,
                 "notes": "Death from postnatally acquired rubella is exceptionally rare. Historical U.S. surveillance estimated approximately 1 death per 210,000 cases (~0.00048%)."
             },
 
@@ -1797,7 +1797,7 @@
         "estimates":[
           {
             "value": 9,
-            "range": [10,12],
+            "range": [8,10],
             "population": "General",
             "source_type": "review_article",
             "title": "Effect of Routine Varicella Immunization on the Epidemiology and Immunogenicity of Varicella and Shingles",
@@ -2033,16 +2033,68 @@
               "year": 2025
             },
 
-        "asymptomatic_fraction": {
+          "asymptomatic_fraction": {
           "unit": "fraction",
-          "consensus":{
-            "min": "N/A",
-            "max": "N/A",
-            "typical": "N/A",
-            "notes": "No varicella-specific estimates of asymptomatic fraction have been identified."
+          "consensus": {
+            "min": 0.07,
+            "max": 0.33,
+            "typical": 0.10,
+            "notes": "The spread here is almost entirely about what counts as evidence of silent infection: household-exposure designs give roughly 7%, while serology-without-reported-history designs give 11% to 33% because they conflate true subclinical infection with recall failure. Recall fails in both directions in the same cohorts, so the household figure is the better-identified quantity and anchors the typical value; SPLIT BY VACCINATION STATUS before use, since the relevant phenomenon in vaccinated populations is breakthrough varicella, which is mild and atypical rather than asymptomatic."
           },
 
-          "estimates": []
+          "estimates": [
+            {
+              "value": 0.07,
+              "range": "N/A",
+              "population": "Adults without a history of varicella, exposed to infected children in the household",
+              "source_type": "clinical_reference",
+              "title": "Chickenpox, Measles, and Mumps",
+              "url": "https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox",
+              "doi": "N/A",
+              "country": "United States",
+              "year": 2016,
+              "notes": "Family studies found only 8% of adults without a varicella history developed clinical disease on household exposure, implying a subclinical attack rate near 7% in a population that is 90% immune. BEST-IDENTIFIED DESIGN in this parameter because exposure is observed rather than inferred from serology, so it avoids the recall problem that inflates the entries below; the underlying studies are old and small."
+            },
+
+            {
+              "value": 0.114,
+              "range": "N/A",
+              "population": "Children up to 14 years with no reported history of varicella, northern Greece",
+              "source_type": "serological_survey",
+              "title": "How reliable is the history of chickenpox? Varicella serology among children up to 14 years of age",
+              "url": "https://www.sciencedirect.com/science/article/pii/S1201971203901068",
+              "doi": "N/A",
+              "country": "Greece",
+              "year": 2003,
+              "notes": "Of 402 children with no reported varicella history, 11.4% were seropositive. RECALL FAILURE IS MEASURED HERE AND RUNS BOTH WAYS — 12.2% of children claiming prior varicella lacked antibodies and 10.2% of those with pediatrician-documented disease were seronegative — so this is an upper bound on silent infection, not an estimate of it."
+            },
+
+            {
+              "value": 0.33,
+              "range": "N/A",
+              "population": "Unvaccinated children without a diagnosed varicella case, ten-year follow-up, varicella-endemic countries",
+              "source_type": "research_article",
+              "title": "Clinically- versus serologically-identified varicella: A hidden infection burden. A ten-year follow-up from a randomized study in varicella-endemic countries",
+              "url": "https://www.tandfonline.com/doi/full/10.1080/21645515.2021.1932217",
+              "doi": "10.1080/21645515.2021.1932217",
+              "country": "Multiple",
+              "year": 2021,
+              "notes": "About one-third of unvaccinated, undiagnosed children developed an anti-VZV response, with seropositivity among those without a confirmed case rising from 8% at year one to 75% at year ten. WRONG DENOMINATOR FOR THIS FIELD: this is cumulative silent infection across a decade of repeated exposure, not the silent share of a given infection, and the authors note these events may be minimal or atypical rather than truly asymptomatic."
+            },
+
+            {
+              "value": 0.836,
+              "range": "N/A",
+              "population": "Unvaccinated patients aged 11 and over with no known chickenpox history, hospital serology",
+              "source_type": "serological_survey",
+              "title": "Assumptions and Realities: Unraveling Varicella Zoster Virus Immunity in Unvaccinated Populations",
+              "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11777516/",
+              "doi": "10.1093/ofid/ofae631.2503",
+              "country": "Portugal",
+              "year": 2025,
+              "notes": "83.6% of 613 unvaccinated patients with no known varicella history were VZV IgG positive, rising with age. DO NOT USE AS AN ASYMPTOMATIC FRACTION — this is lifetime seroprevalence among adults whose childhood illness is decades past, so it is dominated by recall decay, and the cohort was selected for comorbidity or immunosuppression."
+            }
+          ]
 
   }
   }
@@ -2857,12 +2909,24 @@
             "unit": "days",
             "consensus": {
               "min": 1,
-              "max": 1,
-              "typical": 1,
-              "notes": "Persons are generally considered infectious from about 7 days before symptom onset until 24 hours after starting appropriate antibiotic therapy. Without treatment, meningococci can persist in nasopharyngeal secretions considerably longer, since clearance is driven by antibiotics rather than natural resolution."
+              "max": 8,
+              "typical": 8,
+              "notes": "Cases are considered infectious from 7 days before symptom onset until 24 hours after appropriate antibiotic therapy begins, with peak infectiousness shortly before onset."
             },
 
             "estimates": [
+                {
+                  "value": 8,
+                  "range": [1, 8],
+                  "population": "Cases of invasive meningococcal disease, treated",
+                  "source_type": "government_report",
+                  "title": "Meningococcal Disease Quicksheet",
+                  "url": "N/A",
+                  "doi": "N/A",
+                  "country": "United States",
+                  "year": 2025,
+                  "notes": "Cases are considered infectious from 7 days before symptom onset until 24 hours after appropriate antibiotic therapy begins, with peak infectiousness shortly before onset; value is the maximum window under prompt treatment (7 presymptomatic days plus ~1 treated day) and the range reflects how much earlier treatment truncates it. TREATMENT-TRUNCATED AND CONTROL-ORIENTED, so this is a contact-tracing lookback window rather than a natural duration of infectiousness, and it should not be pooled with untreated or carriage-based durations."
+                },
               {
                 "value": 1,
                 "range": "N/A",
@@ -3702,6 +3766,20 @@
                   "country": "Democratic Republic of the Congo",
                   "year": 2026,
                   "notes": "CDC MMWR 75(35):554-556, 3-week average for July 31-August 21, 2026. UNIT MISMATCH: this is contacts identified per confirmed case across an entire case investigation, not contacts per day, so it cannot be used in this field without conversion and there is no exposure duration given to convert with. NOT A BEHAVIORAL ESTIMATE: the operational target is >=20 contacts per case and CDC reads 10.6 as evidence of underreporting and underascertainment, so this is a lower bound on tracing performance, not a measurement of the contact network. Corroborating evidence that ascertainment was poor: only 15-20% of new confirmed cases had been previously identified as contacts (target >90%), 72% of validated alerts received laboratory testing, and 59% of confirmed deaths occurred outside an Ebola treatment unit. Context: second-largest Ebola outbreak recorded, 5,458 confirmed cases and 2,606 confirmed deaths (48%) as of August 21, 2026, roughly 5,000 cases in 100 days, 84% in Ituri province, response constrained by armed conflict and population displacement in eastern DRC. Caution for the consensus block: contacts identified per case during an uncontrolled outbreak in a conflict zone reflects response capacity, not transmission-relevant contact structure, and should not be pooled with survey-based contact data. Post-dates my training data; supplied by the user and not independently verified."
+                },
+
+                {
+                  "value": 8.5,
+                  "range": "N/A",
+                  "unit_override": "contacts/case",
+                  "population": "Confirmed EVD cases, Western Area districts, Sierra Leone 2014-2015",
+                  "source_type": "surveillance",
+                  "title": "Contact Tracing during an Outbreak of Ebola Virus Disease in the Western Area Districts of Sierra Leone: Lessons for Future Ebola Outbreak Response",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/27446896/",
+                  "doi": "10.3389/fpubh.2016.00130",
+                  "country": "Sierra Leone",
+                  "year": 2016,
+                  "notes": "32,706 contacts listed against 3,838 confirmed cases, a mean of 8.5 contacts per case; UNIT MISMATCH as with the DRC entry, this is contacts per case investigation rather than contacts per day and cannot be converted without an exposure duration. NOT A BEHAVIORAL ESTIMATE: only 22.1% of confirmed cases had been listed as contacts at illness onset, and the authors attribute the shortfall to community mistrust, concealed exposure information, politicized tracer recruitment and incomplete databases — so this measures tracing performance, not contact structure."
                 }
               ]
             },
@@ -4286,20 +4364,20 @@
                 }
               ]
             },
-##double check following
+
             "fatality_rate": {
               "unit": "percentage",
               "consensus": {
                 "min": 0.0,
-                "max": 4,
+                "max": 1.7,
                 "typical": 0.31,
-                "notes": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%, per hospital admission about 0.73%, and 3-4% among hospitalized infants with underlying heart or lung disease, while healthy adults essentially never die of RSV. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen."
+                "notes": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen."
               },
 
               "estimates": [
                 {
                   "value": 0.31,
-                  "range": "N/A",
+                  "range": [0.1, 1.4],
                   "metric": "CFR per LRTI episode",
                   "population": "Children 0-60 months, global, 2019",
                   "source_type": "systematic_review",
@@ -4308,84 +4386,46 @@
                   "doi": "10.1016/S0140-6736(22)00478-0",
                   "country": "Multiple",
                   "year": 2022,
-                  "notes": "Li et al. estimated 33.0 million (UR 25.4-44.6 million) RSV-associated ALRI episodes and 101,400 RSV-attributable deaths globally, giving roughly 0.31% deaths per episode, with RSV behind 1 in 50 deaths in children under 5 and 1 in 28 in those under 6 months. DENOMINATOR IS LRTI EPISODES, not all infections, so this sits well above a true infection fatality rate."
+                  "notes": "Li et al. estimated 33.0 million (UR 25.4-44.6 million) RSV-associated ALRI episodes and 101,400 RSV-attributable deaths globally, giving roughly 0.31% deaths per episode, with RSV behind 1 in 50 deaths in children under 5 and 1 in 28 in those under 6 months. THE GLOBAL POINT ESTIMATE HIDES A TEN-FOLD INCOME GRADIENT: range shown is the study's in-hospital CFR span from 0.1% (UR 0.1-0.2) in high-income to 1.4% (0.6-2.8) in low-income countries, a DIFFERENT DENOMINATOR borrowed to bound the spread, since no per-episode stratification is reported. DENOMINATOR IS LRTI EPISODES, not all infections, so the central value sits well above a true infection fatality rate."
                 },
 
                 {
-                  "value": 0.73,
-                  "range": "N/A",
-                  "metric": "In-hospital CFR",
-                  "population": "Children 0-60 months admitted with RSV ALRI, global, 2019",
+                  "value": "0.85",
+                  "range": [0.0, 1.7],
+                  "metric": "CFR, inpatient",
+                  "population": "US infants and children under 5 with RSV",
                   "source_type": "systematic_review",
-                  "title": "Global, regional, and national disease burden estimates of acute lower respiratory infections due to respiratory syncytial virus in children younger than 5 years in 2019: a systematic analysis",
-                  "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
-                  "doi": "10.1016/S0140-6736(22)00478-0",
-                  "country": "Multiple",
-                  "year": 2022,
-                  "notes": "Same study: 26,300 in-hospital deaths among 3.6 million admissions, about 0.73%. BIAS RUNS THE UNUSUAL WAY — for every in-hospital death there are roughly three community deaths, so hospital-based CFRs understate total RSV mortality wherever access to care is poor, the reverse of the usual severity-selection effect."
-                },
-
-                {
-                  "value": 0.0,
-                  "range": "N/A",
-                  "metric": "CFR",
-                  "population": "Healthy term infants, first year of life, US",
-                  "source_type": "modeling_study",
-                  "title": "Respiratory Syncytial Virus Prevalence and Risk Factors among Healthy Term Infants, United States",
-                  "url": "https://wwwnc.cdc.gov/eid/article/30/10/24-0609_article",
-                  "doi": "10.3201/eid3010.240609",
+                  "title": "Mortality Among US Infants and Children Under 5 Years of Age with Respiratory Syncytial Virus and Bronchiolitis: A Systematic Literature Review",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/35968871/",
+                  "doi": "10.1093/infdis/jiac226",
                   "country": "United States",
-                  "year": 2024,
-                  "notes": "Population-based birth cohort of 1,680 healthy term infants across two seasons: 53.4% infected in the first year, 2.8% of infected infants hospitalized, and no deaths. A CEILING STATEMENT, NOT A RATE — the cohort cannot resolve a fatality rate this low, but it bounds risk for healthy term infants with access to care and anchors the bottom of the consensus band."
+                  "year": 2022,
+                  "notes": "Bylsma et al., 42 studies: RSV CFRs ranged from 0% to 1.7% (n = 15) and all-cause bronchiolitis from 0% to 0.17% (n = 6), with higher values among premature, ICU-admitted and publicly insured children. NO POINT ESTIMATE IS DEFENSIBLE — the review found case definitions varying across ICD codes and laboratory confirmation, no study using systematic RSV testing, only 10 nationally representative studies with data ending in 2013, and just 2 covering otherwise healthy late-preterm to full-term infants."
                 }
               ]
             },
 
-            "average_contacts_daily": {
-              "unit": "contacts/day",
-              "consensus": {
-                "min": 7.95,
-                "max": 19.77,
-                "typical": 13.4,
-                "notes": "APPLICABLE HERE, unlike the dengue entry: RSV spreads person to person by respiratory secretions and close contact, so a measured human contact rate is the right object. Two cautions — contacts are strongly age-assortative and children drive RSV transmission, so an unstratified mean is the wrong input for an age-structured model, and raw counts ignore contact duration and intensity, which the POLYMOD authors themselves flag as a limit on using contact rates alone."
-              },
+        "average_contacts_daily": {
+          "unit": "contacts/day",
+          "consensus":{
+            "min": "N/A",
+            "max": "N/A",
+            "typical": "N/A",
+            "notes": "No validateable information found for RSV daily contacts."
+          },
 
-              "estimates": [
-                {
-                  "value": 13.4,
-                  "range": [7.95, 19.77],
-                  "population": "General population, eight European countries",
-                  "source_type": "modeling_study",
-                  "title": "Social Contacts and Mixing Patterns Relevant to the Spread of Infectious Diseases",
-                  "url": "https://journals.plos.org/plosmedicine/article?id=10.1371%2Fjournal.pmed.0050074",
-                  "doi": "10.1371/journal.pmed.0050074",
-                  "country": "Multiple (Europe)",
-                  "year": 2008,
-                  "notes": "POLYMOD: 7,290 diary participants recorded 97,904 contacts, mean 13.4 per person per day; range shown is the span of country means (Germany 7.95, Italy 19.77), NOT a confidence interval. A contact is skin-to-skin touch or a face-to-face conversation of three or more words within two metres, so the figure is definition-bound and only comparable to surveys using the same definition."
-                },
+          "estimates":[]
 
-                {
-                  "value": 8.1,
-                  "range": "N/A",
-                  "population": "General population, Hong Kong",
-                  "source_type": "modeling_study",
-                  "title": "Social contact patterns relevant to the spread of respiratory infectious diseases in Hong Kong",
-                  "url": "https://www.nature.com/articles/s41598-017-08241-1",
-                  "doi": "10.1038/s41598-017-08241-1",
-                  "country": "Hong Kong",
-                  "year": 2017,
-                  "notes": "POLYMOD-design diary survey recorded 8.1 contacts per person per day, against 13.4 in Europe and 18.0 in an earlier Hong Kong survey using a different instrument. DO NOT TRANSPORT BETWEEN SETTINGS: a better than two-fold spread across surveys sharing a contact definition, and a wider one across instruments, bounds how much a borrowed contact rate can be trusted."
-                }
-              ]
+              
             },
 
             "immunity_duration": {
               "unit": "days",
               "consensus": {
                 "min": 60,
-                "max": 730,
-                "typical": 240,
-                "notes": "SHORT, PARTIAL AND NEVER STERILIZING — reinfection throughout life is the norm for RSV, including within a single season, and repeat infection does not require antigenic change. Immunity attenuates severity more than it prevents infection, so the correct model structure returns people to a reduced-severity susceptible state rather than holding them in a recovered compartment; no correlate of protection is established, so every value here is an interval between detected infections rather than a measured protection duration."
+                "max": 812,
+                "typical": 460,
+                "notes": "The typical value is based on the third estimate. SHORT, PARTIAL AND NEVER STERILIZING — reinfection throughout life is the norm for RSV, including within a single season, and repeat infection does not require antigenic change. Immunity attenuates severity more than it prevents infection, so the correct model structure returns people to a reduced-severity susceptible state rather than holding them in a recovered compartment; no correlate of protection is established, so every value here is an interval between detected infections rather than a measured protection duration."
               },
 
               "estimates": [
@@ -4434,9 +4474,9 @@
               "unit": "fraction",
               "consensus": {
                 "min": 0.26,
-                "max": 0.70,
-                "typical": 0.55,
-                "notes": "Driven by age and by surveillance intensity rather than by genuine disagreement: infants are the most symptomatic group and give the lowest fractions, while cohorts sampling on a fixed schedule regardless of symptoms find far more silent infection than clinic-based or symptom-triggered designs. Detection method compounds this, since serology-only ascertainment counts both truly silent infection and illness the surveillance missed, so the definition of asymptomatic should be recorded alongside any value used."
+                "max": 0.67,
+                "typical": 0.67,
+                "notes": "The typical is based on the first estimate as it includes all ages, urban and rural household cohort. Driven by age and by surveillance intensity rather than by genuine disagreement: infants are the most symptomatic group and give the lowest fractions, while cohorts sampling on a fixed schedule regardless of symptoms find far more silent infection than clinic-based or symptom-triggered designs. Detection method compounds this, since serology-only ascertainment counts both truly silent infection and illness the surveillance missed, so the definition of asymptomatic should be recorded alongside any value used."
               },
 
               "estimates": [
@@ -4449,7 +4489,7 @@
                   "url": "https://www.nature.com/articles/s41467-023-44275-y",
                   "doi": "10.1038/s41467-023-44275-y",
                   "country": "South Africa",
-                  "year": 2023,
+                  "year": 2024,
                   "notes": "PHIRST cohort sampled regardless of symptoms: 32% of individuals had at least one infection, 33% of 396 infections were symptomatic, and only 2% sought care, giving an asymptomatic fraction near 0.67. Symptom-independent sampling is why this runs well above clinic-based estimates, and 10% of infected individuals had a repeat infection within the same season."
                 },
 
@@ -4460,23 +4500,10 @@
                   "source_type": "modeling_study",
                   "title": "Epidemiology of RSV infections in a birth cohort of healthy children, PREVAIL Cohort 2017-2020",
                   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11777740/",
-                  "doi": "N/A",
+                  "doi": "10.1093/ofid/ofae631.906",
                   "country": "United States",
-                  "year": 2024,
+                  "year": 2025,
                   "notes": "Of 91 PCR-identified infections under weekly surveillance, 24 (26%) were asymptomatic, 24% symptomatic but not medically attended and 50% medically attended. LOWEST ANCHOR AND AGE-SPECIFIC: infants are the most symptomatic age group, so this should not be generalized past the first two years of life."
-                },
-
-                {
-                  "value": 0.639,
-                  "range": "N/A",
-                  "population": "Healthy term infants, first year of life, serology-ascertained",
-                  "source_type": "modeling_study",
-                  "title": "Respiratory Syncytial Virus Prevalence and Risk Factors among Healthy Term Infants, United States",
-                  "url": "https://wwwnc.cdc.gov/eid/article/30/10/24-0609_article",
-                  "doi": "10.3201/eid3010.240609",
-                  "country": "United States",
-                  "year": 2024,
-                  "notes": "Among 1,680 healthy term infants, 53.4% were infected in the first year and 63.9% of infections were found by year-end serology alone rather than by symptom-triggered active surveillance. NOT STRICTLY ASYMPTOMATIC: serology-only detection also captures illness the surveillance missed, so this is an upper bound for an age group whose PCR-surveillance counterpart above gave 0.26."
                 }
               ]
             }
