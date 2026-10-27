@@ -736,3 +736,38 @@ footer.site .bottom {
   /* impact bar hidden — complexity label is sufficient at this size */
   .road-impact { display: none !important; }
 }
+
+/* ------------------------------------------------------------
+   Web agent pages: tool names, "Try next" chips, chart summary
+   ------------------------------------------------------------ */
+
+.tool {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  padding: 1px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.chart-kv { margin-top: 1rem; }
+@media (max-width: 640px) {
+  .chart-kv { grid-template-columns: 1fr; gap: 0 0; }
+  .chart-kv dd { margin-bottom: 0.5rem; }
+}
+@media (max-width: 640px) {
+  /* a stage's tool names take the rest of the row and wrap */
+  .layer-row .layer-status { flex: 1 1 0 !important; min-width: 0; flex-wrap: wrap !important; }
+}
