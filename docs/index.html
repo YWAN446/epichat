@@ -59,21 +59,20 @@
       </div>
       <div class="terminal-body" style="white-space: pre-line;"><span class="prompt user"></span><span style="color: var(--ink);">Model a measles outbreak in Kenya at current vaccination coverage.</span>
 
-<span class="prompt sys"></span><span style="color: var(--ink-3);">lookup_disease → </span><span style="color: var(--accent);">measles · SEIR · R₀ 15 · latent 12 d · infectious 8 d · fatality 1.5%</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">lookup_disease → </span><span style="color: var(--accent);">measles · R₀ 15 · latent 12 d · infectious 8 d · fatality 1.5%</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">configure_simulation → </span><span style="color: var(--accent);">SEIR · R₀ 15 · both periods gamma, illustrative spread</span>
 <span class="prompt sys"></span><span style="color: var(--ink-3);">fetch_demographics → </span><span style="color: var(--accent);">Kenya · UN WPP 2024 ages · Prem 2021 contacts · R₀ held at 15</span>
 <span class="prompt sys"></span><span style="color: var(--ink-3);">fetch_vaccination_coverage → </span><span style="color: var(--accent);">first dose 88% (WHO/UNICEF, 2024) · immune at the start</span>
 
 <span class="prompt user"></span><span style="color: var(--ink);">Run it five times.</span>
 
-<span class="prompt sys"></span><span style="color: var(--ink-3);">run_simulation → </span><span style="color: var(--accent);">10,000 agents · 365 days · 5 runs · median run 9.9% infected, peak day 111</span>
-<span class="prompt sys"></span><span style="color: var(--ink-3);">diagnostics → </span><span style="color: var(--accent);">what_if · 4 interventions to try</span>
-
-<span style="font-family: var(--serif); font-size: 1.02rem; color: var(--ink); display: block; margin: 0.8rem 0; line-height: 1.55; font-style: italic;">"Even with 88% of people immune at the start, measles reaches the other 12%. In the median run of five the outbreak peaks around day 111 and infects 9.9% of the population within the year. This assumes today's first-dose coverage protects every age group alike."</span>
-<span class="prompt sys"></span><span style="color: var(--ink-3);">try next · </span><span class="chip">Vaccinate 70% in a campaign from day 48 to day 78 and rerun</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">configure_simulation → </span><span style="color: var(--accent);">5 replicates</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">run_simulation → </span><span style="color: var(--accent);">10,000 agents · 365 days · median run 10.3% infected, peak day 150</span>
+<span style="font-family: var(--serif); font-size: 1.02rem; color: var(--ink); display: block; margin: 0.8rem 0; line-height: 1.55; font-style: italic;">"Even with 88% of people immune at the start, measles spreads among the other 12%. In the median run of five, 10.3% of the population is infected within the year, most of those who were not immune, with the peak on day 150; across the five runs the peak falls between day 107 and day 196. The model counts this year's first-dose coverage as full immunity at every age, a strong simplification."</span><span class="prompt sys"></span><span style="color: var(--ink-3);">try next · </span><span class="chip">Vaccinate 70% in a campaign from day 89 to day 119 and rerun</span>
 <span class="prompt sys"></span><span style="color: var(--ink-3);">ready. </span><span style="color: var(--accent); animation: pulse 1.2s infinite;">█</span></div>
     </div>
     <p class="mono" style="font-size: 0.7rem; color: var(--ink-3); margin-top: 0.7rem; letter-spacing: 0.04em;">
-      Tool calls and numbers from a run of the current simulation code; the reply is a paraphrase.
+      The configuration is what the app's own tools build for this question, run with the simulation service's code; the conversation and the reply are illustrative.
     </p>
 
     <!-- stats strip -->
@@ -182,7 +181,7 @@
       </div>
       <h2 class="section-title">
         The model handles language.
-        <em>Validated tools handle the simulation.</em>
+        <em>Tools handle the simulation.</em>
       </h2>
     </div>
 
@@ -241,7 +240,7 @@
           <dl class="kv">
             <dt>disease</dt>      <dd>measles · SEIR <span style="color: var(--ink-3);">database</span></dd>
             <dt>R₀</dt>           <dd>15 → β calibrated <span style="color: var(--ink-3);">database, range 12–18</span></dd>
-            <dt>periods</dt>      <dd>latent 12 d · infectious 8 d <span style="color: var(--ink-3);">database</span></dd>
+            <dt>periods</dt>      <dd>latent 12 d · infectious 8 d, gamma <span style="color: var(--ink-3);">database means, illustrative spread</span></dd>
             <dt>fatality</dt>     <dd>1.5% of infections <span style="color: var(--ink-3);">database</span></dd>
             <dt>population</dt>   <dd>Kenya's ages, births and deaths <span style="color: var(--ink-3);">UN WPP 2024</span></dd>
             <dt>network</dt>      <dd>age-structured <span style="color: var(--ink-3);">Prem 2021 matrix for Kenya</span></dd>
@@ -260,18 +259,19 @@
     <div class="panel" style="padding: 2rem 2.4rem;">
       <div class="label">▸ REPLY</div>
       <p style="font-family: var(--serif); font-size: 1.3rem; line-height: 1.5; margin: 0.8rem 0 0; font-style: italic; text-wrap: pretty; max-width: 60ch;">
-        "In the median run of five the outbreak peaks around day 111 and 9.9%
-        of the population is infected within the year. A campaign vaccinating
-        70% between days 48 and 78 brings that to 1.45%, with the peak on day 78."
+        "In the median run of five, 10.3% of the population is infected within
+        the year (9.7–10.9% across the five), with the peak on day 150. A campaign
+        vaccinating 70% between days 89 and 119 brings the median run to 2.7%,
+        but with it the five runs disagree widely (1.3–6.5%), and the app says so."
       </p>
       <div class="label" style="margin-top: 1.6rem;">▸ TRY NEXT</div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem;">
-        <span class="chip">Vaccinate 70% in a campaign from day 48 to day 78 and rerun</span>
-        <span class="chip">Cut contacts by 30% from day 48 for eight weeks and rerun</span>
-        <span class="chip">Add masks (20% less transmission) from day 48 for 90 days and rerun</span>
+        <span class="chip">Vaccinate 70% in a campaign from day 89 to day 119 and rerun</span>
+        <span class="chip">Cut contacts by 30% from day 89 for eight weeks and rerun</span>
+        <span class="chip">Add masks (20% less transmission) from day 89 for 90 days and rerun</span>
       </div>
       <p class="mono" style="font-size: 0.7rem; color: var(--ink-3); margin: 1.4rem 0 0; letter-spacing: 0.04em;">
-        The run suggested four interventions and the app shows three as buttons; the first one's result is in the chart above. The reply is a paraphrase.
+        The run suggested four interventions and the app shows three as buttons; the first one's result is in the chart above. The conversation and the reply are illustrative.
       </p>
     </div>
   </div>
@@ -331,9 +331,9 @@
         </h2>
         <p style="font-family: var(--serif); font-size: 1.15rem; color: oklch(0.75 0.02 80); margin: 1.4rem 0 0; max-width: 50ch; line-height: 1.5;">
           EpiChat runs as a web app with sign-in. During the pilot it is open to
-          study participants, who agree at first sign-in that their conversations
-          are recorded for the research. To take part, or to see a walkthrough,
-          write to Yuke.
+          study participants with an Emory email address, who agree at first
+          sign-in that their conversations are recorded for the research. To take
+          part from elsewhere, or to see a walkthrough, write to Yuke.
         </p>
       </div>
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">

@@ -251,15 +251,16 @@
   <tbody>
     <tr><td><span class="k">SIR</span></td><td>S → I → R</td><td>Acute infection, lasting immunity</td><td>—</td></tr>
     <tr><td><span class="k">SEIR</span></td><td>S → E → I → R</td><td>A latent period (measles, mumps)</td><td>latent period · presymptomatic transmissibility</td></tr>
-    <tr><td><span class="k">SIS</span></td><td>S → I → S</td><td>No lasting immunity (gonorrhea)</td><td>—</td></tr>
+    <tr><td><span class="k">SIS</span></td><td>S → I → S</td><td>No lasting immunity (gonorrhea)</td><td>immunity boost and waning after an infection (<code>sis_imm_boost</code>, <code>sis_waning</code>; 0 by default)</td></tr>
     <tr><td><span class="k">SIRS</span></td><td>S → I → R → S</td><td>Waning immunity</td><td>immunity duration</td></tr>
     <tr><td><span class="k">SEIRS</span></td><td>S → E → I → R → S</td><td>Latent period and waning</td><td>latent period · presymptomatic transmissibility · immunity duration</td></tr>
     <tr><td><span class="k">SEIAR</span></td><td>S → E → I|A → R</td><td>Asymptomatic transmission</td><td>latent period · presymptomatic transmissibility · asymptomatic share (0.3) · their transmissibility (0.5)</td></tr>
   </tbody>
 </table>
 <p>
-  All six take an infectious period (a mean, and optionally a distribution
-  and its spread), susceptibility by age and personal variation in
+  All six take an infectious period (a mean with a distribution and its
+  spread; a new scenario's periods are gamma with an illustrative spread),
+  susceptibility by age and personal variation in
   susceptibility. All but SIS take a case fatality ratio, overall or by
   age group.
 </p>
@@ -324,7 +325,7 @@
   <tbody>
     <tr><td><span class="k">disease.model</span></td><td>sir</td><td>six models</td><td>Chosen from the disease</td></tr>
     <tr><td><span class="k">disease.beta</span></td><td>calibrated</td><td>0.001–1,000 per year</td><td>Transmission rate, set from the R₀ you give</td></tr>
-    <tr><td><span class="k">disease.dur_inf</span></td><td>10 days</td><td>0.5–365 days</td><td>Infectious period: a mean, optionally a distribution and spread</td></tr>
+    <tr><td><span class="k">disease.dur_inf</span></td><td>10 days, gamma</td><td>0.5–365 days</td><td>Infectious period: a mean, a distribution and a spread; the agent's scenarios use gamma with an illustrative spread, from the database's range when it has one</td></tr>
     <tr><td><span class="k">disease.dur_exp</span></td><td>—</td><td>0.1–1,000 days</td><td>Latent period (SEIR, SEIRS, SEIAR)</td></tr>
     <tr><td><span class="k">disease.dur_immune</span></td><td>—</td><td>7–36,500 days</td><td>Immunity duration (SIRS, SEIRS)</td></tr>
     <tr><td><span class="k">disease.p_death</span></td><td>0</td><td>0–1</td><td>Case fatality ratio</td></tr>
@@ -470,11 +471,14 @@
 
 <h2 id="privacy">Privacy · the study</h2>
 <p>
-  During the pilot EpiChat is open to study participants, who sign in with
-  an emailed code. Using it is taking part in the study: at first sign-in a
-  consent screen says what is recorded (your conversations, the agent's
-  summarized reasoning, how you use the app, your browser and device type)
-  and asks you to agree. Your messages go to Anthropic's Claude API to
+  During the pilot EpiChat is open to study participants with an Emory
+  email address, who sign in with an emailed code. Using it is taking part
+  in the study: at first sign-in a consent screen says what is recorded,
+  among other things your email address and the kind of participant you
+  are, your conversations, the agent's summarized reasoning, how you use
+  the app, your browser and device type, your profile answers and what the
+  agent remembers about you, and how often a link you share is opened, and
+  it asks you to agree. Your messages go to Anthropic's Claude API to
   produce replies; simulation settings go to the project's own simulation
   service. The data is kept for the duration of the study on servers in the
   United States, and deleting a conversation hides it from you but keeps it
