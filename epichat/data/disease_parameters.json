@@ -4430,7 +4430,7 @@
 
               "estimates": [
                 {
-                  "value": 60,
+                  "value": 150,
                   "range": [60, 240],
                   "population": "Adults rechallenged with homologous strain group",
                   "source_type": "modeling_study",
