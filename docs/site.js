@@ -17,14 +17,14 @@
             <img src="brand/epichat-icon.png" alt="" class="brand-mark theme-light-only">
             <img src="brand/epichat-icon-dark.png" alt="" class="brand-mark theme-dark-only">
             <span>EpiChat</span>
-            <span class="brand-meta">v0.3 · prototype</span>
+            <span class="brand-meta">web agent · pilot</span>
           </a>
           <div class="nav-links">
             ${NAV_LINKS.map(l => `
               <a href="${l.href}" class="${l.href === CURRENT ? "active" : ""}">${l.label}</a>
             `).join("")}
           </div>
-          <a href="https://epichat.streamlit.app/" target="_blank" rel="noopener" class="nav-cta">Try the demo ↗</a>
+          <a href="https://epichat-ai.vercel.app" target="_blank" rel="noopener" class="nav-cta">Open the app ↗</a>
           <button class="nav-burger" aria-label="Toggle menu" aria-expanded="false">☰</button>
         </div>
       </nav>
@@ -79,7 +79,8 @@
               <ul>
                 <li><a href="index.html">Overview</a></li>
                 <li><a href="docs.html">Docs</a></li>
-                <li><a href="https://epichat.streamlit.app/" target="_blank" rel="noopener">Live demo ↗</a></li>
+                <li><a href="https://epichat-ai.vercel.app" target="_blank" rel="noopener">The app (pilot) ↗</a></li>
+                <li><a href="https://github.com/YWAN446/epichat/blob/main/docs/data-review-requests.md" target="_blank" rel="noopener">Data review list ↗</a></li>
               </ul>
             </div>
             <div>

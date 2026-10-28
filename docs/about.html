@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body data-page="about">
 <div data-mount="nav"></div>
@@ -28,7 +28,7 @@
     <div class="hero-kicker">
       <span>● ABOUT</span>
       <span>CIDMATH · EMORY</span>
-      <span>PROTOTYPE v0.3</span>
+      <span>WEB AGENT · PILOT</span>
     </div>
 
     <h1 class="display" style="font-size: clamp(2.6rem, 5.5vw, 4.8rem);">
@@ -64,15 +64,15 @@
       <div class="panel">
         <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">01</div>
         <p style="font-size: 1.02rem; line-height: 1.55; color: var(--ink); margin: 0.6rem 0 0; text-wrap: pretty;">
-          LLMs now reliably generate structured code from natural
-          language in scoped domains.
+          LLMs now reliably turn natural language into structured
+          tool calls in scoped domains.
         </p>
       </div>
       <div class="panel">
         <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">02</div>
         <p style="font-size: 1.02rem; line-height: 1.55; color: var(--ink); margin: 0.6rem 0 0; text-wrap: pretty;">
-          Starsim's declarative, template-friendly parameter and model
-          interface is an ideal target for LLM-driven code generation.
+          Starsim's declarative parameter and model interface maps
+          onto one parameter registry, with bounds and units, that an agent can fill.
         </p>
       </div>
       <div class="panel">
@@ -169,7 +169,7 @@
           Disease-specific eyes
         </h3>
         <p style="font-size: 0.96rem; line-height: 1.5; color: var(--ink-2); margin: 0 0 1rem; text-wrap: pretty;">
-          For the benchmark queries and what a correct answer looks
+          For the benchmark questions and what a correct answer looks
           like in your area.
         </p>
         <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.7;">
@@ -182,16 +182,16 @@
       <div class="panel" style="padding: 1.8rem;">
         <div class="mono" style="font-size: 0.72rem; letter-spacing: 0.14em; color: var(--accent);">DATA</div>
         <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem;">
-          Layer 02 resolver
+          Cited values and country data
         </h3>
         <p style="font-size: 0.96rem; line-height: 1.5; color: var(--ink-2); margin: 0 0 1rem; text-wrap: pretty;">
-          Authoritative data streams so queries auto-load the right
-          local inputs.
+          The cited values the database still lacks, and authoritative
+          country data the agent can fetch.
         </p>
         <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.7;">
-          ▸ contact matrices<br>
-          ▸ surveillance feeds<br>
-          ▸ country demographics
+          ▸ intervention effects<br>
+          ▸ fatality by age<br>
+          ▸ surveillance feeds
         </div>
       </div>
 
@@ -246,11 +246,11 @@
       </div>
       <div class="panel">
         <div class="label" style="margin-bottom: 1rem;">Timeline</div>
-        <div class="leader"><span class="name">v0.3 · prototype</span><span class="dots"></span><span class="val" style="color: var(--accent);">NOW</span></div>
-        <div class="leader"><span class="name">Data integration</span><span class="dots"></span><span class="val">MO 1–6</span></div>
-        <div class="leader"><span class="name">Benchmark + validation</span><span class="dots"></span><span class="val">MO 7–8</span></div>
-        <div class="leader"><span class="name">Usability study</span><span class="dots"></span><span class="val">MO 9–10</span></div>
-        <div class="leader"><span class="name">Open release + preprint</span><span class="dots"></span><span class="val">MO 11–12</span></div>
+        <div class="leader"><span class="name">v0.3 · Streamlit prototype</span><span class="dots"></span><span class="val">DONE</span></div>
+        <div class="leader"><span class="name">Web agent + data integration</span><span class="dots"></span><span class="val" style="color: var(--accent);">NOW</span></div>
+        <div class="leader"><span class="name">Usability study (pilot)</span><span class="dots"></span><span class="val" style="color: var(--accent);">AUTUMN 2026</span></div>
+        <div class="leader"><span class="name">Benchmark + validation</span><span class="dots"></span><span class="val">NEXT</span></div>
+        <div class="leader"><span class="name">Open release + preprint</span><span class="dots"></span><span class="val">2027</span></div>
       </div>
     </div>
   </div>
@@ -259,6 +259,6 @@
 </main>
 
 <div data-mount="footer"></div>
-<script src="site.js?v=3"></script>
+<script src="site.js?v=4"></script>
 </body>
 </html>

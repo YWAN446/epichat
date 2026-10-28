@@ -9,13 +9,13 @@
 <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Docs · EpiChat">
-<meta property="og:description" content="How EpiChat turns a plain-language question into a validated epidemiological simulation.">
+<meta property="og:description" content="How the EpiChat web agent turns a plain-language question into a sourced, validated epidemic simulation.">
 <meta property="og:image" content="https://ywan446.github.io/epichat/brand/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 <style>
   .docs-layout { display: grid; grid-template-columns: 220px 1fr; gap: 3rem; align-items: start; }
   @media (max-width: 900px) { .docs-layout { grid-template-columns: 1fr; } }
@@ -121,6 +121,9 @@
     border-bottom: 1px solid var(--ink-3);
   }
   table.ref td .k { background: transparent; border: 0; padding: 0; color: var(--accent); }
+  table.ref td .rng { color: var(--ink-3); }
+  .doc ul { padding-left: 1.2rem; }
+  .doc li + li { margin-top: 0.5rem; }
 
   @media (max-width: 900px) {
     .toc { position: static; border-left: 0; border-bottom: 1px solid var(--rule); padding-bottom: 1rem; margin-bottom: 1.5rem; }
@@ -137,8 +140,8 @@
 <section style="border-top: 0; padding-top: 3.5rem; padding-bottom: 2rem;">
   <div class="wrap">
     <div class="hero-kicker">
-      <span>● DOCS · v0.3</span>
-      <span>LAST UPDATED · 2026-05</span>
+      <span>● DOCS · WEB AGENT</span>
+      <span>LAST UPDATED · 2026-10</span>
     </div>
     <h1 class="display" style="font-size: clamp(2.4rem, 5vw, 4.2rem);">
       Docs, parameters,<br>
@@ -146,8 +149,9 @@
     </h1>
     <p class="lede" style="max-width: 58ch;">
       Everything you need to reason about what EpiChat will and won't
-      do — architecture, parameters, disease defaults, and the
-      seven-phase data roadmap.
+      do: the architecture, the workflow and its tools, the parameters,
+      networks and interventions, the diagnostics, the data sources,
+      and the roadmap.
     </p>
   </div>
 </section>
@@ -160,12 +164,19 @@
 <aside class="toc">
   <div class="toc-head">On this page</div>
   <a href="#architecture" class="on">Architecture</a>
+  <a href="#workflow">Workflow</a>
+  <a href="#tools">Agent tools</a>
   <a href="#models">Disease models</a>
-  <a href="#defaults">Built-in defaults</a>
+  <a href="#disease-db">Disease database</a>
   <a href="#parameters">Parameters</a>
+  <a href="#networks">Networks</a>
   <a href="#interventions">Interventions</a>
-  <a href="#nl-tips">NL query tips</a>
-  <a href="#disease-db">Disease parameter DB</a>
+  <a href="#fit">Fit · limits on spread</a>
+  <a href="#diagnostics">Diagnostics</a>
+  <a href="#outputs">Outputs</a>
+  <a href="#data-sources">Data sources</a>
+  <a href="#privacy">Privacy · the study</a>
+  <a href="#nl-tips">Query tips</a>
   <a href="#roadmap">Roadmap</a>
   <a href="#risks">Risks · mitigations</a>
 </aside>
@@ -175,166 +186,359 @@
 
 <h2 id="architecture">Architecture</h2>
 <p>
-  EpiChat is a six-layer pipeline. The LLM handles language;
-  templates handle the simulation. Free-form code is never executed.
+  EpiChat is a web app with a conversational agent and a private
+  simulation service. The model handles language; tools write the
+  configuration, apply the data and run the simulation, so a fetched
+  number or a literature estimate is never retyped by the model.
 </p>
-<pre><code>User NL query (any language · text · URL · report · web search)
-     │
-     ▼
-Layer 0  Input Enricher           <span style="color: var(--ink-3);">(Claude Haiku + web_search — extracts OutbreakContext)</span>
-     │   Structured facts: disease, location, cases, R₀, interventions
-     ▼
-Layer 1  LLM Parameter Parser     <span style="color: var(--ink-3);">(Claude API + extraction prompt)</span>
-     │   SimParams JSON · resolver pulls UN WPP, WHO GHO, World Bank
-     │   β recalibrated for age-structured networks after demographics applied
-     ▼
-Layer 1b Fact-Checker             <span style="color: var(--ink-3);">(disease_parameters.json — no LLM call)</span>
-     │   ⚠ warns if R₀, dur_inf, or dur_exp outside literature ranges
-     ▼
-Layer 2  Code generator           <span style="color: var(--ink-3);">(Jinja2 → Starsim Python)</span>
-     │   Python script
-     ▼
-Layer 3  Execution engine         <span style="color: var(--ink-3);">(subprocess sandbox, 90s timeout)</span>
-     │   Stats JSON + plot file
-     ▼
-Layer 4  Results narrator         <span style="color: var(--ink-3);">(Claude API + narration prompt, in user's language)</span>
-     │   Plain-language summary
-     ▼
-User: epidemic curve + interpretation</code></pre>
+<pre><code>Browser ──SSE──▶ web app (Next.js on Vercel)
+                   │  agent loop: Claude (Opus 5.5 by default) · nine tools · web search and fetch
+                   │  Supabase: sign-in · consent · conversations · runs · events · feedback
+                   │  public data: UN Population Data Portal · WHO GHO · World Bank Data360
+                   ▼
+            sim service (FastAPI · Python 3.12 · private, reached only by the web app)
+                   │  validate (schema v2) → build the Starsim 3.7.2 model → run in a child process
+                   │  up to 5 replicates · up to 2 repairs · diagnostics · Word and PDF export
+                   ▼
+            series · statistics · diagnostics → cards, charts and "Try next" replies</code></pre>
+<p>
+  The web agent replaced the v0.3 template pipeline for the pilot. The
+  Python package, its command-line interface and the Streamlit prototype
+  remain in the repository.
+</p>
+
+<h2 id="workflow">Workflow</h2>
+<p>
+  A conversation moves through six stages, shown under the chat as a
+  step strip. The stage follows from the tools that ran, not from the
+  model's say-so; the model writes only the suggested replies.
+</p>
+<table class="ref">
+  <thead><tr><th>Stage</th><th>What happens</th><th>Tools</th></tr></thead>
+  <tbody>
+    <tr><td>Understand</td><td>The disease, the place and the question; the database's cited parameters; a question back when something is missing</td><td><span class="k">lookup_disease</span> · web search and fetch</td></tr>
+    <tr><td>Configure</td><td>A validated configuration; β calibrated to the R₀</td><td><span class="k">configure_simulation</span> · <span class="k">describe_parameters</span></td></tr>
+    <tr><td>Ground in data</td><td>The country's ages, births and deaths, contact matrix, household size, vaccination coverage and hospital capacity</td><td><span class="k">fetch_demographics</span> · <span class="k">fetch_vaccination_coverage</span> · <span class="k">fetch_health_system</span></td></tr>
+    <tr><td>Run</td><td>Starsim on the private service, one to five replicates</td><td><span class="k">run_simulation</span></td></tr>
+    <tr><td>Interpret</td><td>The run's diagnostics; fixes and interventions as suggested replies; what changed since the previous run</td><td>diagnostics</td></tr>
+    <tr><td>Report</td><td>A report built from the stored runs; a link to share</td><td><span class="k">write_report</span></td></tr>
+  </tbody>
+</table>
+
+<h2 id="tools">Agent tools</h2>
+<p>Nine tools, plus the model provider's web search and web fetch. Each result appears in the conversation as a card.</p>
+<table class="ref">
+  <thead><tr><th>Tool</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><span class="k">lookup_disease</span></td><td>Reads a disease's cited parameters, each with a status: a usable consensus, estimates without an agreed value, held back under review, or nothing yet.</td></tr>
+    <tr><td><span class="k">configure_simulation</span></td><td>Creates or edits the configuration, passing only what changed: the model, the R₀ (β is calibrated to it), durations, fatality, seeding, interventions, a fit, a chosen reference, and any other parameter by its registry path. Everything is validated at once; an error names the parameter.</td></tr>
+    <tr><td><span class="k">describe_parameters</span></td><td>Lists every parameter of the current model and network with its value, bounds, unit, source and literature range.</td></tr>
+    <tr><td><span class="k">fetch_demographics</span></td><td>UN World Population Prospects for a country: the age pyramid (switching to the age-structured network), birth and death rates, the population for scaling, the contact matrix and the household size. The R₀ is held where it was when the new network can carry it.</td></tr>
+    <tr><td><span class="k">fetch_vaccination_coverage</span></td><td>WHO routine coverage for a disease and country, applied as immunity at the start, or as a day-0 campaign when the database has the vaccine's efficacy.</td></tr>
+    <tr><td><span class="k">fetch_health_system</span></td><td>World Bank hospital beds, physicians, nurses and UHC coverage; sets a treatment's daily capacity from the beds.</td></tr>
+    <tr><td><span class="k">run_simulation</span></td><td>Runs the configuration and returns the series, the statistics (scaled to the real population when demographics were fetched) and the diagnostics.</td></tr>
+    <tr><td><span class="k">write_report</span></td><td>Writes the report's summary, meaning, limitations and next steps; its tables and figures come from the stored results.</td></tr>
+    <tr><td><span class="k">remember</span></td><td>Keeps a one-line note about the participant (a role, a situation, a preference) for later conversations.</td></tr>
+  </tbody>
+</table>
 
 <h2 id="models">Disease models</h2>
-<p>Six compartmental models, each specified directly or inferred from a disease name.</p>
+<p>Six compartmental models, chosen from the disease or named directly.</p>
 <table class="ref">
   <thead>
-    <tr><th>Model</th><th>Compartments</th><th>Use case</th><th>Required extras</th></tr>
+    <tr><th>Model</th><th>Compartments</th><th>Use case</th><th>Model-specific parameters</th></tr>
   </thead>
   <tbody>
-    <tr><td><span class="k">SIR</span></td><td>S → I → R</td><td>Standard acute (flu, COVID acute)</td><td>—</td></tr>
-    <tr><td><span class="k">SEIR</span></td><td>S → E → I → R</td><td>Latent period (measles, SARS)</td><td>dur_exp</td></tr>
-    <tr><td><span class="k">SIS</span></td><td>S → I → S</td><td>No lasting immunity (gonorrhea)</td><td>—</td></tr>
-    <tr><td><span class="k">SIRS</span></td><td>S → I → R → S</td><td>Waning immunity (COVID endemic)</td><td>dur_immune</td></tr>
-    <tr><td><span class="k">SEIRS</span></td><td>S → E → I → R → S</td><td>Latent + waning (COVID full)</td><td>dur_exp, dur_immune</td></tr>
-    <tr><td><span class="k">SEIAR</span></td><td>S → E → I|A → R</td><td>Asymptomatic transmission (flu, COVID)</td><td>dur_exp, p_asymp, rel_trans_asymp</td></tr>
+    <tr><td><span class="k">SIR</span></td><td>S → I → R</td><td>Acute infection, lasting immunity</td><td>—</td></tr>
+    <tr><td><span class="k">SEIR</span></td><td>S → E → I → R</td><td>A latent period (measles, mumps)</td><td>latent period · presymptomatic transmissibility</td></tr>
+    <tr><td><span class="k">SIS</span></td><td>S → I → S</td><td>No lasting immunity (gonorrhea)</td><td>immunity boost and waning after an infection (<code>sis_imm_boost</code>, <code>sis_waning</code>; 0 by default)</td></tr>
+    <tr><td><span class="k">SIRS</span></td><td>S → I → R → S</td><td>Waning immunity</td><td>immunity duration</td></tr>
+    <tr><td><span class="k">SEIRS</span></td><td>S → E → I → R → S</td><td>Latent period and waning</td><td>latent period · presymptomatic transmissibility · immunity duration</td></tr>
+    <tr><td><span class="k">SEIAR</span></td><td>S → E → I|A → R</td><td>Asymptomatic transmission</td><td>latent period · presymptomatic transmissibility · asymptomatic share (0.3) · their transmissibility (0.5)</td></tr>
   </tbody>
 </table>
+<p>
+  All six take an infectious period (a mean with a distribution and its
+  spread; a new scenario's periods are gamma with an illustrative spread),
+  susceptibility by age and personal variation in
+  susceptibility. All but SIS take a case fatality ratio, overall or by
+  age group.
+</p>
 
-<h2 id="defaults">Built-in disease defaults</h2>
-<p>Name a disease without full parameters and EpiChat fills these in.</p>
+<h2 id="disease-db">Disease database</h2>
+<p>
+  A literature-backed database (<code>epichat/data/disease_parameters.json</code>)
+  covers 16 diseases. For each parameter it keeps a consensus value with
+  its range and the individual published estimates, each with its title,
+  year and link. The agent reads a status with every value and is told
+  never to quote a number the database holds back. In the app's Data
+  section every single-number estimate has a "Use this value" button; the
+  tool then reads the value and its citation from the reference data, so
+  neither can be mistyped, and the value carries the paper's title for as
+  long as it stands.
+</p>
 <table class="ref">
-  <thead>
-    <tr><th>Disease</th><th>Model</th><th>dur_inf</th><th>dur_exp</th><th>n_contacts</th><th>p_death</th><th>Notes</th></tr>
-  </thead>
+  <thead><tr><th>Disease</th><th>R₀</th><th>Incubation (days)</th><th>Infectious (days)</th><th>Fatality</th></tr></thead>
   <tbody>
-    <tr><td>Generic SIR</td><td>SIR</td><td>10 d</td><td>—</td><td>4</td><td>0.0</td><td>R₀ = 2.5</td></tr>
-    <tr><td>COVID (acute)</td><td>SIR</td><td>8 d</td><td>—</td><td>6</td><td>0.01</td><td></td></tr>
-    <tr><td>COVID (endemic)</td><td>SIRS</td><td>8 d</td><td>—</td><td>6</td><td>0.005</td><td>immune = 180 d</td></tr>
-    <tr><td>COVID (full)</td><td>SEIRS</td><td>8 d</td><td>5 d</td><td>6</td><td>0.005</td><td>immune = 180 d</td></tr>
-    <tr><td>Influenza</td><td>SIR</td><td>5 d</td><td>—</td><td>6</td><td>0.001</td><td></td></tr>
-    <tr><td>Measles</td><td>SEIR</td><td>8 d</td><td>12 d</td><td>10</td><td>0.001</td><td>R₀ ≈ 15</td></tr>
-    <tr><td>SARS-like</td><td>SEIR</td><td>10 d</td><td>5 d</td><td>5</td><td>0.05</td><td></td></tr>
-    <tr><td>Ebola</td><td>SIR</td><td>10 d</td><td>—</td><td>3</td><td>0.5</td><td></td></tr>
-    <tr><td>Gonorrhea</td><td>SIS</td><td>90 d</td><td>—</td><td>2</td><td>0.0</td><td>R₀ ≈ 2</td></tr>
+    <tr><td>Cholera</td><td>2.1 <span class="rng">0.8–7.3</span></td><td>2 <span class="rng">0.5–5</span></td><td>5 <span class="rng">1–10</span></td><td>—</td></tr>
+    <tr><td>COVID-19</td><td>9.5 <span class="rng">5.5–24</span></td><td>5.8 <span class="rng">5–6.7</span></td><td>8 <span class="rng">6–10</span></td><td>0.9% <span class="rng">0.7–1.16%</span></td></tr>
+    <tr><td>Dengue</td><td>4.74 <span class="rng">1–103</span></td><td>6 <span class="rng">3–14</span></td><td>4 <span class="rng">2–5</span></td><td>—</td></tr>
+    <tr><td>Ebola</td><td>1.95 <span class="rng">1.34–2.53</span></td><td>estimates only</td><td>7 <span class="rng">4–10</span></td><td>50% <span class="rng">25–90%</span></td></tr>
+    <tr><td>Hepatitis A</td><td>2.5 <span class="rng">1.71–5.6</span></td><td>28 <span class="rng">14–50</span></td><td>21 <span class="rng">7–28</span></td><td>0.4% <span class="rng">0.3–0.5%</span></td></tr>
+    <tr><td>Influenza</td><td>1.28 <span class="rng">1.19–1.37</span></td><td>2 <span class="rng">1–4</span></td><td>7 <span class="rng">6–8</span></td><td>under review</td></tr>
+    <tr><td>Measles</td><td>15 <span class="rng">12–18</span></td><td>12 <span class="rng">7–21</span></td><td>8</td><td>1.5% <span class="rng">0.5–6%</span></td></tr>
+    <tr><td>Meningococcal</td><td>≥ 1.03</td><td>3.5 <span class="rng">1–10</span></td><td>under review</td><td>12% <span class="rng">6–15%</span></td></tr>
+    <tr><td>Mpox</td><td>2.52 <span class="rng">1.37–3.677</span></td><td>10 <span class="rng">3–17</span></td><td>21 <span class="rng">1–28</span></td><td>—</td></tr>
+    <tr><td>Mumps</td><td>10 <span class="rng">4–19.3</span></td><td>17 <span class="rng">12–25</span></td><td>7</td><td>0.027% <span class="rng">0.016–0.038%</span></td></tr>
+    <tr><td>Pertussis</td><td>14.5 <span class="rng">5.3–17</span></td><td>8.5 <span class="rng">4–21</span></td><td>21 <span class="rng">21–35</span></td><td>0.8% <span class="rng">0.67–0.8%</span></td></tr>
+    <tr><td>Polio</td><td>6 <span class="rng">5–7</span></td><td>8 <span class="rng">4–35</span></td><td>6 <span class="rng">2–10</span></td><td>—</td></tr>
+    <tr><td>RSV</td><td>3 <span class="rng">1.2–9</span></td><td>5 <span class="rng">2–8</span></td><td>6 <span class="rng">3–28</span></td><td>—</td></tr>
+    <tr><td>Rubella</td><td>5.5 <span class="rng">2–8</span></td><td>17 <span class="rng">12–23</span></td><td>14 <span class="rng">11–16</span></td><td>0.005%</td></tr>
+    <tr><td>Tuberculosis</td><td>2.1 <span class="rng">0.24–4.3</span></td><td>180 <span class="rng">14–730</span></td><td>14 <span class="rng">14–365</span></td><td>—</td></tr>
+    <tr><td>Varicella</td><td>8 <span class="rng">5.5–10</span></td><td>15 <span class="rng">14–16</span></td><td>6.5 <span class="rng">6–7</span></td><td>0.0028% <span class="rng">0.002–0.0036%</span></td></tr>
   </tbody>
 </table>
+<p>
+  The typical value, then the consensus range in grey. "Under review": held
+  back until a reviewer checks it. "Estimates only": cited estimates
+  without an agreed value. A dash: not in the database yet. The fields
+  the database still lacks are listed in the
+  <a href="https://github.com/YWAN446/epichat/blob/main/docs/data-review-requests.md" target="_blank" rel="noopener">review list</a>;
+  until they have cited values, the intervention effects (school closure,
+  distancing, masks, a behaviour response) and the variation in
+  susceptibility are illustrative assumptions, and the app labels them so.
+</p>
 
 <h2 id="parameters">Parameters</h2>
-<p>Every parameter is validated by a Pydantic schema before the template layer sees it.</p>
+<p>
+  One registry (<code>epichat/params/registry.py</code>) describes every
+  parameter once: its path, label, unit, bounds, default, the models and
+  networks it applies to, and the database field it comes from. The
+  schema that validates a run and the web app's schema both read it, and
+  the app's Parameters section is generated from it. A tag after each
+  value says where it came from: the database, fetched data, a default,
+  an illustrative assumption, set in chat, set by the run, or a chosen
+  reference.
+</p>
 <table class="ref">
-  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Range</th><th>Meaning</th></tr></thead>
   <tbody>
-    <tr><td><span class="k">disease_type</span></td><td>string</td><td>sir</td><td>sir · seir · sis · sirs · seirs · seiar</td></tr>
-    <tr><td><span class="k">n_agents</span></td><td>int</td><td>10,000</td><td>Population size · 10 → 1,000,000</td></tr>
-    <tr><td><span class="k">beta</span></td><td>float</td><td>computed</td><td>β = R₀ × 365 / (n_contacts × dur_inf) for random networks. For age-structured networks β is back-solved from the POLYMOD spectral radius so approx_R₀() matches the intended value.</td></tr>
-    <tr><td><span class="k">init_prev</span></td><td>float</td><td>0.01</td><td>Seed fraction infected</td></tr>
-    <tr><td><span class="k">dur_inf</span></td><td>float</td><td>10.0</td><td>Infectious period (days)</td></tr>
-    <tr><td><span class="k">dur_exp</span></td><td>float?</td><td>null</td><td>Latent period · required for SEIR/SEIRS/SEIAR</td></tr>
-    <tr><td><span class="k">dur_immune</span></td><td>float?</td><td>null</td><td>Immunity days before waning · SIRS/SEIRS</td></tr>
-    <tr><td><span class="k">p_death</span></td><td>float</td><td>0.0</td><td>Infection fatality rate</td></tr>
-    <tr><td><span class="k">p_asymp</span></td><td>float</td><td>0.3</td><td>Asymptomatic fraction · SEIAR only</td></tr>
-    <tr><td><span class="k">sim_dur_years</span></td><td>float</td><td>1.0</td><td>Simulation horizon</td></tr>
-    <tr><td><span class="k">network_type</span></td><td>string</td><td>random</td><td>random · age_structured</td></tr>
-    <tr><td><span class="k">n_contacts</span></td><td>int</td><td>4</td><td>Avg daily contacts</td></tr>
-    <tr><td><span class="k">network_beta</span></td><td>float</td><td>1.0</td><td>Transmission multiplier per contact</td></tr>
+    <tr><td><span class="k">disease.model</span></td><td>sir</td><td>six models</td><td>Chosen from the disease</td></tr>
+    <tr><td><span class="k">disease.beta</span></td><td>calibrated</td><td>0.001–1,000 per year</td><td>Transmission rate, set from the R₀ you give</td></tr>
+    <tr><td><span class="k">disease.dur_inf</span></td><td>10 days, gamma</td><td>0.5–365 days</td><td>Infectious period: a mean, a distribution and a spread; the agent's scenarios use gamma with an illustrative spread, from the database's range when it has one</td></tr>
+    <tr><td><span class="k">disease.dur_exp</span></td><td>—</td><td>0.1–1,000 days</td><td>Latent period (SEIR, SEIRS, SEIAR)</td></tr>
+    <tr><td><span class="k">disease.dur_immune</span></td><td>—</td><td>7–36,500 days</td><td>Immunity duration (SIRS, SEIRS)</td></tr>
+    <tr><td><span class="k">disease.p_death</span></td><td>0</td><td>0–1</td><td>Case fatality ratio</td></tr>
+    <tr><td><span class="k">disease.seed</span></td><td>0.05% of agents</td><td>a share, or a number of agents</td><td>Initial infections. A share is a draw per agent: five of 10,000 on average, so below 10,000 agents the agent seeds a number instead</td></tr>
+    <tr><td><span class="k">disease.initial_immune_frac</span></td><td>0</td><td>0–0.99</td><td>Share immune at the start</td></tr>
+    <tr><td><span class="k">disease.rel_sus_cv</span></td><td>0</td><td>0–2</td><td>Variation in susceptibility between people</td></tr>
+    <tr><td><span class="k">network.network_type</span></td><td>random</td><td>random · age_structured · hybrid</td><td>Who meets whom</td></tr>
+    <tr><td><span class="k">network.n_contacts</span></td><td>4 per day</td><td>1–100</td><td>Contacts per day on the random network</td></tr>
+    <tr><td><span class="k">demographics.use_demographics</span></td><td>off</td><td>on · off</td><td>Births and deaths; on once a country's rates are fetched</td></tr>
+    <tr><td><span class="k">run.n_agents</span></td><td>10,000</td><td>10–1,000,000</td><td>Simulated people; results scale to the real population</td></tr>
+    <tr><td><span class="k">run.sim_dur_years</span></td><td>1 year</td><td>0.01–20 years</td><td>Duration</td></tr>
+    <tr><td><span class="k">run.n_replicates</span></td><td>1</td><td>1–5</td><td>Runs with different seeds; the median run with a 10–90% band</td></tr>
+    <tr><td><span class="k">run.rand_seed</span></td><td>1</td><td>any integer</td><td>Seed of the first replicate, for reproducibility</td></tr>
+  </tbody>
+</table>
+<p>
+  The registry holds many more, by tier (core, advanced, expert): the
+  contact matrix, the hybrid layers' sizes and transmissibilities,
+  susceptibility and fatality by age group, presymptomatic transmissibility,
+  every intervention field. Ask the agent "what can I change?" to list
+  them for your scenario.
+</p>
+
+<h2 id="networks">Networks</h2>
+<h3>Random</h3>
+<p>
+  Fresh contacts every day, a constant number or Poisson-distributed,
+  optionally lasting several days. The R₀ formula is exact when contacts
+  do not last.
+</p>
+<h3>Age-structured</h3>
+<p>
+  Three age groups (under 18, 18 to 64, 65 and over) mixing by a 3×3
+  contact matrix: POLYMOD's European defaults, or the country's Prem et
+  al. 2021 matrix once its demographics are fetched (177 countries). The
+  R₀ formula is exact. The measured R₀ is not available on this network,
+  because Starsim's mixing pools do not record who infected whom.
+</p>
+<h3>Hybrid: households, schools, workplaces and community</h3>
+<p>
+  Four layers as in Covasim, with the country's mean household size (UN,
+  189 countries) and the layers' sizes and transmissibilities as
+  parameters. The R₀ formula is approximate here, so a short pilot run,
+  in which only the seeds transmit, measures it and adjusts β.
+</p>
+<p>
+  At the same R₀ the final size is close on every network: the networks
+  differ in who meets whom and in what the interventions act on.
+</p>
+
+<h2 id="interventions">Interventions</h2>
+<p>Six types, combined freely, named in the configuration <code>vaccine</code>, <code>treatment</code>, <code>seasonality</code>, <code>contact_reduction</code>, <code>transmission_reduction</code> and <code>behavior_response</code>. Every effect size is an illustrative assumption unless the database carries it, and the app labels it so.</p>
+
+<h3>Vaccine</h3>
+<p>Routine (a yearly probability for each eligible person) or a campaign (the coverage reached evenly over a window), with an efficacy, leaky or all-or-nothing protection, an age range and a protection duration. Coverage fetched from WHO becomes immunity at the start, or a day-0 campaign when the database has the vaccine's efficacy.</p>
+
+<h3>Treatment</h3>
+<p>A share of infectious people treated each day, after a delay, with an efficacy and an optional daily capacity, which the health-system data sets from the country's hospital beds. In SEIAR it can treat symptomatic cases only.</p>
+
+<h3>Seasonality</h3>
+<p>A yearly cycle in transmission: <code>scale</code> is its size (0.2 moves transmission between 80% and 120% of β) and <code>shift</code> moves the peak through the year.</p>
+
+<h3>Contact reduction</h3>
+<p>One layer's contacts scaled over a window. A school closure is the school layer of the hybrid network at scale 1; distancing scales every layer. The random and age-structured networks take every layer only.</p>
+
+<h3>Transmission reduction</h3>
+<p>Every contact's transmissibility scaled over a window, such as masks.</p>
+
+<h3>Behaviour response</h3>
+<p>Transmission falls as the share of people infectious rises, averaged over the last week by default, and recovers as it falls: people being careful, not a measure. It flattens the peak, but because it relaxes it cannot keep the total far below the herd immunity threshold in a long run.</p>
+
+<h2 id="fit">Fit · limits on spread</h2>
+<p>
+  A run can be fitted to one outcome you know: the attack rate, the peak
+  day or the peak size. The service searches the transmission rate (or the
+  network multiplier) in at most eight runs and reports what it reached.
+  To match a known attack rate while the R₀ stays where it was set, the fit
+  can move the variation in susceptibility or the behaviour response
+  instead.
+</p>
+<p>
+  Without an intervention an epidemic reaches the share the final-size
+  equation gives for its R₀, on every network (89% at R₀ 2.5): only the
+  depletion of susceptibles stops it. Two mechanisms limit spread without a
+  dated measure, both off by default and both named by the agent as
+  assumptions when it offers them: variation in susceptibility (the most
+  susceptible are infected first, so at a coefficient of variation of 1
+  the epidemic ends near 60%) and the behaviour response.
+</p>
+
+<h2 id="diagnostics">Diagnostics</h2>
+<p>
+  After every run the service reads the full series and returns
+  diagnostics, each with levers: a set of parameter values, kept within
+  the registry's bounds and the literature range, or intervention entries.
+  The agent offers at most three as suggested replies, a warning's fixes
+  before any intervention, applies the one you choose, reruns, and says
+  what changed.
+</p>
+<table class="ref">
+  <thead><tr><th>Diagnostic</th><th>Fires when</th></tr></thead>
+  <tbody>
+    <tr><td><span class="k">early_fadeout</span></td><td>The seeding infected nobody, or the outbreak died out early: fewer infections than twice the seeds, or under 1% of the agents when nothing held transmission down from day 0</td></tr>
+    <tr><td><span class="k">instant_peak</span></td><td>The peak is the seeding itself</td></tr>
+    <tr><td><span class="k">unfinished</span></td><td>The run ended before the epidemic did</td></tr>
+    <tr><td><span class="k">cfr_out_of_range</span></td><td>The case fatality ratio is outside the literature range</td></tr>
+    <tr><td><span class="k">final_size_gap</span></td><td>The attack rate does not match the configured R₀</td></tr>
+    <tr><td><span class="k">sharp_curve</span></td><td>Every period is the same for everyone, which sharpens the curve</td></tr>
+    <tr><td><span class="k">fatality_on_all_infections</span></td><td>The fatality ratio applies to every infection, asymptomatic ones included</td></tr>
+    <tr><td><span class="k">no_reinfection</span></td><td>Immunity outlasts the run, so waning cannot be seen</td></tr>
+    <tr><td><span class="k">high_variance</span></td><td>The replicates disagree widely</td></tr>
+    <tr><td><span class="k">well_mixed</span></td><td>Nearly everyone was infected; it offers the two limits on spread</td></tr>
+    <tr><td><span class="k">r0_gap</span></td><td>The measured R₀ is far from the configured one</td></tr>
+    <tr><td><span class="k">what_if</span></td><td>The run had an epidemic: up to four interventions to try (a vaccination campaign, a school closure, distancing, masks, a behaviour response), each starting the day 1% of the agents had been infected, leaving out what the scenario already has</td></tr>
   </tbody>
 </table>
 
-<h2 id="interventions">Interventions</h2>
-<p>Up to three intervention types can combine in a single simulation.</p>
+<h2 id="outputs">Outputs</h2>
+<ul>
+  <li><strong>Charts.</strong> Four views of every run: compartments, new infections, cumulative infections and deaths. With replicates, the median run and a 10–90% band.</li>
+  <li><strong>The details panel.</strong> Scenario, Data (the fetched values with citations and the literature reference list), Parameters (every value with its source), Runs, Report, Activity and Profile.</li>
+  <li><strong>Reports.</strong> The agent's summary, meaning, limitations and next steps; tables and figures from the stored runs; every data source. Download as Word, PDF, HTML or Markdown.</li>
+  <li><strong>Share links.</strong> A read-only copy of the conversation at that moment, without your email.</li>
+  <li><strong>Memory.</strong> One-line notes about you (a role, a situation, a preference) that carry into later conversations; you can see and edit them in your profile.</li>
+  <li><strong>Feedback.</strong> A thumbs up or down on any reply.</li>
+</ul>
 
-<h3>Vaccine</h3>
-<p>Removes a fraction of agents from the susceptible pool. <code>start_day=0</code> = pre-existing immunity; <code>&gt;0</code> = ongoing campaign starting that day.</p>
+<h2 id="data-sources">Data sources</h2>
+<p>Public sources receive only a country code.</p>
+<table class="ref">
+  <thead><tr><th>Source</th><th>Fetched or bundled</th><th>Provides</th></tr></thead>
+  <tbody>
+    <tr><td>UN World Population Prospects 2024</td><td>Fetched (UN Population Data Portal)</td><td>Birth and death rates, total population, age shares</td></tr>
+    <tr><td>WHO Global Health Observatory</td><td>Fetched</td><td>Routine vaccination coverage</td></tr>
+    <tr><td>World Bank Data360</td><td>Fetched</td><td>Hospital beds, physicians, nurses, UHC coverage index</td></tr>
+    <tr><td>Disease parameter database</td><td>Bundled</td><td>Cited parameters for 16 diseases</td></tr>
+    <tr><td>UN WPP 2024 population by single year of age</td><td>Bundled</td><td>The agents' ages: 237 countries and areas, 2024 and 2030</td></tr>
+    <tr><td>UN WPP 2024 projected birth rates</td><td>Bundled</td><td>Birth rates after a multi-year run's first year, 2020–2050</td></tr>
+    <tr><td>Prem et al. 2021 contact matrices</td><td>Bundled</td><td>177 countries, aggregated to three age groups with each country's pyramid</td></tr>
+    <tr><td>UN household size</td><td>Bundled</td><td>Mean household size, 189 countries</td></tr>
+  </tbody>
+</table>
 
-<h3>Treatment</h3>
-<p>Reduces infectious duration or mortality for a fraction of infected agents. Optional daily capacity cap.</p>
+<h2 id="privacy">Privacy · the study</h2>
+<p>
+  During the pilot EpiChat is open to study participants with an Emory
+  email address, who sign in with an emailed code. Using it is taking part
+  in the study: at first sign-in a consent screen says what is recorded,
+  among other things your email address and the kind of participant you
+  are, your conversations, the agent's summarized reasoning, how you use
+  the app, your browser and device type, your profile answers and what the
+  agent remembers about you, and how often a link you share is opened, and
+  it asks you to agree. Your messages go to Anthropic's Claude API to
+  produce replies; simulation settings go to the project's own simulation
+  service. The data is kept for the duration of the study on servers in the
+  United States, and deleting a conversation hides it from you but keeps it
+  for the study. Each participant has a daily turn limit, and the project
+  has a monthly spending cap.
+</p>
 
-<h3>Seasonality</h3>
-<p>Modulates transmission rate sinusoidally over the year — <code>scale</code> is variation strength, <code>shift</code> is phase (0.0 = winter peak, 0.5 = summer peak).</p>
-
-<h2 id="nl-tips">NL query tips</h2>
-<p>EpiChat's parser understands a wide range of phrasing. A few useful patterns:</p>
+<h2 id="nl-tips">Query tips</h2>
+<p>The agent understands a wide range of phrasing. A few useful patterns:</p>
 <table class="ref">
   <thead><tr><th>You say</th><th>EpiChat does</th></tr></thead>
   <tbody>
-    <tr><td>"R0 = 2.5"</td><td>Converts to β via <span class="k">R₀ × 365 / (n_contacts × dur_inf)</span></td></tr>
-    <tr><td>"COVID", "flu", "measles"</td><td>Applies built-in disease defaults</td></tr>
-    <tr><td>"80% vaccinated"</td><td>Vaccine intervention, <span class="k">start_day=0</span></td></tr>
-    <tr><td>"campaign starting month 3"</td><td>Vaccine intervention, <span class="k">start_day=90</span></td></tr>
-    <tr><td>"winter peak" / "seasonal"</td><td>Seasonality · <span class="k">scale=0.3, shift=0.0</span></td></tr>
-    <tr><td>"endemic" / "long-run"</td><td>Enables demographics</td></tr>
-    <tr><td>"age-structured" / "school-age"</td><td><span class="k">network_type=age_structured</span></td></tr>
-    <tr><td>"masks" / "50% mask uptake"</td><td><span class="k">network_beta ≈ 0.75</span></td></tr>
-    <tr><td>"seed 42" / "reproducible"</td><td><span class="k">rand_seed=42</span></td></tr>
-    <tr><td>Query in French, Spanish, Arabic, Chinese…</td><td>Language auto-detected; narration and summaries respond in kind</td></tr>
-    <tr><td>Paste a WHO situation report or bulletin</td><td>Enricher extracts structured facts (cases, CFR, R₀, interventions) before simulation</td></tr>
-    <tr><td>"https://..." URL to an article</td><td>Page fetched client-side; facts extracted from full text</td></tr>
-    <tr><td>"Search for recent Mpox news in West Africa"</td><td>Built-in web search retrieves context before parameter extraction</td></tr>
+    <tr><td>"Model a measles outbreak in Kenya"</td><td>Looks measles up, configures it, and offers to fetch Kenya's demographics and vaccination coverage</td></tr>
+    <tr><td>"R₀ of 2.5"</td><td>Calibrates β to it; exact on the random and age-structured networks</td></tr>
+    <tr><td>"80% are vaccinated"</td><td>Immunity at the start for 80%</td></tr>
+    <tr><td>"a vaccination campaign in the third month"</td><td>A vaccine campaign over a window</td></tr>
+    <tr><td>"close schools for a month"</td><td>A contact reduction on the school layer of the hybrid network</td></tr>
+    <tr><td>"everyone wears masks"</td><td>A transmission reduction, its size labelled as an assumption</td></tr>
+    <tr><td>"people get careful as cases rise"</td><td>A behaviour response</td></tr>
+    <tr><td>"we saw about 30% infected"</td><td>A fit to that attack rate</td></tr>
+    <tr><td>"run it five times"</td><td>Five replicates with a 10–90% band</td></tr>
+    <tr><td>"what can I change?"</td><td><span class="k">describe_parameters</span>: every parameter with its value, bounds and source</td></tr>
+    <tr><td>The "Use this value" button on an estimate</td><td>That estimate applied with its citation</td></tr>
+    <tr><td>"write a report"</td><td><span class="k">write_report</span>, then a download</td></tr>
+    <tr><td>A question in Spanish, French, Chinese…</td><td>Replies in that language; buttons stay in English</td></tr>
+    <tr><td>"what is the latest on mpox in Kinshasa?"</td><td>A web search before it configures anything</td></tr>
   </tbody>
 </table>
-
-<h2 id="disease-db">Disease parameter database</h2>
-<p>EpiChat ships a literature-backed JSON database (<code>epichat/data/disease_parameters.json</code>) covering 8 diseases. When a named disease is detected, the fact-checker compares R₀, infectious period, and incubation period against published ranges and shows a ⚠ warning if any value is out of range. The database is student-extensible: adding a disease requires only editing the JSON file — no Python changes needed.</p>
-
-<table class="ref">
-  <thead><tr><th>Disease</th><th>R₀ range</th><th>Incubation (days)</th><th>Infectious (days)</th><th>Source</th></tr></thead>
-  <tbody>
-    <tr><td>Measles</td><td>12–18</td><td>6–21</td><td>4–12</td><td>PubMed 28757186 · PMC5930806</td></tr>
-    <tr><td>Mumps</td><td>10–12</td><td>14–25</td><td>7–25</td><td>PMC557899 · PMC5930806</td></tr>
-    <tr><td>Rubella</td><td>2–5</td><td>13–24</td><td>7–21</td><td>PMC8893344 · PMC5930806</td></tr>
-    <tr><td>Varicella</td><td>8–10</td><td>10–21</td><td>4–10</td><td>PMC8954496 · PMC5930806</td></tr>
-    <tr><td>Pertussis</td><td>12–17</td><td>3–7</td><td>14–28</td><td>PMC11679829 · PMC5930806</td></tr>
-    <tr><td>Influenza (seasonal)</td><td>1.2–1.4</td><td>1–4</td><td>1–10</td><td>PMC4169819 · PMC5930806</td></tr>
-    <tr><td>Meningococcal</td><td>1.0–1.9</td><td>1–10</td><td>1–7</td><td>ScienceDirect S1567134820301X · PMC5930806</td></tr>
-    <tr><td>Hepatitis A</td><td>2.1–2.8</td><td>20–125</td><td>14–28</td><td>PMC6152969 · PMC5930806</td></tr>
-  </tbody>
-</table>
-
-<p>The database is being expanded to cover COVID-19, Ebola, dengue, RSV, cholera, TB, polio, and Mpox (Phase 9 in the roadmap). Additional parameters per disease — IFR (<code>p_death</code>), contact rate (<code>n_contacts</code>), immunity duration (<code>dur_immune</code>) — will be added as literature data is collected.</p>
 
 <h2 id="roadmap">Roadmap</h2>
-<p>Seven phases remaining, in priority order. Phases 4 (country demographics) and 7 (multilingual support) are complete as of v0.3. Complexity is implementation effort; impact is how much it moves the scientific needle.</p>
+<p>The data roadmap, in priority order, and where each phase stands. Impact is how much it moves the scientific needle.</p>
 <table class="ref">
-  <thead><tr><th>#</th><th>Phase</th><th>Data / Notes</th><th>Complexity</th><th>Impact</th></tr></thead>
+  <thead><tr><th>#</th><th>Phase</th><th>Data · notes</th><th>Status</th><th>Impact</th></tr></thead>
   <tbody>
-    <tr><td>1</td><td>Disease parameter DB extension</td><td>More diseases (COVID, Ebola, dengue…) + more params per disease (p_death, n_contacts…)</td><td>Low (data) / Low–Med (Python)</td><td>High</td></tr>
-    <tr><td>2</td><td>Country contact matrices</td><td>Prem et al. 2021 (177 countries) · SOCRATES · CoMix</td><td>Medium</td><td>High</td></tr>
-    <tr><td>3</td><td>Age-specific severity</td><td>O'Driscoll 2021 · CDC COVID-NET · FluView</td><td>Medium</td><td>High</td></tr>
-    <tr><td>4</td><td>HouseholdNet</td><td>DHS · IPUMS · UN household data · ACS</td><td>High</td><td>Medium</td></tr>
-    <tr><td>5</td><td>Calibration vs surveillance</td><td>OWID · CDC Tracker · WHO FluNet · Tycho</td><td>High</td><td>Very High</td></tr>
-    <tr><td>6</td><td>STI networks</td><td>DHS sexual module · NATSAL · CDC NHBS</td><td>Very High</td><td>Medium</td></tr>
-    <tr><td>7</td><td>Geospatial metapopulation</td><td>WorldPop · OAG · OSM</td><td>Very High</td><td>High</td></tr>
+    <tr><td>1</td><td>Country demographics</td><td>UN WPP 2024 · World Bank</td><td>Done</td><td>High</td></tr>
+    <tr><td>2</td><td>Country contact matrices</td><td>Prem et al. 2021 (177 countries)</td><td>Done</td><td>High</td></tr>
+    <tr><td>3</td><td>Households, schools and workplaces</td><td>UN household size (189 countries) · the hybrid network</td><td>Done</td><td>Medium</td></tr>
+    <tr><td>4</td><td>Age-specific severity</td><td>Fatality by age is a parameter; cited values are in literature review</td><td>In progress</td><td>High</td></tr>
+    <tr><td>5</td><td>Calibration against surveillance data</td><td>A run fits one known outcome today; fitting a reported case series is next</td><td>In progress</td><td>Very High</td></tr>
+    <tr><td>6</td><td>STI and multi-route transmission</td><td>DHS sexual module · NATSAL · CDC NHBS</td><td>Later</td><td>Medium</td></tr>
+    <tr><td>7</td><td>Geospatial metapopulation</td><td>WorldPop · OAG · OSM</td><td>Later</td><td>High</td></tr>
   </tbody>
 </table>
+<p>
+  Beside the data roadmap: cited effect sizes for the interventions,
+  testing and isolation as interventions, a benchmark and validation study
+  against expert-coded models, and an open release with a preprint.
+</p>
 
 <h2 id="risks">Risks · mitigations</h2>
 <table class="ref">
   <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
   <tbody>
-    <tr><td>Invalid Starsim code</td><td>Template-based generation — no free-form LLM code</td></tr>
-    <tr><td>Parameter hallucination</td><td>Pydantic validation; literature-range fact-checking via disease_parameters.json; ⚠ warning shown in chat and CLI when values are outside known ranges</td></tr>
-    <tr><td>Wrong R₀ on age-structured network</td><td>β back-solved from POLYMOD spectral radius after demographics applied; recalibrated on every R₀ / dur_inf modification mid-conversation</td></tr>
-    <tr><td>Execution failure</td><td>3-attempt recovery loop with LLM re-parameterization</td></tr>
-    <tr><td>Timeout</td><td>90-second subprocess limit</td></tr>
-    <tr><td>API instability</td><td>Starsim version pinned in requirements.txt</td></tr>
+    <tr><td>Invalid simulation code</td><td>The model never writes code; tools pass structured values through one registry and schema</td></tr>
+    <tr><td>Parameter hallucination</td><td>Values come from you, the database, fetched data or a chosen reference, each tagged with its source; out-of-range values are flagged; illustrative assumptions are labelled; held-back values are never quoted</td></tr>
+    <tr><td>Wrong R₀ on a structured network</td><td>β calibrated exactly on the random and age-structured networks; on the hybrid network a pilot run measures it and adjusts β</td></tr>
+    <tr><td>Implausible results</td><td>Diagnostics on every run, each with suggested fixes</td></tr>
+    <tr><td>Execution failure</td><td>Up to two automatic repairs of the configuration, with a visible repair log</td></tr>
+    <tr><td>Runaway runs and cost</td><td>A 120-second run limit, a cap of 500,000 agent-years per run, a daily turn limit per participant and a monthly budget</td></tr>
+    <tr><td>API instability</td><td>Starsim pinned at 3.7.2; a fixed simulation baseline in the test suite</td></tr>
   </tbody>
 </table>
 
@@ -352,7 +556,7 @@ User: epidemic curve + interpretation</code></pre>
 </main>
 
 <div data-mount="footer"></div>
-<script src="site.js?v=3"></script>
+<script src="site.js?v=4"></script>
 <script>
 // TOC scrollspy
 const sections = document.querySelectorAll('.doc h2');
