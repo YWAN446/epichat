@@ -16,7 +16,7 @@ from typing import Any, Literal
 import numpy as np
 
 from epichat.disease_db import _num, _range_of, lookup
-from epichat.params.indicators import has_vaccine_indicator
+from epichat.params.indicators import has_vaccine
 from epichat.params.r0 import R0Unreachable, age_shares, approx_r0, calibrate_beta, clamp_beta, r0_is_approximate, weighted_cfr
 from epichat.params.registry import DEATH_MODELS, REGISTRY_BY_PATH, WANING_MODELS
 from epichat.params.schema_v2 import SimParamsV2
@@ -502,7 +502,7 @@ def _what_if(run: _Run, faded: bool) -> Diagnostic | None:
     def offer(entry: dict, label: str, rationale: str, basis: Basis = "rule") -> None:
         levers.append(Lever({}, {}, "change", rationale, basis, interventions=[entry], label=label))
 
-    if has_vaccine_indicator(run.disease) and "vaccine" not in types:
+    if has_vaccine(run.disease) and "vaccine" not in types:
         efficacy, basis = _campaign_efficacy(run.disease)
         w = window(CAMPAIGN_DAYS)
         offer({"type": "vaccine", "kind": "campaign", "coverage": CAMPAIGN_COVERAGE, "efficacy": efficacy, **w},
