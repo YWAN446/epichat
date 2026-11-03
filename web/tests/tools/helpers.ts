@@ -25,7 +25,7 @@ export type FakeDeps = ToolDeps & {
 };
 
 export function makeDeps(over: Partial<{
-  scenario: Scenario; unWpp: ResolvedField[] | Error; whoGho: ResolvedField[] | Error; wbData360: ResolvedField[] | Error;
+  scenario: Scenario; unWpp: ResolvedField[] | Error; unicef: ResolvedField[] | Error; wbData360: ResolvedField[] | Error;
   simulate: SimResult | Error; fallback: { birth_rate: number; death_rate: number; source: string } | null; contextText: string; runId: string | null;
   reportRuns: ReportRun[]; recap: string[]; nextVersion: number; reportId: string | null;
   memoryEnabled: boolean; memories: Memory[]; memoryAdd: "full" | "not_found" | Error; previousRun: PreviousRun | null;
@@ -45,7 +45,7 @@ export function makeDeps(over: Partial<{
   const deps: FakeDeps = {
     scenario: over.scenario ?? emptyScenario(),
     sim,
-    adapters: { unWpp: answer(over.unWpp), whoGho: answer(over.whoGho), wbData360: answer(over.wbData360) } as Adapters,
+    adapters: { unWpp: answer(over.unWpp), unicef: answer(over.unicef), wbData360: answer(over.wbData360) } as Adapters,
     contextText: over.contextText ?? "",
     turnId: "turn-1",
     runs: [],

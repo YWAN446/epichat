@@ -23,7 +23,7 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT).toContain("Create a report");
     expect(SYSTEM_PROMPT).toContain("Do not paste the report into the conversation");
     expect(SYSTEM_PROMPT.indexOf("## About EpiChat")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Decisions recap"));
-    for (const phrase of ["Starsim", "World Population Prospects", "Global Health Observatory", "Data360", "not forecasts", "What is EpiChat"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    for (const phrase of ["Starsim", "World Population Prospects", "WHO/UNICEF estimates", "Data360", "not forecasts", "What is EpiChat"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).toMatch(/\b1[0-9] diseases\b/);
     expect(SYSTEM_PROMPT).toMatch(/\b[1-9]\d{2} cited estimates\b/);
     expect(SYSTEM_PROMPT).not.toContain("## Cards");
