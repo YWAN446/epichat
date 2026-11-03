@@ -15,7 +15,7 @@ describe("configure_simulation", () => {
     expect(deps.scenario.params?.run.n_agents).toBe(50000);
     expect(deps.scenario.params?.demographics.country).toBe("BRA");
     expect(deps.scenario.params?.disease.beta).toBe(22.8125);
-    expect(deps.scenario.params?.disease.dur_inf).toEqual({ mean_days: 10, dist: "gamma", sd_days: 0.75 }); // dengue infectious 2–5 days
+    expect(deps.scenario.params?.disease.dur_inf).toEqual({ mean_days: 10, dist: "gamma", sd_days: 1.5 }); // dengue infectious 1–7 days
     expect(out.applied.n_agents).toBe(50000);
     expect(out.applied.disease).toBe("dengue");
     expect(deps.scenario.disease).toBe("dengue");
