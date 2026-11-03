@@ -420,10 +420,6 @@
       },
       {
        "value": 2.21,
-       "range": [
-        0.07,
-        2.08
-       ],
        "year": 2023,
        "country": "Ethiopia",
        "population": "General",
@@ -1550,8 +1546,8 @@
       {
        "value": 9,
        "range": [
-        10,
-        12
+        8,
+        10
        ],
        "year": 2022,
        "country": "Japan",
@@ -1742,8 +1738,51 @@
      "estimates": []
     },
     "asymptomatic_fraction": {
-     "source": null,
-     "estimates": []
+     "source": "https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox",
+     "estimates": [
+      {
+       "value": 0.07,
+       "year": 2016,
+       "country": "United States",
+       "population": "Adults without a history of varicella, exposed to infected children in the household",
+       "source_type": "clinical_reference",
+       "title": "Chickenpox, Measles, and Mumps",
+       "url": "https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox",
+       "notes": "Family studies found only 8% of adults without a varicella history developed clinical disease on household exposure, implying a subclinical attack rate near 7% in a population that is 90% immune. BEST-IDENTIFIED DESIGN in this parameter because exposure is observed rather than inferred from serology, so it avoids the recall problem that inflates the entries below; the underlying studies are old and small."
+      },
+      {
+       "value": 0.114,
+       "year": 2003,
+       "country": "Greece",
+       "population": "Children up to 14 years with no reported history of varicella, northern Greece",
+       "source_type": "serological_survey",
+       "title": "How reliable is the history of chickenpox? Varicella serology among children up to 14 years of age",
+       "url": "https://www.sciencedirect.com/science/article/pii/S1201971203901068",
+       "notes": "Of 402 children with no reported varicella history, 11.4% were seropositive. RECALL FAILURE IS MEASURED HERE AND RUNS BOTH WAYS — 12.2% of children claiming prior varicella lacked antibodies and 10.2% of those with pediatrician-documented disease were seronegative — so this is an upper bound on silent infection, not an estimate of it."
+      },
+      {
+       "value": 0.33,
+       "year": 2021,
+       "country": "Multiple",
+       "population": "Unvaccinated children without a diagnosed varicella case, ten-year follow-up, varicella-endemic countries",
+       "source_type": "research_article",
+       "title": "Clinically- versus serologically-identified varicella: A hidden infection burden. A ten-year follow-up from a randomized study in varicella-endemic countries",
+       "url": "https://www.tandfonline.com/doi/full/10.1080/21645515.2021.1932217",
+       "doi": "10.1080/21645515.2021.1932217",
+       "notes": "About one-third of unvaccinated, undiagnosed children developed an anti-VZV response, with seropositivity among those without a confirmed case rising from 8% at year one to 75% at year ten. WRONG DENOMINATOR FOR THIS FIELD: this is cumulative silent infection across a decade of repeated exposure, not the silent share of a given infection, and the authors note these events may be minimal or atypical rather than truly asymptomatic."
+      },
+      {
+       "value": 0.836,
+       "year": 2025,
+       "country": "Portugal",
+       "population": "Unvaccinated patients aged 11 and over with no known chickenpox history, hospital serology",
+       "source_type": "serological_survey",
+       "title": "Assumptions and Realities: Unraveling Varicella Zoster Virus Immunity in Unvaccinated Populations",
+       "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11777516/",
+       "doi": "10.1093/ofid/ofae631.2503",
+       "notes": "83.6% of 613 unvaccinated patients with no known varicella history were VZV IgG positive, rising with age. DO NOT USE AS AN ASYMPTOMATIC FRACTION — this is lifetime seroprevalence among adults whose childhood illness is decades past, so it is dominated by recall decay, and the cohort was selected for comorbidity or immunosuppression."
+      }
+     ]
     }
    }
   },
@@ -2446,6 +2485,19 @@
      "source": null,
      "estimates": [
       {
+       "value": 8,
+       "range": [
+        1,
+        8
+       ],
+       "year": 2025,
+       "country": "United States",
+       "population": "Cases of invasive meningococcal disease, treated",
+       "source_type": "government_report",
+       "title": "Meningococcal Disease Quicksheet",
+       "notes": "Cases are considered infectious from 7 days before symptom onset until 24 hours after appropriate antibiotic therapy begins, with peak infectiousness shortly before onset; value is the maximum window under prompt treatment (7 presymptomatic days plus ~1 treated day) and the range reflects how much earlier treatment truncates it. TREATMENT-TRUNCATED AND CONTROL-ORIENTED, so this is a contact-tracing lookback window rather than a natural duration of infectiousness, and it should not be pooled with untreated or carriage-based durations."
+      },
+      {
        "value": 1,
        "year": 2023,
        "country": "United States",
@@ -2953,7 +3005,7 @@
      ]
     },
     "incubation_days": {
-     "source": null,
+     "source": "https://www.cdc.gov/ebola/signs-symptoms/index.html",
      "estimates": [
       {
        "value": 9,
@@ -2982,18 +3034,42 @@
       },
       {
        "value": 12.7,
-       "range": [
-        2,
-        26
-       ],
        "year": 2011,
        "country": "Democratic Republic of the Congo",
        "population": "General, Kikwit outbreak 1995",
        "source_type": "modeling_study",
        "title": "Incubation period of Ebola hemorrhagic virus subtype Zaire",
-       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3766904/",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/24159443/",
        "doi": "10.1016/j.phrp.2011.04.001",
-       "notes": "Eichner, Dowell & Firese, Osong Public Health Research and Perspectives. Fitted a distribution to 196 cases from the 1995 Kikwit outbreak, estimating mean 12.7 days (SD 4.3). The paper is the main source for the claim that a 21-day quarantine misses a small but non-zero fraction of cases; the exact fraction is sensitive to the fitted distribution and later reanalyses (notably Haas 2014) produced a wide spread of answers. Range shown is approximate observed spread, not a confidence interval."
+       "notes": "Eichner, Dowell & Firese, Osong Public Health Research and Perspectives. Fitted a distribution to 196 cases from the 1995 Kikwit outbreak, estimating mean 12.7 days (SD 4.3). The paper is the main source for the claim that a 21-day quarantine misses a small but non-zero fraction of cases; the exact fraction is sensitive to the fitted distribution and later reanalyses (notably Haas 2014) produced a wide spread of answers."
+      },
+      {
+       "value": 6.3,
+       "range": [
+        1,
+        21
+       ],
+       "year": 2015,
+       "population": "General",
+       "source_type": "systematic_review",
+       "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/",
+       "doi": "10.1093/cid/civ531",
+       "notes": "Standard time periods from article."
+      },
+      {
+       "value": 6.22,
+       "range": [
+        1,
+        15
+       ],
+       "year": 2015,
+       "population": "General",
+       "source_type": "systematic_review",
+       "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/",
+       "doi": "10.1093/cid/civ531",
+       "notes": "Proposed time periods from article."
       }
      ]
     },
@@ -3001,25 +3077,25 @@
      "source": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
      "estimates": [
       {
-       "value": 7.5,
+       "value": 5.0,
        "range": [
-        6.0,
-        9.0
+        0.3,
+        9.7
        ],
        "year": 2014,
        "country": "Guinea, Liberia, Sierra Leone",
-       "population": "Fatal cases, West Africa 2014",
+       "population": "Fatal cases",
        "source_type": "government_report",
        "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
        "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
        "doi": "10.1056/NEJMoa1411100",
-       "notes": "WHO Ebola Response Team reported mean time from symptom onset to death of approximately 7.5 days, versus roughly 11.8 days from onset to hospital discharge among survivors. Used here as the upper bound on community infectious duration for fatal cases in the absence of isolation."
+       "notes": "WHO Ebola Response Team reported mean time from the onset of symptoms to hospitalization, a measure of the period of infectiousness in the community."
       },
       {
        "value": 5.61,
        "range": [
         3.5,
-        7.0
+        10.7
        ],
        "year": 2004,
        "country": "Democratic Republic of the Congo / Uganda",
@@ -3028,22 +3104,21 @@
        "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda",
        "url": "https://pubmed.ncbi.nlm.nih.gov/15178190/",
        "doi": "10.1016/j.jtbi.2004.03.006",
-       "notes": "Chowell et al. used a mean infectious period of 5.61 days for the 1976 Congo outbreak and 3.5 days for the 2000 Uganda outbreak. These are model-calibrated compartment residence times, not directly observed clinical durations, and they absorb the effect of isolation — which is why they are shorter than onset-to-death. Do not interpret as a biological shedding duration."
+       "notes": "Chowell et al. used a mean infectious period of 5.61 days for the 1976 Congo outbreak."
       },
       {
-       "value": 115,
+       "value": 9.4,
        "range": [
-        30,
-        565
+        3.9,
+        14.9
        ],
-       "year": 2017,
-       "country": "Sierra Leone",
-       "population": "Male survivors, viral RNA persistence in semen",
-       "source_type": "review_article",
-       "title": "Ebola RNA Persistence in Semen of Ebola Virus Disease Survivors — Final Report",
-       "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1511410",
-       "doi": "10.1056/NEJMoa1511410",
-       "notes": "Deen et al., New England Journal of Medicine. Cohort of male survivors tested by RT-PCR; RNA detected in semen in the large majority of men tested within 3 months of onset, declining over time but with individual cases positive beyond 500 days. Critical caveat: RNA detection is not the same as infectious virus, and the documented sexual transmission events are rare relative to the number of RNA-positive survivors. Included as a separate entry because it is a genuinely different transmission channel, not a continuation of the acute infectious period — do not sum it with the acute estimates above."
+       "year": 2015,
+       "population": "EVD survivors",
+       "source_type": "systematic_review",
+       "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4560911/",
+       "doi": "10.1093/cid/civ531",
+       "notes": "Infectious period refers to after onset of wet symptoms to recovery."
       }
      ]
     },
@@ -3057,9 +3132,9 @@
         90
        ],
        "year": 2025,
-       "population": "General, all outbreaks and species",
-       "source_type": "organization_report",
-       "title": "Ebola disease caused by Zaire ebolavirus",
+       "population": "General",
+       "source_type": "government_report",
+       "title": "Ebola disease",
        "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
        "notes": "WHO states the average case fatality rate is around 50%, having varied from 25% to 90% in past outbreaks. This is the most widely cited headline figure and the basis for the consensus block, though it aggregates across species, decades, and wildly different standards of supportive care.",
        "metric": "CFR"
@@ -3067,13 +3142,13 @@
       {
        "value": 70.8,
        "range": [
-        68.6,
-        72.8
+        69,
+        73
        ],
        "year": 2014,
        "country": "Guinea, Liberia, Sierra Leone",
        "population": "Cases with definitive outcome, West Africa 2014",
-       "source_type": "government_report",
+       "source_type": "modeling_study",
        "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections",
        "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
        "doi": "10.1056/NEJMoa1411100",
@@ -3082,29 +3157,29 @@
       },
       {
        "value": 88,
-       "year": 2024,
+       "year": 1978,
        "country": "Democratic Republic of the Congo",
-       "population": "General, Yambuku outbreak 1976",
+       "population": "General",
        "source_type": "government_report",
-       "title": "Ebola disease distribution by species and outbreak",
+       "title": "Ebola haemorrhagic fever in Zaire, 1976",
        "url": "https://www.cdc.gov/ebola/outbreaks/index.html",
-       "notes": "280 deaths among 318 cases in the index outbreak for Zaire ebolavirus. Upper anchor of the WHO range. Occurred with essentially no supportive care, in a setting with active nosocomial amplification, and with case finding biased toward severe presentations — so this should be read as a near-worst-case rather than an intrinsic species lethality.",
+       "notes": "280 deaths among 318 cases in the index outbreak for Zaire ebolavirus.",
        "metric": "CFR"
       },
       {
-       "value": 33.5,
+       "value": 73.13,
        "range": [
-        29.5,
-        37.5
+        57.58,
+        79.49
        ],
-       "year": 2019,
-       "country": "Democratic Republic of the Congo",
-       "population": "Patients receiving monoclonal antibody therapy, DRC 2018-2019",
-       "source_type": "modeling_study",
-       "title": "A Randomized, Controlled Trial of Ebola Virus Disease Therapeutics (PALM trial)",
-       "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa1910993",
-       "doi": "10.1056/NEJMoa1910993",
-       "notes": "Mulangu et al., New England Journal of Medicine. Mortality at 28 days was roughly 33.5% with REGN-EB3 and 35.1% with mAb114, versus roughly 50-53% in the ZMapp and remdesivir comparison groups. Mortality among patients presenting early with low viral load fell into the roughly 10% range. Range shown is approximate. This entry breaks the historical consensus band deliberately: any forward-looking model of an outbreak with therapeutic access should not use the 50% headline figure.",
+       "year": 2015,
+       "country": "Sierra Leone",
+       "population": "Confirmed hospitalized cases with known outcome, Jui Government Hospital, Freetown",
+       "source_type": "review_article",
+       "title": "Age and Ebola viral load correlate with mortality and survival time in 288 Ebola virus disease patients",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7110900/",
+       "doi": "10.1016/j.ijid.2015.10.021",
+       "notes": "Li et al., International Journal of Infectious Diseases 42:34-39. Retrospective series at Jui Government Hospital, Freetown, Oct 2014-Mar 2015: 288 RT-PCR-confirmed cases, 98 deaths, 36 recoveries. The 73.13% is computed on only the 134 patients with a recorded outcome; the other 154 were transferred out and lost to follow-up, so over half the cohort is missing from the denominator and the figure is likely inflated if transfers skewed toward survivors. Range shown is the age-stratified span, NOT a confidence interval: 57.58% at age <=18, 77.42% at 18-40, 79.49% at >=40. Mortality correlated with age, log viral load (OR 3.095 above 10^6 copies/ml, p = 0.004) and diarrhoea; no sex difference. Median stay was 2 days for deaths vs 14 for survivors, so much of the cohort died too quickly for supportive care to affect outcome.",
        "metric": "CFR"
       }
      ]
@@ -3114,81 +3189,78 @@
      "estimates": []
     },
     "immunity_duration": {
-     "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6009669/",
+     "source": "https://academic.oup.com/jid/article/217/2/223/4716835",
      "estimates": [
       {
        "range": [
         14600,
         "lifelong"
        ],
-       "year": 2018,
+       "year": 2017,
        "country": "Democratic Republic of the Congo",
-       "population": "Survivors of natural infection, Yambuku 1976 cohort",
+       "population": "Survivors of natural infection",
        "source_type": "review_article",
        "title": "Ebola Virus Neutralizing Antibodies Detectable in Survivors of the Yambuku, Zaire Outbreak 40 Years after Infection",
-       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6009669/",
+       "url": "https://academic.oup.com/jid/article/217/2/223/4716835",
        "doi": "10.1093/infdis/jix584",
        "notes": "Rimoin et al., Journal of Infectious Diseases. Traced survivors of the 1976 Yambuku outbreak and found IgG against Ebola glycoprotein in all 14 tested, with neutralizing activity in a subset, 40 years after infection. Strongest available evidence for durable natural immunity, though the sample is tiny and serology is a correlate rather than a demonstration of protection.",
        "special_value": "lifelong"
       },
       {
-       "value": 730,
-       "range": [
-        365,
-        1460
-       ],
-       "year": 2025,
-       "population": "General, vaccine-induced (rVSV-ZEBOV / Ervebo)",
-       "source_type": "organization_report",
-       "title": "Ebola disease caused by Zaire ebolavirus",
-       "url": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
-       "notes": "Ervebo is a single-dose live attenuated vesicular stomatitis virus vector vaccine, shown highly effective in the Guinea ring-vaccination trial with protection evident from roughly 10 days post-vaccination. Immunogenicity studies show antibody responses persisting at least 2 years and in follow-up cohorts beyond that, but duration of clinical protection is not established and no booster schedule is defined for the general population. Value shown is a conservative planning figure, not a measured waning half-life — flag as low-confidence if the model is sensitive to it. Protects against Zaire ebolavirus only."
+       "value": 3650,
+       "year": 2023,
+       "country": "United States",
+       "population": "Survivors of natural infection",
+       "source_type": "health_organization_summary",
+       "title": "Ebola virus disease",
+       "url": "https://www.pennmedicine.org/for-patients-and-visitors/patient-information/conditions-treated-a-to-z/ebola-virus-disease",
+       "notes": "Penn Medicine patient-information page (A.D.A.M. content, last reviewed 31 December 2023), sourced to CDC, WHO, Goldman-Cecil Medicine 27th ed. and Mandell 10th ed. States survivors are immune 'for 10 years or more' and can no longer spread the virus, and that cross-protection against a different Ebola species is not known. CONFLICTS with the ECDC entry in this parameter, which states infection confers lifelong immunity: this is the more conservative framing and closer to what the evidence supports, since the 40-year antibody persistence in the Yambuku cohort is serological rather than a demonstration of protection. Treat 10 years as a defensible floor and 'lifelong' as an upper assumption, not as two compatible readings. LOW EVIDENTIARY WEIGHT: general-audience tertiary summary, no primary data, and the 10-year figure is asserted without a cited source; use for the direction of the caveat, not as an independent estimate. The page also states men can carry virus in semen 'for as long as 3 months', which is contradicted by the Deen et al. cohort in infectious_days showing RNA positivity beyond 500 days — treat the 3-month figure as outdated."
+      },
+      {
+       "value": 1825,
+       "year": 2024,
+       "country": "Guinea",
+       "population": "Vaccinated adults, PREVAC trial (rVSV-ZEBOV and Ad26.ZEBOV/MVA-BN-Filo)",
+       "source_type": "modeling_study",
+       "title": "Long-term cellular immunity of vaccines for Zaire Ebola Virus Diseases",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11372064/",
+       "doi": "10.1038/s41467-024-51453-z",
+       "notes": "Wiedemann, Lhomme, Huchon et al., Nature Communications 15:7666. Immunology ancillary study of the PREVAC randomized trial (NCT02876328), 191 adults per-protocol at the Landreah site, Guinea, with a 31-participant subset followed to 60 months. Both licensed regimens induced EBOV-specific memory T-cell responses detectable at 24, 36, 48 and 60 months post-prime with NO decline over that window, which is the basis for the 1825-day floor here. Two caveats against reading this as duration of protection. (1) DURABILITY IS ASSAY-DEPENDENT: ex-vivo responses were undetectable in every arm by month 12; the persistent signal appears only after 8-day in-vitro expansion with EBOV peptide pools, so this demonstrates memory T cells can be recalled, not that circulating effector immunity persists. Antibody GMCs had already fallen by M12 to roughly pre-boost levels (433 EU/mL Ad26-MVA, 828 rVSV, 663 rVSV-booster, vs 92 placebo). (2) NO CORRELATE OF PROTECTION EXISTS for EVD, and the authors state this plainly — antibodies are thought primary for rVSV protection, CD8+ T cells for the adenovirus/MVA platforms, but the level required for lasting protection is unknown, so T-cell persistence cannot be converted into a protection duration. Platform differences: Ad26 prime induced polyfunctional CD4+ responses further boosted by MVA; rVSV induced minimal ex-vivo T-cell responses despite strong antibody titers and a D7 pro-inflammatory signature (IL-18, IP-10, TRAIL). CD4+ T-cell responses correlated with anti-EBOV IgG, which the authors offer as a rationale for eventual boosting. LOW PRECISION: the 60-month subset is 31 people (9-12 per arm), and the rVSV-booster arm had only 7-9, too few to interpret its absent CD8+ signal. Use 1825 days as a lower bound on immune memory, not as an immunity duration, and keep the vaccine and natural-infection entries in this parameter separate — they are different quantities with different evidence."
       }
      ]
     },
     "asymptomatic_fraction": {
-     "source": "https://pubmed.ncbi.nlm.nih.gov/10881895/",
+     "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/",
      "estimates": [
       {
-       "value": 0.46,
-       "year": 2000,
-       "country": "Gabon",
-       "population": "Close contacts of symptomatic cases, Gabon",
-       "source_type": "review_article",
-       "title": "Human asymptomatic Ebola infection and strong inflammatory response",
-       "url": "https://pubmed.ncbi.nlm.nih.gov/10881895/",
-       "doi": "10.1016/S0140-6736(00)02405-3",
-       "notes": "Leroy et al., The Lancet. Found that 11 of 24 close contacts of symptomatic patients during the 1996 Gabon outbreaks were IgG-positive and PCR-positive without ever developing symptoms. The origin of the widely repeated claim that a large share of Ebola infections are asymptomatic. Small sample, early-generation assays, and subsequent work has not reproduced a fraction this high — treat as the upper bound of plausibility rather than a central estimate."
+       "value": 0.5,
+       "range": [
+        0.46,
+        0.71
+       ],
+       "year": 2014,
+       "country": "Liberia (modeled)",
+       "population": "General, modeling assumption",
+       "source_type": "modeling_study",
+       "title": "Impact of asymptomatic infection and acquired immunity on the spread and control of Ebola",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/",
+       "doi": "10.1016/S0140-6736(14)61839-0",
+       "notes": "Bellan, Pulliam, Dushoff & Meyers, Lancet 384(9953):1499-1500. CORRESPONDENCE, NOT A PRIMARY ESTIMATE: the 50% figure is an illustrative modeling assumption chosen to demonstrate a structural point, not a measurement, and the range shown is the span of the two prior serological findings the letter cites (a post-outbreak serosurvey in which 71% of seropositive individuals reported no disease, and Leroy et al.'s 46% seropositivity among asymptomatic close contacts, already entered separately in this parameter). Do not count as independent evidence and do not double-count with Leroy. The substantive contribution is the modeling consequence: comparing two Liberia models with identical R0, the one ignoring asymptomatic infection projected roughly 50% more cumulative symptomatic cases by January 2015, because asymptomatic infections are unlikely to be infectious but do contribute to herd immunity. This confirms the direction flagged in the consensus block — raising this parameter makes modeled outbreaks easier to control, the opposite of the respiratory-pathogen intuition. SUPERSEDED ON MAGNITUDE: written October 2014, before Glynn et al. 2017 found roughly 3% using a validated oral-fluid assay, so the premise that a 'substantial proportion' of infections are asymptomatic is now contested. Retain for the structural argument, not the value. PMID 25390569."
       },
       {
-       "value": 0.27,
+       "value": 0.271,
        "range": [
-        0.14,
-        0.4
+        0.145,
+        0.396
        ],
        "year": 2016,
        "country": "Multiple",
-       "population": "Household contacts, pooled",
+       "population": "Household contacts, pooled across outbreaks 1976-2014",
        "source_type": "systematic_review",
        "title": "Transmissibility and Pathogenicity of Ebola Virus: A Systematic Review and Meta-analysis of Household Secondary Attack Rate and Asymptomatic Infection",
-       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4826455/",
+       "url": "https://academic.oup.com/cid/article/62/10/1277/2462818",
        "doi": "10.1093/cid/ciw114",
-       "notes": "Dean, Halloran, Yang & Longini, Clinical Infectious Diseases. Meta-analysis across household studies estimating both secondary attack rate (roughly 12.5%) and the proportion of infections that are asymptomatic among seropositive contacts. The authors are explicit that the asymptomatic estimate rests on a small number of serosurveys with heterogeneous assays and that the pooled interval is wide."
-      },
-      {
-       "value": 0.03,
-       "range": [
-        0.01,
-        0.06
-       ],
-       "year": 2017,
-       "country": "Sierra Leone",
-       "population": "Household contacts, Sierra Leone 2014-2016",
-       "source_type": "review_article",
-       "title": "Asymptomatic infection and unrecognised Ebola virus disease in Ebola-affected households in Sierra Leone: a cross-sectional study using a new non-invasive assay for antibodies to Ebola virus",
-       "url": "https://pubmed.ncbi.nlm.nih.gov/28347469/",
-       "doi": "10.1016/S1473-3099(17)30111-1",
-       "notes": "Glynn et al., The Lancet Infectious Diseases. Used a validated oral-fluid antibody assay in households from the West African epidemic and found only a small fraction of contacts with asymptomatic or unrecognised infection — roughly an order of magnitude below Leroy et al. The largest and best-controlled study of the question, and the main reason the consensus 'typical' here is set well below the meta-analytic pooled value. If the model is sensitive to this parameter, run it at both 0.03 and 0.27 rather than picking one."
+       "notes": "Dean, Halloran, Yang & Longini, Clinical Infectious Diseases 62(10):1277-1286. Pooled estimate that 27.1% (95% CI 14.5-39.6) of Ebola infections are asymptomatic — the central meta-analytic value, sitting between the Leroy 46% and the Glynn 3%, and roughly an order of magnitude above the latter. The interval is wide because the underlying serosurveys are few and use heterogeneous, mostly unvalidated assays; the assay problem is the substantive reason to weight Glynn more heavily despite this being the formal meta-analysis. The same paper is the source for the household secondary attack rate figures cited in average_contacts_daily: overall SAR 12.5% (95% CI 8.6-16.3), but almost all of it driven by direct contact — SAR was 0.8% (95% CI 0-2.3) without direct contact and 47.9% (95% CI 23.3-72.6) where nursing care was provided. That gradient is the most useful quantity in this study for parameterizing contact structure, and is a stronger basis for a contact model than any daily contact rate. Also found a statistically significant decline in direct-contact household SAR between 1976 and 2014 (P = .018), likely reflecting changed care and burial behaviour rather than viral change. Authors conclude surveillance and containment should suffice for control."
       }
      ]
     }
@@ -3198,32 +3270,268 @@
    "display_name": "Dengue",
    "parameters": {
     "r0": {
-     "source": "https://www.sciencedirect.com/science/article/pii/S0013935120300050",
-     "estimates": []
+     "source": "https://pubmed.ncbi.nlm.nih.gov/31927301/",
+     "estimates": [
+      {
+       "value": 3.44,
+       "range": [
+        2.03,
+        10.29
+       ],
+       "year": 2020,
+       "country": "Multiple",
+       "population": "General",
+       "source_type": "systematic_review",
+       "title": "Reviewing estimates of the basic reproduction number for dengue, Zika and chikungunya across global climate zones",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/31927301/",
+       "doi": "10.1016/j.envres.2020.109065",
+       "notes": "65 studies included; mean R0 by climate zone was 3.44 tropical, 10.29 sub-tropical, 2.03 temperate. Value is the tropical mean and range is the span of the three zone means, NOT a confidence interval."
+      },
+      {
+       "value": 5.44,
+       "year": 2016,
+       "country": "Brazil",
+       "population": "General",
+       "source_type": "modeling_study",
+       "title": "A comparative analysis of three different methods for the estimation of the basic reproduction number of dengue",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/29928723/",
+       "doi": "10.1016/j.idm.2016.08.002",
+       "notes": "Sanches & Massad, Ribeirao Preto 2009-2010, fitted from the initial growth phase without assuming exponential growth. Three standard methods on the same data gave numerically different answers, so read any single dengue R0 as method-plus-data."
+      },
+      {
+       "value": 27.2,
+       "range": [
+        14.8,
+        49.3
+       ],
+       "year": 2013,
+       "country": "Chile",
+       "population": "Fully susceptible island population, 2002 outbreak",
+       "source_type": "modeling_study",
+       "title": "The basic reproduction number R0 and effectiveness of reactive interventions during dengue epidemics: the 2002 dengue outbreak in Easter Island, Chile",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/24245625/",
+       "doi": "10.3934/mbe.2013.10.1455",
+       "notes": "DO NOT USE AS A GENERAL VALUE: no prior dengue on Easter Island meant a genuinely naive population, a condition endemic settings never meet. Retained as the upper anchor on what a naive-population epidemic can do."
+      },
+      {
+       "value": 2.99,
+       "range": [
+        2.0293,
+        6.531
+       ],
+       "year": 2014,
+       "country": "Pakistan",
+       "population": "General, 2011 epidemic, pre-control",
+       "source_type": "modeling_study",
+       "title": "Estimating the basic reproduction number for single-strain dengue fever epidemics",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/24708869/",
+       "doi": "10.1186/2049-9957-3-12",
+       "notes": "Khan, Hassan & Imran fitted the 2011 epidemic five ways (OLS and GLS on a vector-host ODE model; OLS, GLS and MCMC on a direct-transmission model) and every pre-control estimate fell between 2.95 and 3.08; value shown is the vector-host OLS figure of 2.9871. ROBUST POINT, WIDE INTERVAL: the range is the 95% CI from uncertainty analysis, so the cross-method agreement reflects a well-constrained fit rather than precision, and R0 was above unity with probability >99.9%."
+      }
+     ]
     },
     "incubation_days": {
-     "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-     "estimates": []
+     "source": "https://pubmed.ncbi.nlm.nih.gov/23226436/",
+     "estimates": [
+      {
+       "value": 5.9,
+       "range": [
+        3,
+        10
+       ],
+       "year": 2012,
+       "population": "General, pooled human observations",
+       "source_type": "systematic_review",
+       "title": "The Incubation Periods of Dengue Viruses",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/23226436/",
+       "doi": "10.1371/journal.pone.0050972",
+       "notes": "Chan & Johansson: 204 IIP observations from 35 studies fitted with censored Bayesian time-to-event models, mean 5.9 days with 95% between 3 and 10. No serotype differences detected; this is the reference estimate for the field."
+      },
+      {
+       "value": 6.0,
+       "range": [
+        4.6,
+        7.4
+       ],
+       "year": 2007,
+       "country": "Philippines",
+       "population": "DENV-4, experimentally infected volunteers",
+       "source_type": "review_article",
+       "title": "Natural History of Dengue Virus (DENV)-1 and DENV-4 Infections: Reanalysis of Classic Studies",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/17330791/",
+       "doi": "10.1086/511825",
+       "notes": "Nishiura & Halstead reanalysis of 1920s human challenge data: 6.0 days (SD 1.4) for DENV-4, corroborating the pooled mean from a different evidence type. Incubation correlated negatively with fever duration and severity, consistent with a dose-response mechanism."
+      },
+      {
+       "value": 6,
+       "range": [
+        5,
+        7
+       ],
+       "year": 2026,
+       "country": "United States",
+       "population": "General",
+       "source_type": "government_report",
+       "title": "Clinical Features of Dengue",
+       "url": "https://www.cdc.gov/dengue/hcp/clinical-signs/index.html",
+       "notes": "CDC clinical guidance for health care providers. States dengue begins abruptly after a typical incubation period of 5-7 days, followed by three phases: febrile, critical, and recovery. Value shown is the midpoint of the stated typical range; the source gives no wider observed range, and standard references generally cite 3-14 days as the full span, so treat 5-7 as the modal window rather than the bounds. The same page supports other parameters in a dengue entry: roughly 1 in 4 infections are symptomatic (asymptomatic_fraction ~0.75), about 1 in 20 symptomatic patients progress to severe dengue, mortality in severe dengue can be reduced below 0.5% with prompt intravenous fluid support, and infection confers lifelong homotypic immunity but only months-to-years of heterotypic protection across the four DENV types — which means immunity_duration for dengue cannot be a single value and interacts with antibody-dependent enhancement on reinfection."
+      }
+     ]
     },
     "infectious_days": {
-     "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-     "estimates": []
+     "source": "https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+     "estimates": [
+      {
+       "value": 4.5,
+       "range": [
+        1,
+        7
+       ],
+       "year": 2020,
+       "country": "Thailand",
+       "population": "General, symptomatic infections",
+       "source_type": "review_article",
+       "title": "Dengue viremia kinetics in asymptomatic and symptomatic infection",
+       "url": "https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+       "doi": "10.1016/j.ijid.2020.09.1443",
+       "notes": "Infectiousness estimated by mosquito transmission or viral isolation ranges 1-7 days with a mean of 4-5; value is the midpoint of that stated mean. Primary infections run longer than secondary, so endemic populations sit at the low end of the band."
+      },
+      {
+       "value": 2.5,
+       "range": [
+        1,
+        5
+       ],
+       "year": 2015,
+       "country": "Cambodia",
+       "population": "Asymptomatic and presymptomatic DENV-infected individuals",
+       "source_type": "modeling_study",
+       "title": "Asymptomatic humans transmit dengue virus to mosquitoes",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/26553981/",
+       "doi": "10.1073/pnas.1508114112",
+       "notes": "Dengue patients were infectious up to 5 d after the onset of symptoms."
+      }
+     ]
     },
     "fatality_rate": {
      "source": null,
-     "estimates": []
+     "estimates": [
+      {
+       "value": 0.07,
+       "year": 2025,
+       "country": "Multiple",
+       "population": "Reported cases, global surveillance 2024",
+       "source_type": "review_article",
+       "title": "Global dengue epidemic worsens with record 14 million cases and 9000 deaths reported in 2024",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/40449873/",
+       "doi": "10.1016/j.tmaid.2025.102864",
+       "notes": "WHO surveillance data for 2024: 14.1 million reported cases and 9,508 deaths, crude CFR 0.07%; WHO's own fact sheet gives over 14.6 million and more than 12,000 for the same year, which bounds how tight any dengue surveillance figure can be. A ratio of two undercounts, so use only as a crude-surveillance comparator.",
+       "metric": "CFR"
+      },
+      {
+       "value": 25,
+       "year": 2024,
+       "country": "Sri Lanka",
+       "population": "Dengue patients admitted to a medical ICU",
+       "source_type": "review_article",
+       "title": "Nine fatal cases of dengue: a case series from an intensive care unit in Sri Lanka",
+       "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11605893/",
+       "doi": "10.1186/s41182-024-00661-w",
+       "notes": "Of 1,722 ICU admissions over 30 months, 44 were dengue and 11 (25.0%) died, mainly from acute liver failure and shock. SEVERE SELECTION BIAS: an ICU denominator is compatible with the sub-1% severe-dengue figure rather than contradicting it, and neither transfers to the other's population.",
+       "metric": "CFR"
+      },
+      {
+       "value": 0.05,
+       "range": [
+        0.022,
+        0.072
+       ],
+       "year": 2023,
+       "country": "Multiple (Region of the Americas)",
+       "population": "Reported dengue cases, Region of the Americas, 2023",
+       "source_type": "health_organization_summary",
+       "title": "Case fatality rate due to dengue (Impact Indicator 23), End of Biennium Report 2022-2023",
+       "url": "https://pbdigital.paho.org/en/eob-2022-2023/impact-results/23-case-fatality-rate-due-dengue",
+       "notes": "PAHO reported a regional CFR of 0.050% for 2023 against a 2012-2018 baseline of 0.056%, during the Region's most severe epidemic on record with over 4.4 million cases; range shown is the span of the reported trend line, NOT a confidence interval. UPWARD-BIASED DENOMINATOR: 14 countries report only laboratory-confirmed cases to PASB, so true case counts are higher and the real CFR lower, and this is a programme target indicator rather than an independent measurement.",
+       "metric": "CFR"
+      }
+     ]
     },
     "average_contacts_daily": {
      "source": null,
      "estimates": []
     },
     "immunity_duration": {
-     "source": null,
-     "estimates": []
+     "source": "https://pubmed.ncbi.nlm.nih.gov/23825116/",
+     "estimates": [
+      {
+       "year": 2013,
+       "country": "Thailand",
+       "population": "Homotypic — reinfection with the same serotype",
+       "source_type": "review_article",
+       "title": "Interactions between serotypes of dengue highlight epidemiological impact of cross-immunity",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/23825116/",
+       "doi": "10.1098/rsif.2013.0414",
+       "notes": "Exposure to one virus induces lifelong immunity to all other members of that virus's serotype, but the interaction between serotypes is less clear.",
+       "special_value": "lifelong"
+      },
+      {
+       "value": 730,
+       "range": [
+        365,
+        1095
+       ],
+       "year": 2013,
+       "country": "Thailand",
+       "population": "Heterotypic cross-protection against other serotypes",
+       "source_type": "modeling_study",
+       "title": "Interactions between serotypes of dengue highlight epidemiological impact of cross-immunity",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/23825116/",
+       "doi": "10.1098/rsif.2013.0414",
+       "notes": "Reich et al. fitted mechanistic models to 12,197 serotyped infections over 38 years in Bangkok and found strong evidence for cross-protection of approximately 1-3 years; 730 is the midpoint of that band, NOT a published point estimate. INFERRED FROM POPULATION DYNAMICS, so it is confounded with anything else producing multi-year serotype cycling — directionally solid, numerically soft."
+      }
+     ]
     },
     "asymptomatic_fraction": {
-     "source": null,
-     "estimates": []
+     "source": "https://pubmed.ncbi.nlm.nih.gov/37809992/",
+     "estimates": [
+      {
+       "value": 0.54,
+       "year": 2023,
+       "country": "Multiple",
+       "population": "Dengue-infected persons, pooled across definitions and designs",
+       "source_type": "systematic_review",
+       "title": "Asymptomatic dengue infection rate: A systematic literature review",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/37809992/",
+       "doi": "10.1016/j.heliyon.2023.e20069",
+       "notes": "De Santis, Bouscaren & Flahault, 74 studies screened, mean asymptomatic proportion 54% across the 50 reporting it — well below the canonical 75% and the only formal systematic review of this parameter. UNWEIGHTED MEAN ACROSS INCOMPATIBLE DEFINITIONS: the review's central finding is that 'asymptomatic' has been used for clinically undetectable, undiagnosed and merely mild infection, so 54% pools three different quantities and should not be read as a corrected version of Bhatt."
+      },
+      {
+       "value": 0.08,
+       "year": 2023,
+       "country": "Multiple",
+       "population": "Clinically undetectable laboratory-confirmed dengue infections (strict definition)",
+       "source_type": "systematic_review",
+       "title": "Asymptomatic dengue infection rate: A systematic literature review",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/37809992/",
+       "doi": "10.1016/j.heliyon.2023.e20069",
+       "notes": "Only 8% of infections were asymptomatic under the strict definition of clinically undetectable AND laboratory-confirmed, roughly an order of magnitude below the headline figure and the single strongest challenge to the 75% in this parameter. LOWER BOUND, NOT A REPLACEMENT: requiring laboratory confirmation in a person with no symptoms selects for active cohort surveillance designs, so this is the floor on truly silent infection rather than a corrected central estimate."
+      },
+      {
+       "value": 0.6,
+       "range": [
+        0.4,
+        0.8
+       ],
+       "year": 2025,
+       "country": "United States",
+       "population": "General, DENV infections",
+       "source_type": "government_report",
+       "title": "Dengue, CDC Yellow Book 2026: Health Information for International Travel",
+       "url": "https://www.cdc.gov/yellow-book/hcp/travel-associated-infections-diseases/dengue.html",
+       "notes": "Sanchez-Gonzalez, Adams & Paz-Bailey state 40-80% of DENV infections are asymptomatic; value shown is the midpoint of that band, NOT a published point estimate. "
+      }
+     ]
     }
    }
   },
@@ -3231,32 +3539,266 @@
    "display_name": "RSV",
    "parameters": {
     "r0": {
-     "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-     "estimates": []
+     "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+     "estimates": [
+      {
+       "value": 3.0,
+       "year": 2016,
+       "country": "United States",
+       "population": "General, US census divisions, multiple seasons",
+       "source_type": "modeling_study",
+       "title": "Retrospective Parameter Estimation and Forecast of Respiratory Syncytial Virus in the United States",
+       "url": "https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+       "doi": "10.1371/journal.pcbi.1005133",
+       "notes": "Reis & Shaman, Bayesian filtering across US census divisions and seasons gave R0 3.0 (SD 0.6)."
+      },
+      {
+       "value": 1.65,
+       "range": [
+        1.2,
+        2.1
+       ],
+       "year": 2001,
+       "country": "Multiple",
+       "population": "General, model-dependent",
+       "source_type": "modeling_study",
+       "title": "Modeling epidemics caused by respiratory syncytial virus (RSV)",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/11520501/",
+       "notes": "SIRS model"
+      },
+      {
+       "value": 6.25,
+       "range": [
+        5.4,
+        7.1
+       ],
+       "year": 2001,
+       "country": "Multiple",
+       "population": "General, model-dependent",
+       "source_type": "modeling_study",
+       "title": "Modeling epidemics caused by respiratory syncytial virus (RSV)",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/11520501/",
+       "notes": "model with gradual acquisition of partial immunity"
+      },
+      {
+       "value": 1.375,
+       "range": [
+        0.92,
+        1.83
+       ],
+       "year": 2026,
+       "country": "Philippines",
+       "population": "Closed community settings including children, by region, year and subtype",
+       "source_type": "systematic_review",
+       "title": "Respiratory Syncytial Virus Transmission in Closed Community Settings That Include Children: A Systematic Review and Meta-Analysis",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13261290/",
+       "doi": "10.1111/irv.70270",
+       "notes": "Estimates computed with a gamma-fitted 3.2-day serial interval standing in for the generation time: highest 1.76 (95% CI 1.62-1.83) for RSV-B and lowest 0.92 (0.92-1.0) for RSV-A, both in Caibiran, with variability between regions and years. Sub-unity values in an endemic partially immune population are effective reproduction numbers and must not be read as R0."
+      },
+      {
+       "value": 2.46,
+       "range": [
+        0.92,
+        4.0
+       ],
+       "year": 2023,
+       "population": "General, pooled across the published evidence base",
+       "source_type": "review_article",
+       "title": "What are the parameters and modes of transmission of RSV? A rapid review",
+       "url": "https://usher.ed.ac.uk/sites/default/files/atoms/files/rsv_transmission_parameters_rr_-_version_3_formatted.pdf",
+       "notes": "Rapid review using adapted systematic methods found only FOUR studies estimating RSV R0, spanning 0.92 (95% CI 0.92-1.0) to 3.0 (range 1.5-4.0). LOW WEIGHT, GREY LITERATURE: its value is as evidence that no proper meta-analysis of RSV R0 exists and the evidence base is four studies wide, not as an independent estimate."
+      }
+     ]
     },
     "incubation_days": {
-     "source": "https://cdphe.colorado.gov/child-care-school-settings/rsv",
-     "estimates": []
+     "source": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+     "estimates": [
+      {
+       "value": 4.4,
+       "year": 2009,
+       "population": "General, pooled across studies",
+       "source_type": "systematic_review",
+       "title": "Incubation periods of acute respiratory viral infections: a systematic review",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+       "doi": "10.1016/S1473-3099(09)70069-6",
+       "notes": "Lessler et al. screened 436 articles across nine respiratory viruses and pooled 38 with usable data, fitting log-normal distributions; the RSV pooled mean is 4.4 days. The reference estimate for this field, and the authors stress using the full distribution rather than the central value — right tail for quarantine policy, centre for source attribution."
+      },
+      {
+       "value": 5,
+       "range": [
+        2,
+        8
+       ],
+       "year": 2024,
+       "country": "Multiple",
+       "population": "General, clinical reference",
+       "source_type": "review_article",
+       "title": "Respiratory Syncytial Virus Infections in Neonates: A Persisting Problem",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10860331/",
+       "doi": "10.5005/jp-journals-11002-0073",
+       "notes": "States an incubation period of 4-6 days with a range of 2-8; value shown is the midpoint of the typical window. Consistent with the pooled estimate above and with adult challenge-model protocols, which use the same 4-5 day centre and 2-8 day span."
+      },
+      {
+       "value": 5,
+       "range": [
+        2,
+        8
+       ],
+       "year": 2025,
+       "country": "Singapore",
+       "population": "General",
+       "source_type": "government_report",
+       "title": "Respiratory syncytial virus",
+       "url": "https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
+       "notes": "Singapore CDA professional guidance gives a typical incubation of 5 days ranging from 2 to 8, matching the clinical reference entry exactly and sitting close to the 4.4-day pooled estimate. TERTIARY RESTATEMENT, not independent evidence — retained because national agency guidance is what contact-tracing and exclusion policy is actually written against."
+      }
+     ]
     },
     "infectious_days": {
-     "source": "https://www.cdc.gov/rsv/causes/index.html",
-     "estimates": []
+     "source": null,
+     "estimates": [
+      {
+       "value": 6.5,
+       "range": [
+        4,
+        10
+       ],
+       "year": 2025,
+       "country": "Singapore",
+       "population": "General, practical transmissibility window",
+       "source_type": "government_report",
+       "title": "Respiratory syncytial virus",
+       "url": "https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
+       "notes": "Singapore CDA gives an infectious period of 1-2 days before symptom onset to 3-8 days after; value and range are the derived total window width (4 to 10 days, midpoint 6.5), NOT published figures. CONFIRMS PRESYMPTOMATIC TRANSMISSION and is far shorter than the 11.2-day PCR shedding estimate because agency guidance is written around practical transmissibility and exclusion policy rather than detectable virus."
+      },
+      {
+       "value": 6.5,
+       "range": [
+        4,
+        10
+       ],
+       "year": 2026,
+       "country": "United States",
+       "population": "General, practical contagious window",
+       "source_type": "government_report",
+       "title": "How RSV Spreads",
+       "url": "https://www.cdc.gov/rsv/causes/index.html",
+       "notes": "CDC states people are usually contagious for 3 to 8 days and may become contagious a day or two before symptoms appear; value and range are the derived total window (4-10 days, midpoint 6.5), NOT published figures. LONG RIGHT TAIL OMITTED FROM THE RANGE: some infants and immunocompromised people shed for 4 weeks or longer after symptoms resolve, which is the mechanism behind the prolonged shedders carrying ~30% of cumulative shedding days in the Kenya cohort."
+      }
+     ]
     },
     "fatality_rate": {
      "source": null,
-     "estimates": []
+     "estimates": [
+      {
+       "value": 0.31,
+       "range": [
+        0.1,
+        1.4
+       ],
+       "year": 2022,
+       "country": "Multiple",
+       "population": "Children 0-60 months, global, 2019",
+       "source_type": "systematic_review",
+       "title": "Global, regional, and national disease burden estimates of acute lower respiratory infections due to respiratory syncytial virus in children younger than 5 years in 2019: a systematic analysis",
+       "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
+       "doi": "10.1016/S0140-6736(22)00478-0",
+       "notes": "Li et al. estimated 33.0 million (UR 25.4-44.6 million) RSV-associated ALRI episodes and 101,400 RSV-attributable deaths globally, giving roughly 0.31% deaths per episode, with RSV behind 1 in 50 deaths in children under 5 and 1 in 28 in those under 6 months. THE GLOBAL POINT ESTIMATE HIDES A TEN-FOLD INCOME GRADIENT: range shown is the study's in-hospital CFR span from 0.1% (UR 0.1-0.2) in high-income to 1.4% (0.6-2.8) in low-income countries, a DIFFERENT DENOMINATOR borrowed to bound the spread, since no per-episode stratification is reported. DENOMINATOR IS LRTI EPISODES, not all infections, so the central value sits well above a true infection fatality rate.",
+       "metric": "CFR per LRTI episode"
+      },
+      {
+       "value": 0.85,
+       "range": [
+        0.0,
+        1.7
+       ],
+       "year": 2022,
+       "country": "United States",
+       "population": "US infants and children under 5 with RSV",
+       "source_type": "systematic_review",
+       "title": "Mortality Among US Infants and Children Under 5 Years of Age with Respiratory Syncytial Virus and Bronchiolitis: A Systematic Literature Review",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/35968871/",
+       "doi": "10.1093/infdis/jiac226",
+       "notes": "Bylsma et al., 42 studies: RSV CFRs ranged from 0% to 1.7% (n = 15) and all-cause bronchiolitis from 0% to 0.17% (n = 6), with higher values among premature, ICU-admitted and publicly insured children. NO POINT ESTIMATE IS DEFENSIBLE — the review found case definitions varying across ICD codes and laboratory confirmation, no study using systematic RSV testing, only 10 nationally representative studies with data ending in 2013, and just 2 covering otherwise healthy late-preterm to full-term infants.",
+       "metric": "CFR, inpatient"
+      }
+     ]
     },
     "average_contacts_daily": {
      "source": null,
      "estimates": []
     },
     "immunity_duration": {
-     "source": null,
-     "estimates": []
+     "source": "https://pubmed.ncbi.nlm.nih.gov/2010624/",
+     "estimates": [
+      {
+       "value": 150,
+       "range": [
+        60,
+        240
+       ],
+       "year": 1991,
+       "country": "United States",
+       "population": "Adults rechallenged with homologous strain group",
+       "source_type": "modeling_study",
+       "title": "Immunity to and frequency of reinfection with respiratory syncytial virus",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/2010624/",
+       "doi": "10.1093/infdis/163.4.693",
+       "notes": "Hall et al. challenged 15 adults with prior natural infection using the same strain group at 2, 4, 8, 14, 20 and 26 months: about half were reinfected by 2 months and two-thirds by 8 months, every challenge infected at least a quarter of subjects, and within 26 months 73% had two or more infections. The strongest direct evidence in this parameter, but n=15, so treat the timeline as well-demonstrated and the proportions as imprecise."
+      },
+      {
+       "value": 90,
+       "year": 2013,
+       "country": "Kenya",
+       "population": "Birth cohort, post-primary-infection antibody kinetics",
+       "source_type": "modeling_study",
+       "title": "Kinetics of the Neutralizing Antibody Response to Respiratory Syncytial Virus Infections in a Birth Cohort",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3798117/",
+       "notes": "Neutralizing antibody declined to pre-infection levels within roughly 3 months of primary infection, which the authors offer as a mechanism for rapid repeat infection. IMMUNOLOGICAL MARKER, NOT PROTECTION: no correlate of protection exists for RSV, so this is a floor on detectable humoral response rather than a duration of immunity."
+      },
+      {
+       "value": 460,
+       "range": [
+        324,
+        812
+       ],
+       "year": 2023,
+       "country": "Australia",
+       "population": "Children with hospital-attended RSV reinfection",
+       "source_type": "modeling_study",
+       "title": "Respiratory Syncytial Virus Reinfections in Children in Western Australia",
+       "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10747877/",
+       "doi": "10.3390/v15122417",
+       "notes": "Median interval between RSV detections was 460 days (IQR 324-812), with reinfection most common in children whose first detection was before 6 months of age. ASCERTAINMENT-LIMITED: only reinfections severe enough to reach care are counted, so this measures the gap between detected episodes and is an overestimate of the interval between infections."
+      }
+     ]
     },
     "asymptomatic_fraction": {
-     "source": null,
-     "estimates": []
+     "source": "https://www.nature.com/articles/s41467-023-44275-y",
+     "estimates": [
+      {
+       "value": 0.67,
+       "year": 2024,
+       "country": "South Africa",
+       "population": "All ages, rural and urban household cohort",
+       "source_type": "modeling_study",
+       "title": "Incidence and transmission of respiratory syncytial virus in urban and rural South Africa, 2017-2018",
+       "url": "https://www.nature.com/articles/s41467-023-44275-y",
+       "doi": "10.1038/s41467-023-44275-y",
+       "notes": "PHIRST cohort sampled regardless of symptoms: 32% of individuals had at least one infection, 33% of 396 infections were symptomatic, and only 2% sought care, giving an asymptomatic fraction near 0.67. Symptom-independent sampling is why this runs well above clinic-based estimates, and 10% of infected individuals had a repeat infection within the same season."
+      },
+      {
+       "value": 0.26,
+       "year": 2025,
+       "country": "United States",
+       "population": "Healthy term infants, weekly surveillance birth cohort",
+       "source_type": "modeling_study",
+       "title": "Epidemiology of RSV infections in a birth cohort of healthy children, PREVAIL Cohort 2017-2020",
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11777740/",
+       "doi": "10.1093/ofid/ofae631.906",
+       "notes": "Of 91 PCR-identified infections under weekly surveillance, 24 (26%) were asymptomatic, 24% symptomatic but not medically attended and 50% medically attended. LOWEST ANCHOR AND AGE-SPECIFIC: infants are the most symptomatic age group, so this should not be generalized past the first two years of life."
+      }
+     ]
     }
    }
   },

@@ -43,8 +43,8 @@ def test_disease_db_export_shape(tmp_path):
     measles = db["diseases"]["measles"]
     assert measles["summaries"]["r0"]["status"] == "ok"
     assert measles["flat"]["r0"]["range_text"] == "12–18"
-    assert db["diseases"]["dengue"]["flat"]["r0"]["range_text"] == "1.0–103.0"
-    assert db["diseases"]["dengue"]["flat"]["fatality_rate"] is None
+    assert db["diseases"]["dengue"]["flat"]["r0"]["range_text"] == "2.0293–10.29"             # Annie's October port
+    assert db["diseases"]["dengue"]["flat"]["fatality_rate"] is None                        # held back: under review
     assert measles["summaries"]["immunity_duration"]["status"] == "estimates_only"
     prompt = json.loads((tmp_path / "data" / "system_prompt.json").read_text(encoding="utf-8"))
     assert prompt["system"].startswith("You are EpiChat") and "—" in prompt["system"]
@@ -106,7 +106,7 @@ def test_disease_refs_export_shape(tmp_path):
     assert first["title"] == "The basic reproduction number (R0) of measles: a systematic review"
     assert first["value"] == 15 and first["year"] == 2017 and first["doi"] == "10.1016/S1473-3099(17)30307-9"
     assert "notes" in first and "range" in first
-    assert refs["diseases"]["dengue"]["parameters"]["fatality_rate"] == {"source": None, "estimates": []}
+    assert refs["diseases"]["polio"]["parameters"]["fatality_rate"] == {"source": None, "estimates": []}   # no fatality cited
     total = sum(len(p["estimates"]) for d in refs["diseases"].values() for p in d["parameters"].values())
     assert total >= 150
 
