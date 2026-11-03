@@ -4512,9 +4512,9 @@
         "infectious_days": {
           "unit": "days",
           "consensus": {
-            "min": 3.4,
-            "max": 18,
-            "typical": 11.2,
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "STRONGLY AGE-STRATIFIED, and this is the dominant source of spread rather than measurement error: shedding runs about 18 days in infants against 9 days in adults, and 13.5 days in symptomatic against 7.8 in asymptomatic episodes. Sampling intensity and detection method also drive the estimate — infrequent symptom-triggered sampling and culture give short durations, frequent PCR surveillance gives long ones — so a single scalar here will misrepresent whichever age group the model cares about."
           },
           "estimates": [
@@ -4548,7 +4548,9 @@
               "year": 2026,
               "notes": "CDC states people are usually contagious for 3 to 8 days and may become contagious a day or two before symptoms appear; value and range are the derived total window (4-10 days, midpoint 6.5), NOT published figures. LONG RIGHT TAIL OMITTED FROM THE RANGE: some infants and immunocompromised people shed for 4 weeks or longer after symptoms resolve, which is the mechanism behind the prolonged shedders carrying ~30% of cumulative shedding days in the Kenya cohort."
             }
-          ]
+          ],
+          "status": "under_review",
+          "review_note": "Typical 11.2 days has no citation and looks like a PCR shedding duration; both cited estimates give 6.5 days (range 4 to 10). Needs a transmission window with a citation, or the shedding figure scoped as shedding."
         },
         "asymptomatic_fraction": {
           "unit": "fraction",
@@ -4597,9 +4599,9 @@
         "fatality_rate": {
           "unit": "percentage",
           "consensus": {
-            "min": 0.0,
-            "max": 1.7,
-            "typical": 0.31,
+            "min": null,
+            "max": null,
+            "typical": null,
             "notes": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen."
           },
           "estimates": [
@@ -4618,8 +4620,26 @@
               "country": "Multiple",
               "year": 2022,
               "notes": "Li et al. estimated 33.0 million (UR 25.4-44.6 million) RSV-associated ALRI episodes and 101,400 RSV-attributable deaths globally, giving roughly 0.31% deaths per episode, with RSV behind 1 in 50 deaths in children under 5 and 1 in 28 in those under 6 months. THE GLOBAL POINT ESTIMATE HIDES A TEN-FOLD INCOME GRADIENT: range shown is the study's in-hospital CFR span from 0.1% (UR 0.1-0.2) in high-income to 1.4% (0.6-2.8) in low-income countries, a DIFFERENT DENOMINATOR borrowed to bound the spread, since no per-episode stratification is reported. DENOMINATOR IS LRTI EPISODES, not all infections, so the central value sits well above a true infection fatality rate."
+            },
+            {
+              "value": 0.85,
+              "range": [
+                0.0,
+                1.7
+              ],
+              "metric": "CFR, inpatient",
+              "population": "US infants and children under 5 with RSV",
+              "source_type": "systematic_review",
+              "title": "Mortality Among US Infants and Children Under 5 Years of Age with Respiratory Syncytial Virus and Bronchiolitis: A Systematic Literature Review",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/35968871/",
+              "doi": "10.1093/infdis/jiac226",
+              "country": "United States",
+              "year": 2022,
+              "notes": "Bylsma et al., 42 studies: RSV CFRs ranged from 0% to 1.7% (n = 15) and all-cause bronchiolitis from 0% to 0.17% (n = 6), with higher values among premature, ICU-admitted and publicly insured children. NO POINT ESTIMATE IS DEFENSIBLE — the review found case definitions varying across ICD codes and laboratory confirmation, no study using systematic RSV testing, only 10 nationally representative studies with data ending in 2013, and just 2 covering otherwise healthy late-preterm to full-term infants."
             }
-          ]
+          ],
+          "status": "under_review",
+          "review_note": "Typical 0.31% is deaths per lower-respiratory-infection episode in children under 5, and the 1.7% maximum is an inpatient case fatality; the simulation counts every infection as a case, so either would overstate deaths. Needs a fatality per infection, or the estimates scoped to the population and denominator they describe."
         },
         "immunity_duration": {
           "unit": "days",

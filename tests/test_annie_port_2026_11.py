@@ -23,8 +23,6 @@ def test_dengue_and_rsv_are_cited_now(diseases):
     assert consensus(diseases, "dengue", "infectious_days") == (1, 4.5, 7)
     assert consensus(diseases, "dengue", "asymptomatic_fraction") == (0.08, 0.6, 0.8)
     assert consensus(diseases, "rsv", "r0") == (0.92, 3.0, 7.1)
-    assert consensus(diseases, "rsv", "infectious_days") == (3.4, 11.2, 18)
-    assert consensus(diseases, "rsv", "fatality_rate") == (0.0, 0.31, 1.7)
     assert consensus(diseases, "rsv", "immunity_duration") == (60, 460, 812)
     assert len(diseases["rsv"]["parameters"]["incubation_days"]["estimates"]) == 3
 
@@ -54,3 +52,33 @@ def test_her_extra_estimate_fields_fit_main_schema(diseases):
     asymptomatic = diseases["ebola"]["parameters"]["asymptomatic_fraction"]["estimates"]
     assert any("PMID 25390569" in (e.get("notes") or "") for e in asymptomatic)
     assert all("pmid" not in e for e in asymptomatic)
+
+
+def test_rsv_fatality_and_infectious_period_are_held_back(diseases):
+    # Final review: 0.31% is deaths per LRTI episode in under-5s and 1.7% an inpatient CFR, while the simulation counts every
+    # infection as a case; and 11.2 days is a PCR-shedding figure next to cited estimates of 6.5 days.
+    fatality = diseases["rsv"]["parameters"]["fatality_rate"]
+    assert fatality["status"] == "under_review" and "inpatient" in fatality["review_note"]
+    assert consensus(diseases, "rsv", "fatality_rate") == (None, None, None)
+    infectious = diseases["rsv"]["parameters"]["infectious_days"]
+    assert infectious["status"] == "under_review" and "shedding" in infectious["review_note"]
+    assert consensus(diseases, "rsv", "infectious_days") == (None, None, None)
+    assert sorted(e["value"] for e in infectious["estimates"]) == [6.5, 6.5]
+
+
+def test_a_cited_estimate_with_its_number_as_text_is_kept(diseases):
+    # Final review: Bylsma 2022, a systematic review, carried "0.85" as a string and was dropped as a placeholder.
+    fatality = diseases["rsv"]["parameters"]["fatality_rate"]["estimates"]
+    assert any(e.get("doi") == "10.1093/infdis/jiac226" and e["value"] == 0.85 for e in fatality)
+
+
+def test_the_port_stops_on_a_cited_estimate_it_cannot_read():
+    import sys
+    sys.path.insert(0, str(DB.parent.parent.parent / "scripts"))
+    import port_annie_parameters as port
+    kept = port._clean({"unit": "percentage", "estimates": [{"title": "A study", "value": "0.85"}]}, "x", "fatality_rate")
+    assert kept["estimates"][0]["value"] == 0.85
+    with pytest.raises(SystemExit, match="A study"):
+        port._clean({"unit": "percentage", "estimates": [{"title": "A study", "value": "N/A"}]}, "x", "fatality_rate")
+    untitled = port._clean({"unit": "percentage", "estimates": [{"title": "", "value": None}]}, "x", "fatality_rate")
+    assert "estimates" not in untitled                                                # an in-progress placeholder is still dropped

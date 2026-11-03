@@ -2544,13 +2544,9 @@
      "notes": "Consensus reflects generalized estimates for multiple countries."
     },
     "infectious_days": {
-     "status": "ok",
+     "status": "under_review",
      "n_estimates": 2,
      "unit": "days",
-     "min": 3.4,
-     "max": 18,
-     "typical": 11.2,
-     "source": "https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
      "estimate_range": [
       6.5,
       6.5
@@ -2563,19 +2559,16 @@
        "title": "Respiratory syncytial virus"
       }
      ],
-     "notes": "STRONGLY AGE-STRATIFIED, and this is the dominant source of spread rather than measurement error: shedding runs about 18 days in infants against 9 days in adults, and 13.5 days in symptomatic against 7.8 in asymptomatic episodes. Sampling intensity and detection method also drive the estimate — infrequent symptom-triggered sampling and culture give short durations, frequent PCR surveillance gives long ones — so a single scalar here will misrepresent whichever age group the model cares about."
+     "notes": "STRONGLY AGE-STRATIFIED, and this is the dominant source of spread rather than measurement error: shedding runs about 18 days in infants against 9 days in adults, and 13.5 days in symptomatic against 7.8 in asymptomatic episodes. Sampling intensity and detection method also drive the estimate — infrequent symptom-triggered sampling and culture give short durations, frequent PCR surveillance gives long ones — so a single scalar here will misrepresent whichever age group the model cares about.",
+     "review_note": "Typical 11.2 days has no citation and looks like a PCR shedding duration; both cited estimates give 6.5 days (range 4 to 10). Needs a transmission window with a citation, or the shedding figure scoped as shedding."
     },
     "fatality_rate": {
-     "status": "ok",
-     "n_estimates": 1,
+     "status": "under_review",
+     "n_estimates": 2,
      "unit": "percentage",
-     "min": 0.0,
-     "max": 1.7,
-     "typical": 0.31,
-     "source": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
      "estimate_range": [
       0.31,
-      0.31
+      0.85
      ],
      "estimate_extremes": [
       {
@@ -2583,9 +2576,16 @@
        "population": "Children 0-60 months, global, 2019",
        "source_type": "systematic_review",
        "title": "Global, regional, and national disease burden estimates of acute lower respiratory infections due to respiratory syncytial virus in children younger than 5 years in 2019: a systematic analysis"
+      },
+      {
+       "value": 0.85,
+       "population": "US infants and children under 5 with RSV",
+       "source_type": "systematic_review",
+       "title": "Mortality Among US Infants and Children Under 5 Years of Age with Respiratory Syncytial Virus and Bronchiolitis: A Systematic Literature Review"
       }
      ],
-     "notes": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen."
+     "notes": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen.",
+     "review_note": "Typical 0.31% is deaths per lower-respiratory-infection episode in children under 5, and the 1.7% maximum is an inpatient case fatality; the simulation counts every infection as a case, so either would overstate deaths. Needs a fatality per infection, or the estimates scoped to the population and denominator they describe."
     },
     "average_contacts_daily": {
      "status": "no_source",
@@ -2669,24 +2669,8 @@
      "note": "Consensus reflects generalized estimates for multiple countries.",
      "range_text": "2–8"
     },
-    "infectious_days": {
-     "min": 3.4,
-     "max": 18,
-     "typical": 11.2,
-     "source": "https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
-     "unit": "days",
-     "note": "STRONGLY AGE-STRATIFIED, and this is the dominant source of spread rather than measurement error: shedding runs about 18 days in infants against 9 days in adults, and 13.5 days in symptomatic against 7.8 in asymptomatic episodes. Sampling intensity and detection method also drive the estimate — infrequent symptom-triggered sampling and culture give short durations, frequent PCR surveillance gives long ones — so a single scalar here will misrepresent whichever age group the model cares about.",
-     "range_text": "3.4–18"
-    },
-    "fatality_rate": {
-     "min": 0.0,
-     "max": 1.7,
-     "typical": 0.31,
-     "source": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
-     "unit": "percentage",
-     "note": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen.",
-     "range_text": "0.0–1.7"
-    },
+    "infectious_days": null,
+    "fatality_rate": null,
     "average_contacts_daily": null,
     "immunity_duration": {
      "min": 60,

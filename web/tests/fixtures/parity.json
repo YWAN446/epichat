@@ -154001,9 +154001,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
-    "Infectious period 30 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 5% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
@@ -154032,9 +154030,7 @@
    "dur_immune": null,
    "p_asymp": 0.1,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 5% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
@@ -154063,7 +154059,6 @@
    "p_asymp": null,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
     "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
@@ -154079,7 +154074,6 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
     "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
     "Asymptomatic fraction 0.99 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
@@ -154096,7 +154090,6 @@
    "p_asymp": 0.1,
    "warnings": [
     "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 50% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
     "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
@@ -154113,7 +154106,6 @@
    "warnings": [
     "R₀ ≈ 100.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
     "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 5% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
@@ -154127,7 +154119,6 @@
    "dur_immune": 10.0,
    "p_asymp": 0.99,
    "warnings": [
-    "Infectious period 30 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
     "Asymptomatic fraction 0.99 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
@@ -154196,7 +154187,6 @@
    "dur_immune": 400.0,
    "p_asymp": 0.3,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/"
    ]
   },
@@ -154212,7 +154202,6 @@
    "warnings": [
     "R₀ ≈ 100.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
     "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 5% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
@@ -154227,7 +154216,6 @@
    "p_asymp": 0.3,
    "warnings": [
     "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 5% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
@@ -154243,7 +154231,6 @@
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
     "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 50% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
@@ -154258,8 +154245,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
-    "Fatality rate 5% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext"
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/"
    ]
   },
   {
@@ -154272,7 +154258,6 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.99,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
     "Asymptomatic fraction 0.99 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
@@ -154289,7 +154274,6 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
     "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
     "Asymptomatic fraction 0.99 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
@@ -154334,8 +154318,6 @@
    "p_asymp": 0.1,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3.4–18 days). Source: https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
-    "Fatality rate 50% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
     "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
@@ -154351,7 +154333,6 @@
    "p_asymp": null,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
-    "Fatality rate 5% is outside the literature range for rsv (0.0–1.7%). Source: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
     "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },

@@ -68,6 +68,17 @@ UNDER_REVIEW = {
         "population case fatality; the other estimates (0.05% to 0.07%) are "
         "surveillance figures. Needs the ICU estimate scoped to the population "
         "it describes, or left out of the range.",
+    ("rsv", "fatality_rate"):
+        "Typical 0.31% is deaths per lower-respiratory-infection episode in "
+        "children under 5, and the 1.7% maximum is an inpatient case fatality; "
+        "the simulation counts every infection as a case, so either would "
+        "overstate deaths. Needs a fatality per infection, or the estimates "
+        "scoped to the population and denominator they describe.",
+    ("rsv", "infectious_days"):
+        "Typical 11.2 days has no citation and looks like a PCR shedding "
+        "duration; both cited estimates give 6.5 days (range 4 to 10). Needs a "
+        "transmission window with a citation, or the shedding figure scoped as "
+        "shedding.",
     ("hepatitis_a", "immunity_duration"):
         "Consensus mixes a numeric string ('7300') with qualitative text "
         "('lifelong', and a sentence contrasting natural with vaccine-induced "
@@ -127,11 +138,16 @@ def _clean(block: dict, disease: str, param: str) -> dict:
 
     # Drop in-progress placeholders only. An estimate with a citation and a
     # qualitative value ("lifelong") is real data - the schema supports it via
-    # special_value, and a later task quotes these back to the student.
-    block["estimates"] = [
-        est for est in (block.get("estimates") or [])
-        if est.get("title") and (is_num(est.get("value")) or est.get("special_value"))
-    ]
+    # special_value, and a later task quotes these back to the student. A cited
+    # estimate whose number is text ("0.85") is read as the number; one whose
+    # value cannot be read at all stops the port rather than vanish.
+    for est in block.get("estimates") or []:
+        value = est.get("value")
+        if isinstance(value, str) and re.fullmatch(r"\s*-?\d+(\.\d+)?\s*", value):
+            est["value"] = float(value) if "." in value else int(value)
+        if est.get("title") and not (is_num(est.get("value")) or est.get("special_value")):
+            raise SystemExit(f"{disease}.{param}: cited estimate {est['title']!r} has no readable value ({value!r})")
+    block["estimates"] = [est for est in (block.get("estimates") or []) if est.get("title")]
     if not block["estimates"]:
         block.pop("estimates")
 

@@ -3655,7 +3655,7 @@
      ]
     },
     "infectious_days": {
-     "source": "https://www.cda.gov.sg/professionals/diseases/respiratory-syncytial-virus/",
+     "source": null,
      "estimates": [
       {
        "value": 6.5,
@@ -3688,7 +3688,7 @@
      ]
     },
     "fatality_rate": {
-     "source": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00478-0/fulltext",
+     "source": null,
      "estimates": [
       {
        "value": 0.31,
@@ -3705,6 +3705,22 @@
        "doi": "10.1016/S0140-6736(22)00478-0",
        "notes": "Li et al. estimated 33.0 million (UR 25.4-44.6 million) RSV-associated ALRI episodes and 101,400 RSV-attributable deaths globally, giving roughly 0.31% deaths per episode, with RSV behind 1 in 50 deaths in children under 5 and 1 in 28 in those under 6 months. THE GLOBAL POINT ESTIMATE HIDES A TEN-FOLD INCOME GRADIENT: range shown is the study's in-hospital CFR span from 0.1% (UR 0.1-0.2) in high-income to 1.4% (0.6-2.8) in low-income countries, a DIFFERENT DENOMINATOR borrowed to bound the spread, since no per-episode stratification is reported. DENOMINATOR IS LRTI EPISODES, not all infections, so the central value sits well above a true infection fatality rate.",
        "metric": "CFR per LRTI episode"
+      },
+      {
+       "value": 0.85,
+       "range": [
+        0.0,
+        1.7
+       ],
+       "year": 2022,
+       "country": "United States",
+       "population": "US infants and children under 5 with RSV",
+       "source_type": "systematic_review",
+       "title": "Mortality Among US Infants and Children Under 5 Years of Age with Respiratory Syncytial Virus and Bronchiolitis: A Systematic Literature Review",
+       "url": "https://pubmed.ncbi.nlm.nih.gov/35968871/",
+       "doi": "10.1093/infdis/jiac226",
+       "notes": "Bylsma et al., 42 studies: RSV CFRs ranged from 0% to 1.7% (n = 15) and all-cause bronchiolitis from 0% to 0.17% (n = 6), with higher values among premature, ICU-admitted and publicly insured children. NO POINT ESTIMATE IS DEFENSIBLE — the review found case definitions varying across ICD codes and laboratory confirmation, no study using systematic RSV testing, only 10 nationally representative studies with data ending in 2013, and just 2 covering otherwise healthy late-preterm to full-term infants.",
+       "metric": "CFR, inpatient"
       }
      ]
     },
