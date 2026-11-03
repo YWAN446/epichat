@@ -413,7 +413,7 @@ each completed fetch gets its own 🔧 line, and the post-run results include a
 |--------|-----|--------------------|----------|
 | **UN World Population Prospects 2024** | UN Population Data Portal (`UN_API_KEY`) | Crude birth rate (55), crude death rate (59), total population (49), age shares 0–17/18–64/65+ (71) | Vital dynamics, result scaling to real population, age-structured contact network |
 | **World Bank Data360 (WDI)** | `data360api.worldbank.org` (no key) | Hospital beds / physicians / nurses per 1,000; UHC coverage index; TB incidence; HIV, hepatitis-B, diabetes prevalence; malaria incidence; birth/death rate, population, age shares (fallback) | Treatment-intervention capacity, initial prevalence for those diseases, demographic fallback |
-| **WHO Global Health Observatory** | GHO OData API (no key) | Vaccination coverage (MCV1/2, DTP3, polio, BCG, HepB3, Hib3, PCV3, rotavirus, HPV, MenA, yellow fever, PAB); reported case counts (measles, pertussis, polio, rubella, mumps, diphtheria, tetanus, yellow fever, …) | Auto-added vaccine interventions at reported coverage; surveillance-based initial prevalence |
+| **WHO Global Health Observatory** | GHO OData API (no key), retired at the end of 2025; the web app reads the same WHO/UNICEF coverage estimates from UNICEF's SDMX service, and polio's Pol3 from World Bank Data360 | Vaccination coverage (MCV1/2, DTP3, polio, BCG, HepB3, Hib3, PCV3, rotavirus, HPV, MenA, yellow fever, PAB); reported case counts (measles, pertussis, polio, rubella, mumps, diphtheria, tetanus, yellow fever, …) | Auto-added vaccine interventions at reported coverage; surveillance-based initial prevalence |
 
 ### Bundled / local data (no API call)
 

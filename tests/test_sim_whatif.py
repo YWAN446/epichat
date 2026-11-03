@@ -75,6 +75,8 @@ def test_the_hybrid_network_adds_a_school_closure_and_a_disease_with_an_indicato
     assert d.levers[1].label == "Close schools from day 20 for six weeks and rerun"
     assert d.levers[2].label == "Cut community contacts by 30% from day 20 for eight weeks and rerun"
     assert len(d.levers) == dx.WHAT_IF_MAX_LEVERS and all(len(lever.label) <= dx.LABEL_MAX for lever in d.levers)
+    hepatitis_a, _ = what_if(hybrid, disease="hepatitis_a")                              # a vaccine without a coverage series
+    assert entries(hepatitis_a)[0]["type"] == "vaccine"
     no_indicator, _ = what_if(hybrid, disease="covid19")
     assert [e["type"] for e in entries(no_indicator)] == ["contact_reduction", "contact_reduction", "transmission_reduction", "behavior_response"]
     no_children = params(**{"network.network_type": "hybrid", "demographics.age_pct_under18": 0.0, "demographics.age_pct_18_64": 90.0, "demographics.age_pct_over65": 10.0})

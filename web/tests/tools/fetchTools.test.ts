@@ -5,7 +5,7 @@ import { configureSimulation } from "@/lib/tools/configureSimulation";
 import { BUNDLED_HOUSEHOLDS, BUNDLED_MATRICES, BUNDLED_PYRAMID, fetchDemographics } from "@/lib/tools/fetchDemographics";
 import { fetchHealthSystem } from "@/lib/tools/fetchHealthSystem";
 import indicators from "@/data/vaccine_indicators.json";
-import { GHO_CODES, fetchVaccinationCoverage } from "@/lib/tools/fetchVaccinationCoverage";
+import { VACCINE_CODES, fetchVaccinationCoverage } from "@/lib/tools/fetchVaccinationCoverage";
 import { makeDeps, rf } from "./helpers";
 
 async function configured(deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) {
@@ -149,26 +149,46 @@ describe("fetch_health_system", () => {
 
 describe("fetch_vaccination_coverage", () => {
   it("adds a vaccine intervention once", async () => {
-    const deps = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")] }), { disease: "measles" });
+    const deps = await configured(makeDeps({ unicef: [rf("mcv1_coverage", 88, "WHO/UNICEF estimates, KEN, 2025")] }), { disease: "measles" });
     const first = JSON.parse((await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps)).content);
     expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.88); // routine coverage is pre-existing immunity at the start
     expect(getVaccine(deps.scenario.params!)).toBeNull();
     expect(first.applied).toEqual({ mcv1_coverage: 88, applied_vaccine_coverage: 0.88 });
-    expect(deps.queries[0]).toEqual({ source: "who_gho", indicatorCodes: ["WHS8_110", "MCV2"], locationCode: "KEN" });
+    expect(deps.queries[0]).toEqual({ source: "unicef", indicatorCodes: ["IM_MCV1", "IM_MCV2"], locationCode: "KEN" });
+    expect(first.citations).toEqual(["WHO/UNICEF estimates, KEN, 2025"]);
     const second = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
     expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.88);
     expect(second.payload).toMatchObject({ kind: "data", params: { disease: { initial_immune_frac: 0.88 } } });
   });
 
-  it("says when no indicator exists and when the adapter fails", async () => {
-    const deps = await configured(makeDeps({ whoGho: new Error("boom") }), { disease: "dengue" });
+  it("says when no indicator exists and when the source is down", async () => {
+    const deps = await configured(makeDeps({ unicef: new Error("UNICEF data service unavailable (HTTP 500)") }), { disease: "dengue" });
     const none = await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "dengue fever" }, deps);
     expect(none.content).toBe("NO VACCINE INDICATOR: no routine-immunization coverage indicator is available for dengue.");
     expect(none.isError).toBeUndefined();
+    const hepatitisA = await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "hepatitis A" }, deps);   // its old code was hepatitis B dose 3
+    expect(hepatitisA.content).toBe("NO VACCINE INDICATOR: no routine-immunization coverage indicator is available for hepatitis_a.");
+    expect(deps.queries).toEqual([]);
     const failed = await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "measles" }, deps);
-    expect(failed.content).toBe("FETCH ERROR: boom");
-    const empty = await configured(makeDeps({ whoGho: [] }), { disease: "measles" });
+    expect(failed.content).toBe("FETCH ERROR: UNICEF data service unavailable (HTTP 500)");
+    const empty = await configured(makeDeps({ unicef: [] }), { disease: "measles" });
     expect((await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "measles" }, empty)).content).toBe("FETCH ERROR: no vaccination data returned for BRA");
+  });
+});
+
+describe("fetch_vaccination_coverage's sources (WHO's GHO API is retired)", () => {
+  it("asks UNICEF for the WHO/UNICEF estimates, rubella by its own vaccine", async () => {
+    const deps = await configured(makeDeps({ unicef: [rf("rcv1_coverage", 80, "WHO/UNICEF estimates, KEN, 2025")] }), { disease: "rubella" });
+    const out = await fetchVaccinationCoverage({ country_iso3: "ken", disease: "rubella" }, deps);
+    expect(deps.queries).toEqual([{ source: "unicef", indicatorCodes: ["IM_RCV1"], locationCode: "KEN" }]);
+    expect(out.payload).toMatchObject({ kind: "data", source: "unicef", iso3: "KEN", applied: { rcv1_coverage: 80, applied_vaccine_coverage: 0.8 } });
+  });
+
+  it("asks the World Bank for polio's Pol3, which UNICEF does not publish", async () => {
+    const deps = await configured(makeDeps({ wbData360: [rf("polio_coverage", 87, "WB HNP, KEN, 2022")], unicef: new Error("must not be asked") }), { disease: "polio" });
+    const out = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "polio" }, deps);
+    expect(deps.queries).toEqual([{ source: "wb_data360", indicatorCodes: ["WB_HNP_SH_IMM_POL3"], locationCode: "KEN", databaseId: "WB_HNP", startYear: 2015 }]);
+    expect(out.payload).toMatchObject({ kind: "data", source: "wb_data360", citations: ["WB HNP, KEN, 2022"], applied: { polio_coverage: 87, applied_vaccine_coverage: 0.87 } });
   });
 });
 
@@ -214,7 +234,7 @@ describe("fetch_demographics with the bundled tables (Part 2, 5.3, 5.4, 6.1)", (
 
 describe("fetch_vaccination_coverage with a database efficacy (Part 2, 7.4)", () => {
   it("writes a day-0 campaign with the database's vaccine efficacy when the database carries one", async () => {
-    const deps = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")], lookup: { measles: { vaccine_efficacy: { status: "ok", typical: 0.93, n_estimates: 2 } } } }), { disease: "measles" });
+    const deps = await configured(makeDeps({ unicef: [rf("mcv1_coverage", 88, "WHO/UNICEF estimates, KEN, 2025")], lookup: { measles: { vaccine_efficacy: { status: "ok", typical: 0.93, n_estimates: 2 } } } }), { disease: "measles" });
     const out = JSON.parse((await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps)).content);
     const p = deps.scenario.params!;
     expect(p.disease.initial_immune_frac).toBe(0);
@@ -228,8 +248,8 @@ describe("fetch_vaccination_coverage with a database efficacy (Part 2, 7.4)", ()
 
 describe("the routine-immunization indicators (follow-up spec 7.2)", () => {
   it("come from the list the service shares", () => {
-    expect(GHO_CODES).toEqual(indicators.indicators);
-    expect(Object.keys(GHO_CODES)).toContain("measles");
+    expect(VACCINE_CODES).toEqual(indicators.indicators);
+    expect(Object.keys(VACCINE_CODES)).toContain("measles");
   });
 });
 
@@ -243,7 +263,7 @@ describe("the fetch tools send where each value came from (follow-up spec 8.4)",
   });
 
   it("does so for the vaccination and the health-system fetches too", async () => {
-    const vaccinated = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")] }), { disease: "measles" });
+    const vaccinated = await configured(makeDeps({ unicef: [rf("mcv1_coverage", 88, "WHO/UNICEF estimates, KEN, 2025")] }), { disease: "measles" });
     const coverage = (await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" } as never, vaccinated)).payload as { sources?: Record<string, string> };
     expect(coverage.sources).toMatchObject({ "disease.initial_immune_frac": "fetch" });
     const beds = [{ ...rf("treatment_capacity", 2.52, "WB WDI, KEN, 2021"), description: "hospital beds/1,000", alternatives: [] }];

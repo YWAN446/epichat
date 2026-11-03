@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message:Error xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <message:ErrorMessage code="100">
+    <com:Text>No data for data query against the dataflow: urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=UNICEF:IMMUNISATION(1.0)</com:Text>
+  </message:ErrorMessage>
+</message:Error>

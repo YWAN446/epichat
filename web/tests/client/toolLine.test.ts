@@ -23,6 +23,8 @@ describe("tool lines", () => {
     expect(TOOL_LABELS.configure_simulation).toBe("⚙️ Configured simulation");
     expect(TOOL_LABELS.run_simulation).toBe("▶️ Simulation");
     expect(TOOL_LABELS.web_fetch).toBe("📄 Read page");
+    expect(TOOL_LABELS.fetch_vaccination_coverage).toBe("🔧 WHO/UNICEF vaccination coverage");     // WHO's GHO API is retired
+    expect(TOOL_STATUS.fetch_vaccination_coverage).toBe("Fetching WHO/UNICEF vaccination coverage…");
     expect(TOOL_STATUS.run_simulation).toBe("Running the simulation — this usually takes 1–2 minutes…");
     expect(TOOL_STATUS.lookup_disease).toBe("Looking up disease parameters…");
     expect(toolLabel("something_new")).toBe("🔧 something_new");
