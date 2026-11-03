@@ -19,6 +19,8 @@ export const WB_INDICATOR_MAP: Record<string, [string, string]> = {
   WB_WDI_SP_POP_TOTL: ["total_population", "total population"],
   WB_WDI_SP_POP_0014_TO_ZS: ["age_distribution_pct", "population ages 0–14 (%)"],
   WB_WDI_SP_POP_65UP_TO_ZS: ["age_distribution_pct", "population ages 65+ (%)"],
+  // The World Bank's copy of the WHO/UNICEF Pol3 estimate, in its health database: UNICEF publishes no Pol3 series.
+  WB_HNP_SH_IMM_POL3: ["polio_coverage", "Pol3 immunization (% of one-year-old children)"],
 };
 
 const CANDIDATE_GROUPS: Record<string, { primary: string; alternatives: string[] }> = {
@@ -28,7 +30,8 @@ const CANDIDATE_GROUPS: Record<string, { primary: string; alternatives: string[]
 
 type Raw = { value: number; year: string };
 
-export function assembleWbFields(raw: Map<string, Raw>, iso3: string): ResolvedField[] {
+/** `database` names the citation's database ("WB WDI" unless the query asked another, e.g. "WB HNP"). */
+export function assembleWbFields(raw: Map<string, Raw>, iso3: string, database = "WB WDI"): ResolvedField[] {
   if (raw.size === 0) return [];
   const results: ResolvedField[] = [];
   const consumed = new Set<string>();
@@ -40,15 +43,15 @@ export function assembleWbFields(raw: Map<string, Raw>, iso3: string): ResolvedF
     for (const code of group.alternatives) {
       const alt = raw.get(code);
       if (!alt) continue;
-      alternatives.push(resolved(field, alt.value, `WB WDI, ${iso3}, ${alt.year}`, WB_INDICATOR_MAP[code][1]));
+      alternatives.push(resolved(field, alt.value, `${database}, ${iso3}, ${alt.year}`, WB_INDICATOR_MAP[code][1]));
       consumed.add(code);
     }
-    results.push(resolved(field, primary.value, `WB WDI, ${iso3}, ${primary.year}`, WB_INDICATOR_MAP[group.primary][1], alternatives));
+    results.push(resolved(field, primary.value, `${database}, ${iso3}, ${primary.year}`, WB_INDICATOR_MAP[group.primary][1], alternatives));
   }
   for (const [code, { value, year }] of raw) {
     if (consumed.has(code)) continue;
     const [field, description] = WB_INDICATOR_MAP[code];
-    results.push(resolved(field, value, `WB WDI, ${iso3}, ${year}`, description));
+    results.push(resolved(field, value, `${database}, ${iso3}, ${year}`, description));
   }
   return results;
 }
@@ -77,5 +80,5 @@ export async function fetchWbData360(query: DataQuery, opts: AdapterOptions = {}
   );
   const raw = new Map<string, Raw>();
   for (const [code, value] of fetched) if (value) raw.set(code, value);
-  return assembleWbFields(raw, iso3);
+  return assembleWbFields(raw, iso3, (query.databaseId ?? "WB_WDI").replace("_", " "));
 }

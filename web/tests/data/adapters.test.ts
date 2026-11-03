@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { ADAPTER_TIMEOUT_MS, type FetchLike } from "@/lib/data/types";
 import { fetchUnWpp, mapUnRows, parseUnCsv, unLocationId } from "@/lib/data/unWpp";
 import { assembleWbFields, fetchWbData360 } from "@/lib/data/wbData360";
-import { fetchWhoGho, mapWhoRows } from "@/lib/data/whoGho";
+import { UNICEF_INDICATOR_MAP, fetchUnicef, mapUnicefRows, parseCsv } from "@/lib/data/unicef";
 import parity from "../fixtures/parity.json";
 
 const fixture = (name: string) => readFileSync(new URL(`../fixtures/adapters/${name}`, import.meta.url), "utf8");
@@ -60,30 +60,46 @@ describe("UN WPP adapter", () => {
   });
 });
 
-describe("WHO GHO adapter", () => {
-  it("maps the latest non-null row", () => {
-    const rows = JSON.parse(fixture("who_gho_coverage.json")).value;
-    expect(mapWhoRows("WHS8_110", rows, "KEN")).toEqual({ field: "mcv1_coverage", value: 76, citation: "WHO GHO, KEN, 2022", description: "", alternatives: [] });
-    expect(mapWhoRows("WHS8_110", [], "KEN")).toBeNull();
-    expect(mapWhoRows("NOPE", rows, "KEN")).toBeNull();
+describe("UNICEF adapter (the WHO/UNICEF estimates)", () => {
+  const now = () => new Date("2026-11-03T12:00:00Z");
+
+  it("parses quoted fields, doubled quotes and CRLF", () => {
+    expect(parseCsv('a,b,c\r\n1,"x, y","say ""hi"""\r\n2,,\n')).toEqual([["a", "b", "c"], ["1", "x, y", 'say "hi"'], ["2", "", ""]]);
   });
 
-  it("fetches each code and matches the Python fields", async () => {
-    for (const c of parity.adapters.who_gho) {
-      const { fetchImpl, calls } = fakeFetch((url) => {
-        for (const [code, file] of Object.entries(c.files)) if (url.includes(`/${code}?`)) return { status: 200, body: fixture(file) };
-        return new Error(`unexpected ${url}`);
-      });
-      const fields = await fetchWhoGho({ source: "who_gho", indicatorCodes: c.codes, locationCode: c.iso3 }, { fetchImpl });
-      expect(fields, JSON.stringify(c.codes)).toEqual(c.fields);
-      expect(calls[0].url).toBe(`https://ghoapi.azureedge.net/api/${c.codes[0]}?$filter=SpatialDim%20eq%20'KEN'`);
-    }
+  it("maps the latest year with a value, per code in the order asked", () => {
+    const rows = parseCsv(fixture("../unicef/ken_mcv1_mcv2.csv"));
+    expect(mapUnicefRows(rows, ["IM_MCV2", "IM_MCV1"], "KEN")).toEqual([
+      { field: "mcv2_coverage", value: 81, citation: "WHO/UNICEF estimates, KEN, 2025", description: "measles-containing vaccine, second dose (% of children)", alternatives: [] },
+      { field: "mcv1_coverage", value: 80, citation: "WHO/UNICEF estimates, KEN, 2025", description: "measles-containing vaccine, first dose (% of children)", alternatives: [] },
+    ]);
+    const blank = parseCsv("REF_AREA,INDICATOR,TIME_PERIOD,OBS_VALUE\nKEN,IM_BCG,2024,90\nKEN,IM_BCG,2025,\n");
+    expect(mapUnicefRows(blank, ["IM_BCG", "IM_DTP3"], "KEN").map((f) => [f.value, f.citation])).toEqual([[90, "WHO/UNICEF estimates, KEN, 2024"]]);
+    expect(mapUnicefRows([], ["IM_BCG"], "KEN")).toEqual([]);
   });
 
-  it("skips a code whose request fails and keeps the rest", async () => {
-    const { fetchImpl } = fakeFetch((url) => (url.includes("/MCV2?") ? new Error("down") : { status: 200, body: fixture("who_gho_coverage.json") }));
-    const fields = await fetchWhoGho({ source: "who_gho", indicatorCodes: ["WHS8_110", "MCV2"], locationCode: "KEN" }, { fetchImpl });
-    expect(fields.map((f) => f.field)).toEqual(["mcv1_coverage"]);
+  it("asks once for every code, ten years back, and gives up after the timeout", async () => {
+    const { fetchImpl, calls } = fakeFetch(() => ({ status: 200, body: fixture("../unicef/ken_mcv1_mcv2.csv") }));
+    const fields = await fetchUnicef({ source: "unicef", indicatorCodes: ["IM_MCV1", "NOPE", "IM_MCV2"], locationCode: "ken" }, { fetchImpl, now });
+    expect(fields.map((f) => [f.field, f.value])).toEqual([["mcv1_coverage", 80], ["mcv2_coverage", 81]]);
+    expect(calls.map((c) => c.url)).toEqual(["https://sdmx.data.unicef.org/ws/public/sdmxapi/rest/data/UNICEF,IMMUNISATION,1.0/KEN.IM_MCV1+IM_MCV2.?format=csv&labels=id&startPeriod=2016"]);
+    expect(calls[0].init?.signal).toBeInstanceOf(AbortSignal);
+    expect(UNICEF_INDICATOR_MAP.IM_RCV1[0]).toBe("rcv1_coverage");
+  });
+
+  it("reads a 404 as no data and asks for nothing without a known code", async () => {
+    const missing = fakeFetch(() => ({ status: 404, body: fixture("../unicef/no_results.xml") }));
+    expect(await fetchUnicef({ source: "unicef", indicatorCodes: ["IM_MENGA"], locationCode: "USA" }, { fetchImpl: missing.fetchImpl, now })).toEqual([]);
+    const none = fakeFetch(() => new Error("must not be called"));
+    expect(await fetchUnicef({ source: "unicef", indicatorCodes: ["WHS8_110"], locationCode: "KEN" }, { fetchImpl: none.fetchImpl, now })).toEqual([]);
+    expect(none.calls).toEqual([]);
+  });
+
+  it("says the service is down rather than that there is no data", async () => {
+    const down = fakeFetch(() => ({ status: 500, body: "<html><body>Server Error 500</body></html>" }));
+    await expect(fetchUnicef({ source: "unicef", indicatorCodes: ["IM_MCV1"], locationCode: "KEN" }, { fetchImpl: down.fetchImpl, now })).rejects.toThrow("UNICEF data service unavailable (HTTP 500)");
+    const offline = fakeFetch(() => new Error("fetch failed"));
+    await expect(fetchUnicef({ source: "unicef", indicatorCodes: ["IM_MCV1"], locationCode: "KEN" }, { fetchImpl: offline.fetchImpl, now })).rejects.toThrow("UNICEF data service unavailable (fetch failed)");
   });
 });
 
@@ -104,5 +120,13 @@ describe("World Bank Data360 adapter", () => {
   it("assembles raw values in request order and picks the latest period", () => {
     const raw = new Map([["WB_WDI_SH_UHC_SRVS_CV_XD", { value: 56, year: "2022" }], ["WB_WDI_SH_MED_PHYS_ZS", { value: 0.2, year: "2021" }]]);
     expect(assembleWbFields(raw, "KEN").map((f) => [f.field, f.description])).toEqual([["uhc_coverage", "UHC service coverage index 0–100"], ["treatment_capacity", "physicians/1,000"]]);
+  });
+
+  it("reads the World Bank's Pol3 from its health database and names the database", async () => {
+    const body = JSON.stringify({ value: [{ OBS_VALUE: "91", TIME_PERIOD: "2021" }, { OBS_VALUE: "87", TIME_PERIOD: "2022" }, { OBS_VALUE: null, TIME_PERIOD: "2023" }] });
+    const { fetchImpl, calls } = fakeFetch(() => ({ status: 200, body }));
+    const fields = await fetchWbData360({ source: "wb_data360", indicatorCodes: ["WB_HNP_SH_IMM_POL3"], locationCode: "KEN", databaseId: "WB_HNP", startYear: 2015 }, { fetchImpl });
+    expect(fields).toEqual([{ field: "polio_coverage", value: 87, citation: "WB HNP, KEN, 2022", description: "Pol3 immunization (% of one-year-old children)", alternatives: [] }]);
+    expect(calls[0].url).toBe("https://data360api.worldbank.org/data360/data?DATABASE_ID=WB_HNP&INDICATOR=WB_HNP_SH_IMM_POL3&REF_AREA=KEN&timePeriodFrom=2015&timePeriodTo=2025");
   });
 });

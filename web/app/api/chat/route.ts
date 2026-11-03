@@ -3,7 +3,7 @@ import { handleChat, type ChatDeps } from "@/lib/chat/handleChat";
 import { encodeEvent } from "@/lib/chat/sse";
 import { fetchUnWpp } from "@/lib/data/unWpp";
 import { fetchWbData360 } from "@/lib/data/wbData360";
-import { fetchWhoGho } from "@/lib/data/whoGho";
+import { fetchUnicef } from "@/lib/data/unicef";
 import { supabaseConversationStore } from "@/lib/db/conversations";
 import { supabaseMemoryStore } from "@/lib/db/memories";
 import { supabaseMessageStore } from "@/lib/db/messages";
@@ -46,7 +46,7 @@ export async function POST(request: Request): Promise<Response> {
     sim: createSimClient({ baseUrl: settings.simInternalUrl, secret: settings.simSharedSecret }),
     adapters: {
       unWpp: (query) => fetchUnWpp(query, { apiKey: settings.unApiKey }),
-      whoGho: (query) => fetchWhoGho(query),
+      unicef: (query) => fetchUnicef(query),
       wbData360: (query) => fetchWbData360(query),
     },
     now: () => new Date(),
