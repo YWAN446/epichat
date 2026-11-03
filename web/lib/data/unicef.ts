@@ -46,12 +46,16 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
-/** Per code asked for, in that order, the latest year that has a value. */
+/** SDMX's answer to a query that matched no observations; every other 404 (a retired dataflow, a moved path) is an outage. */
+const NO_DATA = "No data for data query";
+
+/** Per code asked for, in that order, the latest year that has a value. A body without the CSV's columns is not an answer. */
 export function mapUnicefRows(rows: string[][], codes: string[], iso3: string): ResolvedField[] {
   if (rows.length === 0) return [];
   const [header, ...body] = rows;
   const col = (name: string) => header.indexOf(name);
   const [indicator, period, value] = [col("INDICATOR"), col("TIME_PERIOD"), col("OBS_VALUE")];
+  if (indicator < 0 || period < 0 || value < 0) throw new Error("UNICEF data service unavailable (unexpected response)");
   const results: ResolvedField[] = [];
   for (const code of codes) {
     const known = UNICEF_INDICATOR_MAP[code];
@@ -64,8 +68,9 @@ export function mapUnicefRows(rows: string[][], codes: string[], iso3: string): 
   return results;
 }
 
-/** One request for every known code, ten years back. No data is an empty list; a service that does not answer throws, so the
- *  tool can say the source is down rather than that the country has no estimate. */
+/** One request for every known code, ten years back. No data is an empty list; a service that does not answer, or answers with
+ *  anything but SDMX's no-data message or the CSV, throws, so the tool can say the source is down rather than that the country has
+ *  no estimate. */
 export async function fetchUnicef(query: DataQuery, opts: AdapterOptions = {}): Promise<ResolvedField[]> {
   const fetchImpl = opts.fetchImpl ?? fetch;
   const iso3 = (query.locationCode ?? "").trim().toUpperCase();
@@ -79,7 +84,8 @@ export async function fetchUnicef(query: DataQuery, opts: AdapterOptions = {}): 
   } catch (error) {
     throw new Error(`UNICEF data service unavailable (${error instanceof Error ? error.message : String(error)})`);
   }
-  if (response.status === 404) return [];
+  const body = await response.text().catch(() => "");
+  if (response.status === 404 && body.includes(NO_DATA)) return [];
   if (!response.ok) throw new Error(`UNICEF data service unavailable (HTTP ${response.status})`);
-  return mapUnicefRows(parseCsv(await response.text()), codes, iso3);
+  return mapUnicefRows(parseCsv(body), codes, iso3);
 }

@@ -101,6 +101,15 @@ describe("UNICEF adapter (the WHO/UNICEF estimates)", () => {
     const offline = fakeFetch(() => new Error("fetch failed"));
     await expect(fetchUnicef({ source: "unicef", indicatorCodes: ["IM_MCV1"], locationCode: "KEN" }, { fetchImpl: offline.fetchImpl, now })).rejects.toThrow("UNICEF data service unavailable (fetch failed)");
   });
+
+  it("reads only SDMX's own no-data answer as no data: a moved or renamed dataset is the service being unavailable", async () => {
+    const ask = (answer: { status: number; body: string }) =>
+      fetchUnicef({ source: "unicef", indicatorCodes: ["IM_MCV1"], locationCode: "KEN" }, { fetchImpl: fakeFetch(() => answer).fetchImpl, now });
+    await expect(ask({ status: 404, body: fixture("../unicef/no_dataflow.xml") })).rejects.toThrow("UNICEF data service unavailable (HTTP 404)");   // a retired dataflow version
+    await expect(ask({ status: 404, body: "<html><body>Not Found</body></html>" })).rejects.toThrow("UNICEF data service unavailable (HTTP 404)");   // a moved path
+    await expect(ask({ status: 200, body: "<html><body>Down for maintenance</body></html>" })).rejects.toThrow("UNICEF data service unavailable (unexpected response)");
+    expect(await ask({ status: 200, body: "REF_AREA,INDICATOR,TIME_PERIOD,OBS_VALUE\n" })).toEqual([]);   // the columns, and no rows
+  });
 });
 
 describe("World Bank Data360 adapter", () => {
