@@ -31,7 +31,7 @@ class RunResult:
     timed_out: bool
     duration_ms: int
     replicates: dict | None = None
-    effective_params: dict | None = None      # the child's parameters as run (Part 2, 5.7: a calibrated beta)
+    effective_params: dict | None = None      # the child's parameters as run (a fitted lever)
 
 
 def child_environment() -> dict[str, str]:

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Series } from "@/lib/client/chart";
+import { SOLVER_LABELS } from "@/lib/client/format";
 import { initialSeriesState, loadSeries } from "@/lib/client/series";
 import { commaInt } from "@/lib/sim/pyformat";
 import type { RunPayload } from "@/lib/tools/types";
@@ -58,6 +59,7 @@ export function RunSummary({ payload, options, onPick }: { payload: RunPayload; 
           <p className="text-sm text-ink-faint">Series unavailable.</p>
         )}
       </div>
+      {payload.stats.solver && <p className="mt-2 text-xs text-ink-faint">Ran as {SOLVER_LABELS[payload.stats.solver]}.</p>}
       {options && options.length > 0 && onPick && (
         <div aria-label="Try next" className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-ink-faint">Try next</span>

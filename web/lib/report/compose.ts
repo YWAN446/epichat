@@ -3,7 +3,7 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { SOURCE_LABELS, configurationRows, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { SOLVER_LABELS, SOURCE_LABELS, configurationRows, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import { parameterTable } from "@/lib/client/parameters";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
@@ -120,19 +120,15 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
   if (scenario.params) {
     const rows = configurationRows(configView(scenario.params, scenario.disease), approxR0(scenario.params), name);
     if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
-    // Part 2, 5.6 as amended: the latest run's measured R0 beside the configured one, never an earlier run's (the live value is
-    // withheld under 30 day-0 seeds, which the default 0.05% seeding is, and when the seeds exhausted the population); when it was
-    // withheld and a pilot ran, the pilot's first-generation measurement over 20 to 1,000 seeds.
-    const latest = runs.at(-1)?.stats;
-    const pilot = latest?.r0_calibration?.measured;
-    const measured = typeof latest?.r0_measured === "number" ? latest.r0_measured : typeof pilot === "number" ? pilot : null;
-    if (measured !== null) rows.splice(rows.findIndex(([label]) => label.startsWith("R₀")) + 1, 0, ["R₀ measured", measured.toFixed(1)]);
     // Part 2, 7.7: the latest run's fit, after the R0 rows: what was asked for, what the search reached, in how many runs.
     const fit = runs.at(-1)?.stats.fit;
     if (fit) {
       const after = rows.map(([label]) => label.startsWith("R₀")).lastIndexOf(true) + 1;
       rows.splice(after, 0, ["Fitted to", `${fitText(fit.target, fit.wanted)} (reached ${fitValueText(fit.target, fit.achieved)} in ${fit.runs} runs)`]);
     }
+    // how Starsim ran the latest run: compartments (deterministic, one run) or agents on a network
+    const solver = runs.at(-1)?.stats.solver;
+    if (solver) rows.push(["Ran as", SOLVER_LABELS[solver]]);
     blocks.push({ kind: "keyValues", items: rows });
   }
   if (scenario.dataSources.length > 0) {

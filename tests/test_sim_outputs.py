@@ -1,7 +1,6 @@
-"""extract() produces the 8.6 series and stats from a finished Starsim 3.7 sim."""
+"""extract(): the 8.6 series and the stats from a finished Starsim 4 sim."""
 import pytest
 
-from epichat.params.migrate import coerce_params
 from epichat.params.schema_v2 import SimParamsV2
 from epichat.sim.builder import build_sim
 from epichat.sim.outputs import SERIES_KEYS, extract
@@ -15,173 +14,74 @@ EXPECTED = {
     "seirs": BASE | {"n_recovered", "n_exposed"},
     "seiar": BASE | {"n_recovered", "n_exposed", "n_asymptomatic"},
 }
-EXTRA = {"seir": dict(dur_exp=3.0), "seirs": dict(dur_exp=3.0, dur_immune=60.0), "seiar": dict(dur_exp=3.0), "sirs": dict(dur_immune=60.0)}
+LATENT = {"mean_days": 3.0}
+EXTRA = {"seir": dict(dur_exp=LATENT), "seirs": dict(dur_exp=LATENT, dur_immune={"mean_days": 60.0}), "seiar": dict(dur_exp=LATENT),
+         "sirs": dict(dur_immune={"mean_days": 60.0})}
+STATS = {"peak_infections", "peak_day", "total_infected", "total_deaths", "n_agents", "sim_days", "seeds_day0", "seeds", "solver", "r0_model"}
 
 
-def run(name, **over):
-    base = dict(disease_type=name, beta=22.8125, n_agents=500, sim_dur_years=20 / 365, rand_seed=1, init_prev=0.05, p_death=0.3)
-    base.update(EXTRA.get(name, {}))
-    base.update(over)
-    params = coerce_params(base)
-    sim = build_sim(params)
+def run(model: str = "sir", days: int = 20, network: dict | None = None, interventions=(), demographics: dict | None = None, **disease):
+    deaths = {} if model == "sis" else {"p_death": 0.3}
+    body = {"disease": {"model": model, "seed": {"mode": "count", "value": 25}, **deaths, **EXTRA.get(model, {}), **disease},
+            "network": network or {}, "demographics": demographics or {}, "interventions": list(interventions),
+            "run": {"n_agents": 500, "sim_dur_years": days / 365, "rand_seed": 1}}
+    p = SimParamsV2.model_validate(body)
+    sim = build_sim(p)
     sim.run()
-    return extract(sim, params.run.n_agents, sim.seeds_day0, params.demographics.use_demographics), sim
+    return extract(sim, p), sim
 
 
-@pytest.mark.parametrize("name", sorted(EXPECTED))
-def test_series_keys_lengths_and_stats_follow_8_6(name):
-    out, sim = run(name)
+@pytest.mark.parametrize("model", sorted(EXPECTED))
+def test_series_keys_lengths_and_stats(model):
+    out, sim = run(model)
     series, stats = out["series"], out["stats"]
-    assert set(series) == EXPECTED[name]
-    assert {len(v) for v in series.values()} == {21}
-    assert series["day"] == list(range(21))
+    assert set(out) == {"stats", "series"} and set(series) == EXPECTED[model] and set(SERIES_KEYS) >= EXPECTED[model] - {"day"}
+    assert {len(v) for v in series.values()} == {21} and series["day"] == list(range(21))
     assert series["n_infected"] == series["n_infectious"]
-    assert stats["sim_days"] == 21 and stats["n_agents"] == 500 and stats["seeds_day0"] == sim.seeds_day0 > 0
-    assert stats["peak_infections"] == max(series["n_infectious"])
+    assert set(stats) == STATS and stats["solver"] == "ode" and stats["r0_model"] == pytest.approx(2.125 if model == "seiar" else 2.5)   # seiar: 30% asymptomatic at half
+    assert stats["sim_days"] == 21 and stats["n_agents"] == 500 and stats["seeds_day0"] == stats["seeds"] == 25
+    assert stats["peak_infections"] == round(max(series["n_infectious"]))
     assert stats["peak_day"] == series["n_infectious"].index(max(series["n_infectious"]))
-    assert stats["total_infected"] == round(series["cum_infections"][-1])
-    assert stats["total_deaths"] == round(series["cum_deaths"][-1])
+    assert stats["total_infected"] == round(series["cum_infections"][-1]) and stats["total_deaths"] == round(series["cum_deaths"][-1])
     assert all(isinstance(v, float) for key in series if key != "day" for v in series[key])
-    assert set(SERIES_KEYS) >= EXPECTED[name] - {"day"}
 
 
-def test_cumulative_infections_count_the_day_zero_seeds_once():
-    out, sim = run("sir")
-    res = sim.results.sir
-    assert out["series"]["new_infections"][0] == float(res.new_infections.values[0] + sim.seeds_day0)
-    assert out["series"]["cum_infections"][-1] == float(res.cum_infections.values[-1] + sim.seeds_day0)
-    assert out["stats"]["total_infected"] == round(res.cum_infections.values[-1]) + sim.seeds_day0
+def test_the_day_zero_seeds_count_once_as_new_infections_on_day_zero():
+    out, sim = run()
+    infections = sim.results.sir.infection.values
+    assert out["series"]["new_infections"][0] == pytest.approx(25 + infections[0])
+    assert out["series"]["cum_infections"][-1] == pytest.approx(25 + infections.sum())
 
 
-def test_delayed_seeds_are_already_in_the_disease_counts():
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 30, "day": 4}},
-                                    "run": {"n_agents": 500, "sim_dur_years": 10 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    sim.run()
-    out = extract(sim, 500, sim.seeds_day0, False)
-    assert out["stats"]["seeds_day0"] == 0 and out["series"]["new_infections"][:4] == [0.0] * 4
-    assert out["series"]["new_infections"][4] >= 30 and out["stats"]["total_infected"] >= 30
+def test_seiar_infectious_count_includes_the_asymptomatic_and_excludes_the_exposed():
+    out, _ = run("seiar")
+    s = out["series"]
+    assert all(i >= a for i, a in zip(s["n_infectious"], s["n_asymptomatic"])) and max(s["n_asymptomatic"]) > 0
+    assert s["n_infectious"][0] == 25 and s["n_exposed"][0] == 0
 
 
-@pytest.mark.parametrize("name", ["seir", "seirs", "seiar"])
-def test_n_infectious_excludes_the_exposed(name):
-    out, sim = run(name)
-    res = sim.results[name]
-    assert out["series"]["n_infectious"] == [float(v) for v in res.n_infectious.values]
-    assert out["series"]["n_exposed"] == [float(v) for v in res.n_exposed.values]
+def test_a_delayed_seeding_is_in_the_seeds_but_not_in_the_day_zero_seeds():
+    out, _ = run(days=10, seed={"mode": "count", "value": 30, "day": 4})
+    assert out["stats"]["seeds_day0"] == 0 and out["stats"]["seeds"] == 30
+    assert out["series"]["cum_infections"][3] == 0 and out["series"]["cum_infections"][-1] >= 30
 
 
-def test_seiar_n_infectious_includes_asymptomatic_agents():
-    out, sim = run("seiar", p_asymp=1.0)
-    assert max(out["series"]["n_asymptomatic"]) > 0
-    assert out["series"]["n_infectious"] == [float(v) for v in sim.results.seiar.n_infectious.values]
-    assert out["stats"]["peak_infections"] == max(out["series"]["n_infectious"])
+def test_deaths_are_the_diseases_and_all_causes_come_only_with_demographics():
+    out, _ = run(p_death=0.0, demographics={"use_demographics": True, "birth_rate": 20.0, "death_rate": 500.0})
+    assert out["stats"]["total_deaths"] == 0 and out["series"]["cum_deaths_all"][-1] > 0
+    out, _ = run()
+    assert out["stats"]["total_deaths"] > 0 and "cum_deaths_all" not in out["series"]
 
 
-def test_deaths_are_the_disease_deaths_and_all_causes_only_with_demographics():
-    out, sim = run("sir", use_demographics=True, birth_rate=20.0, death_rate=500.0, p_death=0.0)
-    assert out["stats"]["total_deaths"] == 0 and max(out["series"]["new_deaths"]) == 0
-    assert out["series"]["cum_deaths_all"][-1] > 0 == out["series"]["cum_deaths"][-1]
-    assert out["series"]["new_deaths_all"] == [float(v) for v in sim.results.new_deaths.values]
-    plain, _ = run("sir", p_death=0.5)
-    assert "cum_deaths_all" not in plain["series"] and plain["stats"]["total_deaths"] > 0
-    cum = plain["series"]["cum_deaths"]
-    assert all(b >= a for a, b in zip(cum, cum[1:]))
+def test_an_agent_run_has_whole_counts_and_r0_is_none_where_starsim_cannot_give_one():
+    out, sim = run(network={"network_type": "hybrid"})
+    assert sim.solver == "abm" and out["stats"]["solver"] == "abm"
+    assert all(float(v).is_integer() for v in out["series"]["n_infectious"])
+    assert out["stats"]["r0_model"] is None or out["stats"]["r0_model"] > 0
 
 
-def test_seeds_stat_counts_day_zero_and_delayed_seeds():
-    out, sim = run("sir")
-    assert out["stats"]["seeds"] == out["stats"]["seeds_day0"] == sim.seeds_day0
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 30, "day": 4}},
-                                    "run": {"n_agents": 500, "sim_dur_years": 10 / 365, "rand_seed": 1}})
-    delayed = build_sim(p)
-    delayed.run()
-    stats = extract(delayed, 500, delayed.seeds_day0, False)["stats"]
-    assert stats["seeds_day0"] == 0 and stats["seeds"] == 30
-
-
-def _live(model: str, target: float, dur: dict, seeds: int, n: int = 20000, days: int = 60, seed: int = 1):
-    from epichat.params.r0 import with_r0
-    p = with_r0(SimParamsV2.model_validate({"disease": {"model": model, "dur_inf": dur, "seed": {"mode": "count", "value": seeds}},
-                                            "run": {"n_agents": n, "sim_dur_years": days / 365, "rand_seed": seed}}), target)
-    sim = build_sim(p, seed=seed)
-    sim.run()
-    return sim
-
-
-def test_the_measured_r0_is_unbiased_for_a_short_infectious_period():
-    # a day-0 seed transmits on one more step than an ordinary case: with a 4-day period the raw count read 20% high
-    from epichat.sim.outputs import measured_r0
-    values = [measured_r0(_live("sir", 1.5, {"mean_days": 4.0, "dist": "gamma", "sd_days": 1.5}, 300, seed=s)) for s in (1, 2, 3)]
-    assert abs(sum(values) / 3 - 1.5) / 1.5 < 0.06, values
-
-
-def test_the_measured_r0_counts_only_a_seeds_first_episode():
-    # in sis a seed recovers and is infected again; the infections of its later episodes are not its reproduction number
-    from epichat.sim.outputs import measured_r0
-    values = [measured_r0(_live("sis", 2.5, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, 100, days=40, seed=s)) for s in (1, 2, 3)]
-    assert all(v is not None for v in values) and abs(sum(values) / 3 - 2.5) / 2.5 < 0.10, values
-
-
-def test_the_measured_r0_is_withheld_when_the_seeds_exhaust_the_population():
-    # 2% seeded at R0 12: the seeds' descendants infect everyone while the seeds are still infectious; the raw count read 5.9
-    from epichat.sim.outputs import MEASURED_MAX_WEIGHT, measure_r0, measured_r0
-    sim = _live("sir", 12.0, {"mean_days": 8.0, "dist": "gamma", "sd_days": 3.0}, 200, n=10000, days=40)
-    assert measured_r0(sim) is None and measure_r0(sim, count_day0=False).weight > MEASURED_MAX_WEIGHT
-
-
-def test_a_measurement_carries_its_standard_error_and_the_edge_cases_hold():
-    from epichat.sim.outputs import measure_r0, measured_r0
-    m = measure_r0(_live("sir", 2.5, {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, 100), count_day0=False)
-    assert m.seeds == 100 and 0 < m.se < 0.5 and 1.0 <= m.weight < 1.25 and abs(m.mean - 2.5) < 4 * m.se + 0.15, m
-    quiet = SimParamsV2.model_validate({"disease": {"beta": 0.001, "seed": {"mode": "count", "value": 30}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
-    sim = build_sim(quiet)
-    sim.run()
-    assert measured_r0(sim) == 0.0 and measure_r0(sim, count_day0=False).se == 0.0             # seeds, but they infected nobody
-    assert extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] == 0.0
-    few = SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 29}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
-    sim = build_sim(few)
-    sim.run()
-    m = measure_r0(sim, count_day0=False)                                                        # measured, but withheld: a mean over 29 seeds is noise
-    assert m is not None and m.seeds == 29 and measured_r0(sim) is None and extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] is None
-    later = SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 20, "day": 5}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
-    sim = build_sim(later)
-    sim.run()
-    assert measured_r0(sim) is None and measure_r0(sim, count_day0=False) is None             # no day-0 seeds
-
-
-def test_initial_immunity_is_not_depletion():
-    # review I1: agents immune from the start are not susceptibles the epidemic used up; the measured value reads the effective
-    # reproduction number there (5.8's reference), and a day-0 vaccine at full efficacy is that same initial immunity
-    from epichat.params.r0 import with_r0
-    from epichat.sim.outputs import measure_r0, measured_r0
-
-    def live(seed: int, **extra):
-        body = {"disease": {"dur_inf": {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, "seed": {"mode": "count", "value": 150}},
-                "run": {"n_agents": 20000, "sim_dur_years": 60 / 365, "rand_seed": seed}}
-        body["disease"].update(extra.pop("disease", {}))
-        body.update(extra)
-        sim = build_sim(with_r0(SimParamsV2.model_validate(body), 2.5), seed=seed)
-        sim.run()
-        return sim
-
-    plain = [measured_r0(live(s)) for s in (1, 2, 3)]
-    immune = [measured_r0(live(s, disease={"initial_immune_frac": 0.3})) for s in (1, 2, 3)]
-    vaccinated = [measured_r0(live(s, interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 0}])) for s in (1, 2, 3)]
-    assert all(v is not None for v in plain + immune + vaccinated), (plain, immune, vaccinated)      # it was withheld: the weight read 1.55
-    assert measure_r0(live(1, disease={"initial_immune_frac": 0.3}), count_day0=False).weight < 1.1
-    # on the same random seeds the immune share is all that differs: the estimate scales by the share left susceptible
-    assert sum(immune) / sum(plain) == pytest.approx(0.7, rel=0.06) and sum(vaccinated) / sum(plain) == pytest.approx(0.5, rel=0.08), (plain, immune, vaccinated)
-    assert abs(sum(immune) / 3 - 1.75) / 1.75 < 0.15                                                 # and it is the effective reproduction number
-
-
-def test_measured_r0_is_unknown_on_the_age_structured_network():
-    # Starsim's MixingPools record no per-agent sources (−999999 for every secondary infection), so the seeds' secondary infections cannot be counted
-    from epichat.sim.outputs import measured_r0
-    p = SimParamsV2.model_validate({"network": {"network_type": "age_structured"},
-                                    "demographics": {"age_pct_under18": 38.6, "age_pct_18_64": 57.6, "age_pct_over65": 3.8},
-                                    "disease": {"seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 2000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    sim.run()
-    assert sim.results.sir.cum_infections.values[-1] > 100 and measured_r0(sim) is None
-    assert extract(sim, 2000, sim.seeds_day0, False)["stats"]["r0_measured"] is None
+def test_the_behaviour_response_reports_its_lowest_factor():
+    out, _ = run(days=60, interventions=[{"type": "behavior_response", "scale": 0.6}])
+    b = out["stats"]["behavior"]
+    assert 0.4 < b["min_factor"] < 1 and 0 <= b["min_day"] <= 60
+    assert "behavior" not in run()[0]["stats"]

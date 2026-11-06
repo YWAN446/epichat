@@ -1,307 +1,103 @@
-"""Spec 8.3: delayed seeding and initial immunity as Starsim interventions
-(CRN-safe distributions, no numpy generators)."""
+"""Every intervention is a Starsim delivery or modifier and moves the outcome the way it should, under either solver."""
 import numpy as np
 import pytest
-import starsim as ss
 
-from epichat.sim.interventions import InitialImmunity, SeedInfections, SimpleTreatment
-from epichat.sim.models import MODELS
-
-EXTRA = {"seir": dict(dur_exp=ss.constant(ss.days(3))), "seirs": dict(dur_exp=ss.constant(ss.days(3)), dur_immune=ss.constant(ss.days(5))),
-         "seiar": dict(dur_exp=ss.constant(ss.days(3))), "sirs": dict(dur_immune=ss.constant(ss.days(5)))}
+from epichat.params.schema_v2 import SimParamsV2
+from epichat.sim.builder import build_sim
+from epichat.sim.outputs import extract
 
 
-def build(name, interventions, days=12, n_agents=1000, init_prev=0.0, beta=22.8125, **pars):
-    kw = dict(init_prev=ss.bernoulli(p=init_prev), beta=ss.peryear(beta), dur_inf=ss.constant(ss.days(4)))
-    if name == "sis":
-        kw.update(waning=ss.peryear(0), imm_boost=0)
-    else:
-        kw["p_death"] = ss.bernoulli(p=0.0)
-    kw.update(EXTRA.get(name, {}))
-    kw.update(pars)
-    sim = ss.Sim(n_agents=n_agents, diseases=MODELS[name](**kw), networks=ss.RandomNet(n_contacts=4), interventions=interventions,
-                 start=ss.days(0), dur=ss.days(days), dt=ss.days(1), verbose=0, rand_seed=1)
-    sim.init()
-    return sim
-
-
-def test_seed_infections_by_count_on_a_later_day():
-    sim = build("sir", [SeedInfections(day=3, mode="count", value=25)])
-    sim.run()
-    res = sim.results.sir
-    assert list(res.n_infected.values[:3]) == [0.0, 0.0, 0.0]
-    assert sim.interventions[0].n_seeded == 25
-    assert res.new_infections.values[3] >= 25 and res.cum_infections.values[-1] >= 25   # seeds count: the sim was initialized
-
-
-def test_seed_infections_by_fraction_is_reproducible():
-    a = build("seir", [SeedInfections(day=2, mode="fraction", value=0.05)])
-    b = build("seir", [SeedInfections(day=2, mode="fraction", value=0.05)])
-    a.run()
-    b.run()
-    assert 30 <= a.interventions[0].n_seeded <= 70
-    assert a.interventions[0].n_seeded == b.interventions[0].n_seeded
-    assert list(a.results.seir.cum_infections.values) == list(b.results.seir.cum_infections.values)
-
-
-@pytest.mark.parametrize("name", sorted(MODELS))
-def test_initial_immunity_takes_half_of_the_non_seeded_agents(name):
-    waning = {"dur_immune": ss.constant(ss.days(100))} if name in ("sirs", "seirs") else {}   # longer than the run: nobody wanes here
-    sim = build(name, [InitialImmunity(frac=0.5)], init_prev=0.1, beta=0.001, **waning)
-    sim.run()
-    d = sim.diseases[0]
-    n = sim.interventions[0].n_immunised
-    assert 0.48 * 900 - 40 <= n <= 0.52 * 900 + 40
-    if name == "sis":
-        assert float(np.mean(d.rel_sus.values)) < 0.6 and int((np.asarray(d.immunity.values) > 0).sum()) == n
-    else:
-        assert int(d.recovered.count()) >= n and int(d.susceptible.count()) <= 1000 - n - 80
-
-
-@pytest.mark.parametrize("name", ["sirs", "seirs"])
-def test_initial_immunity_wanes_in_the_waning_models(name):
-    sim = build(name, [InitialImmunity(frac=0.5)], init_prev=0.0, beta=0.001, days=12)
-    sim.run()
-    d = sim.diseases[0]
-    assert sim.interventions[0].n_immunised > 400
-    assert int(d.recovered.count()) == 0 and int(d.susceptible.count()) == 1000     # dur_immune 5 days: everyone is back
-
-
-def test_initial_immunity_wanes_in_sis_at_sis_waning():
-    held = build("sis", [InitialImmunity(frac=0.5)], init_prev=0.0, beta=0.001, waning=ss.peryear(0))
-    held.run()
-    waned = build("sis", [InitialImmunity(frac=0.5)], init_prev=0.0, beta=0.001, waning=ss.peryear(52.0))
-    waned.run()
-    assert float(np.mean(held.diseases[0].rel_sus.values)) == pytest.approx(0.5, abs=0.05)
-    assert float(np.mean(waned.diseases[0].rel_sus.values)) > 0.8
-
-
-def test_initial_immunity_never_picks_day_zero_seeds():
-    sim = build("sir", [InitialImmunity(frac=0.99)], init_prev=0.1, beta=0.001)
-    sim.run()
-    assert sim.results.sir.n_infected.values[0] >= 60          # the seeds were not moved to recovered
-    assert sim.interventions[0].n_immunised <= 900
-
-
-def test_simple_treatment_still_lives_here():
-    sim = build("sir", [SimpleTreatment(prob=1.0, max_capacity=5, start_day=0)], init_prev=0.1, beta=0.001)
-    sim.run()
-    assert sim.results.sir.n_infected.values[1] == sim.results.sir.n_infected.values[0] - 5
-
-
-def test_a_campaign_reaches_its_coverage_within_its_window():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 0.6, "start_day": 10, "end_day": 19}],
-                                    "run": {"n_agents": 4000, "sim_dur_years": 40 / 365, "rand_seed": 1}})
+def run(interventions=(), network: dict | None = None, days: int = 180, **disease) -> dict:
+    body = {"disease": {"seed": {"mode": "count", "value": 20}, **disease}, "network": network or {}, "interventions": list(interventions),
+            "run": {"n_agents": 5000, "sim_dur_years": days / 365, "rand_seed": 1}}
+    p = SimParamsV2.model_validate(body)
     sim = build_sim(p)
     sim.run()
-    vaccinated = np.asarray(sim.diseases[0].vaccine_protection) < 1.0
-    assert abs(vaccinated.mean() - 0.6) < 0.03                                               # the whole window, 10 days, reaches 60%
-    vx = next(i for i in sim.interventions.values() if hasattr(i, "ti_vaccinated"))
-    ti = np.asarray(vx.ti_vaccinated)
-    assert np.nanmin(ti) >= 10 and np.nanmax(ti) <= 19
+    out = extract(sim, p)
+    out["solver"] = sim.solver
+    return out
 
 
-def test_a_leaky_vaccine_halves_rel_sus_and_waning_restores_it():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 1.0, "start_day": 5, "end_day": 5,
-                                                                                    "efficacy": 0.5, "protection_days": 10}],
-                                    "run": {"n_agents": 1000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    disease = sim.diseases[0]
-    for _ in range(8):
-        sim.run_one_step()
-    susceptible = np.asarray(disease.susceptible)
-    assert np.allclose(np.asarray(disease.rel_sus)[susceptible], 0.5)                         # day 7: everyone vaccinated on day 5 keeps half
-    for _ in range(10):
-        sim.run_one_step()
-    assert np.allclose(np.asarray(disease.rel_sus)[np.asarray(disease.susceptible)], 1.0)     # day 17: the 10-day protection has worn off
-    allornothing = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 1.0, "start_day": 5, "end_day": 5, "efficacy": 0.5, "leaky": False}],
-                                               "run": {"n_agents": 2000, "sim_dur_years": 10 / 365, "rand_seed": 1}})
-    sim = build_sim(allornothing)
-    sim.run()
-    protection = np.asarray(sim.diseases[0].vaccine_protection)
-    assert set(np.unique(protection)) <= {0.0, 1.0} and 0.4 < (protection == 0.0).mean() < 0.6
+@pytest.fixture(scope="module")
+def base():
+    return run()
 
 
-def test_a_day_zero_vaccine_with_efficacy_below_one_is_a_one_day_campaign():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "coverage": 1.0, "start_day": 0, "efficacy": 0.3}],
-                                    "run": {"n_agents": 500, "sim_dur_years": 5 / 365, "rand_seed": 1}})
-    assert p.disease.initial_immune_frac == 0.0 and len(p.interventions) == 1
-    sim = build_sim(p)
-    sim.run()
-    assert np.allclose(np.asarray(sim.diseases[0].vaccine_protection), 0.7)
+def total(out):
+    return out["stats"]["total_infected"]
 
 
-def test_vaccination_by_age_reaches_only_the_range():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 1.0, "start_day": 1, "end_day": 1, "age_min": 5, "age_max": 18}],
-                                    "demographics": {"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0},
-                                    "run": {"n_agents": 3000, "sim_dur_years": 5 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    age = np.asarray(sim.people.age)
-    sim.run()
-    protected = np.asarray(sim.diseases[0].vaccine_protection) == 0.0
-    assert protected[(age >= 5) & (age < 18)].mean() > 0.99 and not protected[(age < 5) | (age >= 18)].any()
+def peak(out):
+    return out["stats"]["peak_infections"]
 
 
-def test_treatment_with_a_delay_waits_and_halves_transmissibility_while_waiting():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001, "dur_inf": {"mean_days": 30}, "seed": {"mode": "count", "value": 100}},
-                                    "interventions": [{"type": "treatment", "coverage": 1.0, "capacity": 10, "delay_days": 3, "efficacy": 1.0, "rel_trans_treated": 0.5}],
-                                    "run": {"n_agents": 1000, "sim_dur_years": 30 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    disease = sim.diseases[0]
-    recovered_by_day = []
-    for day in range(8):
-        sim.run_one_step()
-        recovered_by_day.append(int(disease.recovered.count()))
-    assert recovered_by_day[2] == 0 and recovered_by_day[4] >= 10                             # nobody before the 3-day delay; 10 a day after it
-    waiting = np.asarray(disease.infectious) & (np.asarray(disease.treatment_factor) < 1.0)
-    assert waiting.sum() >= 40 and np.allclose(np.asarray(disease.rel_trans)[waiting], 0.5 * np.asarray(disease.rel_trans_base)[waiting])
+def test_a_routine_vaccine_and_a_campaign_lower_the_attack_rate(base):
+    routine = run([{"type": "vaccine", "coverage": 0.9, "start_day": 5}])
+    campaign = run([{"type": "vaccine", "kind": "campaign", "coverage": 0.6, "start_day": 5, "end_day": 15}])
+    one_day = run([{"type": "vaccine", "kind": "campaign", "coverage": 0.6, "start_day": 5, "end_day": 5}])
+    assert total(campaign) < total(routine) < total(base) and total(one_day) < total(base)
 
 
-def test_treatment_efficacy_cures_a_share_and_symptomatic_only_skips_the_asymptomatic():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001, "dur_inf": {"mean_days": 30}, "seed": {"mode": "count", "value": 400}},
-                                    "interventions": [{"type": "treatment", "coverage": 1.0, "efficacy": 0.5}],
-                                    "run": {"n_agents": 1000, "sim_dur_years": 4 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    sim.run()
-    assert 150 < int(sim.diseases[0].recovered.count()) < 250                                   # half of 400 cured on the first treated day
-    seiar = SimParamsV2.model_validate({"disease": {"model": "seiar", "beta": 0.001, "dur_exp": {"mean_days": 1}, "dur_inf": {"mean_days": 30}, "p_asymp": 0.5, "seed": {"mode": "count", "value": 400}},
-                                        "interventions": [{"type": "treatment", "coverage": 1.0, "symptomatic_only": True}],
-                                        "run": {"n_agents": 1000, "sim_dur_years": 6 / 365, "rand_seed": 1}})
-    sim = build_sim(seiar)
-    sim.run()
-    d = sim.diseases[0]
-    delivery = next(i for i in sim.interventions.values() if hasattr(i, "treated"))
-    assert int(d.asymptomatic.count()) > 100 and int(d.recovered.count()) > 100
-    assert not np.any(np.asarray(delivery.treated) & np.asarray(d.asymptomatic))             # no asymptomatic agent was treated
+def test_a_day_zero_entry_not_folded_into_initial_immunity_protects_from_the_start(base):
+    leaky = run([{"type": "vaccine", "coverage": 0.6, "start_day": 0, "efficacy": 0.8}])
+    yearly = run([{"type": "vaccine", "coverage": 0.6, "start_day": 1, "efficacy": 0.8}])
+    assert total(leaky) < 0.5 * total(base) and total(leaky) < total(yearly)
 
 
-def test_a_school_closure_removes_the_school_layers_transmission_for_its_window():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    base = {"disease": {"beta": 300.0, "dur_inf": {"mean_days": 30}, "seed": {"mode": "count", "value": 30}},      # seeds outlive the closure
-            "network": {"network_type": "hybrid", "community_contacts": 0, "work_contacts": 0, "household_size": 1.0},
-            "demographics": {"age_pct_under18": 50.0, "age_pct_18_64": 45.0, "age_pct_over65": 5.0}, "run": {"n_agents": 3000, "sim_dur_years": 20 / 365, "rand_seed": 1}}
-    open_ = build_sim(SimParamsV2.model_validate(base))
-    open_.run()
-    closed = SimParamsV2.model_validate({**base, "interventions": [{"type": "contact_reduction", "layer": "school", "scale": 1.0, "start_day": 0, "end_day": 9}]})   # scale: the fraction removed
-    sim = build_sim(closed)
-    sim.run()
-    new = np.asarray(sim.results.sir.new_infections.values)
-    assert new[1:10].sum() == 0 and new[11:].sum() > 0                                           # nothing while closed, infections once it reopens
-    assert open_.results.sir.new_infections.values[1:10].sum() > 0
-    s = sim.networks["s"]
-    assert np.allclose(np.asarray(s.edges.beta), s.pars.beta) and s.pars.beta > 0                # betas restored after the window
+def test_an_age_targeted_vaccine_does_less_than_one_for_everyone(base):
+    window = {"type": "vaccine", "kind": "campaign", "coverage": 0.6, "start_day": 5, "end_day": 15}
+    children = run([{**window, "age_max": 18}])
+    everyone = run([window])
+    assert total(everyone) < total(children) < total(base)
 
 
-def test_a_transmission_reduction_scales_the_connectors_factor_over_its_window():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"interventions": [{"type": "transmission_reduction", "scale": 0.3, "start_day": 5, "end_day": 10}, {"type": "seasonality", "scale": 0.2}],
-                                    "run": {"n_agents": 500, "sim_dur_years": 15 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    sim.run()
-    factors = np.array(sim.connectors[0].factors)
-    seasonal = np.array([sim.connectors[0].seasonal(ti) for ti in range(len(factors))])
-    assert np.allclose(factors[:5], seasonal[:5]) and np.allclose(factors[5:11], 0.7 * seasonal[5:11]) and np.allclose(factors[11:], seasonal[11:])
+def test_waning_vaccine_protection_lets_more_people_be_infected():
+    window = {"type": "vaccine", "kind": "campaign", "coverage": 0.6, "start_day": 5, "end_day": 15}
+    lasting = run([window], days=365)
+    waning = run([{**window, "protection_days": 20}], days=365)
+    assert total(waning) > total(lasting)
 
 
-def test_a_v1_shaped_treatment_still_runs_through_simple_treatment():
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"interventions": [{"type": "treatment", "coverage": 0.5, "capacity": 20, "start_day": 3}], "run": {"n_agents": 500, "sim_dur_years": 5 / 365}})
-    assert any(isinstance(i, SimpleTreatment) for i in build_sim(p).interventions.values())
-    rich = SimParamsV2.model_validate({"interventions": [{"type": "treatment", "coverage": 0.5, "capacity": 20, "start_day": 3, "delay_days": 1}], "run": {"n_agents": 500, "sim_dur_years": 5 / 365}})
-    assert not any(isinstance(i, SimpleTreatment) for i in build_sim(rich).interventions.values())
+def test_treatment_cuts_transmission_and_a_capacity_limits_it(base):
+    treated = run([{"type": "treatment", "coverage": 0.2}])
+    capped = run([{"type": "treatment", "coverage": 0.2, "capacity": 2}])
+    assert total(treated) < total(capped) < total(base)
 
 
-# The review's findings on the 2C branch (C1, I2, I3, I5): each test reproduces the finding.
-def test_vaccination_by_age_stays_on_the_right_agents_after_deaths():
-    # review C1: deaths leave Starsim's active uids, so an eligibility built on the compact view returns positions, not uids
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001, "p_death": 0.5, "dur_inf": {"mean_days": 2}, "seed": {"mode": "count", "value": 1500}},
-                                    "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 1.0, "start_day": 10, "end_day": 10, "age_min": 5, "age_max": 18}],
-                                    "demographics": {"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0},
-                                    "run": {"n_agents": 3000, "sim_dur_years": 15 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    sim.run()
-    age = np.asarray(sim.people.age.raw)
-    alive = np.asarray(sim.people.alive.raw, dtype=bool)
-    assert 400 < (~alive).sum() < 1100                                                        # the deaths happened before the campaign
-    protected = np.asarray(sim.diseases[0].vaccine_protection.raw) == 0.0
-    in_range = (age >= 5) & (age < 18)
-    assert protected[alive & in_range].mean() > 0.99
-    assert not protected[alive & ~in_range].any() and not protected[~alive].any()
+def test_a_delayed_treatment_runs_as_agents_and_still_helps(base):
+    delayed = run([{"type": "treatment", "coverage": 0.5, "delay_days": 2}])
+    assert delayed["solver"] == "abm" and total(delayed) < total(base)
 
 
-def test_overlapping_contact_reductions_compose_and_restore_in_order():
-    # review I2: a reduction that starts while another is active must not snapshot the reduced beta as its base
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "network": {"network_type": "hybrid"},
-                                    "demographics": {"age_pct_under18": 40.0, "age_pct_18_64": 50.0, "age_pct_over65": 10.0},
-                                    "interventions": [{"type": "contact_reduction", "layer": "all", "scale": 0.5, "start_day": 10, "end_day": 40},
-                                                      {"type": "contact_reduction", "layer": "school", "scale": 1.0, "start_day": 30, "end_day": 72}],
-                                    "run": {"n_agents": 1000, "sim_dur_years": 100 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    base = {k: float(net.pars.beta) for k, net in sim.networks.items()}
-    edges = {k: np.array(net.edges.beta, copy=True) for k, net in sim.networks.items()}
-    seen = {}
-    for day in range(100):
-        sim.run_one_step()
-        if day in (5, 20, 35, 50, 80):
-            seen[day] = {k: float(net.pars.beta) / base[k] for k, net in sim.networks.items()}
-    assert seen[5] == {k: 1.0 for k in base} and seen[80] == {k: 1.0 for k in base}
-    assert seen[20] == {k: 0.5 for k in base}
-    assert seen[35] == {"h": 0.5, "s": 0.0, "w": 0.5, "c": 0.5}
-    assert seen[50] == {"h": 1.0, "s": 0.0, "w": 1.0, "c": 1.0}                                   # the school stays closed when the other reduction ends
-    assert np.allclose(np.asarray(sim.networks["s"].edges.beta), edges["s"])                      # and reopens with its original edge betas
+def test_isolation_while_treatment_runs_lowers_transmission(base):
+    isolated = run([{"type": "treatment", "coverage": 0.0, "rel_trans_treated": 0.5}])
+    assert peak(isolated) < 0.5 * peak(base)
 
 
-def test_a_window_doses_each_agent_once_until_its_protection_ends():
-    # review I3: an all-or-nothing campaign redrawn daily protected more than coverage × efficacy; a dose is not repeated while it protects
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    allornothing = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 0.8, "start_day": 0, "end_day": 9, "efficacy": 0.5, "leaky": False}],
-                                               "run": {"n_agents": 4000, "sim_dur_years": 12 / 365, "rand_seed": 1}})
-    sim = build_sim(allornothing)
-    sim.run()
-    vx = next(i for i in sim.interventions.values() if hasattr(i, "n_doses"))
-    doses = np.asarray(vx.n_doses)
-    assert doses.max() == 1 and abs((doses > 0).mean() - 0.8) < 0.03
-    protected = np.asarray(sim.diseases[0].vaccine_protection) == 0.0
-    assert abs(protected.mean() - 0.4) < 0.03
-    waning = SimParamsV2.model_validate({"disease": {"beta": 0.001}, "interventions": [{"type": "vaccine", "coverage": 1.0, "start_day": 0, "end_day": 11, "protection_days": 5}],
-                                         "run": {"n_agents": 500, "sim_dur_years": 12 / 365, "rand_seed": 1}})
-    sim = build_sim(waning)
-    sim.run()
-    vx = next(i for i in sim.interventions.values() if hasattr(i, "n_doses"))
-    assert np.all(np.asarray(vx.n_doses) == 3)                                                     # days 0, 5 and 10: again once the protection ends
+def test_seasonality_raises_or_lowers_early_transmission_by_its_phase(base):
+    high = run([{"type": "seasonality", "scale": 0.5, "shift": 0.0}])
+    low = run([{"type": "seasonality", "scale": 0.5, "shift": 0.5}])
+    assert high["stats"]["peak_day"] < base["stats"]["peak_day"] < low["stats"]["peak_day"]
 
 
-def test_a_treatment_window_closing_releases_the_queue():
-    # review I5: agents still queued when the window closes kept the waiting factor for the rest of the run
-    from epichat.params.schema_v2 import SimParamsV2
-    from epichat.sim.builder import build_sim
-    p = SimParamsV2.model_validate({"disease": {"model": "sis", "beta": 0.001, "dur_inf": {"mean_days": 30}, "seed": {"mode": "count", "value": 300}},
-                                    "interventions": [{"type": "treatment", "coverage": 1.0, "capacity": 5, "end_day": 3, "rel_trans_treated": 0.5}],
-                                    "run": {"n_agents": 1000, "sim_dur_years": 10 / 365, "rand_seed": 1}})
-    sim = build_sim(p)
-    sim.run()
-    d = sim.diseases[0]
-    delivery = next(i for i in sim.interventions.values() if hasattr(i, "queued"))
-    assert 15 <= int(delivery.treated.count()) <= 20                                             # five a day while the window was open
-    assert delivery.queue == [] and not np.asarray(delivery.queued).any()
-    assert np.allclose(np.asarray(d.treatment_factor), 1.0)
+@pytest.mark.parametrize("kind", ("transmission_reduction", "contact_reduction"))
+def test_a_reduction_lowers_the_peak_only_inside_its_window(base, kind):
+    reduced = run([{"type": kind, "scale": 0.5, "start_day": 10, "end_day": 60}])
+    assert peak(reduced) < 0.5 * peak(base)
+    assert reduced["series"]["new_infections"][:10] == pytest.approx(base["series"]["new_infections"][:10])
+
+
+def test_the_behaviour_response_flattens_the_peak(base):
+    response = run([{"type": "behavior_response", "scale": 0.6}])
+    assert peak(response) < 0.5 * peak(base) and total(response) < total(base)
+    assert 0 < response["stats"]["behavior"]["min_factor"] < 1
+
+
+def test_closing_a_hybrid_layer_removes_its_transmission():
+    hybrid = {"network_type": "hybrid"}
+    open_layers = run(network=hybrid, days=60, beta=5.0)
+    community = run([{"type": "contact_reduction", "layer": "community", "scale": 1.0}], network=hybrid, days=60, beta=5.0)
+    everything = run([{"type": "contact_reduction", "layer": "all", "scale": 1.0}], network=hybrid, days=60, beta=5.0)
+    assert open_layers["solver"] == "abm"
+    assert total(everything) == 20 and total(community) < total(open_layers)
+    assert np.sum(everything["series"]["new_infections"][1:]) == 0

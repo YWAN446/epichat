@@ -1,153 +1,93 @@
-"""Series and stats from a finished sim, in the spec 8.6 shape. n_infected is
-still sent as an alias of n_infectious for one release (section 18); deaths are
-the disease's own, with the all-causes pair only when demographics are on. The
-stats carry seeds_day0 and seeds (day 0 plus delayed), the latter for spec 10."""
+"""Series and stats from a finished sim. Counts are people (fractional when the run is an ODE); n_infected is sent as an alias of
+n_infectious; deaths are the disease's own, with the all-causes pair only when demographics are on. Starsim records each stock at
+the start of each day (day 0 is the initial state) and each flow over the day."""
 from __future__ import annotations
 
-import math
-from dataclasses import dataclass
-
 import numpy as np
-import pandas as pd
 import starsim as ss
-
-from .interventions import SeedInfections
-
-MEASURED_MAX_WEIGHT = 1.25       # a live run's seeds were no longer in a susceptible population above this mean depletion weight
-MEASURED_MIN_SEEDS = 30          # a live run's measured R0 is a mean over its day-0 seeds: under 30 (the default seeds 5) it is noise, withheld
 
 SERIES_KEYS = ("n_susceptible", "n_exposed", "n_infectious", "n_infected", "n_asymptomatic", "n_recovered",
                "new_infections", "cum_infections", "new_deaths", "cum_deaths", "new_deaths_all", "cum_deaths_all")
 
 
-def _values(res, key) -> list[float]:
-    return [float(v) for v in res[key].values]
+def _values(result) -> np.ndarray:
+    return np.asarray(result.values, dtype=float)
 
 
-def realized_seeds(sim: ss.Sim, seeds_day0: int) -> int:
-    """The day-0 seeds plus what a delayed SeedInfections infected: spec 10's `seeds`."""
-    delayed = sum(int(i.n_seeded) for i in sim.interventions.values() if isinstance(i, SeedInfections))
-    return int(seeds_day0) + delayed
+def _floats(x) -> list[float]:
+    return [float(v) for v in x]
 
 
-def infection_log(sim: ss.Sim):
-    """The first disease's infection log: on the analyzer once the run has finalized (Starsim moves it there), else on the disease."""
+def seeds(sim: ss.Sim) -> tuple[float, float]:
+    """The day-0 seeds (the infectious at the start) and every seed, adding those a delayed seeding infected."""
+    res = sim.results[sim.diseases[0].name]
+    day0 = float(res.I.values[0])
+    delayed = float(np.sum(sim.results.seed.delivered.values)) if "seed" in sim.results else 0.0
+    return day0, day0 + delayed
+
+
+def model_r0(sim: ss.Sim) -> float | None:
+    """Starsim's R0 for the declared disease, when it can give one for this sim."""
+    try:
+        return float(sim.diseases[0].R0())
+    except Exception:
+        return None
+
+
+def behavior_factors(infectious: np.ndarray, alive: np.ndarray, response) -> np.ndarray:
+    """The behavior response's multiplier on each day it acts, from the share infectious (builder.behavior_multiplier's formula)."""
+    share = infectious / np.maximum(alive, 1.0)
+    m = int(response.memory_days)
+    mean = np.array([share[max(0, t - m + 1):t + 1].mean() for t in range(len(share))])
+    factors = 1.0 - response.scale * mean / (response.half_prevalence + mean)
+    days = np.arange(len(share))
+    inside = (days >= response.start_day) & ((days <= response.end_day) if response.end_day is not None else True)
+    return np.where(inside, factors, 1.0)
+
+
+def extract(sim: ss.Sim, params) -> dict:
+    """params: the SimParamsV2 the sim was built from."""
+    demographics_on = params.demographics.use_demographics
     disease = sim.diseases[0]
-    analyzer = sim.analyzers.get("infection_log") if hasattr(sim.analyzers, "get") else None
-    if analyzer is not None and getattr(analyzer, "logs", None) and disease.name in analyzer.logs and analyzer.logs[disease.name] is not None:
-        return analyzer.logs[disease.name]
-    return getattr(disease, "infection_log", None)
-
-
-@dataclass(frozen=True)
-class Measurement:
-    mean: float          # infections per seed, depletion-weighted
-    se: float            # the standard error of that mean over the seeds
-    seeds: int
-    weight: float        # the mean depletion weight over the infections counted; 1.0 when none were
-
-
-def measure_r0(sim: ss.Sim, count_day0: bool) -> Measurement | None:
-    """Part 2, 5.6 as amended: for each day-0 seed, the infections it caused in its first infectious episode (before it was infected
-    again), each weighted by alive / susceptible at the step before, which corrects the depletion of susceptibles to first order.
-    The weight is scaled by the share of the non-seed agents that was susceptible before anything spread, so agents immune from the
-    start (initial_immune_frac: recovered in the SIR family) are not counted as depletion: with initial immunity the estimate reads
-    the effective reproduction number, as 5.8's reference does.
-    With variation in susceptibility (follow-up spec 4) the most susceptible are infected first, so susceptibility is depleted faster
-    than the number of susceptibles: the weight is multiplied by the susceptibles' mean personal multiplier before anything spread
-    over their mean as the infection's step began (the disease records it), which makes it the ratio of the susceptibility present
-    at the start to the susceptibility left. Without variation nothing is recorded and the weight is the count's.
-    count_day0 False leaves out what the seeds transmitted on step 0: a seed is infectious from step 0, an ordinary case from the step
-    after its infection, so a seed transmits on one more step. True counts everything (the pilot keeps its seeds quiet on step 0).
-    None without day-0 seeds or on a network that records no per-agent sources (the age-structured MixingPools)."""
-    log = infection_log(sim)
-    if log is None or len(log) == 0:
-        return None
-    df = log.to_df()
-    source = pd.to_numeric(df["source"], errors="coerce").to_numpy(dtype=float)
-    t = np.array([float(getattr(x, "value", x)) for x in df["t"]])        # the log stores TimePars (days) on the numeric day axis
-    targets = df["target"].to_numpy()
-    seeded = (t == 0) & (np.isnan(source) | (source < 0))
-    seeds = np.sort(targets[seeded].astype(np.int64))
-    if len(seeds) == 0:
-        return None
-    later = ~seeded
-    if later.any() and not (source[later] >= 0).any():
-        return None                     # the network records no per-agent sources (ss.MixingPools writes -999999): unknown, not zero
-    again = np.full(len(seeds), np.inf)                                    # the step each seed was infected again, if it was
-    hit = later & np.isin(targets, seeds)
-    np.minimum.at(again, np.searchsorted(seeds, targets[hit].astype(np.int64)), t[hit])
-    by_seed = later & np.isin(source, seeds) & (t >= (0 if count_day0 else 1))
-    index = np.searchsorted(seeds, source[by_seed].astype(np.int64))
-    first = t[by_seed] < again[index]
-    index, step = index[first], t[by_seed][first].astype(int)
-    when = np.maximum(step - 1, 0)
-    name = list(sim.diseases.keys())[0]
-    susceptible = np.asarray(sim.results[name]["n_susceptible"].values, dtype=float)
-    alive = np.asarray(sim.results["n_alive"].values, dtype=float)
-    spread = np.asarray(sim.results[name]["new_infections"].values, dtype=float)
-    start = min(1.0, (susceptible[0] + spread[0]) / max(alive[0] - len(seeds), 1.0))     # susceptible before step 0's transmission
-    weights = start * alive[when] / np.maximum(susceptible[when], 1.0)
-    means = np.asarray(getattr(sim.diseases[0], "sus_ind_means", ()), dtype=float)
-    if len(means) and len(step):
-        with np.errstate(divide="ignore", invalid="ignore"):
-            ratio = means[0] / means[np.minimum(step, len(means) - 1)]
-        weights = weights * np.where(np.isfinite(ratio) & (ratio > 0), ratio, 1.0)
-    per_seed = np.bincount(index, weights=weights, minlength=len(seeds))
-    se = float(per_seed.std(ddof=1) / math.sqrt(len(seeds))) if len(seeds) > 1 else 0.0
-    return Measurement(float(per_seed.mean()), se, int(len(seeds)), float(weights.mean()) if len(weights) else 1.0)
-
-
-def measured_r0(sim: ss.Sim) -> float | None:
-    """The R0 a live run shows: measure_r0 without the seeds' step-0 transmissions, withheld (None) when the population was already
-    depleted while the seeds were infectious (too many seeds for the R0), where no weighting recovers what the seeds would have done,
-    and when fewer than MEASURED_MIN_SEEDS were seeded (the standard error over five seeds is about √(R0/5)); the pilot, which seeds
-    20 to 1,000, is the measurement then."""
-    m = measure_r0(sim, count_day0=False)
-    if m is None or m.seeds < MEASURED_MIN_SEEDS or m.weight > MEASURED_MAX_WEIGHT:
-        return None
-    return m.mean
-
-
-def extract(sim: ss.Sim, n_agents: int, seeds_day0: int, demographics_on: bool) -> dict:
-    name = list(sim.diseases.keys())[0]
-    res = sim.results[name]
-    npts = len(sim.results.timevec)
+    res = sim.results[disease.name]
+    npts = len(res.S)
     series: dict[str, list] = {"day": list(range(npts))}
-    series["n_susceptible"] = _values(res, "n_susceptible")
-    if "n_exposed" in res:
-        series["n_exposed"] = _values(res, "n_exposed")
-    infectious = _values(res, "n_infectious" if "n_infectious" in res else "n_infected")
-    series["n_infectious"] = infectious
-    series["n_infected"] = list(infectious)
-    if "n_asymptomatic" in res:
-        series["n_asymptomatic"] = _values(res, "n_asymptomatic")
-    if "n_recovered" in res:
-        series["n_recovered"] = _values(res, "n_recovered")
-    new_infections = np.array(res["new_infections"].values, dtype=float)      # a copy: never mutate Starsim's result
-    new_infections[0] += seeds_day0                      # Starsim counts only incident infections; the seeds are prevalent
-    series["new_infections"] = [float(v) for v in new_infections]
-    series["cum_infections"] = [float(v) for v in np.cumsum(new_infections)]
-    deaths = np.asarray(res["new_deaths_disease"].values, dtype=float) if "new_deaths_disease" in res else np.zeros(npts)
-    series["new_deaths"] = [float(v) for v in deaths]
-    series["cum_deaths"] = [float(v) for v in np.cumsum(deaths)]
+    series["n_susceptible"] = _floats(_values(res.S))
+    if "E" in res:
+        series["n_exposed"] = _floats(_values(res.E))
+    infectious = _values(res.I) + (_values(res.A) if "A" in res else 0.0)
+    series["n_infectious"] = _floats(infectious)
+    series["n_infected"] = _floats(infectious)
+    if "A" in res:
+        series["n_asymptomatic"] = _floats(_values(res.A))
+    if "R" in res:
+        series["n_recovered"] = _floats(_values(res.R))
+    day0, all_seeds = seeds(sim)
+    new_infections = _values(res.infection).copy()
+    new_infections[0] += day0                  # the seeds are infectious at the start, not infected during day 0
+    series["new_infections"] = _floats(new_infections)
+    series["cum_infections"] = _floats(np.cumsum(new_infections))
+    deaths = _values(res.death) if "death" in res else np.zeros(npts)
+    series["new_deaths"] = _floats(deaths)
+    series["cum_deaths"] = _floats(np.cumsum(deaths))
     if demographics_on:
-        series["new_deaths_all"] = [float(v) for v in sim.results.new_deaths.values]
-        series["cum_deaths_all"] = [float(v) for v in sim.results.cum_deaths.values]
-    peak = np.asarray(infectious)
+        died = _values(sim.results.died)
+        series["new_deaths_all"] = _floats(died)
+        series["cum_deaths_all"] = _floats(np.cumsum(died))
     stats = {
-        "peak_infections": int(peak.max()),
-        "peak_day": int(peak.argmax()),
+        "peak_infections": int(round(infectious.max())),
+        "peak_day": int(infectious.argmax()),
         "total_infected": int(round(series["cum_infections"][-1])),
         "total_deaths": int(round(series["cum_deaths"][-1])),
-        "n_agents": int(n_agents),
+        "n_agents": int(round(float(sim.results.alive.values[0]))),
         "sim_days": npts,
-        "seeds_day0": int(seeds_day0),
-        "seeds": realized_seeds(sim, seeds_day0),
+        "seeds_day0": int(round(day0)),
+        "seeds": int(round(all_seeds)),
+        "solver": str(sim.solver),
+        "r0_model": model_r0(sim),
     }
-    stats["r0_measured"] = measured_r0(sim)          # Part 2, 5.6; a ratio, never scaled
-    response = next((c for c in sim.connectors.values() if getattr(c, "behavior", None) is not None), None)
-    if response is not None and response.behavior_factors:              # follow-up spec 5.2: the strongest reduction and its day
-        factors = np.asarray(response.behavior_factors, dtype=float)
+    response = next((i for i in params.interventions if i.type == "behavior_response"), None)
+    if response is not None:
+        factors = behavior_factors(infectious, _values(sim.results.alive), response)
         stats["behavior"] = {"min_factor": round(float(factors.min()), 4), "min_day": int(factors.argmin())}
     return {"stats": stats, "series": series}
