@@ -38,6 +38,27 @@ def test_the_peak_day_is_fitted_within_three_days():
     assert abs(info["achieved"] - 45) <= 3 and info["runs"] <= fit.MAX_RUNS and fitted.disease.beta == info["value"]
 
 
+def test_a_late_peak_day_is_fitted_through_the_threshold():
+    """With the default seeding (5 of 10,000) a peak on day 150 needs R0 near 1.1. Below 1 an ODE infects several times its seeds
+    and its highest point is the seeds' bump on day 9; just above 1 it is too slow to outgrow that bump within the year. Neither
+    reads as a peak too early."""
+    p = SimParamsV2.model_validate({"run": {"fit": {"lever": "disease.beta", "target": "peak_day", "value": 150}}})
+    _, info = fit.fit_lever(p, 1)
+    assert fit.within("peak_day", info["achieved"], 150) and info["runs"] <= fit.MAX_RUNS, info
+
+
+def test_a_run_that_rises_again_after_the_seeds_bump_peaks_later():
+    p = SimParamsV2.model_validate({})                                          # SIR, 10 days infectious
+    def out(curve, solver="ode", seeds=5):
+        peak = max(range(len(curve)), key=curve.__getitem__)
+        return {"stats": {"peak_day": peak, "solver": solver, "seeds_day0": seeds}, "series": {"n_infectious": curve}}
+    assert fit.peaks_later(p, out([5, 9, 12, 10, 8, 8.5, 9]))                   # the bump, then still rising at the end
+    assert not fit.peaks_later(p, out([5, 9, 12, 10, 8, 7, 6]))                 # the bump and a decline: subcritical
+    assert not fit.peaks_later(p, out([5] + [6] * 20 + [40, 30, 31]))           # a peak after a generation is the epidemic's
+    assert not fit.peaks_later(p, out([5, 9, 12, 10, 8, 3, 4], solver="abm"))   # as agents a small rebound is noise
+    assert fit.peaks_later(p, out([5, 9, 30, 10, 8, 3, 20], solver="abm"))
+
+
 def test_an_unreachable_fit_stops_at_the_levers_bound():
     p = scenario("attack_rate", 0.9, n_agents=2000)
     body = p.model_dump()

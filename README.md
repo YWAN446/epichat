@@ -28,7 +28,7 @@ Layer 1b: Fact-Checker         (disease_parameters.json — no LLM)
      │  Emits ⚠️ warnings shown in chat summary and CLI output
      ▼
 Layer 2: Simulation            (epichat/sim → a declared Starsim 4 model)
-     │  Runs as an ODE unless the network needs agents; child process, 90s timeout
+     │  Runs as an ODE unless the network needs agents; a forked child process, 90s timeout
      │  Stats + series JSON → epidemic curve
      ▼
 Layer 4: Results Narrator      (Claude API + narration prompt)
@@ -689,7 +689,7 @@ epichat/
 | Parameter hallucination | Pydantic validation; literature-range fact-checking via `disease_parameters.json`; ⚠️ warning shown when values are outside known ranges |
 | Wrong R₀ on age-structured network | β back-solved from POLYMOD spectral radius after demographics are applied; recalibrated on every R₀ / `dur_inf` modification |
 | Execution failure | 3-attempt error recovery loop with LLM re-parameterization |
-| Timeout | 90-second subprocess limit |
+| Timeout | 90-second limit on the child process (forked from a server that has imported Starsim, so a run does not pay the import) |
 | API instability | Starsim 4 pinned in requirements.txt (the `v4` branch until 4.0.0 is on PyPI) |
 
 ---

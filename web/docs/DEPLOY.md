@@ -651,9 +651,9 @@ second 3.12 virtualenv: `py -3.12 -m venv .venv` then
 CI runs them on 3.12 too. Both requirement files pin Starsim 4 (`starsim @ git+https://github.com/starsimhub/starsim@v4` until 4.0.0 is on PyPI).
 `npx vercel dev` from the root runs both with the binding injected.
 
-**Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 40 s;
-ten child processes run real Starsim through `python -m epichat.sim.run_params`,
-the entry point the runner spawns). CI runs them on Python 3.12 as the `sim` job.
+**Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 15 s;
+the child processes run real Starsim, forked from a server that has imported it; one
+test runs `python -m epichat.sim.run_params`, the command the runner uses where forkserver is missing). CI runs them on Python 3.12 as the `sim` job.
 
 **Settings** (all optional except the secret): `SIM_TIMEOUT_SECONDS` 120,
 `SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
@@ -715,7 +715,7 @@ was not needed; the only surprise was the bundle size (see above).
 5. Record the numbers below from step 4; the Usage page's Active CPU
    reading is the owner's to note alongside them.
 
-The timings below are from Starsim 3; on Starsim 4 an ODE run of 10,000 people for a year takes about 0.02–0.07 s in process and about 1.2 s as a child process, most of it importing Starsim. Re-time after the next deploy.
+The timings below are from Starsim 3; on Starsim 4 an ODE run of 10,000 people for a year takes about 0.02–0.07 s in process and about 0.07 s as a child process forked from the server that has imported Starsim (`sim/runner.py`; the service starts it at startup, and a fresh process took about 1.2 s, most of it the import). Re-time after the next deploy, and check there that the forkserver starts on Vercel (the runner uses a fresh process only where the platform has no forkserver).
 
 | Measured on Vercel, 2026-10-12, Starsim 3.7.2 through the builder (iad1, Hobby, 2 GB) | Value |
 |---|---|

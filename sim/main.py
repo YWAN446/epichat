@@ -27,6 +27,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 os.environ.setdefault("EPICHAT_CACHE_DIR", str(Path(tempfile.gettempdir()) / "epichat-cache"))
 
+from contextlib import asynccontextmanager  # noqa: E402
 from importlib.metadata import version as _package_version  # noqa: E402
 
 from fastapi import Depends, FastAPI, HTTPException, Request  # noqa: E402
@@ -37,16 +38,24 @@ from pydantic import BaseModel, Field, ValidationError  # noqa: E402
 from epichat.data_loaders.demographics import get_demographics_for_sim  # noqa: E402
 from epichat.params.migrate import coerce_params  # noqa: E402
 from epichat.sim.diagnostics import as_dicts, diagnose  # noqa: E402
+from runner import warm  # noqa: E402
 from series import scale_stats, scaled_bands, scaled_outcome, thin  # noqa: E402
 from service import agent_years, exceeds_cap, simulate  # noqa: E402
 from settings import Settings, load_settings  # noqa: E402
 import report_render as render  # noqa: E402
 
 # Read from package metadata: importing starsim itself costs over a second
-# in the parent, which only ever runs it in a child process.
+# in the parent, which only ever runs it in a child process (forked from a
+# server that has imported it: runner.py).
 STARSIM_VERSION = _package_version("starsim")
 
-app = FastAPI(title="EpiChat simulation service", docs_url=None, redoc_url=None)
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    warm()                      # the forkserver imports Starsim while the service waits for its first request
+    yield
+
+
+app = FastAPI(title="EpiChat simulation service", docs_url=None, redoc_url=None, lifespan=_lifespan)
 _state = {"served": False}
 
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+import numpy as np
 
 from epichat.params.paths import get_path, set_path
 from epichat.params.registry import REGISTRY_BY_PATH
@@ -70,9 +71,27 @@ def within(target: str, achieved: float, wanted: float) -> bool:
 
 
 def evaluate(p: SimParamsV2, seed: int) -> dict:
+    """The run's {"stats", "series"}."""
     sim = build_sim(p, seed=seed)
     sim.run()
-    return extract(sim, p)["stats"]
+    return extract(sim, p)
+
+
+def peaks_later(p: SimParamsV2, out: dict) -> bool:
+    """The run's highest point is the seeds' own bump (within a generation of day 0) and the curve rises again by the end: an
+    epidemic too slow to outgrow its seeds within the run, whose peak is later than the run shows. As agents the rise has to clear
+    twice the trough and twice the seeds, above the noise of a tail."""
+    stats, infectious = out["stats"], np.asarray(out["series"]["n_infectious"], dtype=float)
+    d = p.disease
+    generation = d.dur_inf.mean_days + (d.dur_exp.mean_days if d.dur_exp is not None else 0.0)
+    peak = int(stats["peak_day"])
+    if peak > generation or peak >= len(infectious) - 1:
+        return False
+    trough, end = float(infectious[peak:].min()), float(infectious[-1])
+    if stats.get("solver") == "ode":
+        return end > trough * (1 + 1e-6) + 1e-9
+    seeds = stats.get("seeds_day0") or stats.get("seeds") or 0
+    return end > max(2 * trough, FADEOUT_SEED_MULTIPLE * seeds)
 
 
 def _with_lever(p: SimParamsV2, lever: str, value: float) -> SimParamsV2:
@@ -84,10 +103,11 @@ def _with_lever(p: SimParamsV2, lever: str, value: float) -> SimParamsV2:
 def fit_lever(p: SimParamsV2, seed: int) -> tuple[SimParamsV2, dict | None]:
     """The parameters to run (the lever moved when a fit is set) and {target, wanted, achieved, lever, value, runs}, or (p, None).
     The search doubles or halves the lever from its current value until the target is bracketed (stopping at the lever's bound),
-    then takes midpoints. A run that faded out (under twice its seeds infected) means too little transmission: a lever the outcome
-    rises with is too low, a lever it falls with is too high. For a peak day a peak under twice the seeds is a fade-out too (the
-    day would be the seeds' bump); for an attack rate or a peak size it is not, since a behaviour response holds the peak down
-    while the infections go on."""
+    then takes midpoints. A run that faded out (under twice its seeds infected, or a disease Starsim puts at an R0 of at most 1, which
+    as an ODE can infect many times its seeds) means too little transmission: a lever the outcome rises with is too low, a lever it
+    falls with is too high. For a peak day a peak under twice the seeds is a fade-out too (the day would be the seeds' bump), and so
+    is an epidemic too slow to peak within the run (peaks_later); for an attack rate or a peak size it is not, since a behaviour
+    response holds the peak down while the infections go on."""
     f = p.run.fit
     if f is None:
         return p, None
@@ -102,12 +122,14 @@ def fit_lever(p: SimParamsV2, seed: int) -> tuple[SimParamsV2, dict | None]:
     runs, achieved = 0, None
     while runs < MAX_RUNS:
         current = _with_lever(p, f.lever, value)
-        stats = evaluate(current, seed)
+        out = evaluate(current, seed)
+        stats = out["stats"]
         achieved = outcome(stats, f.target, p.run.n_agents)
         runs += 1
         seeds = stats.get("seeds_day0") or stats.get("seeds") or 0
-        faded = stats["total_infected"] <= FADEOUT_SEED_MULTIPLE * seeds or (
-            f.target == "peak_day" and stats["peak_infections"] <= FADEOUT_SEED_MULTIPLE * seeds)
+        r0 = stats.get("r0_model")
+        faded = stats["total_infected"] <= FADEOUT_SEED_MULTIPLE * seeds or (r0 is not None and r0 <= 1) or (
+            f.target == "peak_day" and (stats["peak_infections"] <= FADEOUT_SEED_MULTIPLE * seeds or peaks_later(current, out)))
         if within(f.target, achieved, f.value) and not faded:
             break
         if spec.rising:
