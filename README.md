@@ -690,7 +690,7 @@ epichat/
 | Wrong R₀ on age-structured network | β back-solved from POLYMOD spectral radius after demographics are applied; recalibrated on every R₀ / `dur_inf` modification |
 | Execution failure | 3-attempt error recovery loop with LLM re-parameterization |
 | Timeout | 90-second limit on the child process (forked from a server that has imported Starsim, so a run does not pay the import) |
-| API instability | Starsim 4 pinned in requirements.txt (the `v4` branch until 4.0.0 is on PyPI) |
+| API instability | Starsim 4 pinned exactly in requirements.txt (4.0.0rc3 until 4.0.0 is out) |
 
 ---
 

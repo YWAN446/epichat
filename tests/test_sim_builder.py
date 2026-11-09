@@ -39,7 +39,7 @@ def test_the_solver_is_an_ode_unless_something_needs_agents(network, interventio
     p = scenario(network=network, interventions=interventions)
     assert needs_agents(p) is agents
     sim, _ = run(p)
-    assert sim.solver == ("abm" if agents else "ode")
+    assert sim.solver.name == ("abm" if agents else "ode")
 
 
 def test_well_mixed_contact_needs_no_network_and_the_others_have_theirs():
@@ -124,7 +124,7 @@ def test_an_agent_run_with_shares_draws_ages_in_those_shares():
 def test_v1_parameters_are_migrated_and_run():
     p = coerce_params({"disease_type": "seir", "beta": 22.8125, "dur_exp": 3.0, "n_agents": 1000, "sim_dur_years": 30 / 365, "rand_seed": 1})
     sim, out = run(p)
-    assert sim.solver == "ode" and len(out["series"]["day"]) == 31 and "n_exposed" in out["series"]
+    assert sim.solver.name == "ode" and len(out["series"]["day"]) == 31 and "n_exposed" in out["series"]
 
 
 def test_the_run_has_one_point_a_day_from_day_zero():

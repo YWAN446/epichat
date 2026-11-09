@@ -25,7 +25,7 @@ def run_replicates(params: SimParamsV2, n: int | None = None) -> dict:
         sim.run()
         results.append(extract(sim, params))
         seeds.append(seed)
-        if sim.solver == "ode":
+        if sim.solver.name == "ode":
             break                       # deterministic: every replicate would be the same
     order = sorted(range(len(results)), key=lambda i: results[i]["stats"]["total_infected"])
     rep = order[(len(results) - 1) // 2]

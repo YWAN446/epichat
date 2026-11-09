@@ -2,8 +2,8 @@
 
 Every model is states and transitions: S, I and (except SIS without immunity) R, with E in the latent models and A in SEIAR.
 Starsim runs the declared disease as an ODE unless something in the sim needs agents (the hybrid network, lasting contacts, or a
-treatment delay), in which case the same disease runs as agents. Ages, age-specific susceptibility and fatality, and variation in
-susceptibility are stratifications of the disease, so they hold under either solver."""
+treatment delay), in which case the same disease runs as agents. Age groups and susceptibility classes are stratifications of the
+disease, and susceptibility and fatality by group are values by level (ss.by) in its rates, so they hold under either solver."""
 from __future__ import annotations
 
 import numpy as np
@@ -93,7 +93,16 @@ def make_disease(p: SimParamsV2, contacts_per_day: float = 1.0) -> ss.Disease:
         force = force + d.rel_trans_asymp * A
     if E is not None and d.rel_trans_exposed > 0:
         force = force + d.rel_trans_exposed * E
-    transitions = dict(infection=S >> (I if E is None else E) @ beta * force)
+    rate = beta
+    if p.network.network_type == "hybrid":                  # each layer's transmissibility relative to beta
+        lb = p.network.layer_beta
+        rate = rate * dict(h=lb.household, s=lb.school, w=lb.work, c=lb.community)
+    rel_sus = d.rel_sus_age.as_tuple()
+    if needs_ages(p) and rel_sus != (1.0, 1.0, 1.0):      # susceptibility by age group
+        rate = rate * ss.by(age=[rel_sus[band_of(a)] for a in age_edges(p)])
+    if d.rel_sus_cv > 0:                                    # variation in susceptibility: SUS_LEVELS equal classes
+        rate = rate * ss.by(susceptibility=susceptibility_levels(d.rel_sus_cv))
+    transitions = dict(infection=S >> (I if E is None else E) @ rate * force)
 
     if E is not None:
         onset = {A: d.p_asymp, I: None} if A is not None else I
@@ -136,11 +145,7 @@ def make_disease(p: SimParamsV2, contacts_per_day: float = 1.0) -> ss.Disease:
     disease = ss.Disease(*states, **transitions, init=init or None, init_n=init_n or None, name=model)
 
     if needs_ages(p):
-        edges = age_edges(p)
-        rel_sus = d.rel_sus_age.as_tuple()
-        adjust = {"rel_sus": [rel_sus[band_of(a)] for a in edges]} if rel_sus != (1.0, 1.0, 1.0) else None
-        disease.stratify(age=age_group_shares(p, edges), adjust=adjust)
+        disease.stratify(age=age_group_shares(p, age_edges(p)))
     if d.rel_sus_cv > 0:
-        levels = susceptibility_levels(d.rel_sus_cv)
-        disease.stratify(susceptibility={f"q{i + 1}": 1 / SUS_LEVELS for i in range(SUS_LEVELS)}, adjust={"rel_sus": levels})
+        disease.stratify(susceptibility={f"q{i + 1}": 1 / SUS_LEVELS for i in range(SUS_LEVELS)})
     return disease

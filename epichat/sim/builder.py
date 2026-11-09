@@ -41,14 +41,12 @@ def build_network(params: SimParamsV2):
         # EpiChat's rows are sources and columns targets; Starsim's matrix[i, j] is the contacts a person in i has with people in j
         return ss.contacts(ages=list(AGE_EDGES), matrix=np.array(n.contacts.as_rows()).T, name="contacts")
     if n.network_type == "hybrid":
-        lb = n.layer_beta
-        return ssl.HybridNet(household_size=ss.poisson(lam=n.household_size),
-                             contacts=dict(s=n.school_contacts, w=n.work_contacts, c=n.community_contacts),
-                             beta=dict(h=lb.household, s=lb.school, w=lb.work, c=lb.community),
+        return ssl.HybridNet(household_size=ss.poisson(mean=n.household_size),
+                             n_contacts=dict(s=n.school_contacts, w=n.work_contacts, c=n.community_contacts),
                              school_ages=[n.school_age_min, n.school_age_max], work_ages=[n.work_age_min, n.work_age_max])
     if well_mixed(params):
         return None
-    contacts = ss.poisson(lam=n.n_contacts) if n.contacts_dist == "poisson" else ss.constant(n.n_contacts)
+    contacts = ss.poisson(mean=n.n_contacts) if n.contacts_dist == "poisson" else ss.constant(n.n_contacts)
     return ss.RandomNet(n_contacts=contacts, dur=ss.days(n.contact_duration_days), name="random")
 
 
@@ -126,7 +124,7 @@ def build_interventions(params: SimParamsV2, disease: ss.Disease) -> list:
     out = []
     if d.seed.day > 0:
         how = dict(capacity=int(d.seed.value)) if d.seed.mode == "count" else dict(coverage=float(d.seed.value))
-        out.append(ss.Delivery(move=S >> I, at=ss.days(d.seed.day), name="seed", **how))
+        out.append(ss.Delivery(S >> I, when=ss.days(d.seed.day), name="seed", **how))
     for k, i in enumerate(params.interventions):
         name = f"{i.type}_{k}"
         if i.type == "vaccine":
@@ -137,7 +135,7 @@ def build_interventions(params: SimParamsV2, disease: ss.Disease) -> list:
             # a day-0 routine entry not folded into initial immunity (ages, waning, a partial efficacy) is protection from the start
             day0 = i.kind == "routine" and i.start_day == 0 and i.end_day is None
             if day0 or (i.kind == "campaign" and i.end_day is not None and i.end_day <= i.start_day):
-                out.append(ss.vaccinate(product, coverage=coverage, at=ss.days(i.start_day), who=who, name=name))
+                out.append(ss.vaccinate(product, coverage=coverage, when=ss.days(i.start_day), who=who, name=name))
             else:                       # routine: the coverage a year; campaign: the coverage over its window (unset: the run's end)
                 end = run_days if i.end_day is None else min(i.end_day, run_days)
                 days = (end - i.start_day + 1) if i.kind == "campaign" else 365
@@ -147,13 +145,13 @@ def build_interventions(params: SimParamsV2, disease: ss.Disease) -> list:
             capacity = ss.perday(i.capacity) if i.capacity is not None else None
             if i.delay_days > 0:           # a delay from becoming infectious: Starsim runs this as agents
                 trigger = disease.onset if hasattr(disease, "onset") else disease.infection
-                out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), on=trigger, delay=ss.days(i.delay_days), coverage=prob, capacity=capacity, name=name,
+                out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), when=ss.on(trigger, delay=ss.days(i.delay_days)), coverage=prob, capacity=capacity, name=name,
                                     **window(i, run_days)))
             else:
                 who = I if (i.symptomatic_only or A is None) else I | A
                 out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), who=who, coverage=per_day(prob, 1), capacity=capacity, name=name, **window(i, run_days)))
             if i.rel_trans_treated < 1:    # while infectious during the program, as if isolated until treated
-                out.append(ss.modify(disease.rel_trans, multiply=i.rel_trans_treated, where=I, name=f"{name}_isolation", **window(i, run_days)))
+                out.append(ss.modify(disease.rel_trans, multiply=i.rel_trans_treated, who=I, name=f"{name}_isolation", **window(i, run_days)))
         elif i.type == "seasonality":
             out.append(ss.modify(disease.pars.beta, multiply=ss.seasonal(amplitude=i.scale, peak=i.shift), name=name))
         elif i.type == "transmission_reduction":

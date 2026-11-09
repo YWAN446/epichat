@@ -83,7 +83,7 @@ def extract(sim: ss.Sim, params) -> dict:
         "sim_days": npts,
         "seeds_day0": int(round(day0)),
         "seeds": int(round(all_seeds)),
-        "solver": str(sim.solver),
+        "solver": sim.solver.name,
         "r0_model": model_r0(sim),
     }
     response = next((i for i in params.interventions if i.type == "behavior_response"), None)

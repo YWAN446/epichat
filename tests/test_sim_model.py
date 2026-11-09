@@ -31,7 +31,7 @@ def run(p: SimParamsV2):
 @pytest.mark.parametrize("model", MODELS)
 def test_every_model_runs_as_an_ode_with_its_states_and_keeps_the_people(model):
     sim, out = run(scenario(model, p_death=0.0 if model == "sis" else 0.05))
-    assert sim.solver == "ode" and out["stats"]["solver"] == "ode"
+    assert sim.solver.name == "ode" and out["stats"]["solver"] == "ode"
     disease = sim.diseases[0]
     assert disease.name == model and [s for s in "SEIAR" if s in sim.results[model]] == list(STATES[model])
     s = out["series"]

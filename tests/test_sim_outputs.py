@@ -75,7 +75,7 @@ def test_deaths_are_the_diseases_and_all_causes_come_only_with_demographics():
 
 def test_an_agent_run_has_whole_counts_and_r0_is_none_where_starsim_cannot_give_one():
     out, sim = run(network={"network_type": "hybrid"})
-    assert sim.solver == "abm" and out["stats"]["solver"] == "abm"
+    assert sim.solver.name == "abm" and out["stats"]["solver"] == "abm"
     assert all(float(v).is_integer() for v in out["series"]["n_infectious"])
     assert out["stats"]["r0_model"] is None or out["stats"]["r0_model"] > 0
 

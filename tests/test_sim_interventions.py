@@ -14,7 +14,7 @@ def run(interventions=(), network: dict | None = None, days: int = 180, **diseas
     sim = build_sim(p)
     sim.run()
     out = extract(sim, p)
-    out["solver"] = sim.solver
+    out["solver"] = sim.solver.name
     return out
 
 

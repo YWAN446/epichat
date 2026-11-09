@@ -1,4 +1,4 @@
-starsim @ git+https://github.com/starsimhub/starsim@v4
+starsim==4.0.0rc3
 anthropic>=0.76.0
 streamlit>=1.54.0
 pydantic>=2.0.0
