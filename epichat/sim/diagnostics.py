@@ -1,6 +1,6 @@
 """Spec 10: diagnostics over a finished run. Pure and deterministic, no Starsim:
 the service calls diagnose() after every successful run, on the child's full
-agent-unit series, and sends the result with the answer. Every threshold is a
+agent-unit series and stats, and sends the result with the answer. Every threshold is a
 named constant; the values are the spec's starting points, to be tuned from
 the diagnostic_shown and option_chosen events of section 11.
 
@@ -17,7 +17,7 @@ import numpy as np
 
 from epichat.disease_db import _num, _range_of, lookup
 from epichat.params.indicators import has_vaccine_indicator
-from epichat.params.r0 import R0Unreachable, age_shares, approx_r0, calibrate_beta, clamp_beta, r0_is_approximate, weighted_cfr
+from epichat.params.r0 import R0Unreachable, age_shares, approx_r0, calibrate_beta, clamp_beta, weighted_cfr
 from epichat.params.registry import DEATH_MODELS, REGISTRY_BY_PATH, WANING_MODELS
 from epichat.params.schema_v2 import SimParamsV2
 
@@ -25,7 +25,7 @@ Severity = Literal["info", "warning"]
 Direction = Literal["increase", "decrease", "change"]
 Basis = Literal["disease_db", "rule", "user"]
 
-# Section 10's thresholds; starting points, tuned from pilot data.
+# Section 10's thresholds; starting points, to be tuned from use.
 FADEOUT_SEED_MULTIPLE = 2            # early_fadeout and the faded-out share: total_infected < max(2 × seeds, ANCHOR_SHARE × agents)
 FADEOUT_SEED_FACTOR = 5              # suggested seeds: max(5 × seeds, 10), at most n_agents
 FADEOUT_SEED_FLOOR = 10
@@ -44,8 +44,6 @@ R0_RECHECK_TOLERANCE = 0.1           # a configured R0 within 10% of the databas
 WELL_MIXED_R_EFF = 2.0               # Part 2, 5.8
 WELL_MIXED_ATTACK_RATE = 0.7
 WELL_MIXED_CV = 1.0                  # follow-up spec 7.6: the variation it offers (illustrative)
-R0_GAP = 0.25
-R0_GAP_SIGMAS = 3                    # the gap must exceed three standard errors of the measured mean when the seeds are few
 # Follow-up spec 7.2: the interventions what_if offers. Every size is illustrative until the database carries it.
 ANCHOR_SHARE = 0.01                  # the windows start the day the cumulative infections reached this share of the agents
 WHAT_IF_MIN_ATTACK = 0.05            # no offer after a run that had no epidemic
@@ -96,16 +94,6 @@ def final_size(r: float, cv: float = 0.0) -> float:
     for _ in range(400):
         z = 1 - math.exp(-r * z) if v <= 0 else 1 - (1 + v * r * z) ** (-1 / v)
     return z
-
-
-def realized_seeds(stats: dict, params: SimParamsV2) -> int:
-    """stats["seeds"] from the child; a child without it falls back to seeds_day0 for day-0 seeding, then to the configured seed."""
-    if stats.get("seeds") is not None:
-        return int(stats["seeds"])
-    seed = params.disease.seed
-    if seed.day == 0 and stats.get("seeds_day0") is not None:
-        return int(stats["seeds_day0"])
-    return int(seed.value) if seed.mode == "count" else int(round(seed.value * params.run.n_agents))
 
 
 def db_range(disease: str | None, db_field: str) -> tuple[float, float, float | None] | None:
@@ -159,7 +147,6 @@ class _Run:
     series: dict
     stats: dict
     replicates: dict | None
-    seeds: int
     disease: str | None
 
     def __post_init__(self) -> None:
@@ -170,9 +157,8 @@ class _Run:
         self.peak = max(self.infectious) if self.infectious else 0.0
         self.t_peak = self.infectious.index(self.peak) if self.infectious else 0
         self.total = float(self.stats.get("total_infected", 0))
-        calibration = self.stats.get("r0_calibration")
-        # a calibrated run's beta is no longer the formula's, so its R0 is the calibration's target, not the formula on what ran
-        self.r0 = float(calibration["target"]) if calibration and calibration.get("target") else approx_r0(p)
+        self.seeds = int(self.stats.get("seeds", 0))          # every seed, the delayed ones included
+        self.r0 = approx_r0(p)
         self.r_eff = self.r0 * (1 - p.disease.initial_immune_frac)
         self.simple = (p.disease.model in SIMPLE_MODELS and p.network.network_type == "random"
                        and not p.demographics.use_demographics and not p.interventions)
@@ -380,10 +366,9 @@ def _high_variance(run: _Run) -> Diagnostic | None:
 
 
 def _well_mixed(run: _Run) -> Diagnostic | None:
-    """Part 2, 5.8 as broadened by follow-up spec 7.6: at the same R0 every network infects nearly everyone (the follow-up measured
-    it), so this fires on all of them and offers the two limits on spread. The hybrid network is offered on the random one only, as
-    the structure interventions act on, without promising a lower final size (at the same measured R0 the hybrid network's final
-    size is close to the random one's; the review of 2B measured 0.886 against 0.893 at R0 2.5)."""
+    """Part 2, 5.8 as broadened by follow-up spec 7.6: at the same R0 every network infects nearly everyone, so this fires on all of
+    them and offers the two limits on spread. The hybrid network is offered on the random one only, as the structure interventions
+    act on, without promising a lower final size (at the same R0 its final size is close to the random network's)."""
     p = run.params
     if run.r_eff < WELL_MIXED_R_EFF or run.n <= 0 or run.stats.get("fit"):
         return None                             # on a fitted run the size is the one the user gave, and a lever would be fitted away
@@ -405,26 +390,17 @@ def _well_mixed(run: _Run) -> Diagnostic | None:
     if p.network.network_type == "random":
         levers.append(Lever({"network.network_type": "hybrid"}, {"network.network_type": "random"}, "change",
                             "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same "
-                            "measured R0 its final size is close to the random network's, so the switch alone does not lower it.", "rule",
+                            "R0 its final size is close to the random network's, so the switch alone does not lower it.", "rule",
                             label="Switch to the hybrid network and rerun"))
     return Diagnostic("well_mixed", "info", "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
                       {"attack_rate": round(attack, 3), "r_eff": round(run.r_eff, 2)}, levers)
 
 
-def r0_gap_threshold(reference: float, seeds: int) -> float:
-    """25%, widened to R0_GAP_SIGMAS standard errors of a mean over `seeds` Poisson-like counts when the seeds are few."""
-    if reference <= 0 or seeds <= 0:
-        return R0_GAP
-    return max(R0_GAP, R0_GAP_SIGMAS * math.sqrt(reference / seeds) / reference)
-
-
 def _r0_reference(run: _Run) -> float | None:
-    """What the day-0 seeds should have passed on: R_eff (on a calibrated run the calibration's target, less the initial immunity)
-    times the day-0 seasonal factor (1 + scale × cos(2π shift)); None when a treatment, a behaviour response (follow-up spec 5.4),
-    a vaccine entry or a dated contact or transmission reduction that starts while the seeds still transmit, the latent plus the infectious period,
-    cuts what they pass on (what_if's windows start the day 1% were infected, which is day 0 with a 1% seeding). The pilot
-    measures without interventions or initial immunity and the live run with them, so a calibrated run takes the same adjustments as
-    any other."""
+    """What the day-0 seeds should pass on: R_eff times the day-0 seasonal factor (1 + scale × cos(2π shift)); None when a
+    treatment, a behaviour response (follow-up spec 5.4), a vaccine entry or a dated contact or transmission reduction that starts
+    while the seeds still transmit, the latent plus the infectious period, cuts what they pass on (what_if's windows start the day 1%
+    were infected, which is day 0 with a 1% seeding)."""
     p = run.params
     transmitting = p.disease.dur_inf.mean_days + (p.disease.dur_exp.mean_days if p.disease.dur_exp is not None else 0.0)
     for i in p.interventions:                 # a vaccine entry here is a campaign, or one with ages, waning or a partial efficacy: not folded into initial_immune_frac
@@ -435,27 +411,6 @@ def _r0_reference(run: _Run) -> float | None:
         if i.type == "seasonality":
             reference *= max(0.0, 1.0 + i.scale * math.cos(2 * math.pi * i.shift))
     return reference
-
-
-def _r0_gap(run: _Run) -> Diagnostic | None:
-    """Part 2, 5.8: the measured R0 (the seeds' secondary infections) differs from what the configuration implies for them (R_eff, the
-    day-0 seasonal factor, or the calibration's target); levers only on the exact networks (the Part 1 recheck)."""
-    measured = run.stats.get("r0_measured")
-    reference = _r0_reference(run)
-    if measured is None or reference is None or reference <= 0 or run.stats.get("fit"):
-        return None
-    threshold = r0_gap_threshold(reference, run.seeds)
-    if abs(float(measured) - reference) / reference <= threshold:
-        return None
-    calibrated = run.stats.get("r0_calibration") is not None
-    levers = []
-    if not calibrated and not r0_is_approximate(run.params):
-        lever = _r0_recheck(run)
-        if lever is not None:
-            levers.append(lever)
-    return Diagnostic("r0_gap", "info", "The measured R0 differs from the configured one",
-                      {"approx_r0": round(run.r0, 2), "r_eff": round(run.r_eff, 2), "reference": round(reference, 2),
-                       "r0_measured": round(float(measured), 2), "threshold": round(threshold, 2), "calibrated": calibrated}, levers)
 
 
 def anchor_day(run: _Run) -> int | None:
@@ -535,16 +490,16 @@ def _what_if(run: _Run, faded: bool) -> Diagnostic | None:
                       levers[:WHAT_IF_MAX_LEVERS])
 
 
-def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | None, seeds: int,
-             disease: str | None = None) -> list[Diagnostic]:
-    """Every diagnostic the run triggers, warnings first and in the table's order within (section 10, 19)."""
-    run = _Run(params, series, stats, replicates, int(seeds), disease)
+def diagnose(params: SimParamsV2, series: dict, stats: dict, replicates: dict | None, disease: str | None = None) -> list[Diagnostic]:
+    """Every diagnostic the run triggers, warnings first and in the table's order within (section 10, 19). stats carries the run's
+    seeds (every seed, the delayed ones included)."""
+    run = _Run(params, series, stats, replicates, disease)
     fadeout = _early_fadeout(run)
     unfinished = _unfinished(run)
     candidates = (fadeout, _instant_peak(run), unfinished,
                   None if fadeout else _final_size_gap(run, unfinished is not None),
                   _sharp_curve(run), _cfr_out_of_range(run), _fatality_on_all_infections(run),
-                  _no_reinfection(run), _high_variance(run), _well_mixed(run), _r0_gap(run), _what_if(run, fadeout is not None))
+                  _no_reinfection(run), _high_variance(run), _well_mixed(run), _what_if(run, fadeout is not None))
     found = [c for c in candidates if c is not None]
     return sorted(found, key=lambda d: 0 if d.severity == "warning" else 1)
 

@@ -3,7 +3,6 @@ Defaults and inclusive bounds come from the registry, so the two cannot
 disagree; the validators carry the rules the registry cannot express."""
 from __future__ import annotations
 
-import math
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -130,7 +129,7 @@ NETWORK_TYPES = ("random", "age_structured", "hybrid")
 
 
 class ContactMatrix(BaseModel):
-    """The nine leaves network.contacts.<source>_<target> (Part 2, 5.3): rows source, columns target, as ss.MixingPools reads them."""
+    """The nine leaves network.contacts.<source>_<target> (Part 2, 5.3): rows source, columns target (ss.contacts(matrix=...) takes the transpose)."""
     children_children: float = _field("network.contacts.children_children")
     children_adults: float = _field("network.contacts.children_adults")
     children_elderly: float = _field("network.contacts.children_elderly")
@@ -237,7 +236,6 @@ class RunParams(BaseModel):
     sim_dur_years: float = _field("run.sim_dur_years")
     rand_seed: Optional[int] = None
     n_replicates: int = _field("run.n_replicates")
-    calibrate_r0: bool = True
     fit: Optional[Fit] = None
 
 
@@ -257,8 +255,6 @@ class SimParamsV2(BaseModel):
         days = sim_days(self.run.sim_dur_years)
         if seed.day > days:
             raise ValueError(f"disease.seed.day ({seed.day}) must be within the simulation ({days} days)")
-        if self.network.network_beta * (1 - math.exp(-self.disease.beta / 365.0)) > 1.0:
-            raise ValueError("network.network_beta × (1 - exp(-disease.beta / 365)) must not exceed 1: lower network.network_beta or disease.beta")
         day0 = [i for i in self.interventions if i.is_day0_immunity()]          # Part 2, 7.1: at full efficacy only
         if day0:
             coverage = min(day0[-1].coverage or 0.0, 0.99)

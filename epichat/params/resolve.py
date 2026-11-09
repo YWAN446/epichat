@@ -1,5 +1,5 @@
 """Country-driven demographics on schema v2 (the v2 port of
-generator.resolve_demographics). Values still at their defaults are filled
+the v1 resolve_demographics, now removed). Values still at their defaults are filled
 from country data; when the contact count changes, beta is re-solved for the
 R0 the scenario had, with the exact formula (spec 7.4)."""
 from __future__ import annotations

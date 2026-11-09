@@ -6,6 +6,7 @@ from pathlib import Path
 
 from epichat.params.migrate import coerce_params
 from epichat.params.schema_v2 import SimParamsV2
+import runner
 from runner import RunResult, child_environment, run_params
 
 
@@ -40,7 +41,9 @@ def test_success_reads_the_result_file_and_removes_both_files():
 
 
 def test_replicates_come_back_from_the_child():
-    result = run_params(_params(n_replicates=2), _out(), timeout=120)
+    p = _params(n_replicates=2)
+    p.network.network_type = "hybrid"                      # runs as agents: an ODE is deterministic and runs once
+    result = run_params(p, _out(), timeout=120)
     assert result.ok and result.replicates["seeds"] == [1, 2] and len(result.replicates["bands"]["n_infectious"]["p10"]) == 6
 
 
@@ -51,13 +54,15 @@ def test_child_failure_reports_the_stderr_tail_and_cleans_up():
     params = _params(interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 400}])
     result = run_params(params, out, timeout=120)
     assert not result.ok and not result.timed_out
-    assert "Years must be within" in result.error and len(result.error) <= 2000
+    assert "is outside the sim" in result.error and len(result.error) <= 2000
     assert not out.exists() and _temp_params_files() == before
 
 
 def test_timeout_kills_the_child():
+    p = _params(n_agents=20000, sim_dur_years=2.0)
+    p.network.network_type = "hybrid"                      # as agents, several seconds; an ODE would finish in time
     started = time.perf_counter()
-    result = run_params(_params(n_agents=20000, sim_dur_years=2.0), _out(), timeout=0.5)
+    result = run_params(p, _out(), timeout=0.5)
     assert result.timed_out and not result.ok
     assert time.perf_counter() - started < 10
     assert "0.5" in result.error
@@ -68,3 +73,17 @@ def test_child_environment_has_the_import_path_and_cache_dirs():
     assert str(Path(sys.path[0])) in env["PYTHONPATH"]
     assert env["NUMBA_CACHE_DIR"].endswith("numba") and env["MPLCONFIGDIR"].endswith("mpl")
     assert env["PYTHONIOENCODING"] == "utf-8"
+
+
+def test_runs_fork_from_a_server_that_has_imported_starsim(monkeypatch):
+    """Where forkserver exists a run costs the sim, not Starsim's import; the command-line child gives the same answer."""
+    if not runner.FORKS:
+        return
+    runner.warm()
+    run_params(_params(), _out(), timeout=120)              # the first run waits for the server's imports
+    started = time.perf_counter()
+    forked = run_params(_params(), _out(), timeout=120)
+    assert forked.ok and time.perf_counter() - started < 0.5, forked.duration_ms
+    monkeypatch.setattr(runner, "FORKS", False)
+    spawned = run_params(_params(), _out(), timeout=120)
+    assert spawned.ok and spawned.series == forked.series and spawned.stats == forked.stats

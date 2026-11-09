@@ -461,6 +461,8 @@ Done after the sim-parameters phases 3 and 4 are pushed, with migration
 
 ## 6j. Networks, interventions and the fit verification
 
+Updated for Starsim 4: there is no R0 pilot and no measured R0; runs report `stats.solver` and `stats.r0_model` instead, and most run as ODEs.
+
 Done after the sim-parameters Part 2 phases (2A to 2D) are pushed. No
 migration. One browser; a phone is enough.
 
@@ -475,13 +477,10 @@ migration. One browser; a phone is enough.
    the setting. The default seeding (0.05% of the agents: six of the 10,000
    under the service's seed 1, measured by probe on 2026-10-14) takes off
    here; the peak comes near day 90 and the run infects about 44%.
-2. "Run it." The reply says in one sentence that beta was adjusted to the
-   measured R0 (the run payload carries `applied.beta_calibrated_by_measurement`
-   and `stats.r0_calibration`). Then "Create a report": its "What was
-   modelled" block shows an "R₀ measured" row under the configured R₀ (the
-   report is the only place that row appears; the panel has none). The row
-   is the pilot's measurement, `stats.r0_calibration.measured`: the live
-   run's own is withheld under 30 seeds.
+2. "Run it." The run uses agents (the hybrid network): `stats.solver` is
+   `abm`, and the summary under the chart says "Ran as agents". Then
+   "Create a report": its "What was modelled" block shows the configured R₀
+   and a "Ran as" row.
 3. "Close the schools from day 30 for six weeks and run it again." The
    configure call carries `interventions: [{type: contact_reduction, layer:
    school, scale: 1, start_day: 30, end_day: 72}]`; the Parameters
@@ -514,23 +513,17 @@ migration. One browser; a phone is enough.
    that the switch alone lowers the final size.
 6. In the SQL editor:
 
-       select id, stats->'fit' as fit, stats->'r0_calibration' as calibration, stats->'r0_measured' as measured
+       select id, stats->'fit' as fit, stats->'solver' as solver, stats->'r0_model' as r0_model
        from runs order by created_at desc limit 4;
 
    The fitted run's row carries `fit` with `target`, `wanted`, `achieved`,
-   `lever`, `value` and `runs`, and no `calibration` (the fit replaces the
-   pilot); the two unfitted hybrid runs of steps 2 and 3 carry `calibration`;
-   the random run of step 5 carries neither. Every row here carries
-   `measured`, and since the seed default of 2026-10-14 (0.05% of the
-   agents, five of 10,000) it is null on all four: a live run's measured R0
-   is withheld under 30 day-0 seeds, as it is on an age-structured run,
-   where Starsim's mixing pools do not log the source, and on a run seeded
-   so heavily that the population was exhausted while the seeds were still
-   infectious. The hybrid rows' `calibration.measured` is the pilot's
-   measurement over 20 to 1,000 seeds, which the report's "R₀ measured" row
-   shows in its place.
+   `lever`, `value` and `runs`. The hybrid runs of steps 2 to 4 carry
+   `solver` `abm` and a null `r0_model`; the random run of step 5 carries
+   `ode` and an `r0_model` equal to the configured R₀.
 
 ## 6k. Limits on spread, suggested interventions, the Parameters section and chosen references verification
+
+Recorded on Starsim 3.7.2; the pilot and measured R0 described below were removed in the port to Starsim 4.
 
 Done after the follow-up round (the pilot fix and its phases A to E) is
 pushed. No migration. One browser at desktop width. The percentages were
@@ -652,15 +645,15 @@ any new project that hosts this service.
 
 `sim/.venv` is a Python 3.12 virtualenv: `py -3.12 -m venv sim/.venv` then
 `sim/.venv/Scripts/python.exe -m pip install -r sim/requirements.txt pytest`.
-The root package tests (which include the Starsim 3.7.2 builder tests) use a
+The root package tests (which include the Starsim 4 builder tests) use a
 second 3.12 virtualenv: `py -3.12 -m venv .venv` then
 `.venv/Scripts/python.exe -m pip install -r requirements.txt -r evals/requirements.txt pytest`;
-CI runs them on 3.12 too. Both requirement files pin `starsim==3.7.2`.
+CI runs them on 3.12 too. Both requirement files pin Starsim 4 (`starsim @ git+https://github.com/starsimhub/starsim@v4` until 4.0.0 is on PyPI).
 `npx vercel dev` from the root runs both with the binding injected.
 
-**Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 40 s;
-ten child processes run real Starsim through `python -m epichat.sim.run_params`,
-the entry point the runner spawns). CI runs them on Python 3.12 as the `sim` job.
+**Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 15 s;
+the child processes run real Starsim, forked from a server that has imported it; one
+test runs `python -m epichat.sim.run_params`, the command the runner uses where forkserver is missing). CI runs them on Python 3.12 as the `sim` job.
 
 **Settings** (all optional except the secret): `SIM_TIMEOUT_SECONDS` 120,
 `SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
@@ -714,13 +707,15 @@ was not needed; the only surprise was the bundle size (see above).
    and the same for `/simulate` print `404` (the web app answers, never the
    sim).
 3. `curl -s -H "Authorization: Bearer $CRON_SECRET" https://epichat-ai.vercel.app/api/health`
-   returns `"sim":{"ok":true,"starsim_version":"3.7.2",...}`.
+   returns `"sim":{"ok":true,"starsim_version":"4.0.0...",...}`.
 4. Timing through the binding, bearer only:
    `.../api/health?run=10000` twice (the first is the cold start), then
    `.../api/health?run=100000` once. Each answer carries `sim_run.duration_ms`
    and `sim_run.cold_start`.
 5. Record the numbers below from step 4; the Usage page's Active CPU
    reading is the owner's to note alongside them.
+
+The timings below are from Starsim 3; on Starsim 4 an ODE run of 10,000 people for a year takes about 0.02–0.07 s in process and about 0.07 s as a child process forked from the server that has imported Starsim (`sim/runner.py`; the service starts it at startup, and a fresh process took about 1.2 s, most of it the import). Re-time after the next deploy, and check there that the forkserver starts on Vercel (the runner uses a fresh process only where the platform has no forkserver).
 
 | Measured on Vercel, 2026-10-12, Starsim 3.7.2 through the builder (iad1, Hobby, 2 GB) | Value |
 |---|---|
@@ -762,20 +757,13 @@ deploy, time a fitted scenario once from the activity's run duration and add
 it here.
 
 A fit that keeps R0 (follow-up spec 6) moves `disease.rel_sus_cv` or
-`behavior_response.scale` instead of beta. Where a pilot sets beta (the
-hybrid network), the variation's fit calibrates beta again at every trial,
-because the pilot depends on the variation; the response's fit calibrates
-once, before the search. Locally (2026-10-13; hybrid, 10k agents, R0 2.5, a
-year): the variation to an attack rate of 50% took 6 runs and 63 s, the
-response's scale to 70% took 5 runs and 52 s, and a beta fit to 50% took 6
-runs and 58 s, so a trial costs about 10 s whatever the lever. A search that
-needs all eight trials would then take about 85 s locally and about 125 s at
-Vercel's 1.5×, past the 120 s timeout: a year-long hybrid fit at 10k agents
-is at the limit, with any lever. Six months is not (50 s for the same six
-runs of the variation). The random network has no pilot: section 6k's fit
-(10k agents, a year, the attack rate to 50%) took 5 runs and 33 s. Owner:
-time one year-long hybrid fit after the deploy; if it is cut off, raise
-`SIM_TIMEOUT_SECONDS` (the function allows 300 s) or fit over six months.
+`behavior_response.scale` instead of beta, at most eight runs like a beta
+fit. On Starsim 3 (2026-10-13; hybrid, 10k agents, a year) a trial cost about
+10 s whatever the lever, so a search that needs all eight trials was at the
+120 s limit. On Starsim 4 a run as an ODE takes well under a second, and a
+hybrid run as agents about 0.2 s in process. Owner: time one year-long
+hybrid fit after the deploy; if it is cut off, raise `SIM_TIMEOUT_SECONDS`
+(the function allows 300 s) or fit over six months.
 
 **Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
 Active CPU hours a month and pauses the whole project for the rest of the

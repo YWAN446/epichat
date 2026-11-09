@@ -37,7 +37,7 @@ def what_if(p: SimParamsV2, total: float = 8600, anchor: int = 20, disease: str 
     infectious, new = epidemic(total, seeds, anchor)
     series = {"day": list(range(DAYS)), "n_infectious": infectious, "new_infections": new}
     stats = {"total_infected": total, "n_agents": N, "seeds": seeds, "seeds_day0": seeds}
-    found = diagnose(p, series, stats, None, seeds, disease)
+    found = diagnose(p, series, stats, None, disease)
     return next((d for d in found if d.id == "what_if"), None), found
 
 
@@ -95,7 +95,7 @@ def test_nothing_the_scenario_already_has_is_offered():
 def test_it_waits_for_an_epidemic():
     assert what_if(params(), total=400)[0] is None                                          # an attack rate under 5%
     faded = diagnose(params(), {"day": list(range(DAYS)), "n_infectious": [10.0, 4.0, 1.0] + [0.0] * (DAYS - 3), "new_infections": [10.0, 5.0] + [0.0] * (DAYS - 2)},
-                     {"total_infected": 15, "n_agents": N, "seeds": 10, "seeds_day0": 10}, None, 10, None)
+                     {"total_infected": 15, "n_agents": N, "seeds": 10, "seeds_day0": 10}, None, None)
     assert [d.id for d in faded] == ["early_fadeout"]
     assert what_if(params(), total=600)[0] is not None
 
@@ -106,16 +106,16 @@ def test_the_anchor_is_the_day_one_percent_were_infected_and_a_one_percent_seedi
     assert seeded.evidence["anchor_day"] == 0 and entries(seeded)[0]["start_day"] == 0 and entries(seeded)[0]["end_day"] == 56
     assert seeded.levers[0].label == "Cut contacts by 30% from day 0 for eight weeks and rerun"
     cumulative = {"day": [0, 1, 2], "n_infectious": [1.0, 2.0, 3.0], "new_infections": [0.0, 0.0, 0.0], "cum_infections": [50.0, 120.0, 300.0]}
-    run = dx._Run(params(), cumulative, {"total_infected": 300, "n_agents": N}, None, 50, None)
+    run = dx._Run(params(), cumulative, {"total_infected": 300, "n_agents": N, "seeds": 50}, None, None)
     assert dx.anchor_day(run) == 1                                                          # the series' own cumulative count when it is there
-    assert dx.anchor_day(dx._Run(params(), {"n_infectious": [1.0], "new_infections": [0.0]}, {"total_infected": 0}, None, 1, None)) is None
+    assert dx.anchor_day(dx._Run(params(), {"n_infectious": [1.0], "new_infections": [0.0]}, {"total_infected": 0, "seeds": 1}, None, None)) is None
 
 
 def test_a_window_never_passes_the_end_of_the_run():
     short = params(**{"run.sim_dur_years": 60 / 365})
     infectious, new = epidemic(8600, 10, 20)
     series = {"day": list(range(61)), "n_infectious": infectious[:61], "new_infections": new[:61]}
-    d = next(x for x in diagnose(short, series, {"total_infected": 4000, "n_agents": N, "seeds": 10, "seeds_day0": 10}, None, 10, None) if x.id == "what_if")
+    d = next(x for x in diagnose(short, series, {"total_infected": 4000, "n_agents": N, "seeds": 10, "seeds_day0": 10}, None, None) if x.id == "what_if")
     assert entries(d)[0]["end_day"] == 60 and entries(d)[1]["end_day"] == 60
 
 

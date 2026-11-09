@@ -96,15 +96,15 @@ export type RunPayload = {
   cold_start: boolean;
   /** Only on the live stream event; stored without it (the runs row keeps it). */
   series?: Record<string, number[]>;
-  /** Per-replicate stats when run.n_replicates > 1 (spec 8.7); the bands wait for the workspace follow-up. */
+  /** Per-replicate stats when a run as agents has run.n_replicates > 1 (spec 8.7); an ODE run runs once and has none. The bands wait for the workspace follow-up. */
   replicates?: { n: number; seeds: number[]; representative: number; stats: SimStats[] };
   /** Spec 10: what the run's shape suggests about the configuration; absent on payloads stored before phase 4. */
   diagnostics?: Diagnostic[];
   /** Spec 11: against the previous run, or null for the scenario's first run. */
   compare?: RunCompare | null;
-  /** Part 2, 5.7: beta_calibrated_by_measurement when the service corrected beta to the measured R0. */
+  /** Part 2, 7.7: the fitted lever's value, and the behaviour response's strongest reduction. */
   applied?: Record<string, unknown>;
-  /** Follow-up spec 8.4: where each configured value came from, by registry path: the scenario's own parameters, so a beta the run calibrated or a lever it fitted keeps the source of what was configured. */
+  /** Follow-up spec 8.4: where each configured value came from, by registry path: the scenario's own parameters, so a lever the run fitted keeps the source of what was configured. */
   sources?: Record<string, ParamSource>;
   /** The chosen references behind the reference tags that survive the run (see ConfigPayload.references). */
   references?: Record<string, string>;

@@ -11,7 +11,7 @@
      "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
      "evidence": {
       "attack_rate": 0.86,
-      "r_eff": 2.3
+      "r_eff": 2.5
      },
      "levers": [
       {
@@ -48,7 +48,7 @@
         "network.network_type": "random"
        },
        "direction": "change",
-       "rationale": "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same measured R0 its final size is close to the random network's, so the switch alone does not lower it.",
+       "rationale": "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same R0 its final size is close to the random network's, so the switch alone does not lower it.",
        "basis": "rule",
        "label": "Switch to the hybrid network and rerun"
       }
@@ -125,7 +125,7 @@
      "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
      "evidence": {
       "attack_rate": 0.86,
-      "r_eff": 12.24
+      "r_eff": 12.69
      },
      "levers": [
       {
@@ -248,7 +248,7 @@
      "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
      "evidence": {
       "attack_rate": 0.86,
-      "r_eff": 6.33
+      "r_eff": 6.88
      },
      "levers": [
       {
@@ -368,7 +368,7 @@
      "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
      "evidence": {
       "attack_rate": 0.86,
-      "r_eff": 12.24
+      "r_eff": 12.69
      },
      "levers": [
       {
@@ -491,7 +491,7 @@
      "title": "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic",
      "evidence": {
       "attack_rate": 0.86,
-      "r_eff": 2.3
+      "r_eff": 2.5
      },
      "levers": [
       {
@@ -528,7 +528,7 @@
         "network.network_type": "random"
        },
        "direction": "change",
-       "rationale": "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same measured R0 its final size is close to the random network's, so the switch alone does not lower it.",
+       "rationale": "The hybrid network makes households, schools and workplaces explicit, so interventions can act on them; at the same R0 its final size is close to the random network's, so the switch alone does not lower it.",
        "basis": "rule",
        "label": "Switch to the hybrid network and rerun"
       }

@@ -83,10 +83,8 @@ def test_day_zero_vaccine_becomes_initial_immunity():
         v2(disease={"initial_immune_frac": 0.3}, interventions=[{"type": "vaccine", "coverage": 0.6}])
 
 
-def test_per_contact_probability_cannot_exceed_one():
-    with pytest.raises(ValidationError, match="network.network_beta"):
-        v2(disease={"beta": 1000}, network={"network_beta": 10})
-    assert v2(disease={"beta": 1000}, network={"network_beta": 1.0}).network.network_beta == 1.0
+def test_a_per_contact_rate_may_exceed_one_a_day():
+    assert v2(disease={"beta": 1000}, network={"network_beta": 10}).network.network_beta == 10        # a rate, not a probability
 
 
 def test_demographics_keep_the_v1_rules():
@@ -144,7 +142,7 @@ def test_network_leaves_default_and_round_trip():
     assert (n.household_size, n.school_contacts, n.work_contacts, n.community_contacts) == (2.0, 20, 16, 20)
     assert (n.layer_beta.household, n.layer_beta.school, n.layer_beta.work, n.layer_beta.community) == (3.0, 0.6, 0.6, 0.3)
     assert (n.school_age_min, n.school_age_max, n.work_age_min, n.work_age_max) == (6, 22, 22, 65)
-    assert p.demographics.age_source == "default" and p.run.calibrate_r0 is True
+    assert p.demographics.age_source == "default" and not hasattr(p.run, "calibrate_r0")
     hybrid = v2(network={"network_type": "hybrid", "household_size": 4.5, "contacts": {"adults_adults": 12.0}})
     assert hybrid.network.household_size == 4.5 and hybrid.network.contacts.adults_adults == 12.0 and hybrid.network.contacts.children_children == 7.0
     assert ContactMatrix.from_rows([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).as_rows() == [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]

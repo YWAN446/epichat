@@ -1,6 +1,6 @@
 """Importing a leaf module of the package must not drag in the orchestrator.
 
-The simulation service imports epichat.generator and epichat.schema only; if
+The simulation service imports epichat.params and epichat.sim only; if
 the package __init__ eagerly imported EpiChat, the service bundle would need
 every orchestrator dependency and pay its import time on every cold start.
 """
@@ -18,9 +18,9 @@ def _run(code: str) -> str:
     return result.stdout.strip()
 
 
-def test_importing_generator_leaves_orchestrator_out():
+def test_importing_params_leaves_orchestrator_out():
     out = _run(
-        "import sys; import epichat.generator; "
+        "import sys; import epichat.params.resolve, epichat.sim.run_params; "
         "print('epichat.epichat' in sys.modules, 'anthropic' in sys.modules)"
     )
     assert out == "False False"

@@ -117,14 +117,14 @@ def test_phase_2b_adds_the_network_demographics_and_run_leaves():
     for p in ("network.contacts_dist", "network.contact_duration_days", "network.contacts.children_children", "network.contacts.elderly_adults",
               "network.contacts_source", "network.household_size", "network.school_contacts", "network.work_contacts", "network.community_contacts",
               "network.layer_beta.household", "network.layer_beta.community", "network.school_age_min", "network.school_age_max",
-              "network.work_age_min", "network.work_age_max", "demographics.age_source", "run.calibrate_r0"):
+              "network.work_age_min", "network.work_age_max", "demographics.age_source"):
         assert p in paths, p
     assert reg.spec_for("network.network_type").choices == ("random", "age_structured", "hybrid")
     assert reg.spec_for("network.contacts.adults_adults").default == 9.0 and reg.spec_for("network.contacts.children_elderly").default == 0.5
     assert reg.spec_for("network.contacts.children_adults").bounds == (0.0, 50.0) and reg.spec_for("network.contacts.children_adults").tier == "advanced"
     assert reg.spec_for("network.household_size").tier == "core" and reg.spec_for("network.layer_beta.school").default == 0.6
     assert reg.spec_for("network.contacts_dist").choices == ("constant", "poisson") and reg.spec_for("demographics.age_source").choices == ("default", "shares", "un_wpp")
-    assert reg.spec_for("run.calibrate_r0").default is True and reg.spec_for("run.calibrate_r0").kind == "bool"
+    assert "run.calibrate_r0" not in paths
     assert "no effect on the age-structured" in reg.spec_for("network.n_contacts").description
     assert reg.CONTACT_DEFAULTS == ((7.0, 2.5, 0.5), (2.5, 9.0, 1.5), (0.5, 1.5, 3.5))
     assert reg.export()["version"] == 5

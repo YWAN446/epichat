@@ -45,8 +45,8 @@ describe("configure_simulation", () => {
     const deps = makeDeps();
     const out = JSON.parse((await run(deps, { disease: "measles", disease_type: "sir", r0: 15, dur_inf_days: 8 })).content);
     expect(out.approx_r0).toBe(15);
-    // exact formula on a gamma 8-day infectious period (measles 8–8 gives sd 2.4): D_eff 7.5
-    expect(deps.scenario.params?.disease.beta).toBeCloseTo(-365 * Math.log(1 - 15 / (4 * 7.5)), 5);
+    // the linear relation on an 8-day infectious period: R0 = 4 contacts × beta / 365 × 8 days
+    expect(deps.scenario.params?.disease.beta).toBeCloseTo((365 * 15) / (4 * 8), 5);
     expect(out.applied.r0).toBe(15);
   });
 
@@ -111,9 +111,9 @@ describe("configure_simulation", () => {
 
   it("refuses an R0 the contacts and infectious period cannot carry, naming the levers", async () => {
     const deps = makeDeps();
-    const out = await run(deps, { disease: "dengue", dur_inf_days: 2, r0: 10 });
+    const out = await run(deps, { disease: "dengue", dur_inf_days: 2, r0: 30 }); // the most 4 contacts × 2 days carry at beta 1000 is 21.92
     expect(out.isError).toBe(true);
-    expect(out.content).toMatch(/^CONFIG ERROR: R0 10 is not reachable: the most the contacts and infectious period can carry is \d+\.\d\d; raise network\.n_contacts or disease\.dur_inf\.mean_days\./);
+    expect(out.content).toMatch(/^CONFIG ERROR: R0 30 is not reachable: the most the contacts and infectious period can carry is \d+\.\d\d; raise network\.n_contacts or disease\.dur_inf\.mean_days\./);
     expect(deps.scenario.params).toBeNull();
   });
 
@@ -220,14 +220,11 @@ describe("configure_simulation: the spec's field names, advanced and changed", (
     expect(deps.scenario.params?.disease.dur_inf).toEqual({ mean_days: 10, dist: "lognormal", sd_days: 2 });
   });
 
-  it("says when the clamped beta carries less R0 than asked", async () => {
+  it("reaches every R0 up to the one at the largest beta", async () => {
     const deps = makeDeps();
-    const out = JSON.parse((await run(deps, { disease: "dengue", dur_inf_days: 2, r0: 5.99 })).content); // the most 4 contacts × 1.5 days carry is 6: beta 2335 clamps to 1000
-    expect(deps.scenario.params?.disease.beta).toBe(1000);
-    expect(out.approx_r0).toBeLessThan(5.7);
-    expect(out.warnings.some((w: string) => w.startsWith("beta was clamped at 1000"))).toBe(true);
-    const fine = JSON.parse((await run(deps, { r0: 3 })).content);
-    expect(fine.warnings.some((w: string) => w.includes("clamped"))).toBe(false);
+    const out = JSON.parse((await run(deps, { disease: "dengue", dur_inf_days: 2, r0: 21.9 })).content); // 4 contacts × 2 days carry 21.92 at beta 1000
+    expect(deps.scenario.params?.disease.beta).toBeCloseTo((365 * 21.9) / 8, 5);
+    expect(out.approx_r0).toBe(21.9);
   });
 });
 
@@ -286,11 +283,11 @@ describe("configure_simulation records a taken option", () => {
 describe("configure_simulation and the fatality by age", () => {
   it("checks the fatality ratio against the literature as the population-weighted value", async () => {
     const deps = makeDeps();
-    const out = JSON.parse((await run(deps, { disease: "measles", r0: 15, dur_inf_days: 8, p_death: 0.001, advanced: { "disease.p_death_age.elderly": 0.5 } })).content);
-    // default shares have no elderly: the weighted CFR is 0.1%, below the 0.5–6% range
+    const out = JSON.parse((await run(deps, { disease: "measles", r0: 15, dur_inf_days: 8, p_death: 0.001 })).content);
+    // the same 0.1% in every group is below the 0.5–6% range
     expect(out.warnings.some((w: string) => w.startsWith("Fatality rate 0.1%"))).toBe(true);
-    const withElderly = JSON.parse((await run(deps, { advanced: { "demographics.age_pct_under18": 40, "demographics.age_pct_18_64": 50, "demographics.age_pct_over65": 10 } })).content);
-    expect(withElderly.warnings.some((w: string) => w.startsWith("Fatality rate"))).toBe(false); // 0.9 × 0.1% + 0.1 × 50% = 5.09%
+    const withElderly = JSON.parse((await run(deps, { advanced: { "disease.p_death_age.elderly": 0.5 } })).content);
+    expect(withElderly.warnings.some((w: string) => w.startsWith("Fatality rate"))).toBe(false); // the default ages: 0.9 × 0.1% + 0.1 × 50% = 5.09%
   });
 });
 
@@ -542,19 +539,18 @@ describe("configure_simulation on a fitted scenario (review of phase B)", () => 
     const p = deps.scenario.params!;
     expect(p.run.fit).toBeNull();
     expect(p.disease.beta).toBe(13.56);
-    expect(p.run.calibrate_r0).toBe(false);                                                 // the pilot would move the fitted beta to the formula's R0
+    expect(p.run).not.toHaveProperty("calibrate_r0");
     expect(p.interventions).toHaveLength(1);
     expect(out.warnings.join(" ")).toContain("ended the fit");
     expect(out.warnings.join(" ")).toContain("13.56");
     expect(out.changed.map((c: { path: string }) => c.path)).toEqual(expect.arrayContaining(["interventions", "disease.beta", "run.fit.target"]));
   });
 
-  it("keeps a fitted variation and a fitted response the same way, and leaves the calibration on", async () => {
+  it("keeps a fitted variation and a fitted response the same way", async () => {
     const cv = await fitted({ target: "attack_rate", value: 0.6, lever: "disease.rel_sus_cv" }, 0.875);
     await run(cv, { interventions: [masks] });
     expect(cv.scenario.params!.run.fit).toBeNull();
     expect(cv.scenario.params!.disease.rel_sus_cv).toBe(0.875);
-    expect(cv.scenario.params!.run.calibrate_r0).toBe(true);
     const response = await fitted({ target: "attack_rate", value: 0.7, lever: "behavior_response.scale" }, 0.3, { interventions: [{ type: "behavior_response", scale: 0.2 }] });
     await run(response, { interventions: [masks] });
     expect(response.scenario.params!.run.fit).toBeNull();

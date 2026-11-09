@@ -50,8 +50,8 @@ export type ConfigureSimulationArgs = z.infer<typeof ConfigureSimulationInput>;
 type Obj = Record<string, unknown>;
 type DurationField = "dur_inf_days" | "dur_exp_days" | "dur_immune_days";
 const DURATION_FIELDS: [DurationName, DurationField][] = [["dur_inf", "dur_inf_days"], ["dur_exp", "dur_exp_days"], ["dur_immune", "dur_immune_days"]];
-/** A beta clamped at the registry bound carries less R0 than asked; above this relative gap the tool says so. */
-const R0_CLAMP_TOLERANCE = 0.01;
+/** A relative change of R0 above this is worth a warning. */
+const R0_TOLERANCE = 0.01;
 
 const block = (base: Obj, key: string): Obj => {
   if (typeof base[key] !== "object" || base[key] === null) base[key] = {};
@@ -64,13 +64,11 @@ const block = (base: Obj, key: string): Obj => {
  * validated once), `changed`, start_new_scenario, and the gamma defaults of
  * spec 7.3.
  */
-const BETA_FIT_LEVERS = ["disease.beta", "network.network_beta"];
 const noted = (references: Record<string, string> | undefined) => (references ? { references } : {});
 
 /**
  * The scenario with its fit ended and the value the fitted run found written into the lever, or null when the last run was not a
- * run of this fit (another target, value or lever, or no fit at all). A fitted beta or network multiplier also switches the
- * measured-R0 calibration off: on a network where the pilot runs it would move the fitted value back to the formula's R0.
+ * run of this fit (another target, value or lever, or no fit at all).
  */
 function keepFittedValue(params: SimParams, previous: PreviousRun): { params: SimParams; note: string } | null {
   const fit = params.run.fit;
@@ -85,14 +83,12 @@ function keepFittedValue(params: SimParams, previous: PreviousRun): { params: Si
     response.scale = found.value;
   } else {
     setPath(body, fit.lever, found.value);
-    if (BETA_FIT_LEVERS.includes(fit.lever)) (body.run as Obj).calibrate_r0 = false;
   }
   const validated = validateParams(body);
   if (!validated.ok) return null;
-  const calibration = BETA_FIT_LEVERS.includes(fit.lever) ? " The measured-R0 calibration is off for this scenario, since its beta is the fitted one." : "";
   return {
     params: validated.params,
-    note: `This change to the interventions ended the fit (${fitText(fit.target, fit.value)}) and kept the fitted value of ${fit.lever} (${fmtValue(found.value)}), so the next run shows the change against the fitted baseline.${calibration} Pass fit again in the same call to fit with the change in place.`,
+    note: `This change to the interventions ended the fit (${fitText(fit.target, fit.value)}) and kept the fitted value of ${fit.lever} (${fmtValue(found.value)}), so the next run shows the change against the fitted baseline. Pass fit again in the same call to fit with the change in place.`,
   };
 }
 
@@ -361,14 +357,11 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const warnings = paramWarnings(scenario, params, deps.contextText);
   if (fitEnded) warnings.push(fitEnded);
   const approx_r0 = pyRound(approxR0(params), 2);
-  if (r0Target !== undefined && Math.abs(approx_r0 - r0Target) > R0_CLAMP_TOLERANCE * r0Target) {
-    warnings.push(`beta was clamped at ${params.disease.beta}, so the run's R0 is ${approx_r0} rather than the requested ${r0Target}; more contacts or a longer infectious period would reach it.`);
-  }
   if (chosen && chosen.parameter !== "r0" && before) {
     // Review of phase D: a reference for the infectious period, the contacts or the asymptomatic share keeps beta, as a typed value
     // does, so R0 moves; one press must not do that silently, least of all to an R0 the user chose from the same list.
     const r0Before = approxR0(before);
-    if (Math.abs(approxR0(params) - r0Before) > R0_CLAMP_TOLERANCE * r0Before) {
+    if (Math.abs(approxR0(params) - r0Before) > R0_TOLERANCE * r0Before) {
       const earlier = scenario.dataSources.find((f) => f.field === "ref:r0");
       const lost = earlier && !Object.hasOwn(referenceNotes(params, scenario), "disease.beta") ? ` The R0 reference chosen earlier (${fmtValue(earlier.value)}) no longer stands.` : "";
       warnings.push(`Applying this reference kept beta, so R0 moved from ${pyRound(r0Before, 2)} to ${approx_r0}.${lost} Pass r0, or choose an R0 reference again, to set it.`);

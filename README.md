@@ -27,11 +27,9 @@ Layer 1b: Fact-Checker         (disease_parameters.json — no LLM)
      │  Compares R₀, dur_inf, dur_exp against literature ranges
      │  Emits ⚠️ warnings shown in chat summary and CLI output
      ▼
-Layer 2: Code Generator        (Jinja2 templates → Starsim Python)
-     │  Python script
-     ▼
-Layer 3: Execution Engine      (subprocess sandbox, 90s timeout)
-     │  Stats JSON + plot file
+Layer 2: Simulation            (epichat/sim → a declared Starsim 4 model)
+     │  Runs as an ODE unless the network needs agents; a forked child process, 90s timeout
+     │  Stats + series JSON → epidemic curve
      ▼
 Layer 4: Results Narrator      (Claude API + narration prompt)
      │  Plain-language summary
@@ -96,8 +94,8 @@ PDF export now renders Chinese, Japanese, and Korean characters correctly via Re
 ## Web agent: parameters, diagnostics and options (2026)
 
 The web app (`web/`, Next.js on Vercel) and its simulation service (`sim/`,
-FastAPI running Starsim 3.7 through `epichat/sim/`) replace the templates
-above for the usability study. Their parameters are the sim-parameters
+FastAPI running Starsim 4 through `epichat/sim/`) are the main interface; the
+Streamlit app and the CLI run their simulations through the same `epichat/sim/`. Their parameters are the sim-parameters
 design in two parts,
 `docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md` (the
 registry, schema v2, the exact R0, diagnostics and options) and
@@ -136,30 +134,14 @@ registry, schema v2, the exact R0, diagnostics and options) and
   `diagnostic_shown` and `option_chosen` say which fired and which were taken,
   so the thresholds (named constants at the top of the diagnostics module)
   can be tuned from the pilot.
-- **Disease extensions (Part 2).** Susceptibility by age (`rel_sus_age`:
-  children under 18, adults, the elderly), fatality by age (`p_death_age`)
-  and presymptomatic transmissibility (`rel_trans_exposed`). On every step
-  the disease composes its own `rel_sus` (age, the personal multiplier,
-  vaccine protection, the SIS model's immunity) and a connector composes
-  `rel_trans` (treatment, seasonality, the transmission reductions, the
-  behaviour response); the exact R0 carries the multipliers.
+- **The model.** Every scenario is one declared Starsim 4 disease (`epichat/sim/model.py`): states S, E (latent models), I, A (SEIAR) and R, and transitions between them. Starsim runs it as an ODE unless something needs individuals (the hybrid network, a random network with lasting contacts or Poisson contact counts, or a treatment with a delay), in which case the same disease runs as agents, with replicates and bands. Susceptibility by age (`rel_sus_age`), fatality by age (`p_death_age`) and variation in susceptibility (`rel_sus_cv`, as five equal-probability susceptibility classes) are stratifications of the disease, presymptomatic transmission (`rel_trans_exposed`) is a term of the force of infection, and the interventions are Starsim's own deliveries (`ss.vaccinate`, `ss.treat`) and modifiers (`ss.modify` for seasonality, reductions and the behaviour response). A run reports which solver ran (`stats.solver`) and Starsim's own R0 (`stats.r0_model`).
 - **Networks.** `network_type` is `random` (fresh contacts daily, constant or
   Poisson, optionally lasting `contact_duration_days`), `age_structured`
   (three age groups mixing by a 3×3 contact matrix: POLYMOD's European
   defaults, or the country's Prem 2021 matrix once `fetch_demographics` has
   run) or `hybrid` (households, schools, workplaces and community as in
   Covasim, with the country's household size and the layers' sizes and
-  transmissibilities as parameters). The R0 formula is exact on the random
-  and age-structured networks and approximate on the hybrid network or with a
-  `contact_duration_days` above 0. A run reports the measured R0 (the
-  infections a day-0 seed causes in its first infectious period, corrected
-  for depletion; null on the age-structured network, where Starsim's mixing
-  pools do not record who infected whom, when the seeds were too many to
-  measure it, and when fewer than 30 were seeded, which the default 0.05%
-  seeding is), and where the formula is approximate a short pilot, in which
-  only the seeds transmit, adjusts beta to it
-  (`applied.beta_calibrated_by_measurement`; `run.calibrate_r0` switches it
-  off; a fit on beta replaces it, a fit that keeps R0 does not). At the same
+  transmissibilities as parameters). Each contact transmits at `network_beta × beta / 365` a day, so R0 is that rate times the contacts (the number a day, or the spectral radius of the matrix weighted by age susceptibility) times the transmission-weighted infectious days; this is exact on the random and age-structured networks, which run as ODEs (Starsim's own R0 agrees), and approximate on the hybrid network or with a `contact_duration_days` above 0. At the same
   R0 the final size is close
   on every network: the networks differ in who meets whom and in what the
   interventions act on.
@@ -173,8 +155,8 @@ registry, schema v2, the exact R0, diagnostics and options) and
   matrix from Prem 2021 (`contact_matrices.csv`). `scripts/fetch_un_wpp_tables.py`,
   `scripts/fetch_household_size.py` and `scripts/fetch_contact_matrices.py`
   rebuild the tables. The older per-country loader
-  (`epichat/data_loaders/contact_matrices.py`), which `generator.py` and
-  `params/resolve.py` still call through `get_mean_contacts` for a country's
+  (`epichat/data_loaders/contact_matrices.py`), which
+  `params/resolve.py` still calls through `get_mean_contacts` for a country's
   mean number of contacts, reads a directory of per-source files that is not
   bundled; it finds nothing, and `n_contacts` keeps its value.
 - **Interventions.** Six types: a vaccine (routine or a campaign over a
@@ -199,8 +181,8 @@ registry, schema v2, the exact R0, diagnostics and options) and
   without a dated measure, both off by default and both illustrative
   assumptions the agent offers and names
   (`docs/superpowers/specs/2026-10-13-limits-suggestions-parameters-design.md`).
-  `disease.rel_sus_cv` gives each agent a personal susceptibility multiplier
-  with mean 1 and that coefficient of variation: the most susceptible are
+  `disease.rel_sus_cv` gives people a susceptibility multiplier
+  with mean 1 and that coefficient of variation (five equal-sized classes standing for a gamma distribution): the most susceptible are
   infected first, so the epidemic ends smaller at the same R0 (60% at a
   coefficient of 1). A `behavior_response` entry makes transmission fall as
   the share infectious rises and recover as it falls: it flattens the peak
@@ -208,15 +190,11 @@ registry, schema v2, the exact R0, diagnostics and options) and
   run, take the total far below the herd immunity threshold (a run that ends
   well below it has not finished). The fit can move either one instead of
   beta (`lever: disease.rel_sus_cv` or `behavior_response.scale`), which
-  matches a known attack rate while R0 stays where it was set: with variation
-  the service keeps R0 by correcting beta, by a closed form on the random
-  network (where a very susceptible agent's chance per contact is capped at
-  1) and by the pilot on the hybrid one, at every value a fit tries.
+  matches a known attack rate while R0 stays where it was set (variation in susceptibility with mean 1 leaves R0 unchanged).
 - **Diagnostics, continued.** `well_mixed` (nearly everyone was infected:
   it fires on every network, since at the same R0 they all end close, and
   offers the two limits on spread, plus the hybrid network on the random one)
-  and `r0_gap` (the measured R0 far from the configured one) join the list
-  above.
+  joins the list above.
 - **Suggested interventions.** A lever may carry intervention entries (for
   `configure_simulation`'s interventions field) and a label, a ready reply.
   After a run that had an epidemic, `what_if` offers up to four: a vaccination
@@ -274,8 +252,7 @@ registry, schema v2, the exact R0, diagnostics and options) and
   `.venv/Scripts/python.exe scripts/review_requests.py --write docs/data-review-requests.md`
   whenever the database or the registry changes.
 
-The CLI, the Streamlit app and the templates below still use the v1 flat
-parameters; the web app accepts both shapes and writes v2.
+The CLI and the Streamlit app still parse queries into the v1 flat parameters, which migrate to v2 before they run; the web app accepts both shapes and writes v2.
 
 ---
 
@@ -524,7 +501,7 @@ both have a window, and a contact reduction names its layer.
 
 Six intervention types can be combined in a single simulation (`vaccine`,
 `treatment`, `seasonality`, `contact_reduction`, `transmission_reduction`,
-`behavior_response`): the CLI and the templates know the first three; the web
+`behavior_response`): the CLI and the Streamlit app know the first three; the web
 agent takes all six, with the schema v2 fields marked below.
 
 ### Vaccine
@@ -658,14 +635,12 @@ epichat/
 ├── epichat/
 │   ├── schema.py            # Pydantic models: SimParams + OutbreakContext
 │   ├── params/              # Registry, schema v2, migration, exact R0 (web agent)
-│   ├── sim/                 # Starsim 3.7 models, builder, outputs, diagnostics (web agent)
+│   ├── sim/                 # Starsim 4 model, builder, outputs, diagnostics
 │   ├── enricher.py          # Input enrichment: query/report/URL/search → OutbreakContext
 │   ├── parser.py            # NL + OutbreakContext → SimParams (Claude API)
 │   │                        #   incl. beta calibration for age-structured networks
 │   ├── disease_db.py        # Disease parameter DB: lookup, detect, fact-check
 │   ├── chat_controller.py   # Conversation state machine, summary builder
-│   ├── generator.py         # SimParams → Starsim code (Jinja2)
-│   ├── executor.py          # Sandboxed subprocess execution
 │   ├── narrator.py          # Results → plain-language (Claude API)
 │   ├── modifier.py          # Plain-text modification → updated SimParams
 │   ├── epichat.py           # Main orchestrator + error recovery loop
@@ -688,13 +663,6 @@ epichat/
 │   ├── build_logo_assets.py # Derives every logo variant; also writes docs/brand/
 │   ├── epichat-logo{,-dark}.png   # Full mark, transparent
 │   └── epichat-icon{,-dark}.png   # Simplified mark for small sizes
-├── templates/
-│   ├── sir.py.j2            # SIR (+ SIS) simulation template
-│   ├── seir.py.j2           # SEIR simulation template
-│   ├── sirs.py.j2           # SIRS (waning immunity) template
-│   ├── seirs.py.j2          # SEIRS (latent + waning) template
-│   ├── seiar.py.j2          # SEIAR (asymptomatic track) template
-│   └── sis.py.j2            # SIS (no immunity) template
 ├── sim/                     # The simulation service (FastAPI) the web app calls
 ├── web/                     # The web app (Next.js); web/docs/DEPLOY.md is its runbook
 ├── docs/data-review-requests.md  # The review list for the database team (generated)
@@ -717,12 +685,12 @@ epichat/
 
 | Risk | Mitigation |
 |------|-----------|
-| Invalid Starsim code | Template-based generation (not free-form LLM code) |
+| Invalid Starsim code | The model is built by code from validated parameters (never free-form LLM code) |
 | Parameter hallucination | Pydantic validation; literature-range fact-checking via `disease_parameters.json`; ⚠️ warning shown when values are outside known ranges |
 | Wrong R₀ on age-structured network | β back-solved from POLYMOD spectral radius after demographics are applied; recalibrated on every R₀ / `dur_inf` modification |
 | Execution failure | 3-attempt error recovery loop with LLM re-parameterization |
-| Timeout | 90-second subprocess limit |
-| API instability | Starsim version pinned in requirements.txt |
+| Timeout | 90-second limit on the child process (forked from a server that has imported Starsim, so a run does not pay the import) |
+| API instability | Starsim 4 pinned exactly in requirements.txt (4.0.0rc3 until 4.0.0 is out) |
 
 ---
 

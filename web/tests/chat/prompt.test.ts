@@ -10,14 +10,16 @@ describe("system prompt", () => {
     for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Report", "## Repairs", "## Limits on spread", "## Interventions", "## Contact networks"]) expect(SYSTEM_PROMPT).toContain(heading);
     for (const phrase of ["disease.rel_sus_cv", "behavior_response", "herd immunity threshold", "off by default", "lever: disease.rel_sus_cv", "behavior_response_min_factor"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT.indexOf("## Limits on spread")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Interventions"));
-    // review of phase A: a run that ends far below the threshold has not finished; one rule for a known attack rate; R0 is kept by a correction
-    for (const phrase of ["in the long run", "has not finished", "use the lever of Limits on spread", "by a closed form", "calibrates beta at every value it tries"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    // review of phase A: a run that ends far below the threshold has not finished; one rule for a known attack rate
+    for (const phrase of ["in the long run", "has not finished", "use the lever of Limits on spread"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).not.toContain("because it relaxes it cannot take the total far below");
-    for (const phrase of ["close on every network", "measured R0", "Covasim", "expectedly null"]) expect(SYSTEM_PROMPT).toContain(phrase);
-    // the seed default of 2026-10-14: 0.05% drawn per agent, seed_count below 10,000 agents, and no sentence about a withheld measured R0
-    for (const phrase of ["0.05% of the agents", "pass seed_count (at least 5)", "withheld under 30 of them"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    for (const phrase of ["close on every network", "Covasim"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    // Starsim 4: the run reports its solver and Starsim's own R0; no pilot, no measured R0
+    for (const phrase of ["stats.solver", "stats.r0_model", "has no replicates", "exact for an ODE run"]) expect(SYSTEM_PROMPT).toContain(phrase);
+    for (const phrase of ["pilot", "measured R0", "r0_calibration", "r0_measured", "calibrate_r0", "0 to 60"]) expect(SYSTEM_PROMPT).not.toContain(phrase);
+    // the seed default of 2026-10-14: 0.05% of the agents, seed_count below 10,000 agents
+    for (const phrase of ["0.05% of the agents", "pass seed_count (at least 5)"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT).not.toContain("expected at a high R0 with the default seeding");
-    for (const phrase of ["stats.r0_calibration.reached", "could not be brought to the R0 you set", "only its seeds transmit", "stats.r0_calibration.measured"]) expect(SYSTEM_PROMPT).toContain(phrase);
     for (const phrase of ["schools closed", "illustrative assumption", "fitted", "remove_interventions", "stats.fit"]) expect(SYSTEM_PROMPT).toContain(phrase);
     expect(SYSTEM_PROMPT.indexOf("## Interventions")).toBeLessThan(SYSTEM_PROMPT.indexOf("## Contact networks"));
     expect(SYSTEM_PROMPT).toContain("Create a report");
@@ -75,7 +77,7 @@ describe("system prompt", () => {
       "before interpreting the new run",
       "apply the lever's whole patch",
       "under 18, 18 to 64, and 65 and over",
-      "no elderly group",
+      "follow the world's population",
     ]) {
       expect(SYSTEM_PROMPT).toContain(phrase);
     }
