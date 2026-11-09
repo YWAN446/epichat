@@ -1,9 +1,9 @@
-"""Part 2, 7.7: a lever bisected on a log scale until one outcome the participant knows is reached."""
+"""Part 2, 7.7: a lever bisected until one outcome the participant knows is reached."""
 import pytest
 
 from epichat.params.r0 import with_r0
 from epichat.params.schema_v2 import SimParamsV2
-from epichat.sim import calibrate, fit
+from epichat.sim import fit
 from epichat.sim.replicates import run_replicates
 
 
@@ -34,45 +34,55 @@ def test_the_attack_rate_is_fitted_within_two_points_in_at_most_eight_runs():
 
 
 def test_the_peak_day_is_fitted_within_three_days():
-    # 45 sits between the default R0's peak (day 32) and the latest peak an epidemic reaches here (about day 51 just above threshold);
-    # a later target is unreachable: below the threshold the outbreak fades and the peak is the seeds' bump
     fitted, info = fit.fit_lever(scenario("peak_day", 45), 1)
     assert abs(info["achieved"] - 45) <= 3 and info["runs"] <= fit.MAX_RUNS and fitted.disease.beta == info["value"]
+
+
+def test_a_late_peak_day_is_fitted_through_the_threshold():
+    """With the default seeding (5 of 10,000) a peak on day 150 needs R0 near 1.1. Below 1 an ODE infects several times its seeds
+    and its highest point is the seeds' bump on day 9; just above 1 it is too slow to outgrow that bump within the year. Neither
+    reads as a peak too early."""
+    p = SimParamsV2.model_validate({"run": {"fit": {"lever": "disease.beta", "target": "peak_day", "value": 150}}})
+    _, info = fit.fit_lever(p, 1)
+    assert fit.within("peak_day", info["achieved"], 150) and info["runs"] <= fit.MAX_RUNS, info
+
+
+def test_a_run_that_rises_again_after_the_seeds_bump_peaks_later():
+    p = SimParamsV2.model_validate({})                                          # SIR, 10 days infectious
+    def out(curve, solver="ode", seeds=5):
+        peak = max(range(len(curve)), key=curve.__getitem__)
+        return {"stats": {"peak_day": peak, "solver": solver, "seeds_day0": seeds}, "series": {"n_infectious": curve}}
+    assert fit.peaks_later(p, out([5, 9, 12, 10, 8, 8.5, 9]))                   # the bump, then still rising at the end
+    assert not fit.peaks_later(p, out([5, 9, 12, 10, 8, 7, 6]))                 # the bump and a decline: subcritical
+    assert not fit.peaks_later(p, out([5] + [6] * 20 + [40, 30, 31]))           # a peak after a generation is the epidemic's
+    assert not fit.peaks_later(p, out([5, 9, 12, 10, 8, 3, 4], solver="abm"))   # as agents a small rebound is noise
+    assert fit.peaks_later(p, out([5, 9, 30, 10, 8, 3, 20], solver="abm"))
 
 
 def test_an_unreachable_fit_stops_at_the_levers_bound():
     p = scenario("attack_rate", 0.9, n_agents=2000)
     body = p.model_dump()
     body["network"]["n_contacts"] = 1
+    body["network"]["network_beta"] = 0.1                                              # R0 0.55 at the largest beta
     body["disease"]["dur_inf"] = {"mean_days": 2.0, "dist": "constant", "sd_days": None}
     fitted, info = fit.fit_lever(SimParamsV2.model_validate(body), 1)
     assert info["runs"] <= fit.MAX_RUNS and info["achieved"] < 0.9 and fitted.disease.beta == 1000.0            # the registry's upper bound
 
 
-def test_the_replicates_run_with_the_fitted_lever_and_skip_the_pilot():
-    p = scenario("attack_rate", 0.5, n_agents=5000, n_replicates=2)                      # 0.5 (R0 about 1.6) is far from criticality: both seeds land near it
+def test_the_replicates_run_with_the_fitted_lever():
+    p = scenario("attack_rate", 0.5, n_agents=5000, n_replicates=2)
     payload = run_replicates(p)
     assert set(payload["stats"]["fit"]) == {"target", "wanted", "achieved", "lever", "value", "runs"}
     assert payload["effective_params"]["disease"]["beta"] == payload["stats"]["fit"]["value"]
-    assert all(abs(s["total_infected"] / 5000 - 0.5) < 0.08 for s in payload["replicates"]["stats"])
-    body = p.model_dump()
+    assert "replicates" not in payload and abs(payload["stats"]["total_infected"] / 5000 - 0.5) <= 0.02        # an ODE runs once
+
+
+def test_a_fit_on_the_hybrid_network_runs_as_agents_and_its_replicates_land_near_the_target():
+    body = scenario("attack_rate", 0.5, n_agents=3000, n_replicates=2).model_dump()
     body["network"]["network_type"] = "hybrid"
-    hybrid = run_replicates(SimParamsV2.model_validate({**body, "run": {**body["run"], "n_replicates": 1}}))
-    assert "fit" in hybrid["stats"] and "r0_calibration" not in hybrid["stats"]                                  # the fit supersedes the pilot
-
-
-def test_an_unreachable_fit_stops_at_the_joint_bound_of_the_two_levers_without_raising():
-    # review I1: network.network_beta × (1 − e^(−β/365)) ≤ 1 cuts the registry's bound; the search ends there instead of raising
-    import math
-    body = scenario("attack_rate", 0.99, n_agents=2000).model_dump()
-    body["disease"]["beta"] = 300.0
-    body["disease"]["dur_inf"] = {"mean_days": 2.0, "dist": "constant", "sd_days": None}
-    body["network"]["n_contacts"] = 1
-    body["run"]["fit"]["lever"] = "network.network_beta"
-    fitted, info = fit.fit_lever(SimParamsV2.model_validate(body), 1)
-    bound = 1 / (1 - math.exp(-300 / 365))
-    assert info["runs"] <= fit.MAX_RUNS and info["achieved"] < 0.99
-    assert fitted.network.network_beta == pytest.approx(bound, rel=1e-4) and fitted.network.network_beta <= bound
+    payload = run_replicates(SimParamsV2.model_validate(body))
+    assert payload["stats"]["solver"] == "abm" and payload["stats"]["fit"]["runs"] <= fit.MAX_RUNS
+    assert all(abs(s["total_infected"] / 3000 - 0.5) < 0.1 for s in payload["replicates"]["stats"])
 
 
 def varied(target: str, value: float, lever: str, cv: float = 0.0, response: dict | None = None, **run) -> SimParamsV2:
@@ -128,38 +138,8 @@ def test_a_lever_at_zero_starts_at_a_half_and_the_levers_know_their_direction():
     assert seen[0] == 0.5                                                          # a variation of 0 cannot be doubled
 
 
-def test_the_pilot_runs_once_before_a_response_fit_and_at_every_trial_of_a_variation_fit(monkeypatch):
-    # a fit that keeps R0 keeps the pilot: once when the pilot does not depend on the lever, at each trial when it does
-    from epichat.sim import replicates
-    calls = []
-    monkeypatch.setattr(replicates, "calibrate_by_measurement", lambda p, seed: (calls.append("pilot"), (p, {"target": 1.0}))[1])
-
-    def fake_fit(p, seed, prepare=None):
-        calls.append("fit with prepare" if prepare is not None else "fit")
-        return (p if prepare is None else prepare(p)), {"lever": p.run.fit.lever}
-
-    monkeypatch.setattr(replicates, "fit_lever", fake_fit)
-    small = {"n_agents": 500, "sim_dur_years": 20 / 365}
-    out = run_replicates(varied("attack_rate", 0.5, "behavior_response.scale", response={"scale": 0.3}, **small))
-    assert calls == ["pilot", "fit"] and out["stats"]["r0_calibration"] == {"target": 1.0}
-    calls.clear()
-    out = run_replicates(varied("attack_rate", 0.5, "disease.rel_sus_cv", **small))
-    assert calls == ["fit with prepare", "pilot"] and out["stats"]["r0_calibration"] == {"target": 1.0}
-    calls.clear()
-    out = run_replicates(scenario("attack_rate", 0.5, **small))
-    assert calls == ["fit"] and "r0_calibration" not in out["stats"]              # a fit on beta replaces the pilot
-
-
-def test_a_fit_on_beta_replaces_the_pilot_on_the_hybrid_network():
-    beta_fit = scenario("attack_rate", 0.5, n_agents=5000).model_dump()
-    beta_fit["network"]["network_type"] = "hybrid"
-    payload = run_replicates(SimParamsV2.model_validate(beta_fit))
-    assert "fit" in payload["stats"] and "r0_calibration" not in payload["stats"]  # a fit on beta still replaces the pilot
-
-
 def _flattened(scale: float, wanted: float, lever: str) -> SimParamsV2:
-    """R0 1.5 with a 1% seeding over 120 days: a response of 0.6 holds the peak under twice the seeds while an eighth of the
-    agents are infected. The seeding is explicit: with the default 0.05% a response of 0.45 already reaches a tenth."""
+    """R0 1.5 with a 1% seeding over 120 days: a strong response holds the peak near the seeds while the infections go on."""
     body = {"disease": {"dur_inf": {"mean_days": 10.0, "dist": "gamma", "sd_days": 4.0}, "p_death": 0.0, "seed": {"mode": "fraction", "value": 0.01}},
             "interventions": [{"type": "behavior_response", "scale": scale}],
             "run": {"n_agents": 10000, "sim_dur_years": 120 / 365, "rand_seed": 1, "fit": {"target": "attack_rate", "value": wanted, "lever": lever}}}
@@ -167,8 +147,7 @@ def _flattened(scale: float, wanted: float, lever: str) -> SimParamsV2:
 
 
 def test_a_flattened_epidemic_is_not_a_fade_out():
-    # review of the follow-up's phase A: the peak criterion exists for the peak day; on an attack rate it read the plateau a response
-    # makes as a fade-out, turned the response back at 0.6 and sent a beta fit the wrong way
+    # the peak criterion of a fade-out is for the peak day: on an attack rate the plateau a response makes is not a fade-out
     p = _flattened(0.3, 0.10, "behavior_response.scale")
     fitted, info = fit.fit_lever(p, 1)
     entry = next(i for i in fitted.interventions if i.type == "behavior_response")
@@ -178,28 +157,3 @@ def test_a_flattened_epidemic_is_not_a_fade_out():
     assert abs(info["achieved"] - 0.05) <= 0.02 and fitted.disease.beta < p.disease.beta, info
 
 
-def test_a_fit_on_the_variation_calibrates_every_trial():
-    # review of the follow-up's phase A: the pilot depends on the coefficient the fit moves, so each trial is calibrated at its own
-    # coefficient, and the fitted run is the run a plain scenario with that coefficient gets
-    body = varied("attack_rate", 0.5, "disease.rel_sus_cv", n_agents=5000).model_dump()
-    body["network"]["network_type"] = "hybrid"
-    payload = run_replicates(SimParamsV2.model_validate(body))
-    plain = SimParamsV2.model_validate(body).model_dump()
-    plain["disease"]["rel_sus_cv"] = payload["stats"]["fit"]["value"]
-    plain["run"]["fit"] = None
-    expected, info = calibrate.calibrate_by_measurement(SimParamsV2.model_validate(plain), 1)
-    assert payload["effective_params"]["disease"]["beta"] == expected.disease.beta and payload["stats"]["r0_calibration"] == info
-    assert payload["effective_params"]["disease"]["rel_sus_cv"] == payload["stats"]["fit"]["value"], info
-
-
-def test_a_fit_on_the_variation_runs_the_pilot_its_coefficient_needs():
-    # on the random network no pilot runs without variation; at the fitted coefficient saturation takes a share of a high R0, which
-    # the pilot restores and reports
-    body = {"disease": {"dur_inf": {"mean_days": 8.0, "dist": "gamma", "sd_days": 3.0}, "p_death": 0.0, "seed": {"mode": "count", "value": 50}},
-            "run": {"n_agents": 10000, "sim_dur_years": 0.4, "rand_seed": 1, "fit": {"target": "attack_rate", "value": 0.8, "lever": "disease.rel_sus_cv"}}}
-    p = with_r0(SimParamsV2.model_validate(body), 12.0)
-    assert not calibrate.needs_calibration(p)
-    payload = run_replicates(p)
-    info = payload["stats"]["r0_calibration"]
-    assert info["target"] == pytest.approx(12.0, abs=0.01) and info["corrections"] >= 1, info
-    assert payload["effective_params"]["disease"]["beta"] > p.disease.beta and payload["stats"]["fit"]["value"] > 0.5, payload["stats"]["fit"]

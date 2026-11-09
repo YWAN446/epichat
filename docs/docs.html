@@ -197,14 +197,14 @@
                    │  public data: UN Population Data Portal · WHO GHO · World Bank Data360
                    ▼
             sim service (FastAPI · Python 3.12 · private, reached only by the web app)
-                   │  validate (schema v2) → build the Starsim 3.7.2 model → run in a child process
+                   │  validate (schema v2) → build the Starsim 4 model → run in a child process
                    │  up to 5 replicates · up to 2 repairs · diagnostics · Word and PDF export
                    ▼
             series · statistics · diagnostics → cards, charts and "Try next" replies</code></pre>
 <p>
-  The web agent replaced the v0.3 template pipeline for the pilot. The
+  The web agent replaced the v0.3 interface for the pilot. The
   Python package, its command-line interface and the Streamlit prototype
-  remain in the repository.
+  remain in the repository and run their simulations through the same model.
 </p>
 
 <h2 id="workflow">Workflow</h2>
@@ -219,7 +219,7 @@
     <tr><td>Understand</td><td>The disease, the place and the question; the database's cited parameters; a question back when something is missing</td><td><span class="k">lookup_disease</span> · web search and fetch</td></tr>
     <tr><td>Configure</td><td>A validated configuration; β calibrated to the R₀</td><td><span class="k">configure_simulation</span> · <span class="k">describe_parameters</span></td></tr>
     <tr><td>Ground in data</td><td>The country's ages, births and deaths, contact matrix, household size, vaccination coverage and hospital capacity</td><td><span class="k">fetch_demographics</span> · <span class="k">fetch_vaccination_coverage</span> · <span class="k">fetch_health_system</span></td></tr>
-    <tr><td>Run</td><td>Starsim on the private service, one to five replicates</td><td><span class="k">run_simulation</span></td></tr>
+    <tr><td>Run</td><td>Starsim on the private service: one ODE run, or one to five replicates as agents</td><td><span class="k">run_simulation</span></td></tr>
     <tr><td>Interpret</td><td>The run's diagnostics; fixes and interventions as suggested replies; what changed since the previous run</td><td>diagnostics</td></tr>
     <tr><td>Report</td><td>A report built from the stored runs; a link to share</td><td><span class="k">write_report</span></td></tr>
   </tbody>
@@ -353,23 +353,23 @@
 <h3>Random</h3>
 <p>
   Fresh contacts every day, a constant number or Poisson-distributed,
-  optionally lasting several days. The R₀ formula is exact when contacts
-  do not last.
+  optionally lasting several days. With a constant number of fresh contacts,
+  people mix evenly, the model runs as an ODE and the R₀ formula is exact; with
+  Poisson counts or lasting contacts it runs as agents on a contact network.
 </p>
 <h3>Age-structured</h3>
 <p>
   Three age groups (under 18, 18 to 64, 65 and over) mixing by a 3×3
   contact matrix: POLYMOD's European defaults, or the country's Prem et
   al. 2021 matrix once its demographics are fetched (177 countries). The
-  R₀ formula is exact. The measured R₀ is not available on this network,
-  because Starsim's mixing pools do not record who infected whom.
+  model runs as an ODE stratified by age, and the R₀ formula is exact.
 </p>
 <h3>Hybrid: households, schools, workplaces and community</h3>
 <p>
   Four layers as in Covasim, with the country's mean household size (UN,
   189 countries) and the layers' sizes and transmissibilities as
-  parameters. The R₀ formula is approximate here, so a short pilot run,
-  in which only the seeds transmit, measures it and adjusts β.
+  parameters. The model runs as agents in households and other groups,
+  and the R₀ formula is an approximation.
 </p>
 <p>
   At the same R₀ the final size is close on every network: the networks
@@ -438,7 +438,6 @@
     <tr><td><span class="k">no_reinfection</span></td><td>Immunity outlasts the run, so waning cannot be seen</td></tr>
     <tr><td><span class="k">high_variance</span></td><td>The replicates disagree widely</td></tr>
     <tr><td><span class="k">well_mixed</span></td><td>Nearly everyone was infected; it offers the two limits on spread</td></tr>
-    <tr><td><span class="k">r0_gap</span></td><td>The measured R₀ is far from the configured one</td></tr>
     <tr><td><span class="k">what_if</span></td><td>The run had an epidemic: up to four interventions to try (a vaccination campaign, a school closure, distancing, masks, a behaviour response), each starting the day 1% of the agents had been infected, leaving out what the scenario already has</td></tr>
   </tbody>
 </table>
@@ -534,11 +533,11 @@
   <tbody>
     <tr><td>Invalid simulation code</td><td>The model never writes code; tools pass structured values through one registry and schema</td></tr>
     <tr><td>Parameter hallucination</td><td>Values come from you, the database, fetched data or a chosen reference, each tagged with its source; out-of-range values are flagged; illustrative assumptions are labelled; held-back values are never quoted</td></tr>
-    <tr><td>Wrong R₀ on a structured network</td><td>β calibrated exactly on the random and age-structured networks; on the hybrid network a pilot run measures it and adjusts β</td></tr>
+    <tr><td>Wrong R₀ on a structured network</td><td>β calibrated exactly on the random and age-structured networks, where Starsim's own R₀ agrees; approximate on the hybrid network</td></tr>
     <tr><td>Implausible results</td><td>Diagnostics on every run, each with suggested fixes</td></tr>
     <tr><td>Execution failure</td><td>Up to two automatic repairs of the configuration, with a visible repair log</td></tr>
     <tr><td>Runaway runs and cost</td><td>A 120-second run limit, a cap of 500,000 agent-years per run, a daily turn limit per participant and a monthly budget</td></tr>
-    <tr><td>API instability</td><td>Starsim pinned at 3.7.2; a fixed simulation baseline in the test suite</td></tr>
+    <tr><td>API instability</td><td>Starsim 4 pinned in the requirements</td></tr>
   </tbody>
 </table>
 

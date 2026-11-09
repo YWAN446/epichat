@@ -344,20 +344,10 @@ def _format_context_card(ctx) -> str:
 
 def _do_run_simulation() -> None:
     s = st.session_state
-    pop_field = next(
-        (rf for rf in s.data_sources if rf.field == "total_population"), None
-    )
-    pop_scale = (
-        pop_field.value / s.params.n_agents
-        if pop_field and s.params.n_agents > 0
-        else 1.0
-    )
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     plot_path = str(Path("results") / f"sim_{ts}.png")
 
-    exec_result = s.chat._execute_with_retry(
-        s.context, s.params, plot_path, pop_scale=pop_scale
-    )
+    exec_result = s.chat._execute_with_retry(s.context, s.params, plot_path)
 
     if exec_result["error"]:
         _add_msg(

@@ -8,10 +8,9 @@ lower bound is above 0)."""
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
 from dataclasses import dataclass
 
-from pydantic import ValidationError
+import numpy as np
 
 from epichat.params.paths import get_path, set_path
 from epichat.params.registry import REGISTRY_BY_PATH
@@ -25,8 +24,6 @@ MAX_RUNS = 8
 FADEOUT_SEED_MULTIPLE = 2       # a run that infected under twice its seeds faded out; for a peak day, so did one whose peak stayed under twice its seeds
 STEP = 2.0                      # the factor the lever moves by until the target is bracketed
 RISING = {"attack_rate": True, "peak_infections": True, "peak_day": False}       # with a lever the outcome rises with
-BETA_LEVERS = ("disease.beta", "network.network_beta")
-PILOT_LEVERS = ("disease.rel_sus_cv",)       # levers the R0 pilot depends on: each trial is calibrated at its own value
 RESPONSE_SCALE_MAX = 0.95       # a response of 1 would stop transmission outright at a high prevalence
 MIN_STEP = 0.02                 # a lever whose lower bound is 0, halved below this, goes to 0
 
@@ -74,9 +71,27 @@ def within(target: str, achieved: float, wanted: float) -> bool:
 
 
 def evaluate(p: SimParamsV2, seed: int) -> dict:
+    """The run's {"stats", "series"}."""
     sim = build_sim(p, seed=seed)
     sim.run()
-    return extract(sim, p.run.n_agents, sim.seeds_day0, p.demographics.use_demographics)["stats"]
+    return extract(sim, p)
+
+
+def peaks_later(p: SimParamsV2, out: dict) -> bool:
+    """The run's highest point is the seeds' own bump (within a generation of day 0) and the curve rises again by the end: an
+    epidemic too slow to outgrow its seeds within the run, whose peak is later than the run shows. As agents the rise has to clear
+    twice the trough and twice the seeds, above the noise of a tail."""
+    stats, infectious = out["stats"], np.asarray(out["series"]["n_infectious"], dtype=float)
+    d = p.disease
+    generation = d.dur_inf.mean_days + (d.dur_exp.mean_days if d.dur_exp is not None else 0.0)
+    peak = int(stats["peak_day"])
+    if peak > generation or peak >= len(infectious) - 1:
+        return False
+    trough, end = float(infectious[peak:].min()), float(infectious[-1])
+    if stats.get("solver") == "ode":
+        return end > trough * (1 + 1e-6) + 1e-9
+    seeds = stats.get("seeds_day0") or stats.get("seeds") or 0
+    return end > max(2 * trough, FADEOUT_SEED_MULTIPLE * seeds)
 
 
 def _with_lever(p: SimParamsV2, lever: str, value: float) -> SimParamsV2:
@@ -85,39 +100,14 @@ def _with_lever(p: SimParamsV2, lever: str, value: float) -> SimParamsV2:
     return SimParamsV2.model_validate(body)
 
 
-def _valid(p: SimParamsV2, lever: str, value: float) -> bool:
-    try:
-        _with_lever(p, lever, value)
-    except ValidationError:
-        return False
-    return True
-
-
-def _effective_hi(p: SimParamsV2, lever: str, value: float, hi_bound: float) -> float:
-    """The largest value the lever can take: the registry's bound unless the joint rule (network_beta × (1 − e^(−β/365)) ≤ 1) cuts it
-    (review I1), found by bisection on validity between the current value (which validated) and the registry bound."""
-    if _valid(p, lever, hi_bound):
-        return hi_bound
-    lo, hi = value, hi_bound
-    for _ in range(80):
-        mid = math.sqrt(lo * hi)
-        if _valid(p, lever, mid):
-            lo = mid
-        else:
-            hi = mid
-        if hi <= lo * (1 + 1e-7):
-            break
-    return lo
-
-
-def fit_lever(p: SimParamsV2, seed: int, prepare: Callable[[SimParamsV2], SimParamsV2] | None = None) -> tuple[SimParamsV2, dict | None]:
+def fit_lever(p: SimParamsV2, seed: int) -> tuple[SimParamsV2, dict | None]:
     """The parameters to run (the lever moved when a fit is set) and {target, wanted, achieved, lever, value, runs}, or (p, None).
     The search doubles or halves the lever from its current value until the target is bracketed (stopping at the lever's bound),
-    then takes midpoints. A run that faded out (under twice its seeds infected) means too little transmission: a lever the outcome
-    rises with is too low, a lever it falls with is too high. For a peak day a peak under twice the seeds is a fade-out too (the
-    day would be the seeds' bump); for an attack rate or a peak size it is not, since a behaviour response holds the peak down
-    while the infections go on. prepare, when given, turns each trial's parameters into the ones that run (the R0 calibration at
-    that trial's value, for a lever the pilot depends on)."""
+    then takes midpoints. A run that faded out (under twice its seeds infected, or a disease Starsim puts at an R0 of at most 1, which
+    as an ODE can infect many times its seeds) means too little transmission: a lever the outcome rises with is too low, a lever it
+    falls with is too high. For a peak day a peak under twice the seeds is a fade-out too (the day would be the seeds' bump), and so
+    is an epidemic too slow to peak within the run (peaks_later); for an attack rate or a peak size it is not, since a behaviour
+    response holds the peak down while the infections go on."""
     f = p.run.fit
     if f is None:
         return p, None
@@ -126,22 +116,20 @@ def fit_lever(p: SimParamsV2, seed: int, prepare: Callable[[SimParamsV2], SimPar
     value = lever_value(p.model_dump(), f.lever)
     if value <= 0 and spec.start is not None:
         value = spec.start
-    if f.lever in BETA_LEVERS:
-        hi_bound = _effective_hi(p, f.lever, value, hi_bound)
     geometric = lo_bound > 0
     lo = hi = None
     current = p
     runs, achieved = 0, None
     while runs < MAX_RUNS:
         current = _with_lever(p, f.lever, value)
-        if prepare is not None:
-            current = prepare(current)
-        stats = evaluate(current, seed)
+        out = evaluate(current, seed)
+        stats = out["stats"]
         achieved = outcome(stats, f.target, p.run.n_agents)
         runs += 1
         seeds = stats.get("seeds_day0") or stats.get("seeds") or 0
-        faded = stats["total_infected"] <= FADEOUT_SEED_MULTIPLE * seeds or (
-            f.target == "peak_day" and stats["peak_infections"] <= FADEOUT_SEED_MULTIPLE * seeds)
+        r0 = stats.get("r0_model")
+        faded = stats["total_infected"] <= FADEOUT_SEED_MULTIPLE * seeds or (r0 is not None and r0 <= 1) or (
+            f.target == "peak_day" and (stats["peak_infections"] <= FADEOUT_SEED_MULTIPLE * seeds or peaks_later(current, out)))
         if within(f.target, achieved, f.value) and not faded:
             break
         if spec.rising:

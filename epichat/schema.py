@@ -176,21 +176,8 @@ class SimParams(BaseModel):
     def get_vaccine(self) -> Optional[Intervention]:
         return next((i for i in self.interventions if i.type == "vaccine"), None)
 
-    def get_seasonality(self) -> Optional[Intervention]:
-        return next((i for i in self.interventions if i.type == "seasonality"), None)
-
     def get_treatment(self) -> Optional[Intervention]:
         return next((i for i in self.interventions if i.type == "treatment"), None)
-
-    def to_template_dict(self) -> dict:
-        d = self.model_dump()
-        vax   = self.get_vaccine()
-        seas  = self.get_seasonality()
-        treat = self.get_treatment()
-        d["vaccine"]        = vax.model_dump()   if vax   else None
-        d["seasonality_int"]= seas.model_dump()  if seas  else None
-        d["treatment_int"]  = treat.model_dump() if treat else None
-        return d
 
 
 class OutbreakContext(BaseModel):

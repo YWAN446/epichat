@@ -114,7 +114,7 @@ describe("configure_simulation applies a chosen reference (follow-up spec 9.3)",
     expect(estimates("measles", "average_contacts_daily")[4].value).toBe(350);
     expect(estimates("measles", "r0")[7].value).toBe(103.5);
     const deps = makeDeps();
-    await run(deps, { disease: "measles" });
+    await run(deps, { disease: "measles", dur_inf_days: 2 });               // 4 contacts × 2 days carry at most R0 21.92
     const before = structuredClone(deps.scenario.params);
     const contacts = await run(deps, { use_reference: { parameter: "average_contacts_daily", index: 5 } });
     expect(contacts.isError).toBe(true);

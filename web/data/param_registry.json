@@ -21,7 +21,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.SIR, ss.SEIR, ss.SIS and the EpiChat subclasses in epichat/sim/models.py",
+   "starsim_target": "one declared ss.Disease of states and transitions (epichat/sim/model.py)",
    "affects": [
     "timing",
     "peak",
@@ -38,7 +38,7 @@
    "path": "disease.beta",
    "module": "disease",
    "label": "Transmission rate",
-   "description": "Per-contact transmission rate per year; the configure tool sets it from R0. Starsim turns it into a daily probability 1 - exp(-beta / 365).",
+   "description": "Per-contact transmission rate per year; the configure tool sets it from R0. Each contact transmits at network_beta × beta / 365 per day.",
    "kind": "number",
    "unit": "per year",
    "default": 22.8125,
@@ -50,7 +50,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "disease.pars.beta = ss.peryear(beta)",
+   "starsim_target": "the infection transition S >> I @ ss.peryear(beta × network_beta) × I",
    "affects": [
     "peak",
     "final_size"
@@ -78,7 +78,7 @@
    ],
    "tier": "core",
    "db_field": "incubation_days",
-   "starsim_target": "ss.SEIR(dur_exp=...)",
+   "starsim_target": "E >> I @ dur_exp",
    "affects": [
     "timing"
    ],
@@ -106,7 +106,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.SEIR(dur_exp=...)",
+   "starsim_target": "E >> I @ dur_exp",
    "affects": [
     "timing"
    ],
@@ -119,7 +119,7 @@
    "path": "disease.dur_exp.sd_days",
    "module": "disease",
    "label": "Latent period (sd)",
-   "description": "Standard deviation of the period between people, in days; at most twice the mean. Realized periods are about half a day longer than configured because transitions happen on whole days.",
+   "description": "Standard deviation of the period between people, in days; at most twice the mean. A gamma period runs as (mean / sd)² stages (at least one).",
    "kind": "number",
    "unit": "days",
    "default": null,
@@ -135,7 +135,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.SEIR(dur_exp=...)",
+   "starsim_target": "E >> I @ dur_exp",
    "affects": [
     "timing"
    ],
@@ -158,7 +158,7 @@
    "models": [],
    "tier": "core",
    "db_field": "infectious_days",
-   "starsim_target": "ss.SIR(dur_inf=...)",
+   "starsim_target": "I >> R @ dur_inf",
    "affects": [
     "peak",
     "final_size",
@@ -184,7 +184,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.SIR(dur_inf=...)",
+   "starsim_target": "I >> R @ dur_inf",
    "affects": [
     "peak",
     "final_size",
@@ -199,7 +199,7 @@
    "path": "disease.dur_inf.sd_days",
    "module": "disease",
    "label": "Infectious period (sd)",
-   "description": "Standard deviation of the period between people, in days; at most twice the mean. Realized periods are about half a day longer than configured because transitions happen on whole days.",
+   "description": "Standard deviation of the period between people, in days; at most twice the mean. A gamma period runs as (mean / sd)² stages (at least one).",
    "kind": "number",
    "unit": "days",
    "default": null,
@@ -211,7 +211,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.SIR(dur_inf=...)",
+   "starsim_target": "I >> R @ dur_inf",
    "affects": [
     "peak",
     "final_size",
@@ -239,7 +239,7 @@
    ],
    "tier": "core",
    "db_field": "immunity_duration",
-   "starsim_target": "EpiChat SIRS/SEIRS dur_immune",
+   "starsim_target": "R >> S @ dur_immune",
    "affects": [
     "endemicity"
    ],
@@ -266,7 +266,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "EpiChat SIRS/SEIRS dur_immune",
+   "starsim_target": "R >> S @ dur_immune",
    "affects": [
     "endemicity"
    ],
@@ -279,7 +279,7 @@
    "path": "disease.dur_immune.sd_days",
    "module": "disease",
    "label": "Immunity duration (sd)",
-   "description": "Standard deviation of the period between people, in days; at most twice the mean. Realized periods are about half a day longer than configured because transitions happen on whole days.",
+   "description": "Standard deviation of the period between people, in days; at most twice the mean. A gamma period runs as (mean / sd)² stages (at least one).",
    "kind": "number",
    "unit": "days",
    "default": null,
@@ -294,7 +294,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "EpiChat SIRS/SEIRS dur_immune",
+   "starsim_target": "R >> S @ dur_immune",
    "affects": [
     "endemicity"
    ],
@@ -323,7 +323,7 @@
    ],
    "tier": "core",
    "db_field": "fatality_rate",
-   "starsim_target": "ss.bernoulli(p=p_death) drawn at infection",
+   "starsim_target": "ss.Transition(I, ss.dead, dur=dur_inf, p=p_death)",
    "affects": [
     "deaths"
    ],
@@ -348,7 +348,7 @@
    ],
    "tier": "core",
    "db_field": "asymptomatic_fraction",
-   "starsim_target": "SEIAR p_asymp = ss.bernoulli(p=...)",
+   "starsim_target": "E >> {A: p_asymp, I: the rest}",
    "affects": [
     "peak",
     "final_size"
@@ -374,7 +374,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "SEIAR rel_trans_base for asymptomatic agents",
+   "starsim_target": "the force of infection's rel_trans_asymp × A term",
    "affects": [
     "peak",
     "final_size"
@@ -386,7 +386,7 @@
    "path": "disease.rel_sus_age.children",
    "module": "disease",
    "label": "Susceptibility, children (under 18)",
-   "description": "Multiplier on the susceptibility of children (under 18) (1 leaves it as it is). Applies through the agents' ages, so fetch the demographics first for the elderly to exist; an illustrative assumption unless the database carries it.",
+   "description": "Multiplier on the susceptibility of children (under 18) (1 leaves it as it is). Applies through the age groups; an illustrative assumption unless the database carries it.",
    "kind": "number",
    "unit": "multiplier",
    "default": 1.0,
@@ -398,7 +398,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector",
+   "starsim_target": "disease.stratify(age=..., adjust=dict(rel_sus=...))",
    "affects": [
     "peak",
     "final_size"
@@ -410,7 +410,7 @@
    "path": "disease.rel_sus_age.adults",
    "module": "disease",
    "label": "Susceptibility, adults (18 to 64)",
-   "description": "Multiplier on the susceptibility of adults (18 to 64) (1 leaves it as it is). Applies through the agents' ages, so fetch the demographics first for the elderly to exist; an illustrative assumption unless the database carries it.",
+   "description": "Multiplier on the susceptibility of adults (18 to 64) (1 leaves it as it is). Applies through the age groups; an illustrative assumption unless the database carries it.",
    "kind": "number",
    "unit": "multiplier",
    "default": 1.0,
@@ -422,7 +422,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector",
+   "starsim_target": "disease.stratify(age=..., adjust=dict(rel_sus=...))",
    "affects": [
     "peak",
     "final_size"
@@ -434,7 +434,7 @@
    "path": "disease.rel_sus_age.elderly",
    "module": "disease",
    "label": "Susceptibility, the elderly (65 and over)",
-   "description": "Multiplier on the susceptibility of the elderly (65 and over) (1 leaves it as it is). Applies through the agents' ages, so fetch the demographics first for the elderly to exist; an illustrative assumption unless the database carries it.",
+   "description": "Multiplier on the susceptibility of the elderly (65 and over) (1 leaves it as it is). Applies through the age groups; an illustrative assumption unless the database carries it.",
    "kind": "number",
    "unit": "multiplier",
    "default": 1.0,
@@ -446,7 +446,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "rel_sus_base of the agents in the group, composed by the TransmissionModifiers connector",
+   "starsim_target": "disease.stratify(age=..., adjust=dict(rel_sus=...))",
    "affects": [
     "peak",
     "final_size"
@@ -458,7 +458,7 @@
    "path": "disease.rel_sus_cv",
    "module": "disease",
    "label": "Variation in susceptibility",
-   "description": "Coefficient of variation of susceptibility between people: each agent gets a personal multiplier drawn once from a gamma distribution with mean 1. The most susceptible are infected first, so the epidemic ends smaller at the same R0 (0 means everyone is alike; 1 takes R0 2.5 from 89% to 60% infected). An illustrative assumption unless the database carries it.",
+   "description": "Coefficient of variation of susceptibility between people: five equal-sized classes stand for a gamma distribution with mean 1. The most susceptible are infected first, so the epidemic ends smaller at the same R0 (0 means everyone is alike; 1 takes R0 2.5 from 89% to 60% infected). An illustrative assumption unless the database carries it.",
    "kind": "number",
    "unit": "coefficient of variation",
    "default": 0.0,
@@ -470,7 +470,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "the per-agent state rel_sus_ind, a factor of the disease's rel_sus composition",
+   "starsim_target": "disease.stratify(susceptibility=five classes, adjust=dict(rel_sus=...))",
    "affects": [
     "final_size",
     "peak"
@@ -500,7 +500,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "the per-agent death draw (ss.bernoulli with an age-dependent probability)",
+   "starsim_target": "the death transition's p = ss.by(age=...)",
    "affects": [
     "deaths"
    ],
@@ -529,7 +529,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "the per-agent death draw (ss.bernoulli with an age-dependent probability)",
+   "starsim_target": "the death transition's p = ss.by(age=...)",
    "affects": [
     "deaths"
    ],
@@ -558,7 +558,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "the per-agent death draw (ss.bernoulli with an age-dependent probability)",
+   "starsim_target": "the death transition's p = ss.by(age=...)",
    "affects": [
     "deaths"
    ],
@@ -585,7 +585,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "rel_trans_base of exposed agents, who become transmission sources",
+   "starsim_target": "the force of infection's rel_trans_exposed × E term",
    "affects": [
     "peak",
     "timing"
@@ -597,7 +597,7 @@
    "path": "disease.sis_waning",
    "module": "disease",
    "label": "Immunity waning (sis)",
-   "description": "Rate per year at which immunity after an sis infection decays; 0 reproduces the classic SIS with no immunity.",
+   "description": "Rate per year at which people made immune by an sis infection lose it; 0 means the immunity lasts.",
    "kind": "number",
    "unit": "per year",
    "default": 0.0,
@@ -611,7 +611,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.SIS(waning=ss.peryear(...))",
+   "starsim_target": "R >> S @ ss.peryear(...)",
    "affects": [
     "endemicity"
    ],
@@ -622,7 +622,7 @@
    "path": "disease.sis_imm_boost",
    "module": "disease",
    "label": "Immunity boost (sis)",
-   "description": "How much immunity an sis infection adds (0 to 1); 0 means none.",
+   "description": "Share of sis recoveries that become immune (0 to 1); 0 means none, the classic SIS.",
    "kind": "number",
    "unit": null,
    "default": 0.0,
@@ -636,7 +636,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.SIS(imm_boost=...)",
+   "starsim_target": "I >> {R: imm_boost, S: the rest}",
    "affects": [
     "endemicity"
    ],
@@ -647,7 +647,7 @@
    "path": "disease.seed.mode",
    "module": "disease",
    "label": "Seeding mode",
-   "description": "fraction: each agent starts infected with probability value; count: exactly value agents start infected.",
+   "description": "fraction: a share value of the people start infected; count: exactly value people start infected.",
    "kind": "enum",
    "unit": null,
    "default": "fraction",
@@ -659,7 +659,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "init_prev = ss.bernoulli or ss.choose_n",
+   "starsim_target": "ss.Disease(init=dict(I=...)) or ss.Disease(init_n=dict(I=...))",
    "affects": [
     "stochasticity"
    ],
@@ -682,7 +682,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "init_prev, or SeedInfections when day > 0",
+   "starsim_target": "the disease's init or init_n, or ss.Delivery(move=S >> I) when day > 0",
    "affects": [
     "timing",
     "stochasticity"
@@ -706,7 +706,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "SeedInfections intervention",
+   "starsim_target": "ss.Delivery(move=S >> I, at=ss.days(day))",
    "affects": [
     "timing"
    ],
@@ -729,7 +729,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "InitialImmunity intervention",
+   "starsim_target": "ss.Disease(init=dict(R=...))",
    "affects": [
     "final_size"
    ],
@@ -753,7 +753,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.RandomNet, ss.MixingPools or ss.HybridNet",
+   "starsim_target": "well-mixed contact or ss.RandomNet, ss.contacts(ages=..., matrix=...), or starsim.library.HybridNet",
    "affects": [
     "peak",
     "final_size"
@@ -777,7 +777,7 @@
    "models": [],
    "tier": "core",
    "db_field": "average_contacts_daily",
-   "starsim_target": "ss.RandomNet(n_contacts=...)",
+   "starsim_target": "beta × n_contacts with well-mixed contact, or ss.RandomNet(n_contacts=...)",
    "affects": [
     "peak",
     "final_size"
@@ -791,7 +791,7 @@
    "path": "network.contacts_dist",
    "module": "network",
    "label": "Contacts distribution",
-   "description": "constant: everyone has exactly n_contacts a day; poisson: the daily number varies around n_contacts. Random network only; the R0 is unchanged.",
+   "description": "constant: everyone has exactly n_contacts a day; poisson: the daily number varies around n_contacts (the run is then agents). Random network only; the R0 is unchanged.",
    "kind": "enum",
    "unit": null,
    "default": "constant",
@@ -816,7 +816,7 @@
    "path": "network.contact_duration_days",
    "module": "network",
    "label": "Contact duration",
-   "description": "Days a random-network contact lasts before it is replaced; 0 remakes every contact daily. Longer contacts slow spread by local depletion, so the R0 shown is approximate and the measured R0 is the one to quote.",
+   "description": "Days a random-network contact lasts before it is replaced; 0 remakes every contact daily. Longer contacts slow spread by local depletion: the run is then agents on a network and the R0 shown is approximate.",
    "kind": "number",
    "unit": "days",
    "default": 0.0,
@@ -842,7 +842,7 @@
    "path": "network.network_beta",
    "module": "network",
    "label": "Network transmission multiplier",
-   "description": "Multiplies the per-contact probability on the network; 1 leaves beta as it is.",
+   "description": "Multiplies the per-contact transmission rate; 1 leaves beta as it is.",
    "kind": "number",
    "unit": null,
    "default": 1.0,
@@ -854,7 +854,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.RandomNet(beta=...) or the mixing matrix scale",
+   "starsim_target": "a factor of the disease's beta",
    "affects": [
     "peak",
     "final_size"
@@ -878,7 +878,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -904,7 +904,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -930,7 +930,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -956,7 +956,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -982,7 +982,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -1008,7 +1008,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -1034,7 +1034,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -1060,7 +1060,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -1086,7 +1086,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.MixingPools(n_contacts=...)",
+   "starsim_target": "ss.contacts(matrix=...)",
    "affects": [
     "peak",
     "final_size"
@@ -1132,7 +1132,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(household_size=ss.poisson(...))",
+   "starsim_target": "HybridNet(household_size=ss.poisson(...))",
    "affects": [
     "peak",
     "final_size"
@@ -1158,7 +1158,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(contacts=dict(s=...))",
+   "starsim_target": "HybridNet(contacts=dict(s=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1184,7 +1184,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(contacts=dict(w=...))",
+   "starsim_target": "HybridNet(contacts=dict(w=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1210,7 +1210,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(contacts=dict(c=...))",
+   "starsim_target": "HybridNet(contacts=dict(c=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1236,7 +1236,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(beta=dict(h=...))",
+   "starsim_target": "HybridNet(beta=dict(h=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1262,7 +1262,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(beta=dict(s=...))",
+   "starsim_target": "HybridNet(beta=dict(s=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1288,7 +1288,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(beta=dict(w=...))",
+   "starsim_target": "HybridNet(beta=dict(w=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1314,7 +1314,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(beta=dict(c=...))",
+   "starsim_target": "HybridNet(beta=dict(c=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1340,7 +1340,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(school_ages=...)",
+   "starsim_target": "HybridNet(school_ages=...)",
    "affects": [
     "peak"
    ],
@@ -1365,7 +1365,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(school_ages=...)",
+   "starsim_target": "HybridNet(school_ages=...)",
    "affects": [
     "peak"
    ],
@@ -1390,7 +1390,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(work_ages=...)",
+   "starsim_target": "HybridNet(work_ages=...)",
    "affects": [
     "peak"
    ],
@@ -1415,7 +1415,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.HybridNet(work_ages=...)",
+   "starsim_target": "HybridNet(work_ages=...)",
    "affects": [
     "peak"
    ],
@@ -1437,7 +1437,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.Births and ss.Deaths",
+   "starsim_target": "ss.birth and ss.death",
    "affects": [
     "endemicity"
    ],
@@ -1460,7 +1460,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.Births(birth_rate=ss.peryear(...))",
+   "starsim_target": "ss.birth(rate=ss.peryear(...))",
    "affects": [
     "endemicity"
    ],
@@ -1483,7 +1483,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.Deaths(death_rate=ss.peryear(...))",
+   "starsim_target": "ss.death(rate=ss.peryear(...))",
    "affects": [
     "endemicity"
    ],
@@ -1494,7 +1494,7 @@
    "path": "demographics.age_pct_under18",
    "module": "demographics",
    "label": "Share under 18",
-   "description": "Percent of the population aged 0 to 17; with the other two shares it assigns ages on the age-structured network.",
+   "description": "Percent of the population aged 0 to 17; with the other two shares it sizes the age groups.",
    "kind": "number",
    "unit": "percent",
    "default": null,
@@ -1506,7 +1506,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "age assignment after sim.init()",
+   "starsim_target": "the age groups' shares (disease.stratify(age=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1530,7 +1530,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "age assignment after sim.init()",
+   "starsim_target": "the age groups' shares (disease.stratify(age=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1554,7 +1554,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "age assignment after sim.init()",
+   "starsim_target": "the age groups' shares (disease.stratify(age=...))",
    "affects": [
     "peak",
     "final_size"
@@ -1647,7 +1647,7 @@
    "path": "demographics.age_source",
    "module": "demographics",
    "label": "Age source",
-   "description": "Where the simulated ages come from: default (Starsim's uniform 0 to 60), shares (uniform ages within the three shares) or un_wpp (the country's single-year age pyramid, bundled from UN WPP 2024).",
+   "description": "Where the simulated ages come from: default (the world's age shares), shares (uniform ages within the three shares) or un_wpp (the country's single-year age pyramid, bundled from UN WPP 2024).",
    "kind": "enum",
    "unit": null,
    "default": "default",
@@ -1660,7 +1660,7 @@
    "models": [],
    "tier": "expert",
    "db_field": null,
-   "starsim_target": "ss.People(age_data=...)",
+   "starsim_target": "the age groups' shares, and ss.People(age_data=...) as agents",
    "affects": [
     "peak",
     "final_size",
@@ -1689,7 +1689,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.routine_vx, TreatmentDelivery, TransmissionModifiers, ContactReduction",
+   "starsim_target": "ss.vaccinate, ss.treat, ss.Delivery and ss.modify",
    "affects": [
     "peak",
     "final_size",
@@ -1714,7 +1714,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.routine_vx(prob=...) or SimpleTreatment(prob=...)",
+   "starsim_target": "ss.vaccinate(coverage=...) or ss.treat(coverage=...)",
    "affects": [
     "peak",
     "final_size"
@@ -1738,7 +1738,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.routine_vx(start_year=start_day / 365)",
+   "starsim_target": "the delivery's or modifier's start=ss.days(start_day)",
    "affects": [
     "timing"
    ],
@@ -1761,7 +1761,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "SimpleTreatment(max_capacity=...)",
+   "starsim_target": "ss.treat(capacity=ss.perday(...))",
    "affects": [
     "peak",
     "final_size"
@@ -1785,7 +1785,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "TransmissionModifiers or ContactReduction",
+   "starsim_target": "ss.modify(beta, multiply=...) or ss.seasonal(amplitude=...)",
    "affects": [
     "timing",
     "peak",
@@ -1810,7 +1810,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "TransmissibilityModifiers",
+   "starsim_target": "ss.seasonal(peak=...)",
    "affects": [
     "timing"
    ],
@@ -1833,7 +1833,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.routine_vx(end_year=...), the window of a reduction",
+   "starsim_target": "the delivery's or modifier's stop",
    "affects": [
     "timing"
    ],
@@ -1856,7 +1856,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.routine_vx(prob=..., annual_prob=...)",
+   "starsim_target": "ss.vaccinate(at=...) or a daily rate over the window",
    "affects": [
     "timing",
     "final_size"
@@ -1880,7 +1880,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "Vaccine(efficacy=...) or Treatment(efficacy=...)",
+   "starsim_target": "ss.Vaccine(efficacy=...) or ss.Treatment(cure=...)",
    "affects": [
     "final_size",
     "peak"
@@ -1901,7 +1901,7 @@
    "models": [],
    "tier": "expert",
    "db_field": null,
-   "starsim_target": "Vaccine(leaky=...)",
+   "starsim_target": "ss.Vaccine(leaky=...)",
    "affects": [
     "final_size"
    ],
@@ -1924,7 +1924,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.routine_vx(eligibility=...)",
+   "starsim_target": "ss.vaccinate(who=ss.person.age ...)",
    "affects": [
     "final_size"
    ],
@@ -1947,7 +1947,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.routine_vx(eligibility=...)",
+   "starsim_target": "ss.vaccinate(who=ss.person.age ...)",
    "affects": [
     "final_size"
    ],
@@ -1970,7 +1970,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "Vaccine(protection_days=...)",
+   "starsim_target": "ss.Vaccine(waning=ss.boxcar(plateau=...))",
    "affects": [
     "final_size"
    ],
@@ -1981,7 +1981,7 @@
    "path": "interventions[].delay_days",
    "module": "interventions",
    "label": "Treatment delay",
-   "description": "Days after becoming infectious before treatment can start.",
+   "description": "Days after becoming infectious before treatment can start; above 0 the run is agents.",
    "kind": "integer",
    "unit": "days",
    "default": 0,
@@ -1993,7 +1993,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "TreatmentDelivery(delay_days=...)",
+   "starsim_target": "ss.treat(on=onset, delay=ss.days(...))",
    "affects": [
     "peak",
     "final_size"
@@ -2005,7 +2005,7 @@
    "path": "interventions[].rel_trans_treated",
    "module": "interventions",
    "label": "Transmissibility while waiting",
-   "description": "Relative transmissibility of an agent waiting for treatment (0.5 halves it).",
+   "description": "Relative transmissibility of an infectious person while the treatment runs, as if isolated until treated (0.5 halves it).",
    "kind": "number",
    "unit": "multiplier",
    "default": 1.0,
@@ -2017,7 +2017,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "TreatmentDelivery(rel_trans_treated=...)",
+   "starsim_target": "ss.modify(rel_trans, multiply=..., where=I)",
    "affects": [
     "peak",
     "final_size"
@@ -2029,7 +2029,7 @@
    "path": "interventions[].symptomatic_only",
    "module": "interventions",
    "label": "Treat symptomatic only",
-   "description": "seiar: leave asymptomatic agents untreated.",
+   "description": "seiar: leave asymptomatic people untreated.",
    "kind": "bool",
    "unit": null,
    "default": false,
@@ -2040,7 +2040,7 @@
    ],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "TreatmentDelivery(symptomatic_only=...)",
+   "starsim_target": "ss.treat(who=I)",
    "affects": [
     "final_size"
    ],
@@ -2063,7 +2063,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "TransmissionModifiers",
+   "starsim_target": "ss.modify(beta, multiply=the response's factor)",
    "affects": [
     "peak",
     "final_size",
@@ -2088,7 +2088,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "TransmissionModifiers",
+   "starsim_target": "ss.modify(beta, multiply=the response's factor)",
    "affects": [
     "peak",
     "timing"
@@ -2115,7 +2115,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ContactReduction(layer=...)",
+   "starsim_target": "ss.modify(beta, network=...)",
    "affects": [
     "peak",
     "final_size"
@@ -2139,7 +2139,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.Sim(n_agents=...)",
+   "starsim_target": "ss.Sim(total_pop=...) as an ODE, ss.Sim(n_agents=...) as agents",
    "affects": [
     "stochasticity"
    ],
@@ -2162,7 +2162,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.Sim(dur=ss.days(round(365 * years)))",
+   "starsim_target": "ss.Sim(stop=ss.days(round(365 * years)))",
    "affects": [
     "duration"
    ],
@@ -2173,7 +2173,7 @@
    "path": "run.n_replicates",
    "module": "run",
    "label": "Replicates",
-   "description": "How many seeds to run; the result shows the median run with 10 to 90% bands.",
+   "description": "How many seeds to run as agents; the result shows the median run with 10 to 90% bands. An ODE run is deterministic and runs once.",
    "kind": "integer",
    "unit": null,
    "default": 1,
@@ -2208,27 +2208,6 @@
    "starsim_target": "ss.Sim(rand_seed=...)",
    "affects": [
     "stochasticity"
-   ],
-   "requires": [],
-   "networks": []
-  },
-  {
-   "path": "run.calibrate_r0",
-   "module": "run",
-   "label": "Calibrate beta by measurement",
-   "description": "On the hybrid network, or with a contact duration above 0, the R0 formula is approximate: a short pilot in which only the seeds transmit measures R0 and corrects beta until the measurement is within 5% of the target (or within its own standard error when that is larger), at most three times. Off, the formula's beta runs as it is.",
-   "kind": "bool",
-   "unit": null,
-   "default": true,
-   "bounds": null,
-   "choices": null,
-   "models": [],
-   "tier": "advanced",
-   "db_field": null,
-   "starsim_target": "epichat.sim.calibrate",
-   "affects": [
-    "peak",
-    "final_size"
    ],
    "requires": [],
    "networks": []

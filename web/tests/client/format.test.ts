@@ -168,7 +168,6 @@ describe("network rows and field labels (Part 2, section 5)", () => {
     expect(parameterRows(lasting)).toContainEqual(["Contacts distribution", "Poisson"]);
     expect(describeField("household_size", 4.2)).toEqual({ label: "Household size", value: "4.2 people" });
     expect(describeField("contact_matrix", "prem_2021:KEN")).toEqual({ label: "Contact matrix", value: "Prem 2021, Kenya" });
-    expect(describeField("beta_calibrated_by_measurement", 31.25)).toEqual({ label: "Transmission rate calibrated to the measured R₀", value: "31.25" });
     expect(describeField("age_source", "un_wpp")).toEqual({ label: "Age source", value: "UN WPP 2024 pyramid" });
   });
 });

@@ -73,7 +73,7 @@ describe("the Parameters section's rows come from the registry (follow-up spec 8
     const fitted = params({ schema_version: 2, run: { fit: { target: "attack_rate", value: 0.3 } } });
     expect(defaultRows(fitted)).toContainEqual(["Fitted to", "attack rate 30% by moving the transmission rate"]);
     const plain = Object.fromEntries(parameterGroups(params({})).flatMap((g) => g.rows).map((r) => [r.label, r.value]));
-    expect(plain).toMatchObject({ "Variation in susceptibility": "none", "Fatality by age": "same for every age", "Random seed": "1 (not set)", "Calibrate beta by measurement": "yes", "Age structure": "Starsim's default ages", "Contact duration": "a fresh contact every day", "Network transmission multiplier": "×1" });
+    expect(plain).toMatchObject({ "Variation in susceptibility": "none", "Fatality by age": "same for every age", "Random seed": "1 (not set)", "Age structure": "Starsim's default ages", "Contact duration": "a fresh contact every day", "Network transmission multiplier": "×1" });
   });
 
   it("shows the contact matrix as a grid on the age-structured network and the layers as a table on the hybrid one", () => {

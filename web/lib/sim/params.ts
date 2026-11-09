@@ -206,7 +206,7 @@ export const ContactMatrixSchema = z.object({
 export type ContactMatrix = z.infer<typeof ContactMatrixSchema>;
 /** The nine matrix leaves in registry order: source group, then target group (Part 2, 5.3). */
 export const CONTACT_PAIRS = AGE_GROUPS.flatMap((s) => AGE_GROUPS.map((t) => `${s}_${t}` as keyof ContactMatrix));
-/** Rows source, columns target, as Starsim's MixingPools reads them (Part 2, 5.3). */
+/** Rows source, columns target (Part 2, 5.3). */
 export function contactRows(c: ContactMatrix): number[][] {
   return AGE_GROUPS.map((s) => AGE_GROUPS.map((t) => c[`${s}_${t}` as keyof ContactMatrix]));
 }
@@ -274,7 +274,6 @@ export const RunSchema = z.object({
   n_agents: withDefault("run.n_agents", true),
   sim_dur_years: withDefault("run.sim_dur_years"),
   rand_seed: nullable(z.number().int()),
-  calibrate_r0: z.boolean().default(true),
   fit: nullable(FitSchema),
   n_replicates: withDefault("run.n_replicates", true),
 });
@@ -295,7 +294,6 @@ export const SimParamsSchema = z
     if (seed.mode === "count" && seed.value > p.run.n_agents) issue(ctx, `disease.seed.value (${seed.value}) must not exceed run.n_agents (${p.run.n_agents})`);
     const days = simDays(p.run.sim_dur_years);
     if (seed.day > days) issue(ctx, `disease.seed.day (${seed.day}) must be within the simulation (${days} days)`);
-    if (p.network.network_beta * (1 - Math.exp(-p.disease.beta / 365)) > 1) issue(ctx, "network.network_beta × (1 - exp(-disease.beta / 365)) must not exceed 1: lower network.network_beta or disease.beta");
     const day0 = p.interventions.filter(isDayZeroVaccine);
     if (day0.length > 0) {
       const coverage = Math.min(day0[day0.length - 1].coverage ?? 0, 0.99);
@@ -444,22 +442,22 @@ export function hybridContacts(p: SimParams): number {
     + lb.work * n.work_contacts * ageRangeShare(s, n.work_age_min, n.work_age_max) + lb.community * n.community_contacts;
 }
 
-/** No closed form holds with lasting contacts or on the hybrid network; the measured R0 is the one to quote (Part 2, 5.2, 5.5). */
+/** No closed form holds with lasting contacts or on the hybrid network: those run as agents on a network, and the formula is an approximation. */
 export function r0IsApproximate(p: SimParams): boolean {
   return p.network.network_type === "hybrid" || p.network.contact_duration_days > 0;
 }
 
-/** Starsim's per-contact daily transmission probability for a per-year beta. */
-export function perContactProb(beta: number): number {
-  return 1 - Math.exp(-beta / 365);
+/** Transmissions per contact per day at network_beta 1, for a per-year beta. */
+export function perContactRate(beta: number): number {
+  return beta / 365;
 }
 
 export function asympFactor(d: DiseaseParams): number {
   return d.model === "seiar" ? 1 - d.p_asymp * (1 - d.rel_trans_asymp) : 1;
 }
 
-/** Starsim's default ages are uniform on 0 to 60: no elderly (Part 2, section 4.1). */
-export const DEFAULT_AGE_SHARES: [number, number, number] = [0.3, 0.7, 0];
+/** Starsim's default ages: the world's population. */
+export const DEFAULT_AGE_SHARES: [number, number, number] = [0.29, 0.61, 0.1];
 
 /** The share of agents in each age group: the fetched shares when all three are set, else the default ages'. */
 export function ageShares(p: SimParams): [number, number, number] {
@@ -480,25 +478,14 @@ export function weightedCfr(p: SimParams): number {
   return s[0] * q[0] + s[1] * q[1] + s[2] * q[2];
 }
 
-/** Days an exposed agent can transmit on a daily step, by the infectious period's offsets; 0 outside the latent models. */
+/** The mean latent period; 0 outside the latent models. */
 export function exposedDays(d: DiseaseParams): number {
-  if (!LATENT_MODELS.includes(d.model) || !d.dur_exp) return 0;
-  const exp = d.dur_exp;
-  return Math.max(0, exp.dist === "constant" ? Math.ceil(exp.mean_days) - 1 : exp.mean_days - 0.5);
+  return LATENT_MODELS.includes(d.model) && d.dur_exp ? d.dur_exp.mean_days : 0;
 }
 
-/** Days an infectious agent transmits on a daily step (spec 7.4). */
+/** The mean infectious period. */
 export function infectiousDays(d: DiseaseParams): number {
-  const inf = d.dur_inf;
-  let days: number;
-  if (LATENT_MODELS.includes(d.model)) {
-    const exp = d.dur_exp!;
-    if (exp.dist === "constant" && inf.dist === "constant") days = Math.ceil(exp.mean_days + inf.mean_days) - Math.ceil(exp.mean_days);
-    else if (exp.dist === "constant") days = inf.mean_days + 0.5;
-    else days = inf.mean_days;
-  } else if (inf.dist === "constant") days = Math.ceil(inf.mean_days) - 1;
-  else days = inf.mean_days - 0.5;
-  return Math.max(0, days);
+  return d.dur_inf.mean_days;
 }
 
 /** The transmission-weighted days of one infection: the infectious days scaled by the asymptomatic factor (seiar) plus the exposed days at rel_trans_exposed, whatever the track (Part 2, 4.3 and 4.4). */
@@ -506,7 +493,7 @@ export function effectiveDays(d: DiseaseParams): number {
   return infectiousDays(d) * asympFactor(d) + d.rel_trans_exposed * exposedDays(d);
 }
 
-/** The R0 reached if every contact transmitted: contacts × network_beta × D_eff, with the susceptibility multipliers, on the three networks (Part 2, 4.4, 5.5). */
+/** The R0 per unit of daily per-contact rate: contacts × network_beta × D_eff, with the susceptibility multipliers, on the three networks (Part 2, 4.4, 5.5). */
 export function contactScale(p: SimParams): number {
   const n = p.network;
   const r = [p.disease.rel_sus_age.children, p.disease.rel_sus_age.adults, p.disease.rel_sus_age.elderly];
@@ -519,12 +506,16 @@ export function contactScale(p: SimParams): number {
   return contacts * n.network_beta * effectiveDays(p.disease);
 }
 
+/** The registry's upper bound on disease.beta. */
+export const BETA_MAX = 1000;
+
 export function approxR0(p: SimParams): number {
-  return contactScale(p) * perContactProb(p.disease.beta);
+  return contactScale(p) * perContactRate(p.disease.beta);
 }
 
+/** The R0 at the largest beta the registry allows. */
 export function maxR0(p: SimParams): number {
-  return contactScale(p);
+  return contactScale(p) * perContactRate(BETA_MAX);
 }
 
 export class R0UnreachableError extends Error {
@@ -541,16 +532,16 @@ export class R0UnreachableError extends Error {
 /** The beta whose approxR0 is targetR0 on the current network; throws R0UnreachableError when none exists. Unclamped. */
 export function calibrateBeta(p: SimParams, targetR0: number): number {
   const scale = contactScale(p);
-  if (scale <= 0 || targetR0 >= scale) {
+  if (scale <= 0 || targetR0 > maxR0(p)) {
     const levers = p.network.network_type === "hybrid" ? HYBRID_LEVERS : p.network.network_type === "age_structured" ? AGE_LEVERS : RANDOM_LEVERS;
-    throw new R0UnreachableError(targetR0, scale, levers);
+    throw new R0UnreachableError(targetR0, maxR0(p), levers);
   }
-  return -365 * Math.log(1 - targetR0 / scale);
+  return (365 * targetR0) / scale;
 }
 
 /** The agent's clamp-and-round applied to every calibrated beta. */
 export function clampBeta(beta: number): number {
-  return pyRound(Math.max(0.001, Math.min(1000, beta)), 6);
+  return pyRound(Math.max(0.001, Math.min(BETA_MAX, beta)), 6);
 }
 
 export function withR0(p: SimParams, targetR0: number): SimParams {

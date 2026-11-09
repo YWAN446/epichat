@@ -152,7 +152,7 @@ def random_params(rng: random.Random) -> SimParamsV2 | None:
         over = round(rng.uniform(2.0, 20.0), 1)
         demographics = {"age_pct_under18": under, "age_pct_over65": over, "age_pct_18_64": round(100.0 - under - over, 1),
                         "age_source": rng.choice(["default", "shares", "un_wpp"])}
-    run = {"n_agents": rng.choice([1000, 5000, 10000, 50000]), "calibrate_r0": rng.random() < 0.8}
+    run = {"n_agents": rng.choice([1000, 5000, 10000, 50000])}
     if rng.random() < 0.3:
         lever = rng.choice(["disease.beta", "network.network_beta", "disease.rel_sus_cv", "behavior_response.scale"])
         targets = ["attack_rate", "peak_day", "peak_infections"] if lever in ("disease.beta", "network.network_beta") else ["attack_rate", "peak_infections"]
@@ -231,7 +231,7 @@ def params_cases(rng: random.Random) -> list[dict]:
             "weighted_cfr": round(r0.weighted_cfr(p), 9),
             "approximate": r0.r0_is_approximate(p),
             "n_interventions": len(p.interventions),
-            "calibrate": [{"target_r0": t, "beta": _calibrate(p, t)} for t in (1.5, 3.0, 15.0)],
+            "calibrate": [{"target_r0": t, "beta": _calibrate(p, t)} for t in (1.5, 3.0, 15.0, 5000.0)],
             "recalibrate": recalibrate,
         })
     return cases
@@ -339,7 +339,7 @@ def what_if_cases() -> list[dict]:
             new[t] = (total - 0.01 * n) / 100
         series = {"day": list(range(days)), "n_infectious": [min(800.0, 20.0 * t) if t < 150 else 0.0 for t in range(days)], "new_infections": new}
         stats = {"total_infected": total, "n_agents": n, "seeds": seeds, "seeds_day0": seeds}
-        found = [d for d in as_dicts(diagnose(p, series, stats, None, seeds, disease)) if d["id"] in ("what_if", "well_mixed")]
+        found = [d for d in as_dicts(diagnose(p, series, stats, None, disease)) if d["id"] in ("what_if", "well_mixed")]
         cases.append({"network": network, "disease": disease, "anchor": anchor, "diagnostics": found})
     return cases
 

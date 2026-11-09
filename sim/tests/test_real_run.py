@@ -1,6 +1,5 @@
-"""One real Starsim run per model family through the app. Slow (about 3 s
-each: the child imports Starsim) but the only proof that the template's json
-branch, the runner, and the response assembly agree."""
+"""Real Starsim runs through the app. Slow (the child imports Starsim) but the
+only proof that the builder, the runner, and the response assembly agree."""
 import importlib
 
 import pytest
@@ -55,7 +54,7 @@ def test_pop_scale_scales_stats_but_not_agent_counts(client):
     assert body["population"] == 100000
     assert body["stats"]["total_infected"] == body["stats_agents"]["total_infected"] * 100
     assert body["stats"]["peak_day"] == body["stats_agents"]["peak_day"]
-    assert body["series"]["cum_infections"][-1] == body["stats"]["total_infected"]
+    assert abs(body["series"]["cum_infections"][-1] - body["stats"]["total_infected"]) <= 50     # an ODE's counts are fractional: each is rounded once
 
 
 def test_same_seed_is_deterministic(client):
@@ -74,34 +73,24 @@ def test_demographics_add_the_all_causes_deaths_and_keep_disease_deaths_apart(cl
     assert body["series"]["cum_deaths_all"][-1] > 0
 
 
-def test_two_replicates_run_for_real(client):
-    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"beta": 0.05, "seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 2}}, "pop_scale": 1}, headers=AUTH).json()
+def test_an_ode_run_runs_once_and_reports_starsims_r0(client):
+    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 3}}, "pop_scale": 10}, headers=AUTH).json()
+    assert body["replicates"] is None and body["stats"]["solver"] == "ode"
+    assert body["stats"]["r0_model"] == body["stats_agents"]["r0_model"] == pytest.approx(2.5)          # a ratio: never scaled
+
+
+def test_two_hybrid_replicates_run_for_real_as_agents(client):
+    params = {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 20}}, "network": {"network_type": "hybrid"},
+              "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 2}}
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
     rep = body["replicates"]
+    assert body["stats"]["solver"] == "abm" and body["effective_params"]["network"]["network_type"] == "hybrid"
     assert rep["seeds"] == [1, 2] and len(rep["stats"]) == 2 and rep["representative"] in (1, 2)
     assert len(rep["bands"]["cum_infections"]["p90"]) == len(body["series"]["day"]) == 31
     assert body["stats"]["total_infected"] == min(s["total_infected"] for s in rep["stats"])
-
-
-def test_hybrid_run_calibrates_beta_and_reports_the_measured_r0(client):
-    from epichat.params.r0 import with_r0
-    from epichat.params.schema_v2 import SimParamsV2
-    params = {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 30}}, "network": {"network_type": "hybrid"},
-              "run": {"n_agents": 3000, "sim_dur_years": 90 / 365, "rand_seed": 1}}
-    moderate = with_r0(SimParamsV2.model_validate(params), 2.5).model_dump(mode="json")
-    r = client.post("/simulate", json={"params": moderate, "pop_scale": 1}, headers=AUTH)
-    assert r.status_code == 200, r.text
-    body = r.json()
-    calibration = body["stats"]["r0_calibration"]
-    assert isinstance(body["stats"]["r0_measured"], float) and calibration["corrections"] <= 3
-    assert set(calibration) == {"target", "measured", "se", "corrections", "reached"} and calibration["target"] == 2.5
-    assert body["effective_params"]["network"]["network_type"] == "hybrid"
-    assert body["stats"]["r0_measured"] == body["stats_agents"]["r0_measured"]          # a ratio: never scaled
-    # the default beta is an R0 near 11 on the hybrid network: with 1% seeded the population is exhausted while the seeds are still
-    # infectious, so the live run's measured R0 is withheld; the pilot, in which only the seeds transmit, still measures and reports
-    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
-    assert r.status_code == 200, r.text
-    high = r.json()["stats"]
-    assert high["r0_measured"] is None and isinstance(high["r0_calibration"]["measured"], float) and high["r0_calibration"]["target"] > 8
+    assert "r0_calibration" not in body["stats"] and "r0_measured" not in body["stats"]
 
 
 def test_a_fitted_run_reports_the_fit_and_the_fitted_beta(client):

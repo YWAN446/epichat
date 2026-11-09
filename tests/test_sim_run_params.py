@@ -28,7 +28,8 @@ def test_writes_stats_and_series_for_valid_params(tmp_path):
 
 
 def test_v2_params_with_replicates_write_the_replicates_block(tmp_path):
-    params = {"schema_version": 2, "disease": {"seed": {"value": 0.05}}, "run": {"n_agents": 300, "sim_dur_years": 10 / 365, "rand_seed": 1, "n_replicates": 2}}
+    params = {"schema_version": 2, "disease": {"seed": {"value": 0.05}}, "network": {"network_type": "hybrid"},          # agents: an ODE runs once
+              "run": {"n_agents": 300, "sim_dur_years": 10 / 365, "rand_seed": 1, "n_replicates": 2}}
     completed, out_path = run_child(params, tmp_path)
     assert completed.returncode == 0, completed.stderr
     payload = json.loads(out_path.read_text(encoding="utf-8"))

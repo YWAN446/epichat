@@ -7,9 +7,9 @@ import type { FetchLike } from "@/lib/data/types";
 import type { ReportDocument } from "@/lib/report/document";
 import type { SimParams } from "./params";
 
-/** Part 2, 5.6 and 5.7: r0_measured is the infections a day-0 seed causes in its first infectious period, corrected for depletion (a ratio, never scaled; null when it cannot be measured); r0_calibration is present when the service's pilot measured R0 (se and reached since the pilot became a first-generation experiment), or when a closed form corrected the saturation that variation in susceptibility causes on the random network (measured is then the closed form and se is 0). */
-export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number; seeds_day0?: number; r0_measured?: number | null; r0_calibration?: { target: number; measured: number | null; corrections: number; se?: number | null; reached?: boolean } | null; fit?: { target: string; wanted: number; achieved: number; lever: string; value: number; runs: number } | null; behavior?: { min_factor: number; min_day: number } | null };
-/** Spec 8.7: the service's replicate block, scaled to the population like stats, bands thinned like the series. */
+/** solver is how Starsim ran the scenario: "ode" (compartments, deterministic, run once) or "abm" (agents on a network); r0_model is Starsim's own R0 for the declared disease, or null when it can give none. */
+export type SimStats = { peak_infections: number; peak_day: number; total_infected: number; total_deaths: number; n_agents: number; sim_days: number; seeds_day0?: number; seeds?: number; solver?: "ode" | "abm"; r0_model?: number | null; fit?: { target: string; wanted: number; achieved: number; lever: string; value: number; runs: number } | null; behavior?: { min_factor: number; min_day: number } | null };
+/** Spec 8.7: the service's replicate block, scaled to the population like stats, bands thinned like the series; absent from an ODE run, which runs once. */
 export type Replicates = { n: number; seeds: number[]; representative: number; stats: SimStats[]; bands: Record<string, { p10: number[]; p90: number[] }> };
 /** Spec 10: one suggested change, a patch of registry paths applied together; since the follow-up it may carry intervention entries too. */
 export type Lever = {

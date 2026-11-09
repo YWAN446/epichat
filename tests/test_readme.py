@@ -29,7 +29,7 @@ def test_the_readme_describes_part_2_from_the_codes_own_names():
 
     web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
     for phrase in ("docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md", "hybrid", "Prem 2021", "UN WPP 2024",
-                   "household", "measured R0", "beta_calibrated_by_measurement", "well_mixed", "r0_gap", "run.fit", "attack rate",
+                   "household", "well_mixed", "run.fit", "attack rate",
                    "docs/data-review-requests.md", "scripts/review_requests.py", "rel_sus_age", "p_death_age", "rel_trans_exposed"):
         assert phrase in web, phrase
     # every bundled table and every intervention type is named where the reader looks for it
@@ -54,11 +54,7 @@ def test_the_runbook_verifies_part_2_through_the_shipped_fields():
         "Fitted to": ("web", "lib", "client", "parameters.ts"),
         "Household size": ("web", "lib", "client", "format.ts"),
         "households, schools, workplaces, community": ("web", "lib", "client", "format.ts"),
-        "R₀ measured": ("web", "lib", "report", "compose.ts"),
         "What was modelled": ("web", "lib", "report", "document.ts"),
-        "beta_calibrated_by_measurement": ("web", "lib", "tools", "runSimulation.ts"),
-        "r0_calibration": ("epichat", "sim", "replicates.py"),
-        "r0_measured": ("epichat", "sim", "outputs.py"),
         "contact_reduction": ("epichat", "schema.py"),
         "attack_rate": ("epichat", "sim", "fit.py"),
     }
@@ -67,11 +63,10 @@ def test_the_runbook_verifies_part_2_through_the_shipped_fields():
         assert phrase in source(*where), (phrase, where)
     for phrase in ("hybrid", "layer", "School contacts reduced by 100%", "Why were so many infected", "stats->'fit'"):
         assert phrase in section, phrase
-    # Important 1: the measured R0 is a report row; the runs panel has none, so the runbook must not send the owner there
-    assert "R₀ measured" not in source("web", "components", "panel", "RunsSection.tsx")
     assert "runs panel and the report" not in section and "Create a report" in section
-    # Important 2: the fit replaces the pilot, so the fitted run carries no calibration
-    assert "the hybrid runs carry" not in section and "no `calibration`" in section
+    # there is no measured R0 and no calibration of beta by measurement any more
+    for gone in ("R₀ measured", "r0_measured", "r0_calibration", "beta_calibrated_by_measurement"):
+        assert gone not in section, gone
     # Important 3: a fitted hybrid run at 50,000 agents does not fit the service's timeout on Vercel
     assert "with 10,000 agents" in section and "50,000" not in section
     # Important 4: a country brings a fetch that moves the scenario off the random network
@@ -92,8 +87,8 @@ def test_the_readme_states_part_2_as_the_code_runs_it():
     from epichat.schema import Intervention, SimParams
 
     web = README.split("## Web agent: parameters")[1].split("## Input Types")[0]
-    # Important 6: the measured R0 is null on the age-structured network, and lasting contacts make the formula approximate too
-    assert "every run reports the measured R0" not in web and "null on the age-structured network" in web
+    # the R0 is the formula's (Starsim's own on the exact networks); lasting contacts and the hybrid network make it approximate
+    assert "measured R0" not in web
     assert r0_is_approximate(SimParamsV2.model_validate({"network": {"contact_duration_days": 3}}))
     assert "`contact_duration_days` above 0" in web
     # re-graded minor 4: a country alone does not bring the pyramid; fetch_demographics sets the age source
@@ -217,9 +212,7 @@ def test_the_runbook_verifies_the_follow_up_through_the_shipped_strings():
     assert "depletion of susceptibles" in step_5 and "depletion of susceptibles" in source("epichat", "sim", "diagnostics.py")
     # what a fit that keeps R0 costs, beside the beta fit's numbers
     keeps = " ".join(runbook.split("## 7.")[1].split("A fit that keeps R0")[1].split("\n\n")[0].split())
-    # only the variation is calibrated at every trial; the response's scale is calibrated once (review of phase E)
-    assert 'PILOT_LEVERS = ("disease.rel_sus_cv",)' in source("epichat", "sim", "fit.py")
-    assert "the variation's fit calibrates beta again at every trial" in keeps and "the response's fit calibrates once" in keeps
+    assert "calibrates beta again" not in keeps and "calibrates once" not in keeps          # no pilot runs before or during a fit
     # and the paragraph does not promise that every such fit is inside the timeout: it gives the eight-trial case and asks for a timing
     assert "all eight" in keeps and "Owner:" in keeps and "The same rule holds" not in keeps
     assert 'maxDuration": 300' in source("vercel.json") and "300 s" in keeps
@@ -232,24 +225,22 @@ def test_the_deferred_documentation_minors_are_settled():
     assert "peak day to day 60" not in testing and "peak day to day 45" in testing              # the day the test fits
     assert 'scenario("peak_day", 45)' in source("tests", "test_sim_fit.py")
     flat = " ".join(README.split())
-    # who composes what (Part 2, 4.2): the disease its own susceptibility, the connector the transmissibility
+    # no connector composes susceptibility or transmissibility: they are the disease's stratifications and Starsim modifiers
     assert "a connector composes `rel_sus` and `rel_trans`" not in flat
-    assert "composes its own `rel_sus`" in flat and "composes `rel_trans`" in flat
-    assert "def compose_rel_sus" in source("epichat", "sim", "models.py") and "disease.rel_trans[:]" in source("epichat", "sim", "connectors.py")
     interventions = README.split("## Interventions")[1].split("## Natural Language Query Tips")[0]
     assert "\n---\n" not in interventions.split("### Seasonality")[1].split("### Contact reduction")[0]
     assert "they have a window and a layer" not in flat
     v2 = " ".join(README.split("Schema v2 also adds")[1].split("\n\n")[0].split())
     assert "for the random network" in v2 and "for the age-structured network" in v2
-    # six intervention types since the behaviour response; the pilot gives way to a beta fit only
+    # six intervention types since the behaviour response
     types = source("epichat", "schema.py").split("type: Literal[")[1].split("]")[0].split(",")
-    assert len(types) == 6 and "Six types" in flat and "Five types" not in flat and "a fit on beta replaces it" in flat
+    assert len(types) == 6 and "Six types" in flat and "Five types" not in flat
     # describe_parameters names a chosen reference among the sources, and lists by network
     described = flat.split("`describe_parameters` lists")[1][:260]
     assert "model and network" in described and "a chosen reference" in described
     assert "reference for a literature estimate" in source("web", "lib", "tools", "describeParameters.ts")
     # the older loader: still called, and the directory it reads is not bundled
     assert "get_mean_contacts" in flat
-    assert "get_mean_contacts" in source("epichat", "generator.py") and "get_mean_contacts" in source("epichat", "params", "resolve.py")
+    assert "get_mean_contacts" in source("epichat", "params", "resolve.py")
     follow_up = source("docs", "superpowers", "specs", "2026-10-13-limits-suggestions-parameters-design.md")
     assert "phases A to E shipped" in " ".join(follow_up.split("## 1. Purpose")[0].split())

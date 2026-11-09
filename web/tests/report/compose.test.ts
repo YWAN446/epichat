@@ -86,29 +86,31 @@ describe("composeReport", () => {
   });
 });
 
-describe("the measured R0 in the report (Part 2, 5.6)", () => {
-  it("adds an R0 measured row after the configured R0 when the latest run carries one, and nothing otherwise", () => {
-    const runs = FIXTURE.runs.map((r, i) => (i === FIXTURE.runs.length - 1 ? { ...r, stats: { ...r.stats, r0_measured: 2.4 } } : r));
-    const doc = composeReport({ ...FIXTURE, runs }, NOW);
-    const rows = doc.sections.find((s) => s.id === "modelled")!.blocks[0];
-    if (rows.kind !== "keyValues") throw new Error("kv");
-    const labels = rows.items.map(([label]) => label);
-    expect(labels.indexOf("R₀ measured")).toBe(labels.indexOf("R₀ (approx.)") + 1);
-    expect(rows.items).toContainEqual(["R₀ measured", "2.4"]);
-    const plain = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
-    if (plain.kind !== "keyValues") throw new Error("kv");
-    expect(plain.items.map(([label]) => label)).not.toContain("R₀ measured");
+describe("the solver in the report", () => {
+  it("says how the latest run ran, and nothing for a run stored without it", () => {
+    const modelled = (runs: typeof FIXTURE.runs) => {
+      const rows = composeReport({ ...FIXTURE, runs }, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
+      if (rows.kind !== "keyValues") throw new Error("kv");
+      return rows.items;
+    };
+    const last = FIXTURE.runs.length - 1;
+    const ode = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "ode" as const } } : { ...r, stats: { ...r.stats, solver: "abm" as const } }));
+    expect(modelled(ode)).toContainEqual(["Ran as", "a compartmental model (ODE)"]);
+    expect(modelled(ode)).not.toContainEqual(["Ran as", "agents on a network"]);       // the latest run's, never an earlier one's
+    const abm = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "abm" as const } } : r));
+    expect(modelled(abm)).toContainEqual(["Ran as", "agents on a network"]);
+    expect(modelled(FIXTURE.runs).map(([label]) => label)).not.toContain("Ran as");
   });
 });
 
 describe("the fit in the report (Part 2, 7.7)", () => {
   it("adds a Fitted to row after the R0 rows when the latest run was fitted, and nothing otherwise", () => {
     const fit = { target: "attack_rate", wanted: 0.3, achieved: 0.31, lever: "disease.beta", value: 9.5, runs: 4 };
-    const runs = FIXTURE.runs.map((r, i) => (i === FIXTURE.runs.length - 1 ? { ...r, stats: { ...r.stats, r0_measured: 2.4, fit } } : r));
+    const runs = FIXTURE.runs.map((r, i) => (i === FIXTURE.runs.length - 1 ? { ...r, stats: { ...r.stats, fit } } : r));
     const rows = composeReport({ ...FIXTURE, runs }, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
     if (rows.kind !== "keyValues") throw new Error("kv");
     const labels = rows.items.map(([label]) => label);
-    expect(labels.indexOf("Fitted to")).toBe(labels.indexOf("R\u2080 measured") + 1);
+    expect(labels.indexOf("Fitted to")).toBe(labels.indexOf("R\u2080 (approx.)") + 1);
     expect(rows.items).toContainEqual(["Fitted to", "attack rate 30% (reached 31% in 4 runs)"]);
     const peak = { target: "peak_day", wanted: 60, achieved: 58, lever: "network.network_beta", value: 1.3, runs: 3 };
     const peakRuns = FIXTURE.runs.map((r, i) => (i === 0 ? { ...r, stats: { ...r.stats, fit: peak } } : r));
@@ -118,27 +120,6 @@ describe("the fit in the report (Part 2, 7.7)", () => {
     const plain = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
     if (plain.kind !== "keyValues") throw new Error("kv");
     expect(plain.items.map(([label]) => label)).not.toContain("Fitted to");
-  });
-});
-
-describe("the measured R0 row after the pilot fix (review I2)", () => {
-  const modelled = (runs: typeof FIXTURE.runs) => {
-    const rows = composeReport({ ...FIXTURE, runs }, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
-    if (rows.kind !== "keyValues") throw new Error("kv");
-    return rows.items;
-  };
-  const last = FIXTURE.runs.length - 1;
-
-  it("never borrows an earlier run's value when the latest run's was withheld", () => {
-    const runs = FIXTURE.runs.map((r, i) => ({ ...r, stats: { ...r.stats, r0_measured: i === 0 ? 5.9 : null } }));
-    expect(modelled(runs).map(([label]) => label)).not.toContain("R₀ measured");
-  });
-
-  it("shows the pilot's measurement when the latest run was calibrated and its live value was withheld", () => {
-    const runs = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, r0_measured: null, r0_calibration: { target: 12, measured: 11.82, se: 0.55, corrections: 2, reached: true } } } : r));
-    expect(modelled(runs)).toContainEqual(["R₀ measured", "11.8"]);
-    const both = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, r0_measured: 2.44, r0_calibration: { target: 2.5, measured: 2.49, se: 0.09, corrections: 1, reached: true } } } : r));
-    expect(modelled(both)).toContainEqual(["R₀ measured", "2.4"]);                  // the live value when there is one
   });
 });
 
