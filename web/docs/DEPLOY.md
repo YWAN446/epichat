@@ -648,7 +648,7 @@ any new project that hosts this service.
 The root package tests (which include the Starsim 4 builder tests) use a
 second 3.12 virtualenv: `py -3.12 -m venv .venv` then
 `.venv/Scripts/python.exe -m pip install -r requirements.txt -r evals/requirements.txt pytest`;
-CI runs them on 3.12 too. Both requirement files pin Starsim 4 (`starsim @ git+https://github.com/starsimhub/starsim@v4` until 4.0.0 is on PyPI).
+CI runs them on 3.12 too. Both requirement files pin Starsim 4 (`starsim==4.0.0rc3` until 4.0.0 is out).
 `npx vercel dev` from the root runs both with the binding injected.
 
 **Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 15 s;
