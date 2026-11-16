@@ -1,0 +1,8 @@
+[server]
+headless = true
+enableCORS = false
+
+[theme]
+base = "dark"
+# The logo's vermilion — the "infectious" nodes in the mark.
+primaryColor = "#F13A25"

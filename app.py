@@ -1,6 +1,13 @@
-"""EpiChat Streamlit web interface — two-step: Parse → Review/Edit → Run."""
+"""EpiChat — conversational epidemiological simulation assistant."""
 
+from __future__ import annotations
+
+import base64
+import datetime
+import functools
+import logging
 import os
+import uuid
 from pathlib import Path
 
 import streamlit as st
@@ -8,446 +15,817 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from epichat.epichat import EpiChat, EpiChatResult
-from epichat.parser import parse_query
-from epichat.schema import Intervention, SimParams
+DEV_MODE = os.environ.get("EPICHAT_DEV_MODE", "false").lower() == "true"
 
-st.set_page_config(
-    page_title="EpiChat",
-    page_icon="🦠",
-    layout="wide",
+from epichat.agent import EpiChatAgent
+from epichat.chat_controller import (
+    agent_status_label,
+    build_summary,
+    detect_new_scenario,
+    detect_run_intent,
+    format_agent_tool_line,
+    format_data_sources,
+    format_tool_failure,
+    format_tool_result,
+    format_understanding_card,
+    next_question,
+    update_collected,
+)
+from epichat.epichat import EpiChat
+from epichat.exporter import to_docx, to_pdf
+from epichat.modifier import apply_modification, generate_sim_description
+from epichat.narrator import narrate
+from epichat.enricher import enrich_input
+from epichat.language import detect_language, detect_location_correction
+from epichat.parser import (
+    ClarificationNeeded,
+    extract_intent,
+    fetch_query,
+    finalize_params,
+    get_last_resolved,
+    get_last_location_queried,
+    parse_query,
 )
 
-# ── Session state ──────────────────────────────────────────────────────────────
-for key, default in [
-    ("step", "input"),          # "input" | "review" | "results"
-    ("parsed_params", None),    # SimParams after LLM parsing
-    ("last_result", None),      # EpiChatResult after running
-    ("history", []),
-    ("last_query", ""),
+_logger = logging.getLogger(__name__)
+
+# Logo assets. The Streamlit theme is dark, so the dark variants are the ones in use;
+# paths resolve against this file rather than the working directory.
+_ASSETS = Path(__file__).parent / "assets"
+_LOGO = _ASSETS / "epichat-logo-dark.png"
+_ICON = _ASSETS / "epichat-icon-dark.png"
+
+
+@functools.lru_cache(maxsize=8)
+def _data_uri(path: Path) -> str:
+    """Inline an image for the HTML blocks, which can't reach the filesystem."""
+    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+
+
+st.set_page_config(page_title="EpiChat", page_icon=str(_ICON), layout="wide")
+# Streamlit renders the chrome logo at roughly 24px either way, so both slots get the
+# simplified icon; the full mark is illegible at that size.
+st.logo(
+    str(_ICON),
+    size="large",
+    icon_image=str(_ICON),
+    link="https://ywan446.github.io/epichat/",
+)
+# st.logo caps out around 32px even at size="large"; scale the mark up past the
+# cap and let the sidebar header grow to hold it (it is fixed at 60px otherwise).
+st.markdown(
+    "<style>"
+    "img[data-testid='stSidebarLogo'], .stLogo { height: 4.5rem; width: auto; }"
+    "[data-testid='stSidebarHeader'] { height: auto; }"
+    "</style>",
+    unsafe_allow_html=True,
+)
+
+Path("results").mkdir(exist_ok=True)
+
+# ── Singleton EpiChat (registers adapters once per session) ───────────────────
+if "chat" not in st.session_state:
+    st.session_state.chat = EpiChat(output_dir="results")
+
+# ── Session state defaults ────────────────────────────────────────────────────
+# Agent chat flow (tool-calling agent) vs the staged pipeline fallback
+_USE_AGENT = os.environ.get("EPICHAT_AGENT", "1") != "0"
+
+_CONV_DEFAULTS: dict = {
+    "active_conv_id": None,
+    "stage": "greeting",
+    "context": "",
+    "params": None,
+    "agent": None,
+    "parse_clarification": None,
+    "pending_intent": None,
+    "fetch_cache": {},
+    "data_sources": [],
+    "plot_path": None,
+    "collected": {
+        "disease": False,
+        "location": False,
+        "population": False,
+        "interventions": False,
+    },
+    "messages": [],
+    "pending_input": None,
+    "outbreak_context": None,
+    "user_language": None,
+}
+
+for key, val in [
+    ("conversations", []),
+    *_CONV_DEFAULTS.items(),
 ]:
     if key not in st.session_state:
-        st.session_state[key] = default
+        st.session_state[key] = val
 
 
-def _init_review_state(p: SimParams) -> None:
-    """Copy parsed SimParams into individual session-state keys for the review form."""
-    vax = p.get_vaccine()
-    seas = p.get_seasonality()
-    treat = p.get_treatment()
-    st.session_state.update({
-        "f_disease_type":   p.disease_type,
-        "f_n_agents":       p.n_agents,
-        "f_n_contacts":     p.n_contacts,
-        "f_network_type":   p.network_type,
-        "f_network_beta":   float(p.network_beta),
-        "f_beta":           float(p.beta),
-        "f_init_prev":      float(p.init_prev),
-        "f_dur_inf":        float(p.dur_inf),
-        "f_dur_exp":        float(p.dur_exp) if p.dur_exp else 5.0,
-        "f_dur_immune":     float(p.dur_immune) if p.dur_immune else 180.0,
-        "f_p_asymp":        float(p.p_asymp),
-        "f_rel_trans_asymp":float(p.rel_trans_asymp),
-        "f_p_death":        float(p.p_death),
-        "f_sim_dur_years":  float(p.sim_dur_years),
-        "f_rand_seed_str":  str(p.rand_seed) if p.rand_seed is not None else "",
-        # vaccine
-        "f_has_vaccine":    vax is not None,
-        "f_vax_coverage":   float(vax.coverage) if vax else 0.7,
-        "f_vax_start_day":  int(vax.start_day) if vax else 0,
-        # seasonality
-        "f_has_seasonality": seas is not None,
-        "f_seas_scale":     float(seas.scale) if seas else 0.2,
-        "f_seas_shift":     float(seas.shift) if seas else 0.0,
-        # treatment
-        "f_has_treatment":  treat is not None,
-        "f_treat_coverage": float(treat.coverage) if (treat and treat.coverage) else 0.5,
-        "f_treat_capacity_str": str(treat.capacity) if (treat and treat.capacity) else "",
-        # demographics
-        "f_use_demographics": p.use_demographics,
-        "f_birth_rate":     float(p.birth_rate),
-        "f_death_rate":     float(p.death_rate),
+# ── Helper: message list manipulation ────────────────────────────────────────
+
+def _add_msg(role: str, content: str, plot_path: str | None = None) -> None:
+    st.session_state.messages.append(
+        {"role": role, "content": content, "plot_path": plot_path}
+    )
+
+
+def _save_current_conversation() -> None:
+    msgs = st.session_state.messages
+    if not msgs:
+        return
+    # Already in history — don't create a duplicate
+    if st.session_state.active_conv_id is not None:
+        return
+    first_user = next((m["content"] for m in msgs if m["role"] == "user"), "Conversation")
+    st.session_state.conversations.append({
+        "id": str(uuid.uuid4()),
+        "title": first_user,
+        "messages": list(msgs),
     })
 
 
-def _build_params_from_form() -> SimParams:
-    """Construct SimParams from the current review form session-state values."""
-    s = st.session_state
-    interventions = []
-    if s.f_has_vaccine:
-        interventions.append(Intervention(
-            type="vaccine",
-            coverage=s.f_vax_coverage,
-            start_day=s.f_vax_start_day,
-        ))
-    if s.f_has_seasonality:
-        interventions.append(Intervention(
-            type="seasonality",
-            scale=s.f_seas_scale,
-            shift=s.f_seas_shift,
-        ))
-    if s.f_has_treatment:
-        cap_str = s.f_treat_capacity_str.strip()
-        cap = int(cap_str) if cap_str.isdigit() else None
-        interventions.append(Intervention(
-            type="treatment",
-            coverage=s.f_treat_coverage,
-            capacity=cap,
-        ))
-    seed_str = s.f_rand_seed_str.strip()
-    rand_seed = int(seed_str) if seed_str.isdigit() else None
-    dt = s.f_disease_type
-    dur_exp    = float(s.f_dur_exp)    if dt in ("seir", "seirs", "seiar") else None
-    dur_immune = float(s.f_dur_immune) if dt in ("sirs", "seirs")          else None
-    return SimParams(
-        disease_type=dt,
-        n_agents=int(s.f_n_agents),
-        n_contacts=int(s.f_n_contacts),
-        network_type=s.f_network_type,
-        network_beta=float(s.f_network_beta),
-        beta=float(s.f_beta),
-        init_prev=float(s.f_init_prev),
-        dur_inf=float(s.f_dur_inf),
-        dur_exp=dur_exp,
-        dur_immune=dur_immune,
-        p_asymp=float(s.f_p_asymp),
-        rel_trans_asymp=float(s.f_rel_trans_asymp),
-        p_death=float(s.f_p_death),
-        sim_dur_years=float(s.f_sim_dur_years),
-        interventions=interventions,
-        rand_seed=rand_seed,
-        use_demographics=bool(s.f_use_demographics),
-        birth_rate=float(s.f_birth_rate),
-        death_rate=float(s.f_death_rate),
-    )
-
-
-# ── Sidebar ────────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.title("🦠 EpiChat")
-    st.caption("Natural language → Starsim simulation")
-    st.divider()
-
-    st.subheader("Example queries")
-    examples = [
-        "Run a default SIR model",
-        "Simulate COVID spread in 50,000 people with R0=2.5 over 2 years",
-        "Model measles in 100K people, 80% vaccinated, R0=15",
-        "SEIR epidemic with 5-day latent period and R0=3 in 20,000 people",
-        "Influenza with seasonal transmission in 30,000 people over 3 years",
-    ]
-    for ex in examples:
-        if st.button(ex, use_container_width=True):
-            st.session_state["prefill"] = ex
-            st.session_state.step = "input"
-
-    st.divider()
-    if st.session_state.history:
-        st.subheader("Recent queries")
-        for i, h in enumerate(reversed(st.session_state.history[-5:])):
-            st.caption(f"{i+1}. {h.user_input[:60]}{'…' if len(h.user_input) > 60 else ''}")
-
-
-# ── Step routing ───────────────────────────────────────────────────────────────
-step = st.session_state.step
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 1 — Input
-# ══════════════════════════════════════════════════════════════════════════════
-if step == "input":
-    st.title("EpiChat — Epidemiological Simulation Assistant")
-    st.markdown(
-        "Describe an epidemic scenario in plain English. "
-        "EpiChat will extract the parameters, let you review and edit them, "
-        "then run the [Starsim](https://starsim.org) simulation."
-    )
-
-    prefill = st.session_state.pop("prefill", "")
-    if prefill:
-        st.session_state["query_input"] = prefill
-
-    query = st.text_area(
-        "Your query",
-        key="query_input",
-        height=80,
-        placeholder="e.g. Simulate measles in a city of 100,000 with 70% vaccination coverage",
-    )
-
-    if st.button("Extract Parameters", type="primary"):
-        if not query.strip():
-            st.warning("Please enter a query.")
+def _reset_conversation() -> None:
+    for key, val in _CONV_DEFAULTS.items():
+        if isinstance(val, dict):
+            st.session_state[key] = dict(val)
+        elif isinstance(val, list):
+            st.session_state[key] = list(val)
         else:
-            with st.spinner("Parsing query with LLM…"):
-                try:
-                    params = parse_query(query.strip())
-                    st.session_state.parsed_params = params
-                    st.session_state.last_query = query.strip()
-                    _init_review_state(params)
-                    st.session_state.step = "review"
-                    st.rerun()
-                except ValueError as e:
-                    st.error(f"**Parse error:** {e}")
+            st.session_state[key] = val
+    # Clear empty-state widget state so pills don't re-fire after New Chat
+    for wkey in ("suggestion_pills", "initial_input"):
+        st.session_state.pop(wkey, None)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 2 — Review & Edit Parameters
-# ══════════════════════════════════════════════════════════════════════════════
-elif step == "review":
-    st.title("Review & Edit Parameters")
-    st.caption(f'Query: *"{st.session_state.last_query}"*')
-    st.markdown("The LLM extracted the parameters below. Edit any value, then click **Run Simulation**.")
-    st.divider()
-
-    s = st.session_state
-
-    # ── Disease model ──────────────────────────────────────────────────────────
-    st.subheader("Disease Model")
-    c1, c2, c3 = st.columns(3)
-    s.f_disease_type = c1.selectbox(
-        "Disease type",
-        ["sir", "seir", "sis", "sirs", "seirs", "seiar"],
-        index=["sir", "seir", "sis", "sirs", "seirs", "seiar"].index(s.f_disease_type),
-        help="SIR: permanent immunity | SEIR: + latent period | SIS: no immunity | "
-             "SIRS: waning immunity | SEIRS: latent + waning | SEIAR: + asymptomatic track",
+def _restore_conversation(conv_id: str) -> None:
+    conv = next((c for c in st.session_state.conversations if c["id"] == conv_id), None)
+    if conv is None:
+        return
+    _reset_conversation()
+    st.session_state.messages = list(conv["messages"])
+    st.session_state.active_conv_id = conv_id
+    st.session_state.stage = "results"
+    last_plot = next(
+        (m["plot_path"] for m in reversed(conv["messages"]) if m.get("plot_path")),
+        None,
     )
-    s.f_n_agents = c2.number_input("Population size", min_value=10, max_value=1_000_000,
-                                    value=s.f_n_agents, step=1000)
-    s.f_init_prev = c3.number_input("Initial prevalence", min_value=0.0001, max_value=0.5,
-                                     value=s.f_init_prev, format="%.4f")
+    st.session_state.plot_path = last_plot
 
-    c4, c5, c6 = st.columns(3)
-    s.f_p_death = c4.number_input("Infection fatality rate", min_value=0.0, max_value=1.0,
-                                   value=s.f_p_death, format="%.4f")
-    s.f_dur_inf = c5.number_input("Infectious period (days)", min_value=1.0, max_value=365.0,
-                                   value=s.f_dur_inf)
-    if s.f_disease_type in ("seir", "seirs", "seiar"):
-        s.f_dur_exp = c6.number_input("Latent period (days)", min_value=1.0, max_value=365.0,
-                                       value=s.f_dur_exp)
-    elif s.f_disease_type == "sirs":
-        s.f_dur_immune = c6.number_input("Immunity duration (days)", min_value=1.0, max_value=3650.0,
-                                          value=s.f_dur_immune,
-                                          help="Days before recovered agents become susceptible again")
-    else:
-        c6.markdown("")
 
-    if s.f_disease_type == "seirs":
-        d1, d2, d3 = st.columns(3)
-        s.f_dur_immune = d1.number_input("Immunity duration (days)", min_value=1.0, max_value=3650.0,
-                                          value=s.f_dur_immune,
-                                          help="Days before recovered agents become susceptible again")
+def _export_filename(ext: str) -> str:
+    msgs = st.session_state.messages
+    first_user = next((m["content"] for m in msgs if m["role"] == "user"), "chat")
+    slug = first_user[:30].lower().replace(" ", "_").replace("/", "_")
+    date = datetime.datetime.now().strftime("%Y%m%d")
+    return f"epichat_{slug}_{date}.{ext}"
 
-    if s.f_disease_type == "seiar":
-        a1, a2 = st.columns(2)
-        s.f_p_asymp = a1.slider(
-            "Fraction asymptomatic", 0.0, 1.0, value=s.f_p_asymp, step=0.05,
-            help="Proportion of infections that are asymptomatic (e.g. 0.4 for COVID-19)")
-        s.f_rel_trans_asymp = a2.slider(
-            "Asymptomatic relative transmissibility", 0.0, 1.0, value=s.f_rel_trans_asymp, step=0.05,
-            help="Transmissibility of asymptomatic cases relative to symptomatic (e.g. 0.5 = half as infectious)")
 
-    # ── Network ───────────────────────────────────────────────────────────────
-    st.subheader("Network")
-    _net_options = ["random", "age_structured"]
-    _net_labels  = ["Random (Erdős–Rényi)", "Age-structured (POLYMOD)"]
-    n1, n2, n3 = st.columns(3)
-    _net_idx = _net_options.index(s.get("f_network_type", "random"))
-    _net_sel = n1.selectbox(
-        "Network type", _net_labels, index=_net_idx,
-        help="Random: every agent contacts n random others each day.\n"
-             "Age-structured: POLYMOD contact matrix — children/adults/elderly mix at realistic rates.")
-    s.f_network_type = _net_options[_net_labels.index(_net_sel)]
+# ── Core conversation logic ───────────────────────────────────────────────────
 
-    if s.f_network_type == "random":
-        s.f_n_contacts = n2.number_input(
-            "Avg contacts per person/day", min_value=1, max_value=100, value=s.f_n_contacts,
-            help="Typical values: household-only ≈ 3–5, community ≈ 8–15, high-contact ≈ 15–30")
-    else:
-        n2.info("Contact rates from POLYMOD matrix:\n"
-                "children↔children: 7/day · adults↔adults: 9/day · elderly↔elderly: 3.5/day")
+def _lang() -> str:
+    return st.session_state.get("user_language") or "English"
 
-    s.f_network_beta = n3.number_input(
-        "Transmission multiplier", min_value=0.01, max_value=10.0,
-        value=s.f_network_beta, format="%.2f",
-        help="Scales all contact-level transmission. 1.0 = default. "
-             "0.5 = 50% reduction (e.g. masks + distancing).")
 
-    # ── Transmission ──────────────────────────────────────────────────────────
-    st.subheader("Transmission")
-    t1, t2, t3 = st.columns(3)
-    s.f_beta = t1.number_input("Beta (per-year rate)", min_value=0.001, max_value=1000.0,
-                                value=s.f_beta, format="%.4f",
-                                help="Per-year transmission rate. Derived from R0 via: beta = R0 × 365 / (n_contacts × dur_inf_days)")
-    approx_r0 = s.f_beta * s.f_network_beta * (s.f_dur_inf / 365.0) * s.f_n_contacts
-    t2.metric("Effective R0", f"{approx_r0:.2f}",
-              help="R0 = beta × network_multiplier × (dur_inf/365) × n_contacts")
-    t3.markdown("")
+def _build_summary_with_description() -> str:
+    s = st.session_state
+    lang = _lang()
+    try:
+        description = generate_sim_description(s.params, s.data_sources, lang=lang)
+    except Exception:
+        description = ""
+    from epichat.disease_db import detect_disease, check_params as _db_check
+    _disease = detect_disease(s.context or "")
+    _warnings = (
+        _db_check(
+            _disease, s.params.approx_r0(), s.params.dur_inf, s.params.dur_exp,
+            p_death=s.params.p_death or None,
+            n_contacts=s.params.n_contacts,
+            dur_immune=s.params.dur_immune,
+            p_asymp=s.params.p_asymp if s.params.disease_type == "seiar" else None,
+        )
+        if _disease else []
+    )
+    return build_summary(s.params, s.data_sources, description, lang=lang, param_warnings=_warnings)
 
-    # ── Simulation settings ───────────────────────────────────────────────────
-    st.subheader("Simulation Settings")
-    s1, s2, s3 = st.columns(3)
-    s.f_sim_dur_years = s1.number_input("Duration (years)", min_value=0.1, max_value=20.0,
-                                         value=s.f_sim_dur_years)
-    s.f_rand_seed_str = s2.text_input("Random seed (blank = random)", value=s.f_rand_seed_str,
-                                       placeholder="e.g. 42")
-    s3.markdown("")
 
-    # ── Interventions ─────────────────────────────────────────────────────────
-    st.subheader("Interventions")
-    iv1, iv2, iv3 = st.columns(3)
-
-    with iv1:
-        s.f_has_vaccine = st.checkbox("Vaccination", value=s.f_has_vaccine)
-        if s.f_has_vaccine:
-            s.f_vax_coverage = st.slider("Coverage", 0.0, 1.0, value=s.f_vax_coverage, step=0.01)
-            s.f_vax_start_day = st.number_input("Start day (0 = pre-existing)", min_value=0,
-                                                  value=s.f_vax_start_day)
-
-    with iv2:
-        s.f_has_seasonality = st.checkbox("Seasonality", value=s.f_has_seasonality)
-        if s.f_has_seasonality:
-            s.f_seas_scale = st.slider("Strength (±%)", 0.0, 1.0, value=s.f_seas_scale, step=0.05)
-            s.f_seas_shift = st.slider("Phase shift (0=Jan peak, 0.5=Jul peak)", 0.0, 1.0,
-                                        value=s.f_seas_shift, step=0.05)
-
-    with iv3:
-        s.f_has_treatment = st.checkbox("Treatment", value=s.f_has_treatment)
-        if s.f_has_treatment:
-            s.f_treat_coverage = st.slider("Uptake probability", 0.0, 1.0,
-                                            value=s.f_treat_coverage, step=0.01)
-            s.f_treat_capacity_str = st.text_input("Max capacity/day (blank = unlimited)",
-                                                    value=s.f_treat_capacity_str)
-
-    # ── Demographics (optional) ───────────────────────────────────────────────
-    with st.expander("Demographics (births & deaths)"):
-        s.f_use_demographics = st.checkbox("Enable demographics", value=s.f_use_demographics)
-        if s.f_use_demographics:
-            d1, d2 = st.columns(2)
-            s.f_birth_rate = d1.number_input("Birth rate (per 1000/year)", min_value=0.1,
-                                              max_value=100.0, value=s.f_birth_rate)
-            s.f_death_rate = d2.number_input("Death rate (per 1000/year)", min_value=0.1,
-                                              max_value=100.0, value=s.f_death_rate)
-
-    st.divider()
-    col_back, col_run, _ = st.columns([1, 1, 4])
-    if col_back.button("← Modify Query"):
-        st.session_state.step = "input"
-        st.rerun()
-
-    if col_run.button("▶ Run Simulation", type="primary"):
+def _do_parse() -> None:
+    st.session_state.parse_clarification = None
+    for attempt in (1, 2):
         try:
-            final_params = _build_params_from_form()
-        except Exception as e:
-            st.error(f"Parameter error: {e}")
-            st.stop()
+            ctx = st.session_state.get("outbreak_context")
+            st.session_state.params = parse_query(st.session_state.context, context=ctx)
+            st.session_state.data_sources = get_last_resolved()
+            if get_last_location_queried():
+                st.session_state._location_recognized = True
+            return
+        except ClarificationNeeded as e:
+            # The LLM understood but needs an answer — surface its question.
+            st.session_state.parse_clarification = e.question
+            return
+        except Exception:
+            _logger.exception("parse_query failed (attempt %d/2)", attempt)
 
-        with st.spinner("Running Starsim simulation…"):
-            chat = EpiChat(output_dir="results")
-            # Use the reviewed params directly (skip re-parsing)
-            from epichat.epichat import EpiChatResult
-            exec_result = chat._execute_with_retry(
-                st.session_state.last_query, final_params,
-                str(Path("results") / "sim_latest.png")
+
+def _do_understand() -> None:
+    """Stage 1: extract intent; on ambiguity store the clarifying question."""
+    s = st.session_state
+    s.pending_intent = None
+    s.parse_clarification = None
+    for attempt in (1, 2):
+        try:
+            s.pending_intent = extract_intent(s.context, s.get("outbreak_context"))
+            return
+        except ClarificationNeeded as e:
+            s.parse_clarification = e.question
+            return
+        except Exception:
+            _logger.exception("extract_intent failed (attempt %d/2)", attempt)
+
+
+def _detected_disease_name() -> str | None:
+    s = st.session_state
+    ctx = s.get("outbreak_context")
+    if ctx is not None and ctx.disease_name:
+        return ctx.disease_name
+    from epichat.disease_db import detect_disease
+    return detect_disease(s.context)
+
+
+def _show_understanding_card() -> None:
+    s = st.session_state
+    _add_msg("assistant", format_understanding_card(
+        s.pending_intent.preliminary_params,
+        s.pending_intent.data_queries,
+        disease_name=_detected_disease_name(),
+        lang=_lang(),
+    ))
+    s.stage = "confirm"
+
+
+def _do_fetch_and_finalize() -> None:
+    """Stage 2: parallel data fetches with per-tool chat lines, then finalize."""
+    s = st.session_state
+    intent = s.pending_intent
+    resolved: list = []
+    with st.status("Fetching data…", expanded=True) as status:
+        pending = []
+        for q in intent.data_queries:
+            key = repr(q)
+            if key in s.fetch_cache:
+                resolved.extend(s.fetch_cache[key])   # reuse, no duplicate line
+            else:
+                pending.append((key, q))
+        if pending:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            with ThreadPoolExecutor(max_workers=min(4, len(pending))) as pool:
+                futures = {pool.submit(fetch_query, q): (key, q) for key, q in pending}
+                for fut in as_completed(futures):
+                    key, q = futures[fut]
+                    try:
+                        fields = fut.result()
+                    except Exception as exc:
+                        _logger.exception("fetch_query failed for %s", q.source)
+                        line = format_tool_failure(q, str(exc)[:120])
+                        fields = []
+                    else:
+                        line = format_tool_result(q, fields)
+                    s.fetch_cache[key] = fields
+                    resolved.extend(fields)
+                    status.write(line)
+                    _add_msg("assistant", line)
+        status.update(label="Calibrating parameters…")
+        s.params = None
+        for attempt in (1, 2):
+            try:
+                s.params = finalize_params(s.context, intent, resolved)
+                break
+            except Exception:
+                _logger.exception("finalize_params failed (attempt %d/2)", attempt)
+        s.data_sources = get_last_resolved()
+        if get_last_location_queried():
+            s._location_recognized = True
+        status.update(label="Data ready", state="complete", expanded=False)
+    _add_msg("assistant", "🧮 Parameters calibrated (β matched to literature R₀; "
+                          "demographics filled at generation)")
+
+
+def _finish_collection() -> None:
+    """Shared tail after a successful fetch+finalize: questions or summary."""
+    s = st.session_state
+    s.collected = update_collected(
+        s.collected, s.params, s.data_sources, s.context,
+        outbreak_context=s.outbreak_context,
+    )
+    if st.session_state.get("_location_recognized"):
+        s.collected["location"] = True
+        s.collected["population"] = True
+        st.session_state._location_recognized = False
+    question = next_question(s.collected, s.params, s.data_sources, lang=_lang())
+    if question is None:
+        _add_msg("assistant", _build_summary_with_description())
+        s.stage = "ready"
+    else:
+        _add_msg("assistant", question)
+        s.stage = "collecting"
+
+
+def _do_enrich(text: str) -> None:
+    st.session_state.outbreak_context = enrich_input(text)
+
+
+def _format_context_card(ctx) -> str:
+    lines = ["**🔬 Extracted context (dev mode)**\n", "| Field | Value |", "|-------|-------|"]
+    for k, v in ctx.model_dump().items():
+        display_v = str(v) if v not in (None, []) else "*unknown*"
+        lines.append(f"| {k} | {display_v} |")
+    return "\n".join(lines)
+
+
+def _do_run_simulation() -> None:
+    s = st.session_state
+    pop_field = next(
+        (rf for rf in s.data_sources if rf.field == "total_population"), None
+    )
+    pop_scale = (
+        pop_field.value / s.params.n_agents
+        if pop_field and s.params.n_agents > 0
+        else 1.0
+    )
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    plot_path = str(Path("results") / f"sim_{ts}.png")
+
+    exec_result = s.chat._execute_with_retry(
+        s.context, s.params, plot_path, pop_scale=pop_scale
+    )
+
+    if exec_result["error"]:
+        _add_msg(
+            "assistant",
+            f"The simulation encountered an error: {exec_result['error']}\n\n"
+            "Would you like to adjust the parameters or try again?",
+        )
+        s.stage = "ready"
+        return
+
+    lang = _lang()
+    narration = narrate(s.context, s.params, exec_result["stats"], lang=lang)
+    stats = exec_result["stats"]
+    n = stats.get("n_agents", 1)
+    pct = stats.get("total_infected", 0) / n * 100 if n else 0
+
+    # Narration text — already in the user's language
+    summary = narration.get("summary", "")
+    if narration.get("summary_continued"):
+        summary += "\n\n" + narration["summary_continued"]
+    findings = narration.get("key_findings", [])
+
+    # UI template strings — translate if needed
+    stats_text = (
+        "✓ Simulation complete\n\n"
+        f"**Peak infections:** {stats.get('peak_infections', 'N/A'):,} "
+        f"(day {stats.get('peak_day', '?')})\n"
+        f"**Total infected:** {stats.get('total_infected', 'N/A'):,} ({pct:.1f}%)\n"
+        f"**Deaths:** {stats.get('total_deaths', 0):,}"
+    )
+    findings_label = "**Key findings:**"
+    footer = "Would you like to try a variation, or start a new simulation?"
+    if lang.lower() != "english":
+        from epichat.language import translate
+        # One call: batch all template strings separated by a marker translators preserve
+        combined = stats_text + "{{SEP}}" + findings_label + "{{SEP}}" + footer
+        parts = translate(combined, lang).split("{{SEP}}")
+        stats_text = parts[0].strip()
+        findings_label = parts[1].strip() if len(parts) > 1 else findings_label
+        footer = parts[2].strip() if len(parts) > 2 else footer
+
+    result_text = stats_text + "\n\n" + summary
+    if findings:
+        result_text += "\n\n" + findings_label + "\n" + "\n".join(f"· {f}" for f in findings)
+    sources_block = format_data_sources(
+        s.data_sources, params=s.params, disease_name=_detected_disease_name(),
+    )
+    if sources_block:
+        result_text += "\n\n---\n" + sources_block
+    result_text += "\n\n---\n" + footer
+
+    _add_msg("assistant", result_text, plot_path=exec_result["plot_path"])
+    s.plot_path = exec_result["plot_path"]
+    s.stage = "results"
+
+
+def _handle_user_message(text: str) -> None:
+    """Add user message immediately and queue processing for the next render cycle."""
+    s = st.session_state
+    if s.stage == "greeting":
+        s.stage = "collecting"
+    _add_msg("user", text)
+    s.pending_input = text
+
+
+def _thinking_text() -> str:
+    """Return an appropriate status label for the current stage and pending input."""
+    if _USE_AGENT:
+        return "Thinking…"
+    stage = st.session_state.stage
+    text = st.session_state.pending_input or ""
+    if stage == "collecting":
+        return "Searching available data…"
+    if stage in ("ready", "results"):
+        if detect_new_scenario(text):
+            return "Parsing new scenario…"
+        return "Thinking…"
+    return "Thinking…"
+
+
+def _agent_turn(text: str) -> None:
+    """One turn of the tool-calling agent flow (EPICHAT_AGENT=1)."""
+    s = st.session_state
+    if s.get("agent") is None:
+        s.agent = EpiChatAgent(executor=s.chat)
+
+    with st.status("Working…", expanded=True) as status:
+        def on_event(kind: str, payload: dict) -> None:
+            if kind == "text":
+                _add_msg("assistant", payload["text"])
+            elif kind == "tool_use":
+                # Progress must be status.write() lines only: status.update()
+                # mid-run desyncs Streamlit 1.54's frontend element tree
+                # ("Bad delta path", white screen).
+                if payload["name"] == "run_simulation":
+                    status.write(f"⏳ {agent_status_label('run_simulation')}")
+                line = format_agent_tool_line(payload["name"], payload.get("input") or {})
+                status.write(line)
+                _add_msg("assistant", line)
+            elif kind == "tool_result":
+                content = payload.get("content")
+                text_c = content if isinstance(content, str) else ""
+                if payload.get("is_error") or text_c.startswith(
+                        ("CONFIG ERROR", "FETCH ERROR", "SIMULATION ERROR")):
+                    _add_msg("assistant", f"⚠ {text_c[:200] or 'A tool call failed.'}")
+            elif kind == "plot":
+                block = format_data_sources(
+                    payload["sources"], params=s.agent.state.params,
+                    disease_name=s.agent.state.disease,
+                )
+                _add_msg("assistant", block or "Simulation complete.",
+                         plot_path=payload["path"])
+                s.plot_path = payload["path"]
+
+        s.agent.handle(text, on_event)
+        status.update(label="Done", state="complete", expanded=False)
+
+    # Mirror agent state so exports and summaries keep working
+    s.params = s.agent.state.params
+    s.data_sources = list(s.agent.state.data_sources)
+
+
+def _process_pending() -> None:
+    """Execute the queued user input. Called from the render loop under a spinner."""
+    s = st.session_state
+    text = s.pending_input
+    s.pending_input = None
+
+    if _USE_AGENT:
+        _agent_turn(text)
+        return
+
+    # One-time language detection per conversation (skipped for English)
+    if s.user_language is None:
+        s.user_language = detect_language(text)
+    lang = _lang()
+
+    if s.stage == "collecting":
+        s.context = (s.context + " " + text).strip()
+        if s.outbreak_context is None:
+            _do_enrich(text)
+            if DEV_MODE and s.outbreak_context is not None and s.outbreak_context.disease_name is not None:
+                _add_msg("assistant", _format_context_card(s.outbreak_context))
+        _do_understand()
+        if s.pending_intent is None:
+            _add_msg(
+                "assistant",
+                s.parse_clarification
+                or "I had trouble understanding that. Could you rephrase? "
+                   "For example: 'Simulate HIV in Kenya'.",
             )
+            return
+        _show_understanding_card()
 
-        if exec_result["error"]:
-            st.error(f"**Simulation error:** {exec_result['error']}")
+    elif s.stage == "confirm":
+        if detect_new_scenario(text):
+            _start_new_scenario(text)
+            return
+        if detect_run_intent(text):
+            _do_fetch_and_finalize()
+            if s.params is None:
+                _add_msg(
+                    "assistant",
+                    "I couldn't finalize the parameters — could you rephrase "
+                    "or adjust the settings?",
+                )
+                s.stage = "collecting"
+                return
+            _finish_collection()
         else:
-            from epichat.narrator import narrate
-            narration = narrate(st.session_state.last_query, final_params, exec_result["stats"])
-            result = EpiChatResult(
-                user_input=st.session_state.last_query,
-                params=final_params,
-                stats=exec_result["stats"],
-                plot_path=exec_result["plot_path"],
-                narration=narration,
-            )
-            st.session_state.history.append(result)
-            st.session_state.last_result = result
-            st.session_state.step = "results"
-            st.rerun()
+            # Treat as a correction: fold into context and re-present the card
+            s.context = (s.context + " " + text).strip()
+            _do_understand()
+            if s.pending_intent is None:
+                _add_msg(
+                    "assistant",
+                    s.parse_clarification
+                    or "I had trouble understanding that. Could you rephrase?",
+                )
+                s.stage = "collecting"
+                return
+            _show_understanding_card()
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 3 — Results
-# ══════════════════════════════════════════════════════════════════════════════
-elif step == "results":
-    result = st.session_state.last_result
-    if result is None:
-        st.session_state.step = "input"
-        st.rerun()
-
-    st.title("Simulation Results")
-    st.caption(f'Query: *"{result.user_input}"*')
-    st.success("Simulation complete!")
-
-    col_plot, col_text = st.columns([1, 1])
-
-    with col_plot:
-        st.subheader("Epidemic curve")
-        if result.plot_path and Path(result.plot_path).exists():
-            st.image(result.plot_path, use_container_width=True)
+    elif s.stage == "ready":
+        if detect_new_scenario(text):
+            _start_new_scenario(text)
+        elif detect_run_intent(text):
+            s.stage = "running"
         else:
-            st.info("Plot not available.")
+            _apply_modification_and_summarize(text)
 
-    with col_text:
-        st.subheader("Results summary")
-        s = result.stats
-        n = s.get("n_agents", 1)
-        pct = s.get("total_infected", 0) / n * 100 if n else 0
+    elif s.stage == "results":
+        if "new simulation" in text.lower() or "new chat" in text.lower():
+            _save_current_conversation()
+            _reset_conversation()
+        elif detect_new_scenario(text):
+            _start_new_scenario(text)
+        else:
+            _apply_modification_and_summarize(text)
+            s.stage = "ready"
 
-        mc1, mc2, mc3 = st.columns(3)
-        mc1.metric("Peak infections", f"{s.get('peak_infections', '?'):,}",
-                   f"day {s.get('peak_day', '?')}")
-        mc2.metric("Total infected", f"{s.get('total_infected', '?'):,}", f"{pct:.1f}%")
-        mc3.metric("Deaths", f"{s.get('total_deaths', 0):,}")
 
-        st.markdown("---")
-        st.markdown(result.narration.get("summary", ""))
+def _start_new_scenario(text: str) -> None:
+    s = st.session_state
+    s.context = text
+    s.params = None
+    s.pending_intent = None
+    s.fetch_cache = {}
+    s.data_sources = []
+    s.collected = {k: False for k in s.collected}
+    s.outbreak_context = None
+    _do_enrich(text)
+    if DEV_MODE and s.outbreak_context is not None and s.outbreak_context.disease_name is not None:
+        _add_msg("assistant", _format_context_card(s.outbreak_context))
+    _do_understand()
+    if s.pending_intent is None:
+        _add_msg(
+            "assistant",
+            s.parse_clarification
+            or "I had trouble understanding that. Could you rephrase? "
+               "For example: 'Simulate HIV in Kenya'.",
+        )
+        s.stage = "collecting"
+        return
+    _show_understanding_card()
 
-        findings = result.narration.get("key_findings", [])
-        if findings:
-            st.markdown("**Key findings:**")
-            for f in findings:
-                st.markdown(f"- {f}")
 
-    with st.expander("Model details"):
-        p = result.params
-        interventions_display = []
-        for i in p.interventions:
-            d = {"type": i.type}
-            if i.type == "vaccine":
-                d.update({"coverage": i.coverage, "start_day": i.start_day})
-            elif i.type == "seasonality":
-                d.update({"scale": i.scale, "shift": i.shift})
-            elif i.type == "treatment":
-                d.update({"coverage": i.coverage, "capacity": i.capacity})
-            interventions_display.append(d)
+def _apply_modification_and_summarize(text: str) -> None:
+    s = st.session_state
+    if s.params is None:
+        _add_msg("assistant", "I don't have parameters yet. Please describe what you'd like to simulate.")
+        return
 
-        st.json({
-            "disease_type":         p.disease_type,
-            "n_agents":             p.n_agents,
-            "network_type":         p.network_type,
-            "n_contacts":           p.n_contacts,
-            "network_beta":         p.network_beta,
-            "beta":                 p.beta,
-            "effective_R0":         round(p.approx_r0(), 2),
-            "init_prev":            p.init_prev,
-            "dur_inf_days":         p.dur_inf,
-            "dur_exp_days":         p.dur_exp,
-            "p_death":              p.p_death,
-            "sim_dur_years":        p.sim_dur_years,
-            "rand_seed":            p.rand_seed,
-            "use_demographics":     p.use_demographics,
-            "interventions":        interventions_display,
-        })
+    # Check if the user is correcting the location before treating as a param modification
+    current_location = s.outbreak_context.location if s.outbreak_context else None
+    new_location = detect_location_correction(text, current_location)
+    if new_location is not None:
+        s.context = (s.context + " " + text).strip()
+        if s.outbreak_context is not None:
+            s.outbreak_context = s.outbreak_context.model_copy(update={"location": new_location})
+        _do_parse()
+        if st.session_state.get("_location_recognized"):
+            s.collected["location"] = True
+            s.collected["population"] = True
+            st.session_state._location_recognized = False
+        s.collected = update_collected(
+            s.collected, s.params, s.data_sources, text,
+            outbreak_context=s.outbreak_context,
+        )
+        _add_msg(
+            "assistant",
+            "Updated. Here's the revised summary:\n\n" + _build_summary_with_description(),
+        )
+        return
 
+    try:
+        r0_before = s.params.approx_r0()
+        params_before = s.params
+        s.params = apply_modification(s.params, text)
+        from epichat.parser import recalibrate_beta
+        s.params = recalibrate_beta(s.params, r0_before, params_before)
+    except Exception as e:
+        _add_msg("assistant", f"I couldn't apply that modification: {e}. Please try again.")
+        return
+    s.context = (s.context + " " + text).strip()
+    _add_msg(
+        "assistant",
+        "Updated. Here's the revised summary:\n\n" + _build_summary_with_description(),
+    )
+
+
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+with st.sidebar:
+    # The mark already sits directly above this via st.logo — wordmark only here.
+    st.markdown(
+        "<h2 style='font-size:2rem;margin:0;padding:4px 0;line-height:1.2'>EpiChat</h2>"
+        "<p style='font-size:1rem;color:white;margin:6px 0 0 0;line-height:1.4'>"
+        "Ask an epidemiological question. Get a validated simulation.</p>"
+        "<p style='font-size:0.75rem;color:rgba(255,255,255,0.5);margin:4px 0 0 0'>v0.3</p>",
+        unsafe_allow_html=True,
+    )
     st.divider()
-    c1, c2 = st.columns([1, 5])
-    if c1.button("New Simulation", type="primary"):
-        st.session_state.step = "input"
+
+    if st.button("+ New Chat", use_container_width=True, type="primary"):
+        _save_current_conversation()
+        _reset_conversation()
         st.rerun()
-    if c2.button("Edit Parameters"):
-        # Re-init the form with the params that were used
-        _init_review_state(result.params)
-        st.session_state.step = "review"
+
+    if st.session_state.conversations:
+        st.divider()
+        st.caption("RECENT")
+        for conv in reversed(st.session_state.conversations):
+            title = conv["title"][:50] + ("…" if len(conv["title"]) > 50 else "")
+            if st.button(title, key=f"conv_{conv['id']}", use_container_width=True):
+                _save_current_conversation()
+                _restore_conversation(conv["id"])
+                st.rerun()
+
+    if st.session_state.plot_path:
+        st.divider()
+        st.caption("Export conversation")
+        msgs = st.session_state.messages
+        _cache_key = (st.session_state.plot_path, len(msgs))
+        if st.session_state.get("_export_cache_key") != _cache_key:
+            st.session_state["_export_pdf"] = to_pdf(msgs, st.session_state.plot_path)
+            st.session_state["_export_docx"] = to_docx(msgs, st.session_state.plot_path)
+            st.session_state["_export_cache_key"] = _cache_key
+        st.download_button(
+            "↓ Download PDF",
+            data=st.session_state["_export_pdf"],
+            file_name=_export_filename("pdf"),
+            mime="application/pdf",
+            use_container_width=True,
+        )
+        st.download_button(
+            "↓ Download Word",
+            data=st.session_state["_export_docx"],
+            file_name=_export_filename("docx"),
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            use_container_width=True,
+        )
+
+
+# ── Main area ─────────────────────────────────────────────────────────────────
+_TYPEWRITER_PHRASES = [
+    "What would you like to simulate today?",
+    "¿Qué le gustaría simular hoy?",
+    "Que souhaitez-vous simuler aujourd'hui?",
+    "O que gostaria de simular hoje?",
+    "今天您想模拟什么？",
+    "ماذا تريد أن تحاكي اليوم؟",
+    "Was möchten Sie heute simulieren?",
+    "आज आप क्या सिमुलेट करना चाहेंगे?",
+    "今日は何をシミュレートしますか？",
+    "Unataka kuiga nini leo?",
+]
+
+_TYPEWRITER_HTML = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  html, body {{ background:transparent; height:56px; overflow:hidden; }}
+  #tw {{
+    font-family: "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: white;
+    text-align: center;
+    line-height: 56px;
+    height: 56px;
+    white-space: nowrap;
+  }}
+  #cursor {{
+    display: inline-block;
+    width: 2px;
+    height: 1.15em;
+    background: white;
+    vertical-align: middle;
+    margin-left: 1px;
+    animation: blink 0.65s step-end infinite;
+  }}
+  @keyframes blink {{ 0%,100%{{opacity:1}} 50%{{opacity:0}} }}
+</style>
+</head>
+<body>
+<div id="tw"><span id="text"></span><span id="cursor"></span></div>
+<script>
+const phrases = {phrases_json};
+let pi = 0, ci = 0, deleting = false;
+const textEl = document.getElementById("text");
+function tick() {{
+  const p = phrases[pi];
+  if (!deleting) {{
+    ci++;
+    textEl.textContent = p.slice(0, ci);
+    if (ci === p.length) {{ deleting = true; setTimeout(tick, 2400); return; }}
+    setTimeout(tick, 65);
+  }} else {{
+    ci--;
+    textEl.textContent = p.slice(0, ci);
+    if (ci === 0) {{
+      deleting = false;
+      pi = (pi + 1) % phrases.length;
+      setTimeout(tick, 450);
+      return;
+    }}
+    setTimeout(tick, 32);
+  }}
+}}
+setTimeout(tick, 900);
+</script>
+</body>
+</html>"""
+
+_SUGGESTIONS = [
+    # Each pill was run through the agent (2026-08-26) and flows to a proposed
+    # setup without errors, follow-up questions, or improvised values.
+    "Simulate a generic SIR epidemic",
+    "COVID-19 in the United States with immunity waning after a year",
+    "Measles in Kenya with current vaccination coverage",
+    "Polio in Pakistan with current vaccination coverage",
+    "Simula un brote de cólera en Haití",
+]
+
+messages = st.session_state.messages
+
+if not messages:
+    # ── Empty state: inline input + suggestion pills ──────────────────────────
+    import json as _json
+    st.markdown(
+        "<div style='text-align:center;padding-top:7vh'>"
+        f"<img src='{_data_uri(_LOGO)}' alt='EpiChat' "
+        "style='width:132px;height:132px;object-fit:contain;margin-bottom:0.4rem'>"
+        "<h1 style='font-size:3rem;margin:0'>EpiChat</h1>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.components.v1.html(
+        _TYPEWRITER_HTML.format(phrases_json=_json.dumps(_TYPEWRITER_PHRASES)),
+        height=56,
+    )
+    st.markdown(
+        "<p style='color:#aac4e0;font-size:1rem;margin:-8px 0 2rem 0;text-align:center'>"
+        "Describe a disease &nbsp;·&nbsp; paste an epidemiological report "
+        "&nbsp;·&nbsp; share a URL &nbsp;·&nbsp; ask me to search for outbreak news"
+        "</p>",
+        unsafe_allow_html=True,
+    )
+    with st.container():
+        initial_prompt = st.chat_input("Type your message…", key="initial_input")
+        selected = st.pills(
+            label="Suggestions",
+            label_visibility="collapsed",
+            options=_SUGGESTIONS,
+            key="suggestion_pills",
+        )
+    if initial_prompt:
+        _handle_user_message(initial_prompt)
         st.rerun()
+    if selected:
+        _handle_user_message(selected)
+        st.rerun()
+    st.stop()
+
+# ── Active state: chat thread + fixed input at bottom ────────────────────────
+for msg in messages:
+    avatar = str(_ICON) if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=avatar):
+        st.markdown(msg["content"])
+        if msg.get("plot_path") and Path(msg["plot_path"]).exists():
+            st.image(msg["plot_path"], use_container_width=True)
+
+# Show thinking indicator and process queued input
+if st.session_state.pending_input:
+    with st.chat_message("assistant", avatar=str(_ICON)):
+        with st.spinner(_thinking_text()):
+            _process_pending()
+    st.rerun()
+
+if st.session_state.stage == "running":
+    with st.chat_message("assistant", avatar=str(_ICON)):
+        st.markdown("Running simulation…")
+    with st.spinner("Running simulation…"):
+        _do_run_simulation()
+    st.rerun()
+
+if prompt := st.chat_input("Type your message…"):
+    _handle_user_message(prompt)
+    st.rerun()

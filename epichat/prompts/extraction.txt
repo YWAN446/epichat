@@ -112,3 +112,121 @@ User: "Model measles in a population of 100,000 where 80% are vaccinated, R0=15,
 
 User: "SEIR epidemic with seasonal transmission, 5-day latent period, R0=3 in 20,000 people over 3 years"
 {"disease_type":"seir","n_agents":20000,"n_contacts":4,"network_type":"random","network_beta":1.0,"beta":54.750000,"init_prev":0.01,"dur_inf":10.0,"dur_exp":5.0,"p_death":0.0,"sim_dur_years":3.0,"rand_seed":null,"use_demographics":false,"birth_rate":20.0,"death_rate":10.0,"interventions":[{"type":"seasonality","coverage":null,"start_day":0,"scale":0.3,"shift":0.0}]}
+
+## Output format
+
+When the user mentions a country, region, or geography, wrap your response in this envelope:
+
+{
+  "preliminary_params": { ...the SimParams fields as before... },
+  "data_queries": [
+    {
+      "source": "un_wpp",
+      "indicators": [55, 59, 71, 49],
+      "location_id": <integer from the table below>,
+      "start_year": 2020,
+      "end_year": 2024
+    }
+  ]
+}
+
+When no geography is mentioned, you may still use this envelope with "data_queries": [],
+or return the SimParams object directly as before.
+
+## WHO GHO data queries
+
+When the user mentions a disease *and* a country, you may add a second `who_gho` query alongside the `un_wpp` query. Use `indicator_codes` (strings) and `location_code` (ISO3). Always include `"WHS9_86"` (total population) when requesting surveillance case data.
+
+Disease → indicator_codes to request:
+
+| Disease          | coverage codes    | cases codes                  |
+|------------------|-------------------|------------------------------|
+| measles/rubeola  | ["WHS8_110"]       | ["WHS3_62", "WHS9_86"]       |
+| rubella          | ["WHS8_110"]       | ["WHS3_51", "WHS9_86"]       |
+| polio            | ["WHS3_43"]       | ["WHS3_59", "WHS9_86"]       |
+| diphtheria       | ["WHS3_41"]       | ["WHS3_55", "WHS9_86"]       |
+| pertussis        | ["WHS3_41"]       | ["WHS3_56", "WHS9_86"]       |
+| mumps            | ["WHS8_110"]       | ["WHS3_54", "WHS9_86"]       |
+| yellow fever     | ["WHS3_48"]       | ["WHS3_60", "WHS9_86"]       |
+| hepatitis B      | ["WHS3_45"]       | []                            |
+| hib              | ["WHS3_46"]       | []                            |
+| pneumococcal     | ["PCV3"]          | []                            |
+| rotavirus        | ["ROTAC"]         | []                            |
+| HPV              | ["SDGHPV"]        | []                            |
+| meningococcal    | ["MENGA"]         | []                            |
+| japanese enc.    | []                | ["WHS3_61", "WHS9_86"]       |
+| neonatal tetanus | ["PAB"]           | ["WHS3_58", "WHS9_86"]       |
+
+Request both coverage and cases codes when simulating a disease with known surveillance. Example for measles in Kenya:
+
+```json
+{
+  "source": "who_gho",
+  "indicator_codes": ["MCV1", "WHS3_62", "WHS9_86"],
+  "location_code": "KEN",
+  "start_year": 2020,
+  "end_year": 2024
+}
+```
+
+## World Bank Data360 data queries
+
+When the user mentions a country *and* a disease not covered by WHO GHO (TB, HIV/AIDS,
+malaria, diabetes, hepatitis B), or when the user asks about hospital capacity or
+healthcare system strength, add a "wb_data360" query alongside the "un_wpp" query.
+
+Use `indicator_codes` (Data360 format), `location_code` (ISO3), `database_id` defaults
+to "WB_WDI". Always include both the demographic WDI codes for cross-source comparison.
+
+Health system — request whenever the user mentions treatment, hospitals, or healthcare:
+  indicator_codes: ["WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS",
+                    "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD"]
+
+Disease epidemiology — request the matching indicator(s) for the disease being simulated:
+
+| Disease    | indicator_codes                                                    |
+|------------|--------------------------------------------------------------------|
+| TB         | ["WB_WDI_SH_TBS_INCD"]                                            |
+| HIV/AIDS   | ["WB_WDI_SH_DYN_AIDS_ZS", "WB_WDI_SH_HIV_INCD_TL_P3"]            |
+| Malaria    | ["WB_WDI_SH_MLR_INCD_P3"]                                         |
+| Diabetes   | ["WB_WDI_SH_STA_DIAB_ZS"]                                         |
+| Hepatitis B| ["WB_WDI_SH_HEP_HBVS_ZS"]                                         |
+
+Demographics — always include alongside a UN WPP query for cross-source comparison:
+  indicator_codes: ["WB_WDI_SP_DYN_CBRT_IN", "WB_WDI_SP_DYN_CDRT_IN",
+                    "WB_WDI_SP_POP_TOTL"]
+
+Precedence: WHO GHO (who_gho source) takes priority for vaccine-preventable diseases
+(measles, polio, pertussis, etc.). Use wb_data360 disease indicators only for diseases
+not covered by WHO GHO.
+
+Example output for HIV in Kenya with health system context:
+
+```json
+{
+  "source": "wb_data360",
+  "database_id": "WB_WDI",
+  "indicator_codes": [
+    "WB_WDI_SH_DYN_AIDS_ZS", "WB_WDI_SH_HIV_INCD_TL_P3",
+    "WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS",
+    "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD",
+    "WB_WDI_SP_DYN_CBRT_IN", "WB_WDI_SP_DYN_CDRT_IN", "WB_WDI_SP_POP_TOTL"
+  ],
+  "location_code": "KEN",
+  "start_year": 2018,
+  "end_year": 2024
+}
+```
+
+## Location table (ISO3 → UN location_id)
+
+{location_table}
+
+## Outbreak context (when provided)
+
+If the user message begins with an "Outbreak context" block, use its values to inform your parameter choices:
+- Use disease_name to select disease_type if it matches a known disease in the table above.
+- Use total_cases and total_deaths to refine init_prev and p_death if not stated in the query.
+- Use r0_estimate to compute beta if R0 is not stated in the query.
+- Location (CRITICAL): The context location is where the source outbreak occurred — it may differ from where the user wants to simulate. If the user's query names any country or region (e.g. "in Kenya", "hit Nigeria", "what would happen in Brazil"), use ONLY the user's stated location for all data_queries. Ignore the context location entirely. Only use the context location when the user's query contains no location at all.
+- All other user-stated values (population, duration, interventions, R0) always take precedence over context values.

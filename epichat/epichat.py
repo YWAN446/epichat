@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 import datetime
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from pydantic import ValidationError
+
+from .adapters.un_wpp import UNWPPAdapter
+from .adapters.who_gho import WHOGHOAdapter
+from .adapters.wb_data360 import WorldBankData360Adapter
 from .executor import SimExecutor
 from .generator import CodeGenerator
 from .narrator import narrate
-from .parser import fix_params, parse_query
+from .parser import configure_resolver, fix_params, get_last_resolved, parse_query
+from .resolver import ResolvedField
 from .schema import SimParams
 
 _MAX_RETRIES = 3
@@ -21,6 +28,8 @@ class EpiChatResult:
     plot_path: str | None
     narration: dict  # {'summary': str, 'key_findings': list[str]}
     error: str | None = None
+    data_sources: list[ResolvedField] = field(default_factory=list)
+    param_warnings: list[str] = field(default_factory=list)
 
     def format_cli(self) -> str:
         """Return a formatted string for CLI display."""
@@ -33,6 +42,12 @@ class EpiChatResult:
         sep = "-" * 42
         lines.append("\nRESULTS")
         lines.append(sep)
+
+        if self.param_warnings:
+            lines.append("⚠️  Parameter notes")
+            for w in self.param_warnings:
+                lines.append(f"  • {w}")
+            lines.append(sep)
 
         s = self.stats
         n = s.get("n_agents", 1)
@@ -55,14 +70,69 @@ class EpiChatResult:
             lines.append("")
 
         p = self.params
+        pop_field = next((rf for rf in self.data_sources if rf.field == "total_population"), None)
         lines.append("MODEL DETAILS")
-        lines.append(f"  Disease type:  {p.disease_type.upper()}")
-        lines.append(f"  Population:    {p.n_agents:,}")
-        lines.append(f"  Beta:          {p.beta:.6f}")
-        lines.append(f"  Approx R0:     {p.approx_r0():.1f}")
-        lines.append(f"  Duration:      {p.sim_dur_years} year(s)")
+        lines.append(f"  Disease type:     {p.disease_type.upper()}")
+        if pop_field is not None:
+            lines.append(f"  Population:       {int(pop_field.value):,}")
+        lines.append(f"  Num of agents:    {p.n_agents:,}")
+        lines.append(f"  Contacts/agent:   {p.n_contacts}")
+        lines.append(f"  Network:          {p.network_type}")
+        if p.network_type == "age_structured":
+            lines.append(f"  Network beta:     {p.network_beta:.4f}")
+        lines.append(f"  Beta:             {p.beta:.6f}")
+        lines.append(f"  Approx R0:        {p.approx_r0():.1f}")
+        lines.append(f"  Init prevalence:  {p.init_prev * 100:.2f}%")
+        lines.append(f"  Inf. duration:    {p.dur_inf:.1f} days")
+        if p.dur_exp is not None:
+            lines.append(f"  Exp. duration:    {p.dur_exp:.1f} days")
+        if p.dur_immune is not None:
+            lines.append(f"  Immunity dur.:    {p.dur_immune:.1f} days")
+        lines.append(f"  Case fatality:    {p.p_death * 100:.2f}%")
+        if p.disease_type == "seiar":
+            lines.append(f"  % asymptomatic:   {p.p_asymp * 100:.1f}%")
+            lines.append(f"  Rel. trans (A):   {p.rel_trans_asymp:.2f}")
+        lines.append(f"  Duration:         {p.sim_dur_years} year(s)")
+        if p.rand_seed is not None:
+            lines.append(f"  Random seed:      {p.rand_seed}")
         interv = [i.type for i in p.interventions]
-        lines.append(f"  Interventions: {', '.join(interv) if interv else 'None'}")
+        lines.append(f"  Interventions:    {', '.join(interv) if interv else 'None'}")
+        if p.use_demographics:
+            lines.append(f"  Birth rate:       {p.birth_rate:.2f} per 1,000/yr")
+            lines.append(f"  Death rate:       {p.death_rate:.2f} per 1,000/yr")
+        if p.age_pct_under18 is not None:
+            lines.append(f"  Age dist. (0-17):  {p.age_pct_under18:.1f}%")
+            lines.append(f"  Age dist. (18-64): {p.age_pct_18_64:.1f}%")
+            lines.append(f"  Age dist. (65+):   {p.age_pct_over65:.1f}%")
+        coverage_source = next(
+            (rf for rf in self.data_sources if rf.field.endswith("_coverage")), None
+        )
+        vaccine = p.get_vaccine()
+        if coverage_source is not None and vaccine is not None:
+            label = coverage_source.field.removesuffix("_coverage").upper()
+            lines.append(f"  Vaccine coverage: {vaccine.coverage * 100:.1f}%  (pre-existing, {label})")
+
+        if self.data_sources:
+            lines.append("")
+            lines.append("DATA SOURCES")
+            max_field_len = max(len(rf.field) for rf in self.data_sources)
+            for rf in self.data_sources:
+                if isinstance(rf.value, dict):
+                    val_str = ", ".join(f"{k}: {v}%" for k, v in rf.value.items())
+                else:
+                    val_str = str(rf.value)
+                desc = f"  ({rf.description})" if rf.description else ""
+                used_marker = "  ★ used" if rf.alternatives else ""
+                lines.append(
+                    f"  {rf.field:<{max_field_len}}  {val_str}  — {rf.citation}{desc}{used_marker}"
+                )
+                for alt in rf.alternatives:
+                    if isinstance(alt.value, dict):
+                        alt_val = ", ".join(f"{k}: {v}%" for k, v in alt.value.items())
+                    else:
+                        alt_val = str(alt.value)
+                    alt_desc = f"  ({alt.description})" if alt.description else ""
+                    lines.append(f"    ↳ {alt_val}  — {alt.citation}{alt_desc}")
 
         if self.plot_path:
             lines.append(f"\n[Plot saved to: {self.plot_path}]")
@@ -75,6 +145,9 @@ class EpiChat:
         self.output_dir = Path(output_dir)
         self.generator = CodeGenerator()
         self.executor = SimExecutor()
+        configure_resolver(UNWPPAdapter(api_key=os.environ.get("UN_API_KEY")))
+        configure_resolver(WHOGHOAdapter())
+        configure_resolver(WorldBankData360Adapter())
 
     def run(self, user_input: str) -> EpiChatResult:
         """Full pipeline: NL query → simulation → narration."""
@@ -82,7 +155,7 @@ class EpiChat:
 
         try:
             params = parse_query(user_input)
-        except ValueError as e:
+        except (ValueError, ValidationError) as e:
             return EpiChatResult(
                 user_input=user_input,
                 params=None,  # type: ignore[arg-type]
@@ -92,13 +165,30 @@ class EpiChat:
                 error=str(e),
             )
 
+        from .disease_db import detect_disease, check_params as _db_check
+        _disease = detect_disease(user_input)
+        _param_warnings = (
+            _db_check(
+                _disease, params.approx_r0(), params.dur_inf, params.dur_exp,
+                p_death=params.p_death or None,
+                n_contacts=params.n_contacts,
+                dur_immune=params.dur_immune,
+                p_asymp=params.p_asymp if params.disease_type == "seiar" else None,
+            )
+            if _disease else []
+        )
+
         # Unique output path for this run
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         plot_path = str(self.output_dir / f"sim_{ts}.png")
 
         print(f"[EpiChat] Running Starsim simulation ({params.disease_type.upper()}, n={params.n_agents:,}, beta={params.beta:.4f})...")
 
-        exec_result = self._execute_with_retry(user_input, params, plot_path)
+        resolved = get_last_resolved()
+        pop_field = next((rf for rf in resolved if rf.field == "total_population"), None)
+        pop_scale = pop_field.value / params.n_agents if pop_field is not None and params.n_agents > 0 else 1.0
+
+        exec_result = self._execute_with_retry(user_input, params, plot_path, pop_scale=pop_scale)
 
         if exec_result["error"]:
             return EpiChatResult(
@@ -108,6 +198,7 @@ class EpiChat:
                 plot_path=None,
                 narration={},
                 error=exec_result["error"],
+                param_warnings=_param_warnings,
             )
 
         print("[EpiChat] Generating plain-language summary...")
@@ -119,16 +210,18 @@ class EpiChat:
             stats=exec_result["stats"],
             plot_path=exec_result["plot_path"],
             narration=narration,
+            data_sources=get_last_resolved(),
+            param_warnings=_param_warnings,
         )
 
     def _execute_with_retry(
-        self, user_input: str, params: SimParams, plot_path: str
+        self, user_input: str, params: SimParams, plot_path: str, pop_scale: float = 1.0
     ) -> dict:
         current_params = params
         last_error = None
 
         for attempt in range(_MAX_RETRIES):
-            code = self.generator.generate(current_params, plot_path)
+            code = self.generator.generate(current_params, plot_path, pop_scale=pop_scale)
             result = self.executor.run(code, self.output_dir)
 
             if result["error"] is None:

@@ -1,0 +1,136 @@
+import { Fragment } from "react";
+import { parameterGroups, type ParameterGrid, type ParameterRow } from "@/lib/client/parameters";
+import type { SimParams } from "@/lib/sim/params";
+
+type Props = {
+  params: SimParams | null;
+  /** Where each value came from, by registry path (follow-up spec 8.4); null for a payload stored before the sources. */
+  sources?: Record<string, string> | null;
+  /** The chosen references behind the reference tags, by registry path (follow-up spec 9.4). */
+  references?: Record<string, string> | null;
+  /** A configuration exists. Without parameters it was stored before the payloads carried them, which is said rather than denied. */
+  configured: boolean;
+};
+
+const HEADING = "mb-1 text-xs font-semibold tracking-wide text-ink-faint uppercase";
+const LIST = "grid grid-cols-[auto_1fr] gap-x-3 gap-y-1";
+const TAG = "ml-1.5 rounded bg-paper-2 px-1.5 py-px text-[0.6875rem] font-normal text-ink-soft";
+
+function Grid({ grid }: { grid: ParameterGrid }) {
+  return (
+    <table className="text-xs">
+      <thead>
+        <tr>
+          {grid.columns.map((column) => (
+            <th key={column} scope="col" className="pr-3 text-left font-normal text-ink-faint">
+              {column}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {grid.rows.map((cells) => (
+          <tr key={cells[0]}>
+            {cells.map((cell, index) =>
+              index === 0 ? (
+                <th key={index} scope="row" className="pr-3 text-left font-normal text-ink-faint">
+                  {cell}
+                </th>
+              ) : (
+                <td key={index} className="pr-3 font-mono">
+                  {cell}
+                </td>
+              ),
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function Rows({ rows }: { rows: ParameterRow[] }) {
+  return (
+    <dl className={LIST}>
+      {rows.map((row) => (
+        <Fragment key={row.label}>
+          <div className="contents">
+            <dt className="text-ink-faint">{row.label}</dt>
+            <dd className="font-medium">
+              {row.value}
+              {row.sources.map((tag) => (
+                <span key={tag} className={TAG}>
+                  <span className="sr-only">source: </span>
+                  {tag}
+                </span>
+              ))}
+              {row.note && <span className="block text-xs font-normal text-ink-faint">{row.note}</span>}
+            </dd>
+          </div>
+          {row.grid && (
+            <div className="col-span-2 overflow-x-auto pb-1">
+              <Grid grid={row.grid} />
+            </div>
+          )}
+        </Fragment>
+      ))}
+    </dl>
+  );
+}
+
+/**
+ * The scenario's current parameters in words with units, generated from the registry (follow-up spec 8): what the next run uses,
+ * or what the latest run used. Five groups; each shows its core parameters and the values that are not the default, and keeps
+ * every other parameter of the scenario's model and network behind "Show all". A value's tags say where it came from.
+ */
+export function ParametersSection({ params, sources, references, configured }: Props) {
+  if (!params) {
+    return (
+      <p className="text-ink-faint">
+        {configured ? "This scenario's parameters were not recorded; they appear after the next change or run." : "Parameters appear here once a scenario is set up."}
+      </p>
+    );
+  }
+  const groups = parameterGroups(params, sources, references);
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-ink-faint">
+        The values the next run uses; after a run, the values it used.{sources ? " The tag after a value says where it came from." : ""}
+      </p>
+      {groups.map((group) => {
+        const shown = group.rows.filter((row) => row.shown);
+        const hidden = group.rows.filter((row) => !row.shown);
+        return (
+          <section key={group.id}>
+            <h4 className={HEADING}>{group.title}</h4>
+            {group.lines ? (
+              group.lines.length === 0 ? (
+                <p className="text-ink-faint">No interventions.</p>
+              ) : (
+                <ul className="list-disc pl-4">
+                  {group.lines.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              )
+            ) : (
+              <>
+                <Rows rows={shown} />
+                {hidden.length > 0 && (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-xs text-ink-faint">
+                      Show all ({group.rows.length})<span className="sr-only"> {group.title.toLowerCase()} parameters</span>
+                    </summary>
+                    <div className="mt-1">
+                      <Rows rows={hidden} />
+                    </div>
+                  </details>
+                )}
+              </>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}

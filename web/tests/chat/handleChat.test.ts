@@ -1,0 +1,613 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import type { ChatStreamEvent } from "@/lib/chat/events";
+import { CONVERSATION_INVALID, CUT_OFF_NOTICE, DISCARD_MESSAGES, UNAVAILABLE, handleChat, type ChatDeps } from "@/lib/chat/handleChat";
+import type { ReportStore } from "@/lib/db/reports";
+import { firstUserMessage, systemBlocks } from "@/lib/chat/prompt";
+import { loadSettings } from "@/lib/config";
+import type { ConversationRow, ConversationStore } from "@/lib/db/conversations";
+import type { MemoryStore } from "@/lib/db/memories";
+import type { MessageStore } from "@/lib/db/messages";
+import { aboutBlock, type Memory } from "@/lib/profile/about";
+import { EMPTY_PROFILE, type ProfileFields } from "@/lib/profile/schema";
+import type { ProfileStore } from "@/lib/profiles";
+import type { PreviousRun, RunInsert, RunStore } from "@/lib/db/runs";
+import { scenarioFromRow, type ScenarioStore } from "@/lib/db/scenarios";
+import type { FinishTurnPayload, TurnStore } from "@/lib/db/turns";
+import type { SimClient, SimResult } from "@/lib/sim/client";
+import { emptyScenario, type RunPayload, type Scenario } from "@/lib/tools/types";
+import type { TurnReservation, UsageDelta, UsageStore } from "@/lib/usage";
+import { makeDeps, params } from "../tools/helpers";
+import { fakeClient, fetchResult, message, searchResult, serverSearch, textBlock, toolUse, type Step } from "./helpers";
+
+const USER = { id: "11111111-1111-1111-1111-111111111111" };
+const CONVERSATION = "33333333-3333-4333-8333-333333333333";
+const SESSION = "44444444-4444-4444-8444-444444444444";
+const TURN = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1";
+const HISTORY: Anthropic.Beta.BetaMessageParam[] = [
+  { role: "user", content: "Today's date: 2026-10-04.\n\nModel measles in Kenya" },
+  { role: "assistant", content: [{ type: "text", text: "Configured." }] },
+];
+const STATS = { peak_infections: 9, peak_day: 40, total_infected: 400, total_deaths: 1, n_agents: 10000, sim_days: 365 };
+const SUCCESS: SimResult = {
+  ok: true, effective_params: params({}), population: 10000, stats: STATS, stats_agents: STATS, series: { day: [0, 1], n_infected: [1, 2] },
+  pop_scale: 1, repairs: [], attempts: 1, duration_ms: 6800, cold_start: false, starsim_version: "3.3.2",
+};
+const HELLO = { text: "Model measles in Kenya" };
+const ANSWER = message([textBlock("Sure.\n\n```next\nConfigure measles\nFetch Kenya data\n```")]);
+const CONFIGURE = message([toolUse("tu_1", "configure_simulation", { disease: "measles", r0: 12 })], "tool_use");
+const RUN = message([toolUse("tu_2", "run_simulation", {})], "tool_use");
+const COMPLETE: ProfileFields = { ...EMPTY_PROFILE, role: "policy_maker", experience: "some", goals: ["deciding"], completedAt: "2026-10-09T10:00:00Z" };
+const REMEMBERED: Memory = { id: "m1", kind: "situation", text: "Works at a county health office", source: "agent", createdAt: "2026-10-08T10:00:00Z" };
+const REMEMBER = (input: Record<string, unknown>) => message([toolUse("tu_m", "remember", input)], "tool_use");
+
+function clock() {
+  let t = Date.parse("2026-10-05T16:00:00Z");
+  return () => new Date((t += 1000));
+}
+
+function configured(): Scenario {
+  return { ...emptyScenario(), id: "s1", params: params({ n_agents: 10000 }), disease: "measles", stage: "configure", stageReached: "configure" };
+}
+
+type Over = {
+  reservation?: TurnReservation; conversation?: ConversationRow | null; history?: Anthropic.Beta.BetaMessageParam[]; scenario?: Scenario | null;
+  texts?: string[]; finishError?: Error; runError?: Error; loadError?: Error; simulate?: SimResult | Error;
+  profile?: ProfileFields; profileError?: Error; memories?: Memory[]; memoryCount?: number; evicted?: boolean; memoryAddError?: Error; previous?: PreviousRun | null;
+};
+
+function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}) {
+  const { client, requests, requestOptions } = fakeClient(script);
+  const calls = {
+    reservations: [] as unknown[][], records: [] as [string, string, UsageDelta][], created: [] as [string, string][],
+    gets: [] as [string, string][], finished: [] as FinishTurnPayload[], runs: [] as RunInsert[], simulated: [] as { popScale: number; contextText: string }[],
+    memoriesAdded: [] as [string, string, string, string, string | null][], deactivated: [] as [string, string][],
+  };
+  const usage: UsageStore = {
+    async reserveTurn(userId, day, monthStart, limits) { calls.reservations.push([userId, day, monthStart, limits]); return over.reservation ?? "ok"; },
+    async record(userId, day, delta) { calls.records.push([userId, day, delta]); },
+  };
+  const conversations: ConversationStore = {
+    async create(userId, title) { calls.created.push([userId, title]); return CONVERSATION; },
+    async get(id, userId) {
+      if (over.loadError) throw over.loadError;
+      calls.gets.push([id, userId]);
+      return over.conversation === undefined ? { id, title: "T", activeScenarioId: over.scenario ? "s1" : null } : over.conversation;
+    },
+    async softDelete() { return true; },
+  };
+  const messages: MessageStore = { async list() { return over.history ?? []; } };
+  const scenarios: ScenarioStore = { async get() { return over.scenario ?? null; } };
+  const turns: TurnStore = {
+    async finishTurn(payload) { if (over.finishError) throw over.finishError; calls.finished.push(structuredClone(payload)); return "s1"; },
+    async userTexts() { return over.texts ?? []; },
+    async listForReplay() { return []; },
+    async lastRecap() { return []; },
+  };
+  const runs: RunStore = { async insert(run) { if (over.runError) throw over.runError; calls.runs.push(run); return "run-1"; }, async listForReport() { return []; }, async seriesFor() { return new Map(); }, async latest() { return over.previous ?? null; } };
+  const reports: ReportStore = { async insert() { return "rep-1"; }, async count() { return 0; }, async get() { return null; }, async latest() { return null; } };
+  const sim: SimClient = {
+    async simulate(_params, popScale, contextText) {
+      calls.simulated.push({ popScale, contextText });
+      if (over.simulate instanceof Error) throw over.simulate;
+      return over.simulate ?? SUCCESS;
+    },
+    async demographicsFallback() { return null; },
+    async export() { return { ok: false, status: 0, kind: "unavailable", detail: "no export in tests" }; },
+  };
+  const profiles: ProfileStore = {
+    async get() {
+      if (over.profileError) throw over.profileError;
+      return { userId: USER.id, email: "student@emory.edu", participantType: "graduate_student", consentVersion: "2026-10-10", consentedAt: "2026-10-10T00:00:00Z", fields: over.profile ?? EMPTY_PROFILE };
+    },
+    async recordConsent() {},
+    async touch() {},
+    async saveProfile() { return { first: false }; },
+    async patchProfile() {},
+  };
+  const memories: MemoryStore = {
+    async list() { return over.memories ?? []; },
+    async add(userId, kind, text, source, conversationId) {
+      if (over.memoryAddError) throw over.memoryAddError;
+      calls.memoriesAdded.push([userId, kind, text, source, conversationId]);
+      return "m-new";
+    },
+    async update() { return true; },
+    async deactivate(userId, id) { calls.deactivated.push([userId, id]); return true; },
+    async deactivateAll() { return 0; },
+    async countActive() { return over.memoryCount ?? 0; },
+    async evictOldestAgent() { return over.evicted ?? true; },
+  };
+  const deps: ChatDeps = {
+    settings: loadSettings(env), client, usage, conversations, messages, scenarios, turns, runs, reports, sim, profiles, memories,
+    adapters: makeDeps().adapters, now: clock(), newId: () => TURN,
+  };
+  const emitted: ChatStreamEvent[] = [];
+  const run = (body: unknown, signal?: AbortSignal) =>
+    handleChat(deps, USER, typeof body === "string" ? body : JSON.stringify(body), (event) => emitted.push(event), signal);
+  return { run, deps, emitted, requests, requestOptions, ...calls };
+}
+
+afterEach(() => vi.restoreAllMocks());
+
+describe("handleChat", () => {
+  it("puts the About block on a conversation's first message only, and keeps the typed text as the turn's user_text", async () => {
+    const first = setup([{ message: ANSWER }], { profile: COMPLETE, memories: [REMEMBERED] });
+    await first.run({ ...HELLO, sessionId: SESSION });
+    expect(first.requests[0].messages).toEqual([{ role: "user", content: firstUserMessage("2026-10-05", HELLO.text, aboutBlock(COMPLETE, [REMEMBERED])) }]);
+    expect(String((first.requests[0].messages as { content: string }[])[0].content)).toContain("- Remembered: Works at a county health office (situation)");
+    expect(first.finished[0].turn.user_text).toBe(HELLO.text);
+    const resumed = setup([{ message: ANSWER }], { profile: COMPLETE, memories: [REMEMBERED], history: HISTORY });
+    await resumed.run({ conversationId: CONVERSATION, sessionId: SESSION, text: "Run it" });
+    expect((resumed.requests[0].messages as unknown[]).at(-1)).toEqual({ role: "user", content: "Run it" });
+  });
+
+  it("withholds remember and the Remembered line when memory is off", async () => {
+    const { run, requests } = setup([{ message: ANSWER }], { profile: { ...COMPLETE, memoryEnabled: false }, memories: [REMEMBERED] });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect((requests[0].tools as { name: string }[]).map((t) => t.name)).not.toContain("remember");
+    const content = String((requests[0].messages as { content: string }[])[0].content);
+    expect(content).toContain("About this participant");
+    expect(content).not.toContain("Remembered");
+  });
+
+  it("stores an agent memory from a remember call, deactivating the one it replaces by text, and logs memory_added", async () => {
+    const script = [{ message: REMEMBER({ kind: "preference", text: "Prefers tables", replaces: "works at a county health office" }) }, { message: ANSWER }];
+    const { run, finished, memoriesAdded, deactivated, requests } = setup(script, { profile: COMPLETE, memories: [REMEMBERED] });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect(memoriesAdded).toEqual([[USER.id, "preference", "Prefers tables", "agent", CONVERSATION]]);
+    expect(deactivated).toEqual([[USER.id, "m1"]]);
+    expect((requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("Remembered: Prefers tables");
+    expect(finished[0].step_events.find((e) => e.kind === "memory_added")).toMatchObject({ tool: "remember", meta: { memory_id: "m-new", kind: "preference", replaced: true } });
+    const unknown = setup([{ message: REMEMBER({ kind: "preference", text: "Prefers tables", replaces: "Likes charts" }) }, { message: ANSWER }], { profile: COMPLETE, memories: [REMEMBERED] });
+    await unknown.run({ ...HELLO, sessionId: SESSION });
+    expect(unknown.memoriesAdded).toEqual([]);
+    expect((unknown.requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("MEMORY NOT FOUND: no such memory to replace.");
+  });
+
+  it("keeps the replaced memory when the new one cannot be stored", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const script = [{ message: REMEMBER({ kind: "preference", text: "Prefers tables", replaces: "Works at a county health office" }) }, { message: ANSWER }];
+    const { run, deactivated, memoriesAdded, requests } = setup(script, { profile: COMPLETE, memories: [REMEMBERED], memoryAddError: new Error("down") });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect(memoriesAdded).toEqual([]);
+    expect(deactivated).toEqual([]);
+    expect((requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("This tool failed. Tell the user this part is temporarily unavailable.");
+    logged.mockRestore();
+  });
+
+  it("matches replaces with the (kind) suffix the About block shows", async () => {
+    const script = [{ message: REMEMBER({ kind: "situation", text: "Works at the state office", replaces: "Works at a county health office (situation)" }) }, { message: ANSWER }];
+    const { run, deactivated, memoriesAdded } = setup(script, { profile: COMPLETE, memories: [REMEMBERED] });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect(deactivated).toEqual([[USER.id, "m1"]]);
+    expect(memoriesAdded).toHaveLength(1);
+  });
+
+  it("answers MEMORY FULL at the cap when every memory is the participant's own, and evicts the oldest agent memory otherwise", async () => {
+    const script = () => [{ message: REMEMBER({ kind: "preference", text: "Prefers tables" }) }, { message: ANSWER }];
+    const full = setup(script(), { profile: COMPLETE, memoryCount: 30, evicted: false });
+    await full.run({ ...HELLO, sessionId: SESSION });
+    expect(full.memoriesAdded).toEqual([]);
+    expect((full.requests[1].messages as { content: { content: string }[] }[]).at(-1)?.content[0].content).toBe("MEMORY FULL: ask the participant to tidy their memory list.");
+    expect(full.finished[0].step_events.some((e) => e.kind === "memory_added")).toBe(false);
+    const evicting = setup(script(), { profile: COMPLETE, memoryCount: 30, evicted: true });
+    await evicting.run({ ...HELLO, sessionId: SESSION });
+    expect(evicting.memoriesAdded).toHaveLength(1);
+  });
+
+  it("answers without a block or the remember tool when the profile cannot be read", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { run, requests, emitted } = setup([{ message: ANSWER }], { profileError: new Error("down") });
+    await run({ ...HELLO, sessionId: SESSION });
+    expect((requests[0].tools as { name: string }[]).map((t) => t.name)).not.toContain("remember");
+    expect(requests[0].messages).toEqual([{ role: "user", content: "Today's date: 2026-10-05.\n\nModel measles in Kenya" }]);
+    expect(emitted.at(-1)).toMatchObject({ type: "done" });
+    expect(logged).toHaveBeenCalledWith("profile read failed", "down");
+    logged.mockRestore();
+  });
+
+  it("answers a first message: creates the conversation, dates the first message, streams, stores the turn, and records usage", async () => {
+    const { run, emitted, requests, created, finished, records, reservations } = setup([{ message: ANSWER, text: ["Sure.", "\n\n```next\nConfigure measles\nFetch Kenya data\n```"] }]);
+    await run({ ...HELLO, sessionId: SESSION });
+
+    expect(reservations).toEqual([[USER.id, "2026-10-05", "2026-10-01", { dailyTurns: 40, monthlyBudgetUsd: 50 }]]);
+    expect(created).toEqual([[USER.id, "Model measles in Kenya"]]);
+    const userMessage = { role: "user", content: "Today's date: 2026-10-05.\n\nModel measles in Kenya" };
+    expect(requests[0].messages).toEqual([userMessage]);
+    expect(requests[0].system).toEqual(systemBlocks());
+    expect((requests[0].tools as { name: string }[]).map((tool) => tool.name)).toEqual([
+      "configure_simulation", "lookup_disease", "fetch_demographics", "fetch_health_system", "fetch_vaccination_coverage", "run_simulation", "write_report", "remember", "describe_parameters", "web_search", "web_fetch",
+    ]);
+    expect(emitted).toEqual([
+      { type: "text", delta: "Sure." },
+      { type: "text", delta: "\n\n```next\nConfigure measles\nFetch Kenya data\n```" },
+      { type: "suggestions", items: ["Configure measles", "Fetch Kenya data"] },
+      { type: "done", turnId: TURN, conversationId: CONVERSATION, notice: null },
+    ]);
+
+    expect(finished).toHaveLength(1);
+    const payload = finished[0];
+    expect(payload).toMatchObject({ user_id: USER.id, conversation_id: CONVERSATION, title: "Model measles in Kenya" });
+    expect(payload.turn).toMatchObject({
+      id: TURN, session_id: SESSION, user_text: "Model measles in Kenya", stop: "end_turn", refusal_category: null, model: "claude-opus-5-5", effort: "medium",
+      input_tokens: 100, output_tokens: 20, cache_read_tokens: 0, cache_write_tokens: 0, stage_before: "understand", stage_after: "understand",
+    });
+    expect(payload.turn.started_at).toBe("2026-10-05T16:00:01.000Z");
+    expect(payload.turn.first_token_at).not.toBeNull();
+    expect(payload.turn.cost_usd).toBeCloseTo(0.0008, 10);
+    expect(payload.turn.api_calls[0]).toMatchObject({ model: "claude-opus-5-5", input_tokens: 100, stop_reason: "end_turn", served_by: "claude-opus-5-5" });
+    expect(payload.events.map((e) => e.kind)).toEqual(["text", "suggestions"]);
+    expect(payload.events[0]).toMatchObject({ seq: 1, text: "Sure." });
+    expect(payload.messages).toEqual([userMessage, { role: "assistant", content: ANSWER.content }]);
+    expect(payload.scenario).toMatchObject({ id: null, seq: 1, params: null, stage: "understand", has_run: false });
+    expect(payload.step_events.map((e) => e.kind)).toEqual(["conversation_started", "turn"]);
+    expect(payload.step_events[0]).toMatchObject({ session_id: SESSION, stage: "understand" });
+    expect(payload.step_events[1].meta).toMatchObject({ stop: "end_turn", api_calls: 1, tool_calls: 0 });
+
+    expect(records).toHaveLength(1);
+    expect(records[0][0]).toBe(USER.id);
+    expect(records[0][1]).toBe("2026-10-05");
+    expect(records[0][2]).toMatchObject({ turns: 0, inputTokens: 100, outputTokens: 20 });
+    expect(records[0][2].costUsd).toBeCloseTo(0.0008, 10);
+  });
+
+  it("continues a conversation: history first, no date line, no title, no conversation_started", async () => {
+    const { run, requests, gets, created, finished } = setup([{ message: message([textBlock("Running.")]) }], { history: HISTORY, texts: ["Model measles in Kenya"] });
+    await run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(gets).toEqual([[CONVERSATION, USER.id]]);
+    expect(created).toEqual([]);
+    expect(requests[0].messages).toEqual([...HISTORY, { role: "user", content: "Run it" }]);
+    expect(finished[0].title).toBeNull();
+    expect(finished[0].step_events.map((e) => e.kind)).toEqual(["turn"]);
+  });
+
+  it("treats an empty suggestions block as no suggestions", async () => {
+    const { run, emitted, finished } = setup([{ message: message([textBlock("Done.\n\n```next\n\n```")]), text: ["Done.\n\n```next\n\n```"] }]);
+    await run(HELLO);
+    expect(emitted.some((e) => e.type === "suggestions")).toBe(false);
+    expect(finished[0].events.map((e) => e.kind)).toEqual(["text"]);
+    expect(finished[0].events[0]).toMatchObject({ text: "Done." });
+  });
+
+  it("stops before the model on a cap, a bad request, an unknown or deleted conversation, and a store failure", async () => {
+    const budget = setup([{ message: ANSWER }], { reservation: "monthly_budget" });
+    await budget.run(HELLO);
+    expect(budget.emitted).toEqual([{ type: "error", code: "monthly_budget", message: expect.stringMatching(/this month/) }]);
+    expect(budget.requests).toEqual([]);
+    expect(budget.records).toEqual([]);
+    expect(budget.finished).toEqual([]);
+
+    const daily = setup([{ message: ANSWER }], { reservation: "daily_turns" });
+    await daily.run(HELLO);
+    expect(daily.emitted[0]).toMatchObject({ type: "error", code: "daily_turns", message: expect.stringMatching(/40/) });
+
+    const bad = setup([{ message: ANSWER }]);
+    await bad.run("not json");
+    expect(bad.emitted[0]).toMatchObject({ type: "error", code: "bad_request" });
+    expect(bad.reservations).toEqual([]);
+
+    const gone = setup([{ message: ANSWER }], { conversation: null });
+    await gone.run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(gone.emitted).toEqual([{ type: "error", code: "conversation_not_found", message: expect.stringMatching(/no longer available/) }]);
+    expect(gone.requests).toEqual([]);
+
+    const noReserve = setup([{ message: ANSWER }]);
+    noReserve.deps.usage.reserveTurn = async () => { throw new Error("database down"); };
+    await noReserve.run(HELLO);
+    expect(noReserve.emitted).toEqual([{ type: "error", code: "service_unavailable", message: UNAVAILABLE }]);
+
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const noLoad = setup([{ message: ANSWER }], { loadError: new Error("database down") });
+    await noLoad.run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(noLoad.emitted).toEqual([{ type: "error", code: "service_unavailable", message: UNAVAILABLE }]);
+    expect(noLoad.requests).toEqual([]);
+    expect(logged).toHaveBeenCalled();
+  });
+
+  it("runs a tool round: the tool events and the stage change stream in order, the scenario is saved, the steps are counted", async () => {
+    const { run, emitted, finished } = setup([{ message: CONFIGURE }, { message: message([textBlock("Configured measles.")]), text: ["Configured measles."] }]);
+    await run(HELLO);
+    expect(emitted.map((e) => e.type)).toEqual(["tool_use", "tool_result", "stage", "text", "done"]);
+    expect(emitted[1]).toMatchObject({ type: "tool_result", id: "tu_1", name: "configure_simulation", ok: true, payload: { kind: "config", approx_r0: 12 } });
+    expect(emitted[2]).toEqual({ type: "stage", stage: "configure" });
+
+    const payload = finished[0];
+    expect(payload.events.map((e) => e.kind)).toEqual(["tool_use", "tool_result", "stage", "text"]);
+    expect((payload.events[1] as { payload: { duration_ms?: number } }).payload.duration_ms).toBe(1000);
+    expect(payload.messages).toHaveLength(4);
+    expect(payload.scenario).toMatchObject({ id: null, seq: 1, disease: "measles", stage: "configure", stage_reached: "configure", has_run: false });
+    expect((payload.scenario.params as { run: { n_agents: number } }).run.n_agents).toBeGreaterThan(0);
+    expect(payload.turn).toMatchObject({ stage_before: "understand", stage_after: "configure", input_tokens: 200, output_tokens: 40 });
+    expect(payload.step_events.map((e) => [e.kind, e.tool, e.stage])).toEqual([
+      ["conversation_started", null, "understand"], ["tool_called", "configure_simulation", "understand"], ["stage_reached", null, "configure"], ["turn", null, "configure"],
+    ]);
+    expect(payload.step_events[1].meta).toEqual({ duration_ms: 1000 });
+    expect(payload.step_events[3].meta).toMatchObject({ tool_calls: 1, api_calls: 2 });
+  });
+
+  it("records a failed tool as tool_failed and keeps going", async () => {
+    const { run, emitted, finished } = setup([{ message: RUN }, { message: message([textBlock("Configure first.")]) }]);
+    await run(HELLO);
+    expect(emitted[1]).toMatchObject({ type: "tool_result", ok: false, payload: { kind: "tool_error" } });
+    expect(finished[0].step_events.map((e) => e.kind)).toEqual(["conversation_started", "tool_failed", "turn"]);
+    expect(emitted.at(-1)?.type).toBe("done");
+  });
+
+  it("runs the simulation: the run row carries the turn id, the stage passes through run to interpret, and the context has no date line", async () => {
+    const { run, emitted, finished, runs, simulated, records } = setup(
+      [{ message: RUN }, { message: message([textBlock("Peak on day 40.")]), text: ["Peak on day 40."] }],
+      { history: HISTORY, texts: ["Model measles in Kenya"], scenario: configured() },
+    );
+    await run({ conversationId: CONVERSATION, sessionId: SESSION, text: "Run it" });
+    expect(simulated).toEqual([{ popScale: 1, contextText: "Model measles in Kenya Run it" }]);
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toMatchObject({ conversationId: CONVERSATION, userId: USER.id, turnId: TURN, scenarioId: "s1" });
+    expect(runs[0].record.result).toEqual(SUCCESS);
+    expect(emitted.map((e) => e.type)).toEqual(["tool_use", "stage", "tool_result", "stage", "text", "done"]);
+    expect(emitted[1]).toEqual({ type: "stage", stage: "run" });
+    expect(emitted[3]).toEqual({ type: "stage", stage: "interpret" });
+    expect(emitted[2]).toMatchObject({ type: "tool_result", ok: true, payload: { kind: "run", run_id: "run-1", series: { day: [0, 1] } } });
+
+    const payload = finished[0];
+    const stored = payload.events[2] as { payload: Record<string, unknown> };
+    expect(stored.payload.kind).toBe("run");
+    expect("series" in stored.payload).toBe(false);
+    expect(payload.scenario).toMatchObject({ id: "s1", has_run: true, stage: "interpret", stage_reached: "interpret" });
+    expect(payload.turn).toMatchObject({ stage_before: "configure", stage_after: "interpret" });
+    expect(payload.step_events.map((e) => e.kind)).toEqual(["stage_reached", "run_completed", "tool_called", "stage_reached", "turn"]);
+    expect(payload.step_events[1]).toMatchObject({ tool: "run_simulation", stage: "run", meta: { duration_ms: 6800, cold_start: false, n_agents: 10000, repairs: 0 } });
+    expect(records[0][2].costUsd).toBeCloseTo(0.0016, 10);
+  });
+
+  it("adds the sim's repair tokens to the cost, and keeps the run when its row cannot be inserted", async () => {
+    const repaired: SimResult = { ...SUCCESS, repairs: [{ attempt: 1, error: "beta too high", changes: [], usage: { model: "claude-opus-5-5", input_tokens: 1000, output_tokens: 100 } }] };
+    const { run, finished, records } = setup([{ message: RUN }, { message: message([textBlock("Repaired and run.")]) }], { history: HISTORY, scenario: configured(), simulate: repaired });
+    await run({ conversationId: CONVERSATION, text: "Run it" });
+    // 2 calls at 0.0008 each, plus 1000 × 4 + 100 × 20 per million for the repair.
+    expect(records[0][2].costUsd).toBeCloseTo(0.0016 + 0.006, 10);
+    expect(finished[0].turn.cost_usd).toBeCloseTo(0.0076, 10);
+
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const noRow = setup([{ message: RUN }, { message: message([textBlock("Ran.")]) }], { history: HISTORY, scenario: configured(), runError: new Error("down") });
+    await noRow.run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(noRow.emitted.at(-1)?.type).toBe("done");
+    expect(noRow.emitted[2]).toMatchObject({ type: "tool_result", ok: true, payload: { run_id: null } });
+    expect(logged).toHaveBeenCalled();
+  });
+
+  it("records a failed simulation as run_failed with the run row's error", async () => {
+    const failure: SimResult = { ok: false, status: 504, kind: "timeout", detail: "The simulation timed out after 120 seconds.", repairs: [], attempts: 1, seconds: 120 };
+    const { run, emitted, finished, runs } = setup([{ message: RUN }, { message: message([textBlock("It timed out.")]) }], { history: HISTORY, scenario: configured(), simulate: failure });
+    await run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(runs[0].record.result).toEqual(failure);
+    expect(emitted[2]).toMatchObject({ type: "tool_result", ok: false, payload: { kind: "tool_error", message: expect.stringMatching(/^SIMULATION ERROR: The simulation timed out/) } });
+    expect(finished[0].step_events.map((e) => e.kind)).toEqual(["stage_reached", "run_failed", "tool_failed", "turn"]);
+    expect(finished[0].step_events[1].meta).toEqual({ kind: "timeout", repairs: 0 });
+    expect(finished[0].scenario).toMatchObject({ has_run: false, stage: "configure" });
+  });
+
+  it("drops a refused turn with the Python message, counts the refusal, stores the turn without messages, and still bills it", async () => {
+    const refusal = message([], "refusal", { stop_details: { type: "refusal", category: "bio", explanation: null } });
+    const { run, emitted, finished, records } = setup([{ message: refusal }]);
+    await run(HELLO);
+    expect(emitted).toEqual([{ type: "discard", message: DISCARD_MESSAGES.refusal }]);
+    expect(DISCARD_MESSAGES.refusal).toBe("I'm unable to help with that request. Let's get back to epidemic simulations — what would you like to model?");
+    expect(finished[0].turn).toMatchObject({ stop: "refusal", refusal_category: "bio" });
+    expect(finished[0].messages).toBeNull();
+    expect(finished[0].step_events).toContainEqual(expect.objectContaining({ kind: "refusal", meta: { category: "bio" } }));
+    expect(records).toHaveLength(1);
+  });
+
+  it("shows the paused message when continuations run out, and the other discard messages", async () => {
+    const paused = setup([{ message: message([serverSearch("st_1", "q"), searchResult("st_1", 1)], "pause_turn") }], {}, { MAX_PAUSE_CONTINUATIONS: "0" });
+    await paused.run(HELLO);
+    expect(paused.emitted.at(-1)).toEqual({ type: "discard", message: "That search ran longer than I can continue in one turn. Ask me again and I'll pick it up." });
+    expect(paused.finished[0].turn.stop).toBe("paused");
+    expect(paused.finished[0].messages).toBeNull();
+
+    const empty = setup([{ message: message([]) }]);
+    await empty.run(HELLO);
+    expect(empty.emitted).toEqual([{ type: "discard", message: "No reply came back. Please try again." }]);
+
+    const limited = setup([{ message: CONFIGURE }], {}, { MAX_TOOL_ROUNDS: "1" });
+    await limited.run(HELLO);
+    expect(limited.emitted.at(-1)).toEqual({ type: "discard", message: "That needed more steps than one message allows. Try a narrower question." });
+    expect(limited.finished[0].turn.stop).toBe("tool_limit");
+
+    const cut = setup([{ message: message([toolUse("tu_1", "configure_simulation", { disease: "mea" })], "max_tokens") }]);
+    await cut.run(HELLO);
+    expect(cut.emitted.at(-1)).toEqual({ type: "discard", message: "That reply ran past the length limit before it finished. Try asking for less at once." });
+  });
+
+  it("marks a reply that hit the length limit", async () => {
+    const { run, emitted } = setup([{ message: message([textBlock("Cut")], "max_tokens") }]);
+    await run(HELLO);
+    expect(emitted.at(-1)).toEqual({ type: "done", turnId: TURN, conversationId: CONVERSATION, notice: CUT_OFF_NOTICE });
+  });
+
+  it("records an aborted turn without appending messages and still records usage", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const { run, emitted, finished, runs, records } = setup(
+      [{ message: RUN }, { error: new Anthropic.APIUserAbortError() }],
+      { history: HISTORY, scenario: configured() },
+    );
+    await run({ conversationId: CONVERSATION, text: "Run it" }, controller.signal);
+    expect(runs).toHaveLength(1);
+    expect(finished[0].turn.stop).toBe("aborted");
+    expect(finished[0].messages).toBeNull();
+    expect(finished[0].events.map((e) => e.kind)).toEqual(["tool_use", "stage", "tool_result", "stage"]);
+    expect(emitted.map((e) => e.type)).toEqual(["tool_use", "stage", "tool_result", "stage"]);
+    expect(records).toHaveLength(1);
+    expect(records[0][2].inputTokens).toBe(100);
+  });
+
+  it("asks for a new conversation when the API rejects the history, and reports other failures as unavailable, keeping the turn as an error", async () => {
+    const rejected = setup([{ error: new Anthropic.BadRequestError(400, undefined, "invalid history", new Headers()) }], { history: HISTORY });
+    await rejected.run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(rejected.emitted).toEqual([{ type: "error", code: "conversation_invalid", message: CONVERSATION_INVALID }]);
+    expect(rejected.finished[0].turn).toMatchObject({ stop: "error", input_tokens: 0 });
+    expect(rejected.finished[0].messages).toBeNull();
+    expect(rejected.records).toHaveLength(1);
+
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const down = setup([{ message: CONFIGURE }, { error: new Anthropic.APIError(529, undefined, "overloaded", new Headers()) }]);
+    await down.run(HELLO);
+    expect(down.emitted.at(-1)).toEqual({ type: "error", code: "service_unavailable", message: UNAVAILABLE });
+    expect(down.finished[0].turn).toMatchObject({ stop: "error", input_tokens: 100 });
+    expect(down.finished[0].events.map((e) => e.kind)).toEqual(["tool_use", "tool_result", "stage"]);
+    expect(down.finished[0].scenario).toMatchObject({ disease: "measles" });
+    expect(logged).toHaveBeenCalled();
+    expect(JSON.stringify(logged.mock.calls)).not.toContain("measles");
+  });
+
+  it("answers service_unavailable when the turn cannot be stored, and still records usage", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { run, emitted, records } = setup([{ message: ANSWER }], { finishError: new Error("db down") });
+    await run(HELLO);
+    expect(emitted.at(-1)).toEqual({ type: "error", code: "service_unavailable", message: UNAVAILABLE });
+    expect(records).toHaveLength(1);
+  });
+
+  it("records a fetched page once, and web events as steps", async () => {
+    const content = [
+      serverSearch("st_1", "measles Kenya"), searchResult("st_1", 2),
+      fetchResult("st_2", "https://www.who.int/measles", "Measles"), fetchResult("st_3", "https://www.who.int/measles", null),
+      textBlock("Found it."),
+    ];
+    const { run, emitted, finished } = setup([{ message: message(content), text: ["Found it."] }]);
+    await run(HELLO);
+    expect(emitted.filter((e) => e.type === "web_search" || e.type === "web_fetch")).toHaveLength(3);
+    expect(finished[0].scenario.web_sources).toEqual([{ title: "Measles", url: "https://www.who.int/measles" }]);
+    expect(finished[0].step_events.map((e) => e.kind)).toEqual(["conversation_started", "web_search", "web_fetch", "web_fetch", "turn"]);
+  });
+
+  it("still answers when usage cannot be recorded, and leaves a text-free log line", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { run, deps, emitted } = setup([{ message: ANSWER }]);
+    deps.usage.record = async () => { throw new Error("database down"); };
+    await expect(run(HELLO)).resolves.toBeUndefined();
+    expect(emitted.at(-1)?.type).toBe("done");
+    expect(logged).toHaveBeenCalledWith("usage record failed");
+  });
+
+  it("finishes quietly and stores the turn when the participant has gone away", async () => {
+    const { client, requests } = fakeClient([{ message: ANSWER, text: ["Sure."] }]);
+    const base = setup([{ message: ANSWER }]);
+    const deps: ChatDeps = { ...base.deps, client };
+    const closed = () => { throw new Error("Invalid state: Controller is already closed"); };
+    await expect(handleChat(deps, USER, JSON.stringify(HELLO), closed)).resolves.toBeUndefined();
+    expect(requests).toHaveLength(1);
+    expect(base.finished).toHaveLength(1);
+    expect(base.records[0][2]).toMatchObject({ inputTokens: 100, outputTokens: 20 });
+  });
+
+  it("passes the abort signal through to the model call", async () => {
+    const controller = new AbortController();
+    const { run, requestOptions } = setup([{ message: ANSWER }]);
+    await run(HELLO, controller.signal);
+    expect(requestOptions).toEqual([{ signal: controller.signal }]);
+  });
+
+  it("emits and stores the recap before the suggestions, and neither when the reply has none", async () => {
+    const text = "Sure.\n\n```recap\nMeasles in Kenya\n- Population 2 million\n```\n\n```next\nRun it\n```";
+    const { run, emitted, finished } = setup([{ message: message([textBlock(text)]), text: [text] }]);
+    await run(HELLO);
+    expect(emitted.map((e) => e.type)).toEqual(["text", "recap", "suggestions", "done"]);
+    expect(emitted[1]).toEqual({ type: "recap", items: ["Measles in Kenya", "Population 2 million"] });
+    expect(finished[0].events.map((e) => e.kind)).toEqual(["text", "recap", "suggestions"]);
+    expect(finished[0].events[0]).toMatchObject({ text: "Sure." });
+    expect(finished[0].events[1]).toMatchObject({ kind: "recap", items: ["Measles in Kenya", "Population 2 million"] });
+
+    const plain = setup([{ message: message([textBlock("Plain.")]), text: ["Plain."] }]);
+    await plain.run(HELLO);
+    expect(plain.emitted.map((e) => e.type)).toEqual(["text", "done"]);
+  });
+  it("records diagnostic_shown with the run id and option_chosen when the next configuration applies a lever", async () => {
+    const diagnostics = [{ id: "unfinished", severity: "warning" as const, title: "t", evidence: {}, levers: [{ patch: { "run.sim_dur_years": 2 }, current: { "run.sim_dur_years": 1 }, direction: "increase" as const, rationale: "r", basis: "rule" as const }] }];
+    const withDiagnostics: SimResult = { ...SUCCESS, diagnostics };
+    const { run, finished, emitted } = setup([{ message: RUN }, { message: message([textBlock("Still going at the end.")]) }], { history: HISTORY, scenario: configured(), simulate: withDiagnostics });
+    await run({ conversationId: CONVERSATION, text: "Run it" });
+    expect(finished[0].step_events.map((e) => e.kind)).toEqual(["stage_reached", "run_completed", "diagnostic_shown", "tool_called", "stage_reached", "turn"]);
+    expect(finished[0].step_events[2]).toMatchObject({ tool: "run_simulation", stage: "run", meta: { run_id: "run-1", ids: "unfinished" } });
+    expect(emitted[2]).toMatchObject({ type: "tool_result", payload: { kind: "run", diagnostics, compare: null } });
+
+    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ n_agents: 10000 }), stats: STATS, statsAgents: STATS, popScale: 1, diagnostics };
+    const option = setup(
+      [{ message: message([toolUse("tu_3", "configure_simulation", { sim_dur_years: 2 })], "tool_use") }, { message: message([textBlock("Two years it is.")]) }],
+      { history: HISTORY, scenario: { ...configured(), hasRun: true, stage: "interpret", stageReached: "interpret" }, previous },
+    );
+    await option.run({ conversationId: CONVERSATION, text: "Run it for two years" });
+    const chosen = option.finished[0].step_events.find((e) => e.kind === "option_chosen");
+    expect(chosen).toMatchObject({ tool: "configure_simulation", meta: { run_id: "run-1", diagnostic_id: "unfinished", patch: JSON.stringify({ "run.sim_dur_years": 2 }) } });
+  });
+});
+
+describe("golden flows: the sim-parameters cases of spec section 1 (evals/golden/cases/parameters.yaml, pending the API harness)", () => {
+  it("parameters-describe: 'What can I change?' lists the active model's parameters with their values and sources", async () => {
+    const scenario: Scenario = { ...configured(), params: params({ disease_type: "seir", dur_exp: 11, dur_inf: 8, beta: 253.1 }) };
+    const { run, emitted, requests, finished } = setup(
+      [{ message: message([toolUse("tu_d", "describe_parameters", {})], "tool_use") }, { message: message([textBlock("You can change…")]), text: ["You can change…"] }],
+      { history: HISTORY, scenario },
+    );
+    await run({ conversationId: CONVERSATION, text: "What can I change?" });
+    expect(emitted.map((e) => e.type)).toEqual(["tool_use", "tool_result", "text", "done"]);
+    expect(emitted[1]).toMatchObject({ type: "tool_result", ok: true, payload: { kind: "parameters", model: "seir", disease: "measles" } });
+    const toolResult = (requests[1].messages as { content: { content: string }[] }[]).at(-1)!.content[0];
+    const listed = JSON.parse(toolResult.content) as { model: string; parameters: { path: string; current: unknown; source: string }[] };
+    const byPath = Object.fromEntries(listed.parameters.map((p) => [p.path, p]));
+    expect(byPath["disease.dur_inf.mean_days"]).toMatchObject({ current: 8, source: "database" });
+    expect(byPath["disease.dur_exp.mean_days"]).toMatchObject({ current: 11, source: "user" });
+    expect(byPath["run.n_agents"]).toMatchObject({ current: 10000, source: "default" });
+    expect(byPath["disease.p_asymp"]).toBeUndefined(); // not a seir parameter
+    expect(finished[0].step_events.map((e) => [e.kind, e.tool])).toContainEqual(["tool_called", "describe_parameters"]);
+    expect(finished[0].scenario).toMatchObject({ stage: "configure" });
+  });
+
+  it("parameters-diagnostic-rerun: an early fade-out returns a diagnostic, the chosen option is recorded, and the rerun compares with the previous run", async () => {
+    const seeds = { patch: { "disease.seed.mode": "count", "disease.seed.value": 25 }, current: { "disease.seed.mode": "fraction", "disease.seed.value": 0.0005 }, direction: "increase" as const, rationale: "More seeds make an early fade-out less likely: 25 instead of 5.", basis: "rule" as const };
+    const replicates = { patch: { "run.n_replicates": 5 }, current: { "run.n_replicates": 1 }, direction: "increase" as const, rationale: "Several replicates show how often the outbreak takes off at all.", basis: "rule" as const };
+    const diagnostics = [{ id: "early_fadeout", severity: "warning" as const, title: "The outbreak died out early", evidence: { r_eff: 1.2, seeds: 5, total_infected: 15, last_infectious: 0 }, levers: [seeds, replicates] }];
+    const fadedStats = { ...STATS, total_infected: 15, peak_infections: 10, peak_day: 0 };
+    const faded: SimResult = { ...SUCCESS, stats: fadedStats, stats_agents: fadedStats, diagnostics };
+
+    // Turn 1: the run comes back with the diagnostic.
+    const first = setup([{ message: RUN }, { message: message([textBlock("It died out early. Options: …")]), text: ["It died out early. Options: …"] }], { history: HISTORY, scenario: configured(), simulate: faded });
+    await first.run({ conversationId: CONVERSATION, text: "Yes, run it." });
+    expect(first.emitted[2]).toMatchObject({ type: "tool_result", payload: { kind: "run", diagnostics, compare: null } });
+    expect(first.finished[0].step_events.find((e) => e.kind === "diagnostic_shown")).toMatchObject({ meta: { run_id: "run-1", ids: "early_fadeout" } });
+    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ schema_version: 2 }), stats: fadedStats, statsAgents: fadedStats, popScale: 1, diagnostics };   // a v2 row: the default seeding, not a v1 row's 1%
+
+    // Turn 2: the user takes the first option; the model applies the lever's patch through the seed field, not through advanced.
+    const after1 = scenarioFromRow(first.finished[0].scenario);
+    const second = setup([{ message: message([toolUse("tu_c", "configure_simulation", { seed_count: 25 })], "tool_use") }, { message: message([textBlock("Set to 25 seeds.")]) }], { history: HISTORY, scenario: after1, previous });
+    await second.run({ conversationId: CONVERSATION, text: "Take the first option and rerun." });
+    expect(second.finished[0].step_events.find((e) => e.kind === "option_chosen")).toMatchObject({ meta: { run_id: "run-1", diagnostic_id: "early_fadeout", patch: JSON.stringify(seeds.patch) } });
+    expect(second.finished[0].scenario).toMatchObject({ params: { disease: { seed: { mode: "count", value: 25 } } } });
+
+    // Turn 3: the rerun compares with the previous run.
+    const after2 = scenarioFromRow(second.finished[0].scenario);
+    const rerun: SimResult = { ...SUCCESS, effective_params: params({ schema_version: 2, disease: { seed: { mode: "count", value: 25 } } }) };
+    const third = setup([{ message: RUN }, { message: message([textBlock("Compared with the previous run…")]) }], { history: HISTORY, scenario: after2, previous, simulate: rerun });
+    await third.run({ conversationId: CONVERSATION, text: "Run it" });
+    const payload = (third.emitted[2] as { payload: RunPayload }).payload;
+    expect(payload.compare).toMatchObject({ previous_run_id: "run-1", pop_scale: { from: 1, to: 1 } });
+    expect(payload.compare?.changed).toEqual(expect.arrayContaining([{ path: "disease.seed.mode", from: "fraction", to: "count" }, { path: "disease.seed.value", from: 0.0005, to: 25 }]));   // the default 0.05%
+    expect(payload.compare?.stats_delta.total_infected).toBe(STATS.total_infected - 15);
+  });
+
+  it("a what_if lever taken through the interventions field is recorded with its entries (follow-up spec 7.5)", async () => {
+    const masks = { type: "transmission_reduction", scale: 0.2, start_day: 20, end_day: 110 };
+    const label = "Add masks (20% less transmission) from day 20 for 90 days and rerun";
+    const diagnostics = [{ id: "what_if", severity: "info" as const, title: "Interventions to try", evidence: { anchor_day: 20, attack_rate: 0.86 }, levers: [
+      { patch: {}, current: {}, direction: "change" as const, rationale: "Masks; the size is illustrative.", basis: "rule" as const, interventions: [masks], label }] }];
+    const previous: PreviousRun = { id: "run-1", effectiveParams: params({ n_agents: 10000 }), stats: STATS, statsAgents: STATS, popScale: 1, diagnostics };
+    const h = setup([{ message: message([toolUse("tu_c", "configure_simulation", { interventions: [masks] })], "tool_use") }, { message: message([textBlock("Masks added.")]) }],
+      { history: HISTORY, scenario: { ...configured(), hasRun: true, stage: "interpret", stageReached: "interpret" }, previous });
+    await h.run({ conversationId: CONVERSATION, text: label });
+    expect(h.finished[0].step_events.find((e) => e.kind === "option_chosen")).toMatchObject({ meta: { run_id: "run-1", diagnostic_id: "what_if", patch: "{}", interventions: JSON.stringify([masks]) } });
+    expect(h.finished[0].scenario).toMatchObject({ params: { interventions: [{ type: "transmission_reduction", scale: 0.2, start_day: 20, end_day: 110 }] } });
+  });
+});

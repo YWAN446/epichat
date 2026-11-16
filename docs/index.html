@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EpiChat — A conversational AI agent for epidemiological simulation</title>
+<link rel="icon" href="brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="brand/epichat-icon.png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<meta name="description" content="EpiChat is a conversational agent that sets up, runs and explains agent-based epidemic simulations in Starsim, grounded in cited estimates and country data, so decision-makers can explore scenarios without waiting for a modeler.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="EpiChat — Ask an epidemiological question. Get a validated simulation.">
+<meta property="og:description" content="A conversational AI agent for epidemiological simulation, in a pilot study at CIDMATH, Emory University.">
+<meta property="og:image" content="https://ywan446.github.io/epichat/brand/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=5">
+</head>
+<body data-page="index">
+<div data-mount="nav"></div>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section style="border-top: 0; padding-top: 4rem;">
+  <div class="wrap">
+    <div class="hero-kicker">
+      <span><span class="status-dot"></span>WEB AGENT · PILOT STUDY</span>
+      <span>CIDMATH · EMORY</span>
+    </div>
+
+    <h1 class="display">
+      Ask an epidemiological<br>
+      question. Get a<br>
+      <em>validated simulation</em>.
+    </h1>
+
+    <p class="lede">
+      EpiChat is a conversational agent that turns a plain-language question
+      into an agent-based simulation in Starsim, grounds it in published
+      estimates and country data, and explains what it found, so
+      decision-makers can explore scenarios themselves, without waiting for a modeler.
+    </p>
+
+    <div style="display:flex; gap:0.75rem; margin-top: 2.4rem; flex-wrap: wrap;">
+      <a href="#how" class="btn">Read how it works <span class="arrow">→</span></a>
+      <a href="https://epichat-ai.vercel.app" target="_blank" rel="noopener" class="btn ghost">Open the app ↗</a>
+      <a href="https://github.com/YWAN446/epichat" target="_blank" rel="noopener" class="btn ghost">GitHub ↗</a>
+    </div>
+
+    <!-- terminal preview: the tool calls and numbers of a real run; the reply is paraphrased -->
+    <div class="terminal" style="margin-top: 4rem;">
+      <div class="terminal-chrome">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <span class="label" style="letter-spacing:0.16em;">epichat </span>
+        <span class="title">measles · kenya · 5 runs</span>
+      </div>
+      <div class="terminal-body" style="white-space: pre-line;"><span class="prompt user"></span><span style="color: var(--ink);">Model a measles outbreak in Kenya at current vaccination coverage.</span>
+
+<span class="prompt sys"></span><span style="color: var(--ink-3);">lookup_disease → </span><span style="color: var(--accent);">measles · R₀ 15 · latent 12 d · infectious 8 d · fatality 1.5%</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">configure_simulation → </span><span style="color: var(--accent);">SEIR · R₀ 15 · both periods gamma, illustrative spread</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">fetch_demographics → </span><span style="color: var(--accent);">Kenya · UN WPP 2024 ages · Prem 2021 contacts · R₀ held at 15</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">fetch_vaccination_coverage → </span><span style="color: var(--accent);">first dose 88% (WHO/UNICEF, 2024) · immune at the start</span>
+
+<span class="prompt user"></span><span style="color: var(--ink);">Run it five times.</span>
+
+<span class="prompt sys"></span><span style="color: var(--ink-3);">configure_simulation → </span><span style="color: var(--accent);">5 replicates</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">run_simulation → </span><span style="color: var(--accent);">10,000 agents · 365 days · median run 10.3% infected, peak day 150</span>
+<span style="font-family: var(--serif); font-size: 1.02rem; color: var(--ink); display: block; margin: 0.8rem 0; line-height: 1.55; font-style: italic;">"Even with 88% of people immune at the start, measles spreads among the other 12%. In the median run of five, 10.3% of the population is infected within the year, most of those who were not immune, with the peak on day 150; across the five runs the peak falls between day 107 and day 196. The model counts this year's first-dose coverage as full immunity at every age, a strong simplification."</span><span class="prompt sys"></span><span style="color: var(--ink-3);">try next · </span><span class="chip">Vaccinate 70% in a campaign from day 89 to day 119 and rerun</span>
+<span class="prompt sys"></span><span style="color: var(--ink-3);">ready. </span><span style="color: var(--accent); animation: pulse 1.2s infinite;">█</span></div>
+    </div>
+    <p class="mono" style="font-size: 0.7rem; color: var(--ink-3); margin-top: 0.7rem; letter-spacing: 0.04em;">
+      The configuration is what the app's own tools build for this question, run with the simulation service's code; the conversation and the reply are illustrative.
+    </p>
+
+    <!-- stats strip -->
+    <div class="stats-strip" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 3rem; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper-2);">
+      <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
+        <div class="label">Disease models</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">6</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">SIR · SEIR · SIS · SIRS · SEIRS · SEIAR</div>
+      </div>
+      <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
+        <div class="label">Diseases with cited data</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">16</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">every estimate with its title and year</div>
+      </div>
+      <div style="padding: 1.2rem 1.4rem; border-right: 1px solid var(--rule);">
+        <div class="label">Intervention types</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--accent); margin-top: 0.3rem;">6</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">vaccines · treatment · seasonality · contacts · masks · behaviour</div>
+      </div>
+      <div style="padding: 1.2rem 1.4rem;">
+        <div class="label">Countries with age data</div>
+        <div class="mono" style="font-size: 1.6rem; font-weight: 500; color: var(--ink); margin-top: 0.3rem;">237</div>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">UN WPP 2024 · contact matrices for 177</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[01 / context]</div>
+        <div class="label" style="margin-top: 1.2rem;">The bottleneck</div>
+      </div>
+      <h2 class="section-title">
+        The bottleneck in computational epidemiology is
+        <em>expertise</em>, not compute.
+      </h2>
+    </div>
+
+    <div class="grid-2" style="align-items: start;">
+      <div>
+        <p style="font-size: 1.05rem; line-height: 1.55; color: var(--ink-2); max-width: 52ch; text-wrap: pretty;">
+          During COVID-19, demand for modeling vastly outpaced supply.
+          WHO and Africa CDC flagged this as a critical pandemic-preparedness
+          gap — especially in LMICs with limited domestic modeling capacity.
+        </p>
+        <p style="font-size: 1.05rem; line-height: 1.55; color: var(--ink-2); max-width: 52ch; text-wrap: pretty; margin-top: 1.2rem;">
+          Policy officers, surveillance teams, and health analysts need
+          fast, defensible answers — but the modelers who can give them
+          are a narrow bottleneck.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 2rem; letter-spacing: 0.06em;">
+          ▸ REF · ENEN ET AL. 2026
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 1.8rem;">
+        <div class="label" style="margin-bottom: 1.2rem;">Who can model / who needs answers</div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+          <div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.08em;">CAN MODEL</div>
+            <div style="font-family: var(--serif); font-size: 1.6rem; margin-top: 0.4rem; font-style: italic;">modelers</div>
+            <div class="mono" style="font-size: 2rem; color: var(--ink); margin-top: 0.6rem; font-weight: 500;">Est: ~15k</div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); margin-top: 0.2rem;">Epi modelers worldwide</div>
+          </div>
+          <div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.08em;">CANNOT MODEL, NEEDS ANSWERS</div>
+            <div style="font-family: var(--serif); font-size: 1.6rem; margin-top: 0.4rem; font-style: italic; color: var(--ink-2);">everyone else</div>
+            <div class="mono" style="font-size: 0.82rem; color: var(--ink-2); margin-top: 0.6rem; line-height: 1.6;">
+              health analysts<br>
+              surveillance officers<br>
+              policy teams<br>
+              local health ministries
+            </div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin: 1.6rem 0 1.2rem;">
+
+        <div class="leader">
+          <span class="name">Typical wait for a modeled answer</span>
+          <span class="dots"></span>
+          <span class="val" style="color: var(--accent);">days–weeks</span>
+        </div>
+        <div class="leader">
+          <span class="name">EpiChat typical turnaround</span>
+          <span class="dots"></span>
+          <span class="val" style="color: var(--ink);">minutes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[02 / architecture]</div>
+        <div class="label" style="margin-top: 1.2rem;">Six stages</div>
+      </div>
+      <h2 class="section-title">
+        The model handles language.
+        <em>Tools handle the simulation.</em>
+      </h2>
+    </div>
+
+    <p style="font-size: 1.05rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; text-wrap: pretty; margin: 0 0 2rem;">
+      A conversation moves through six stages, shown under the chat as a step
+      strip. At each one the agent calls a tool; the tool, not the model, writes
+      the configuration, applies the data and runs the simulation, and its
+      result appears as a card you can inspect.
+    </p>
+
+    <!-- Six-stage workflow -->
+    <div style="border: 1px solid var(--rule); border-radius: 3px; background: var(--paper-2); overflow-x: auto; overflow-y: hidden;">
+      <div id="layers"></div>
+    </div>
+
+    <!-- Run chart -->
+    <div style="margin-top: 3rem;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.8rem; gap: 1rem; flex-wrap: wrap;">
+        <div class="label">Run output · measles in Kenya, with and without the suggested campaign</div>
+      </div>
+      <div id="curve-host"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BY EXAMPLE ============ -->
+<section id="example">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[03 / by example]</div>
+        <div class="label" style="margin-top: 1.2rem;">Plain language in. A sourced simulation out.</div>
+      </div>
+      <h2 class="section-title">
+        A question, step by step.
+      </h2>
+    </div>
+
+    <div class="grid-2" style="gap: 2.8rem;">
+      <div class="terminal">
+        <div class="terminal-chrome">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <span class="label" style="letter-spacing:0.14em;">▸ YOUR QUESTION</span>
+        </div>
+        <div class="terminal-body" style="font-family: var(--serif); font-size: 1.05rem; font-style: italic; line-height: 1.5;">
+          "Model a measles outbreak in Kenya at current vaccination coverage."
+        </div>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-chrome">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <span class="label" style="letter-spacing:0.14em;">▼ CONFIGURATION · WITH SOURCES</span>
+        </div>
+        <div class="terminal-body">
+          <dl class="kv">
+            <dt>disease</dt>      <dd>measles · SEIR <span style="color: var(--ink-3);">database</span></dd>
+            <dt>R₀</dt>           <dd>15 → β calibrated <span style="color: var(--ink-3);">database, range 12–18</span></dd>
+            <dt>periods</dt>      <dd>latent 12 d · infectious 8 d, gamma <span style="color: var(--ink-3);">database means, illustrative spread</span></dd>
+            <dt>fatality</dt>     <dd>1.5% of infections <span style="color: var(--ink-3);">database</span></dd>
+            <dt>population</dt>   <dd>Kenya's ages, births and deaths <span style="color: var(--ink-3);">UN WPP 2024</span></dd>
+            <dt>network</dt>      <dd>age-structured <span style="color: var(--ink-3);">Prem 2021 matrix for Kenya</span></dd>
+            <dt>immune</dt>       <dd>88% at the start <span style="color: var(--ink-3);">WHO/UNICEF first dose, 2024</span></dd>
+            <dt>seeding</dt>      <dd>0.05% of agents <span style="color: var(--ink-3);">default</span></dd>
+            <dt>run</dt>          <dd>10,000 agents · 365 days · 5 runs</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; font-family: var(--mono); color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.14em; margin: 2rem 0 1.5rem;">
+      ── understand · configure · ground in data · run · interpret · report ──
+    </div>
+
+    <div class="panel" style="padding: 2rem 2.4rem;">
+      <div class="label">▸ REPLY</div>
+      <p style="font-family: var(--serif); font-size: 1.3rem; line-height: 1.5; margin: 0.8rem 0 0; font-style: italic; text-wrap: pretty; max-width: 60ch;">
+        "In the median run of five, 10.3% of the population is infected within
+        the year (9.7–10.9% across the five), with the peak on day 150. A campaign
+        vaccinating 70% between days 89 and 119 brings the median run to 2.7%,
+        but with it the five runs disagree widely (1.3–6.5%), and the app says so."
+      </p>
+      <div class="label" style="margin-top: 1.6rem;">▸ TRY NEXT</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem;">
+        <span class="chip">Vaccinate 70% in a campaign from day 89 to day 119 and rerun</span>
+        <span class="chip">Cut contacts by 30% from day 89 for eight weeks and rerun</span>
+        <span class="chip">Add masks (20% less transmission) from day 89 for 90 days and rerun</span>
+      </div>
+      <p class="mono" style="font-size: 0.7rem; color: var(--ink-3); margin: 1.4rem 0 0; letter-spacing: 0.04em;">
+        The run suggested four interventions and the app shows three as buttons; the first one's result is in the chart above. The conversation and the reply are illustrative.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STATUS ============ -->
+<section id="status">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[04 / status]</div>
+        <div class="label" style="margin-top: 1.2rem;">Web agent · pilot · October 2026</div>
+      </div>
+      <h2 class="section-title">
+        It works end to end, and it <em>shows its sources</em>.
+      </h2>
+    </div>
+
+    <div class="grid-2" style="gap: 2.4rem;">
+      <div>
+        <div class="label" style="margin-bottom: 1rem;">▍ SHIPPED</div>
+        <div class="leader"><span class="name">A conversational agent (Claude) with nine tools and web search</span></div>
+        <div class="leader"><span class="name">Sign-in, consent and a recorded usability study</span></div>
+        <div class="leader"><span class="name">Six-stage step strip with suggested replies</span></div>
+        <div class="leader"><span class="name">16-disease database; apply a cited estimate in one click</span></div>
+        <div class="leader"><span class="name">One parameter registry, each value tagged with its source</span></div>
+        <div class="leader"><span class="name">Random, age-structured and household-school-work networks</span></div>
+        <div class="leader"><span class="name">Country ages, contact matrices and vaccination coverage</span></div>
+        <div class="leader"><span class="name">Six interventions, a fit to a known outcome, up to five runs</span></div>
+        <div class="leader"><span class="name">Diagnostics with suggested fixes and interventions</span></div>
+        <div class="leader"><span class="name">Reports (Word, PDF), share links, memory across conversations</span></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom: 1rem;">▍ NEXT</div>
+        <div class="leader"><span class="name">Usability study: graduate students, epidemiologists, decision makers</span></div>
+        <div class="leader"><span class="name">Cited effect sizes for interventions; fatality by age</span></div>
+        <div class="leader"><span class="name">Calibration to a reported case series</span></div>
+        <div class="leader"><span class="name">Testing and isolation as interventions</span></div>
+        <div class="leader"><span class="name">Benchmark and validation study against expert models</span></div>
+        <div class="leader"><span class="name">Open release + preprint</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PILOT CTA ============ -->
+<section id="pilot" style="background: var(--ink); color: var(--paper); border-top: 0;">
+  <div class="wrap">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 3rem; flex-wrap: wrap;">
+      <div>
+        <div class="mono" style="font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: oklch(0.65 0.02 80); margin-bottom: 1.2rem;">
+          ● PILOT · WEB AGENT
+        </div>
+        <h2 style="font-family: var(--serif); font-size: clamp(2.2rem, 4vw, 3.4rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em;">
+          The web agent is in a pilot.<br>
+          <em style="color: oklch(0.78 0.12 var(--accent-h));">Take part.</em>
+        </h2>
+        <p style="font-family: var(--serif); font-size: 1.15rem; color: oklch(0.75 0.02 80); margin: 1.4rem 0 0; max-width: 50ch; line-height: 1.5;">
+          EpiChat runs as a web app with sign-in. During the pilot it is open to
+          study participants with an Emory email address, who agree at first
+          sign-in that their conversations are recorded for the research. To take
+          part from elsewhere, or to see a walkthrough, write to Yuke.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <a href="https://epichat-ai.vercel.app" target="_blank" rel="noopener"
+           class="btn" style="background: oklch(0.78 0.12 var(--accent-h)); color: var(--ink); border-color: transparent;">
+          Open EpiChat ↗
+        </a>
+        <a href="mailto:yuke.wang@emory.edu?subject=EpiChat%20pilot" class="btn ghost" style="color: var(--paper); border-color: oklch(0.6 0.02 70);">
+          Ask to take part
+        </a>
+        <a href="https://github.com/YWAN446/epichat" target="_blank" rel="noopener"
+           class="btn ghost" style="color: var(--paper); border-color: oklch(0.6 0.02 70);">
+          View source on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[05 / roadmap]</div>
+        <div class="label" style="margin-top: 1.2rem;">From prototype to research-grade tool</div>
+      </div>
+      <h2 class="section-title">
+        Where the data roadmap stands.
+      </h2>
+    </div>
+
+    <div style="border: 1px solid var(--rule); border-radius: 3px; overflow: hidden;">
+      <div class="roadmap-header" style="display: grid; grid-template-columns: 60px 1fr 140px 140px; gap: 0; background: var(--paper-3); font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);">
+        <div style="padding: 0.8rem 1rem; border-right: 1px solid var(--rule);">#</div>
+        <div style="padding: 0.8rem 1rem; border-right: 1px solid var(--rule);">Phase</div>
+        <div style="padding: 0.8rem 1rem; border-right: 1px solid var(--rule);">Status</div>
+        <div style="padding: 0.8rem 1rem;">Impact</div>
+      </div>
+      <div id="roadmap-rows"></div>
+    </div>
+
+    <p style="font-family: var(--serif); font-size: 1rem; color: var(--ink-3); margin-top: 1.5rem; font-style: italic;">
+      Data sources and implementation notes are in the
+      <a href="docs.html#roadmap">docs</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ============ TEAM / PI ============ -->
+<section id="team">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[06 / team]</div>
+        <div class="label" style="margin-top: 1.2rem;">The team</div>
+      </div>
+      <h2 class="section-title">
+        Built at <em>CIDMATH</em>, Emory University.
+      </h2>
+    </div>
+
+    <!-- Yuke Wang -->
+    <div class="team-card" style="display: grid; grid-template-columns: 220px 1fr; gap: 2.5rem; align-items: start;">
+      <img src="yuke.jpg" alt="Yuke Wang" style="width: 200px; height: 240px; object-fit: cover; object-position: center top; border: 1px solid var(--rule); border-radius: 2px; display: block;">
+      <div>
+        <div class="label">PRINCIPAL INVESTIGATOR</div>
+        <h3 style="font-family: var(--serif); font-size: 2rem; font-weight: 400; margin: 0.4rem 0 0.2rem; letter-spacing: -0.01em;">
+          Yuke Wang, PhD, MSPH
+        </h3>
+        <p style="font-family: var(--serif); font-size: 1.1rem; line-height: 1.55; color: var(--ink-2); max-width: 58ch; margin-top: 1.4rem; text-wrap: pretty;">
+          Yuke's research sits at the intersection of infectious disease
+          epidemiology, environmental health, computational modeling, and AI.
+          EpiChat is a prototype exploring whether LLMs can meaningfully widen
+          access to epidemiological simulation.
+        </p>
+        <div style="display: flex; gap: 2rem; margin-top: 1.8rem; flex-wrap: wrap;">
+          <div>
+            <div class="label">Contact</div>
+            <a href="mailto:yuke.wang@emory.edu" style="font-family: var(--mono); font-size: 0.88rem;">yuke.wang@emory.edu</a>
+          </div>
+          <div>
+            <div class="label">Affiliation</div>
+            <div class="mono" style="font-size: 0.88rem;">RSPH · Emory University</div>
+          </div>
+          <div>
+            <div class="label">Department</div>
+            <div class="mono" style="font-size: 0.88rem;">Global Health · Biostatistics</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annie Wang -->
+    <div class="team-card" style="display: grid; grid-template-columns: 220px 1fr; gap: 2.5rem; align-items: start; margin-top: 3rem; padding-top: 3rem; border-top: 1px solid var(--rule);">
+      <img src="annie.jpg" alt="Annie Wang" style="width: 200px; height: 240px; object-fit: cover; object-position: center top; border: 1px solid var(--rule); border-radius: 2px; display: block;">
+      <div>
+        <div class="label">MASTER'S STUDENT</div>
+        <h3 style="font-family: var(--serif); font-size: 2rem; font-weight: 400; margin: 0.4rem 0 0.2rem; letter-spacing: -0.01em;">
+          Annie Wang
+        </h3>
+        <p style="font-family: var(--serif); font-size: 1.1rem; line-height: 1.55; color: var(--ink-2); max-width: 58ch; margin-top: 1.4rem; text-wrap: pretty;">
+          Annie is a master's student in the Epidemiology program at the Rollins School of Public Health. She earned her Bachelor's in Health Studies and Statistical Sciences from the University of Toronto. Her research interests focus on statistical analysis in public health, with experience in epidemiological research, data visualization, and applied health data science.
+        </p>
+        <div style="display: flex; gap: 2rem; margin-top: 1.8rem; flex-wrap: wrap;">
+          <div>
+            <div class="label">Contact</div>
+            <a href="mailto:shi.ruo.wang@emory.edu" style="font-family: var(--mono); font-size: 0.88rem;">shi.ruo.wang@emory.edu</a>
+          </div>
+          <div>
+            <div class="label">Affiliation</div>
+            <div class="mono" style="font-size: 0.88rem;">RSPH · Emory University</div>
+          </div>
+          <div>
+            <div class="label">Department</div>
+            <div class="mono" style="font-size: 0.88rem;">Epidemiology</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[07 / faq]</div>
+        <div class="label" style="margin-top: 1.2rem;">Common questions</div>
+      </div>
+      <h2 class="section-title">
+        Questions you probably have.
+      </h2>
+    </div>
+
+    <div id="faq-rows"></div>
+  </div>
+</section>
+
+<!-- ============ ASK ============ -->
+<section id="ask" style="border-bottom: 1px solid var(--rule);">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-index">[08 / the ask]</div>
+        <div class="label" style="margin-top: 1.2rem;">Three ways to collaborate</div>
+      </div>
+      <h2 class="section-title">
+        Help us <em>widen</em> who gets<br>to do epidemiology.
+      </h2>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">▍ 01</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem; letter-spacing: -0.01em;">Domain experts</h3>
+        <p style="font-size: 0.98rem; color: var(--ink-2); line-height: 1.5; margin: 0 0 1rem; text-wrap: pretty;">
+          Lend your eyes to benchmark questions and what a correct answer
+          should look like for the diseases you work on.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.6;">
+          ex · measles · HIV · influenza<br>
+          COVID-19 · TB · cholera
+        </div>
+      </div>
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">▍ 02</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem; letter-spacing: -0.01em;">Data contributors</h3>
+        <p style="font-size: 0.98rem; color: var(--ink-2); line-height: 1.5; margin: 0 0 1rem; text-wrap: pretty;">
+          Help find the cited values the database still lacks, so every
+          scenario rests on published evidence rather than assumptions.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.6;">
+          ex · school closures · masks · distancing<br>
+          fatality by age · vaccine efficacy
+        </div>
+      </div>
+      <div class="panel">
+        <div class="mono" style="font-size: 0.72rem; color: var(--accent); letter-spacing: 0.14em;">▍ 03</div>
+        <h3 style="font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 0.5rem 0 0.8rem; letter-spacing: -0.01em;">Modelers for reference</h3>
+        <p style="font-size: 0.98rem; color: var(--ink-2); line-height: 1.5; margin: 0 0 1rem; text-wrap: pretty;">
+          Expand to other Epi modeling packages and provide
+          validation support.
+        </p>
+        <div class="mono" style="font-size: 0.72rem; color: var(--ink-3); line-height: 1.6;">
+          ex · Starsim · EpiModel · Mesa<br>
+          outbreak · intervention validation
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 3rem; text-align: center;">
+      <a href="mailto:yuke.wang@emory.edu?subject=EpiChat%20collaboration" class="btn accent" style="padding: 1.1rem 1.6rem; font-size: 0.82rem;">
+        Reach out · yuke.wang@emory.edu <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div data-mount="footer"></div>
+
+<script src="site.js?v=4"></script>
+<script src="landing.js?v=3"></script>
+</body>
+</html>

@@ -1,38 +1,29 @@
 # epichat/data_loaders/demographics.py
 
-import gzip
 import json
+import logging
+import os
 import requests
 import pandas as pd
 from pathlib import Path
 from functools import lru_cache
 from typing import Optional
 
+logger = logging.getLogger(__name__)
+
 #file paths
 DATA_PATH = Path(__file__).parent.parent / 'data' / 'demographics'
-CACHE_DIR  = DATA_PATH / 'cache'
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def cache_dir() -> Path:
+    """Where lookups are cached. EPICHAT_CACHE_DIR overrides the default so a
+    read-only deployment can point it at a temp directory."""
+    override = os.environ.get("EPICHAT_CACHE_DIR")
+    return Path(override) if override else DATA_PATH / 'cache'
+
 
 WPP_FILE = DATA_PATH / 'WPP2024_Demographic_Indicators_Medium.csv'
 WHO_FILE = DATA_PATH / 'WHO_Mortality_Database.csv'
-
-# ── World Bank Data360 API ────────────────────────────────────
-# Docs:   https://data360api.worldbank.org
-# OAS:    https://raw.githubusercontent.com/worldbank/open-api-specs/
-#         refs/heads/main/Data360%20Open_API.json
-# DB:     WB_WDI (World Development Indicators)
-# Note:   accepts ISO3 directly via REF_AREA — no ISO2 needed
-# Format: indicators use WB_WDI_ prefix with underscores
-
-DATA360_BASE = "https://data360api.worldbank.org/data360/data"
-
-DATA360_INDICATORS = {
-    'birth_rate':       'WB_WDI_SP_DYN_CBRT_IN',
-    'death_rate':       'WB_WDI_SP_DYN_CDRT_IN',
-    'life_expectancy':  'WB_WDI_SP_DYN_LE00_IN',
-    'fertility_rate':   'WB_WDI_SP_DYN_TFRT_IN',
-    'infant_mortality': 'WB_WDI_SP_DYN_IMRT_IN',
-}
 
 # ── WPP dataframe cache (load once per session) ───────────────
 _wpp_df: Optional[pd.DataFrame] = None
@@ -49,10 +40,10 @@ def _load_wpp() -> Optional[pd.DataFrame]:
         _wpp_df = pd.read_csv(WPP_FILE, low_memory=False,
                               usecols=['ISO3_code', 'Time', 'CBR', 'CDR',
                                        'LEx', 'TFR', 'IMR'])
-        print(f"  Loaded UN WPP 2024 ({len(_wpp_df):,} rows)")
+        logger.info("Loaded UN WPP 2024 (%s rows)", f"{len(_wpp_df):,}")
         return _wpp_df
     except Exception as e:
-        print(f"  ⚠ Could not load WPP file: {e}")
+        logger.warning("Could not load WPP file: %s", e)
         return None
 
 
@@ -77,9 +68,11 @@ def _load_who(iso3: Optional[str] = None) -> Optional[pd.DataFrame]:
         if not path.exists():
             continue
         try:
-            df = pd.read_csv(path, skiprows=6, header=0,
-                             index_col=0, low_memory=False)
-            # Fix column names (file has a shifted index issue)
+            # Skip the 6 metadata lines + header row and read positionally:
+            # data rows carry a trailing comma (13 fields for 12 columns),
+            # so named/indexed reads mis-align every column by one.
+            df = pd.read_csv(path, skiprows=7, header=None, low_memory=False)
+            df = df.iloc[:, :12]
             df.columns = [
                 'Region Code', 'Region Name', 'Country Code', 'Country Name',
                 'Year', 'Sex', 'Age group code', 'Age Group', 'Number',
@@ -87,7 +80,7 @@ def _load_who(iso3: Optional[str] = None) -> Optional[pd.DataFrame]:
             ]
             return df
         except Exception as e:
-            print(f"  ⚠ Could not load WHO file {path.name}: {e}")
+            logger.warning("Could not load WHO file %s: %s", path.name, e)
 
     return None
 
@@ -189,19 +182,22 @@ def get_who_age_distribution(iso3: str) -> Optional[pd.DataFrame]:
     Return age-specific death rates from WHO data as a DataFrame.
     Useful for age-stratified severity modeling (Phase 3).
 
+    Uses the per-age 'Death rate per 100 000 population' column (the
+    age-standardized column is only populated for all-age summary rows).
+
     Returns DataFrame with columns:
-        age_group, age_group_code, agestd_rate_per100k, sex
+        age_group_code, age_group, death_rate_per100k, source
     """
     df = _load_who(iso3)
     if df is None:
         return None
 
     result = df[df['Sex'] == 'All'][
-        ['Age group code', 'Age Group', 'ASdr_per100k']
+        ['Age group code', 'Age Group', 'Death_rate_per100k']
     ].copy()
-    result.columns = ['age_group_code', 'age_group', 'agestd_rate_per100k']
+    result.columns = ['age_group_code', 'age_group', 'death_rate_per100k']
     result = result[~result['age_group_code'].str.contains('unknown', case=False, na=True)]
-    result = result.dropna(subset=['agestd_rate_per100k'])
+    result = result.dropna(subset=['death_rate_per100k'])
     result['source'] = 'WHO Mortality Database'
     return result.reset_index(drop=True)
 
@@ -272,7 +268,7 @@ def _fetch_data360(iso3: str, indicator_key: str, year: int = 2022) -> Optional[
                     return float(val)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != 404:
-                print(f"  ⚠ Data360 error ({indicator_key}, {iso3}): {e}")
+                logger.warning("Data360 error (%s, %s): %s", indicator_key, iso3, e)
             break
         except Exception:
             break
@@ -306,7 +302,7 @@ def get_country_demographics(country_iso3: str, year: int = 2022) -> dict:
     iso3 = country_iso3.upper()
 
     # ── Check disk cache ──────────────────────────────────────
-    cache_file = CACHE_DIR / f'{iso3}_{year}.json'
+    cache_file = cache_dir() / f'{iso3}_{year}.json'
     if cache_file.exists():
         with open(cache_file) as f:
             data = json.load(f)
@@ -352,14 +348,25 @@ def get_country_demographics(country_iso3: str, year: int = 2022) -> dict:
         if d360_used:
             sources.append('World Bank Data360 (WB_WDI)')
 
-    # ── Save to disk cache ────────────────────────────────────
-    with open(cache_file, 'w') as f:
-        json.dump(result, f, indent=2)
+    if 'birth_rate' not in result or 'death_rate' not in result:
+        raise ValueError(
+            f"No demographic data found for {iso3} ({year}) in UN WPP, "
+            f"WHO Mortality Database, or World Bank Data360"
+        )
 
-    print(f"  ✓ {iso3}: birth={result.get('birth_rate','?')}/1000, "
-          f"death={result.get('death_rate','?')}/1000, "
-          f"LE={result.get('life_expectancy','?')}yr "
-          f"[{result['source']}]")
+    result['source'] = ' + '.join(sources)
+
+    # ── Save to disk cache ────────────────────────────────────
+    try:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, 'w') as f:
+            json.dump(result, f, indent=2)
+    except OSError as e:
+        logger.debug("Demographics cache not written (%s): %s", cache_file, e)
+
+    logger.info("%s: birth=%s/1000, death=%s/1000, LE=%syr [%s]",
+                iso3, result.get('birth_rate', '?'), result.get('death_rate', '?'),
+                result.get('life_expectancy', '?'), result['source'])
     return result
 
 
@@ -376,12 +383,12 @@ def get_demographics_for_sim(iso3: str, year: int = 2022) -> dict:
 def clear_cache(iso3: Optional[str] = None):
     """Clear disk cache. Pass iso3 to clear one country, None to clear all."""
     if iso3:
-        for f in CACHE_DIR.glob(f'{iso3.upper()}_*.json'):
+        for f in cache_dir().glob(f'{iso3.upper()}_*.json'):
             f.unlink()
-        print(f"Cleared cache for {iso3}")
+        logger.info("Cleared cache for %s", iso3)
     else:
-        for f in CACHE_DIR.glob('*.json'):
+        for f in cache_dir().glob('*.json'):
             f.unlink()
         # Also clear lru_cache
         get_country_demographics.cache_clear()
-        print("Cleared all demographic cache")
+        logger.info("Cleared all demographic cache")

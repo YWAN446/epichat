@@ -1,0 +1,494 @@
+{
+  "cases": {
+    "seiar": {
+      "median": {
+        "peak_day": 60.0,
+        "total_infected": 8069.0
+      },
+      "params": {
+        "beta": 22.8125,
+        "disease_type": "seiar",
+        "dur_exp": 5.0,
+        "dur_inf": 10.0,
+        "init_prev": 0.01,
+        "n_agents": 10000,
+        "n_contacts": 4,
+        "p_asymp": 0.3,
+        "p_death": 0.0,
+        "rel_trans_asymp": 0.5,
+        "sim_dur_years": 1.0
+      },
+      "per_seed": [
+        {
+          "peak_day": 61,
+          "peak_infections": 1242,
+          "seed": 1,
+          "total_infected": 8111
+        },
+        {
+          "peak_day": 56,
+          "peak_infections": 1263,
+          "seed": 2,
+          "total_infected": 8037
+        },
+        {
+          "peak_day": 60,
+          "peak_infections": 1228,
+          "seed": 3,
+          "total_infected": 8058
+        },
+        {
+          "peak_day": 61,
+          "peak_infections": 1294,
+          "seed": 4,
+          "total_infected": 8148
+        },
+        {
+          "peak_day": 58,
+          "peak_infections": 1311,
+          "seed": 5,
+          "total_infected": 8096
+        },
+        {
+          "peak_day": 60,
+          "peak_infections": 1274,
+          "seed": 6,
+          "total_infected": 8025
+        },
+        {
+          "peak_day": 61,
+          "peak_infections": 1316,
+          "seed": 7,
+          "total_infected": 8045
+        },
+        {
+          "peak_day": 60,
+          "peak_infections": 1333,
+          "seed": 8,
+          "total_infected": 8129
+        },
+        {
+          "peak_day": 57,
+          "peak_infections": 1225,
+          "seed": 9,
+          "total_infected": 7946
+        },
+        {
+          "peak_day": 61,
+          "peak_infections": 1333,
+          "seed": 10,
+          "total_infected": 8080
+        }
+      ]
+    },
+    "seir": {
+      "median": {
+        "peak_day": 54.0,
+        "total_infected": 8758.5
+      },
+      "params": {
+        "beta": 22.8125,
+        "disease_type": "seir",
+        "dur_exp": 5.0,
+        "dur_inf": 10.0,
+        "init_prev": 0.01,
+        "n_agents": 10000,
+        "n_contacts": 4,
+        "p_death": 0.0,
+        "sim_dur_years": 1.0
+      },
+      "per_seed": [
+        {
+          "peak_day": 52,
+          "peak_infections": 2335,
+          "seed": 1,
+          "total_infected": 8690
+        },
+        {
+          "peak_day": 56,
+          "peak_infections": 2395,
+          "seed": 2,
+          "total_infected": 8764
+        },
+        {
+          "peak_day": 54,
+          "peak_infections": 2458,
+          "seed": 3,
+          "total_infected": 8876
+        },
+        {
+          "peak_day": 56,
+          "peak_infections": 2428,
+          "seed": 4,
+          "total_infected": 8796
+        },
+        {
+          "peak_day": 54,
+          "peak_infections": 2291,
+          "seed": 5,
+          "total_infected": 8652
+        },
+        {
+          "peak_day": 53,
+          "peak_infections": 2392,
+          "seed": 6,
+          "total_infected": 8679
+        },
+        {
+          "peak_day": 50,
+          "peak_infections": 2459,
+          "seed": 7,
+          "total_infected": 8721
+        },
+        {
+          "peak_day": 54,
+          "peak_infections": 2461,
+          "seed": 8,
+          "total_infected": 8781
+        },
+        {
+          "peak_day": 54,
+          "peak_infections": 2431,
+          "seed": 9,
+          "total_infected": 8773
+        },
+        {
+          "peak_day": 52,
+          "peak_infections": 2414,
+          "seed": 10,
+          "total_infected": 8753
+        }
+      ]
+    },
+    "seirs": {
+      "median": {
+        "peak_day": 52.5,
+        "total_infected": 8765.0
+      },
+      "params": {
+        "beta": 22.8125,
+        "disease_type": "seirs",
+        "dur_exp": 5.0,
+        "dur_immune": 180.0,
+        "dur_inf": 10.0,
+        "init_prev": 0.01,
+        "n_agents": 10000,
+        "n_contacts": 4,
+        "p_death": 0.0,
+        "sim_dur_years": 1.0
+      },
+      "per_seed": [
+        {
+          "peak_day": 51,
+          "peak_infections": 2483,
+          "seed": 1,
+          "total_infected": 8710
+        },
+        {
+          "peak_day": 53,
+          "peak_infections": 2439,
+          "seed": 2,
+          "total_infected": 8767
+        },
+        {
+          "peak_day": 55,
+          "peak_infections": 2391,
+          "seed": 3,
+          "total_infected": 8768
+        },
+        {
+          "peak_day": 51,
+          "peak_infections": 2435,
+          "seed": 4,
+          "total_infected": 8736
+        },
+        {
+          "peak_day": 56,
+          "peak_infections": 2462,
+          "seed": 5,
+          "total_infected": 8757
+        },
+        {
+          "peak_day": 49,
+          "peak_infections": 2411,
+          "seed": 6,
+          "total_infected": 8589
+        },
+        {
+          "peak_day": 53,
+          "peak_infections": 2451,
+          "seed": 7,
+          "total_infected": 8768
+        },
+        {
+          "peak_day": 54,
+          "peak_infections": 2451,
+          "seed": 8,
+          "total_infected": 8788
+        },
+        {
+          "peak_day": 52,
+          "peak_infections": 2439,
+          "seed": 9,
+          "total_infected": 8827
+        },
+        {
+          "peak_day": 51,
+          "peak_infections": 2535,
+          "seed": 10,
+          "total_infected": 8763
+        }
+      ]
+    },
+    "sir": {
+      "median": {
+        "peak_day": 26.0,
+        "total_infected": 8362.5
+      },
+      "params": {
+        "beta": 22.8125,
+        "disease_type": "sir",
+        "dur_inf": 10.0,
+        "init_prev": 0.01,
+        "n_agents": 10000,
+        "n_contacts": 4,
+        "p_death": 0.0,
+        "sim_dur_years": 1.0
+      },
+      "per_seed": [
+        {
+          "peak_day": 28,
+          "peak_infections": 3847,
+          "seed": 1,
+          "total_infected": 8404
+        },
+        {
+          "peak_day": 25,
+          "peak_infections": 3796,
+          "seed": 2,
+          "total_infected": 8379
+        },
+        {
+          "peak_day": 25,
+          "peak_infections": 3743,
+          "seed": 3,
+          "total_infected": 8394
+        },
+        {
+          "peak_day": 25,
+          "peak_infections": 3859,
+          "seed": 4,
+          "total_infected": 8312
+        },
+        {
+          "peak_day": 25,
+          "peak_infections": 3613,
+          "seed": 5,
+          "total_infected": 8344
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3701,
+          "seed": 6,
+          "total_infected": 8336
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3708,
+          "seed": 7,
+          "total_infected": 8364
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3776,
+          "seed": 8,
+          "total_infected": 8421
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3615,
+          "seed": 9,
+          "total_infected": 8361
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3676,
+          "seed": 10,
+          "total_infected": 8332
+        }
+      ]
+    },
+    "sirs": {
+      "median": {
+        "peak_day": 25.5,
+        "total_infected": 8397.0
+      },
+      "params": {
+        "beta": 22.8125,
+        "disease_type": "sirs",
+        "dur_immune": 180.0,
+        "dur_inf": 10.0,
+        "init_prev": 0.01,
+        "n_agents": 10000,
+        "n_contacts": 4,
+        "p_death": 0.0,
+        "sim_dur_years": 1.0
+      },
+      "per_seed": [
+        {
+          "peak_day": 26,
+          "peak_infections": 3758,
+          "seed": 1,
+          "total_infected": 8395
+        },
+        {
+          "peak_day": 24,
+          "peak_infections": 3769,
+          "seed": 2,
+          "total_infected": 8487
+        },
+        {
+          "peak_day": 24,
+          "peak_infections": 3920,
+          "seed": 3,
+          "total_infected": 8454
+        },
+        {
+          "peak_day": 25,
+          "peak_infections": 3827,
+          "seed": 4,
+          "total_infected": 8464
+        },
+        {
+          "peak_day": 25,
+          "peak_infections": 3677,
+          "seed": 5,
+          "total_infected": 8332
+        },
+        {
+          "peak_day": 27,
+          "peak_infections": 3763,
+          "seed": 6,
+          "total_infected": 8408
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3729,
+          "seed": 7,
+          "total_infected": 8399
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3700,
+          "seed": 8,
+          "total_infected": 8308
+        },
+        {
+          "peak_day": 25,
+          "peak_infections": 3893,
+          "seed": 9,
+          "total_infected": 8388
+        },
+        {
+          "peak_day": 26,
+          "peak_infections": 3588,
+          "seed": 10,
+          "total_infected": 8380
+        }
+      ]
+    },
+    "sis": {
+      "median": {
+        "peak_day": 208.5,
+        "total_infected": 203033.5
+      },
+      "params": {
+        "beta": 22.8125,
+        "disease_type": "sis",
+        "dur_inf": 10.0,
+        "init_prev": 0.01,
+        "n_agents": 10000,
+        "n_contacts": 4,
+        "p_death": 0.0,
+        "sim_dur_years": 1.0
+      },
+      "per_seed": [
+        {
+          "peak_day": 356,
+          "peak_infections": 5960,
+          "seed": 1,
+          "total_infected": 202698
+        },
+        {
+          "peak_day": 119,
+          "peak_infections": 5896,
+          "seed": 2,
+          "total_infected": 203026
+        },
+        {
+          "peak_day": 290,
+          "peak_infections": 5943,
+          "seed": 3,
+          "total_infected": 204079
+        },
+        {
+          "peak_day": 65,
+          "peak_infections": 5934,
+          "seed": 4,
+          "total_infected": 202889
+        },
+        {
+          "peak_day": 185,
+          "peak_infections": 5938,
+          "seed": 5,
+          "total_infected": 203709
+        },
+        {
+          "peak_day": 267,
+          "peak_infections": 6006,
+          "seed": 6,
+          "total_infected": 202555
+        },
+        {
+          "peak_day": 232,
+          "peak_infections": 5907,
+          "seed": 7,
+          "total_infected": 203041
+        },
+        {
+          "peak_day": 159,
+          "peak_infections": 5942,
+          "seed": 8,
+          "total_infected": 202383
+        },
+        {
+          "peak_day": 326,
+          "peak_infections": 5942,
+          "seed": 9,
+          "total_infected": 203603
+        },
+        {
+          "peak_day": 75,
+          "peak_infections": 5943,
+          "seed": 10,
+          "total_infected": 203065
+        }
+      ]
+    }
+  },
+  "n_agents": 10000,
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "sim_dur_years": 1.0,
+  "starsim_version": "3.3.2"
+}

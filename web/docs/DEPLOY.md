@@ -1,0 +1,791 @@
+# Deploying and running the EpiChat web app
+
+The app is the `web/` service of the repository. Sub-project 2 adds the `sim`
+service beside it. Everything below is done once by the owner; the code never
+creates projects or changes dashboard settings.
+
+## 1. Supabase (EpiChat's own project)
+
+1. Create a new project on the free plan. Region: US East.
+2. SQL editor: paste and run `web/supabase/migrations/0001_init.sql`. It is
+   safe to run twice. Later migrations are run in order by file name.
+   Sub-project 3 adds `web/supabase/migrations/0002_turns.sql` (the
+   `finish_turn` function and two scenario columns); run it the same way
+   after 0001.
+   Sub-project 4a adds `web/supabase/migrations/0003_recap.sql` (one more
+   turn event kind, `recap`); run it after 0002, before the workspace code
+   deploys, or every turn is rejected by `finish_turn`.
+   Sub-project 4c adds `web/supabase/migrations/0004_reports.sql` (the
+   `reports` table, two scenario columns, the sixth stage, and `finish_turn`
+   linking reports); run it after 0003, twice, before the report code
+   deploys, or `finish_turn` rejects the scenario's report fields.
+   Sub-project 4e adds `web/supabase/migrations/0005_shares.sql` (the
+   `shares` table, the four share step-event kinds, and
+   `record_share_view`); run it after 0004, twice, before the share code
+   deploys, or every share request fails. The same deploy carries
+   `content/consent.md` at `version: 2026-10-09`, so every participant is
+   shown the consent text once more on their next visit.
+   Sub-project 4d adds `web/supabase/migrations/0006_profile_memory.sql` (the
+   profile columns on `profiles`, the `memories` table, and six step-event
+   kinds); run it after 0005, twice, before the profile code deploys, or
+   every chat turn and every profile request fails on the new columns. The
+   same deploy carries `content/consent.md` at `version: 2026-10-10`, so
+   every participant passes the consent page and then the profile page once.
+   The sim-parameters work (phases 3 and 4) adds
+   `web/supabase/migrations/0007_run_diagnostics.sql` (the `runs.diagnostics`
+   column and two step-event kinds, `diagnostic_shown` and `option_chosen`);
+   run it after 0006, twice, before that code deploys, or every run row
+   insert fails on the missing column (the run still answers, with `run_id`
+   null and no comparison) and `finish_turn` rejects the two new step
+   events.
+3. Sign-in is by an emailed code only. The app has no page for a sign-in link
+   to land on, so the emails must carry the code and no link.
+   - Authentication > Sign In / Providers > Email: set "Email OTP Length" to
+     8. The app asks for exactly eight digits (`SIGN_IN_CODE_LENGTH` in
+     `lib/signInCode.ts`); change both together.
+   - Authentication > Emails: in both the "Confirm signup" and "Magic Link"
+     templates, replace the body with:
+
+         <h2>Sign in to EpiChat</h2>
+         <p>Enter this code on the sign-in page: <strong>{{ .Token }}</strong></p>
+
+     A first-time participant gets the signup template and a returning one
+     gets the magic-link template. Both must be changed.
+4. Authentication > URL Configuration: set the Site URL to the app's live
+   address. No redirect addresses are needed.
+5. Authentication > SMTP settings: turn on custom SMTP with Resend (host
+   `smtp.resend.com`, port `465`, username `resend`, password = a Resend API
+   key with sending access, sender = an address on a domain verified in
+   Resend). The built-in mailer sends only 2 emails an hour.
+6. Authentication > Rate limits: raise "emails per hour" to 100. Resend's free
+   plan allows 100 a day.
+7. Project settings > API keys: copy the project URL, the publishable key, and
+   the secret key into the environment (section 3).
+
+## 2. Anthropic
+
+Used by the web app from sub-project 3 on (every chat turn) and by the sim
+service's parameter repair. Create a workspace for EpiChat in the Anthropic
+Console, create an API key in it (`ANTHROPIC_API_KEY`), and set the
+workspace's monthly spend limit a little above `MONTHLY_BUDGET_USD` as the
+backstop.
+
+## 3. Environment
+
+`web/.env.local` for local runs; the same variables go into Vercel for
+Production and Preview. Copy `web/.env.example` and fill in the Supabase keys,
+`CONTACT_EMAIL`, `RESEARCHER_EMAILS` (the addresses that may open `/admin`),
+and `CRON_SECRET` (any long random string; Vercel sends it as a bearer token
+with every cron request, and `/api/health` reports the enrollment count only
+to that bearer). Every other setting has a default.
+
+`UN_API_KEY` is the UN Population Data Portal bearer for `fetch_demographics`.
+Empty is allowed: the live call then goes without a bearer, and a failure
+falls back to the simulation service's CSV demographics. Set it in Vercel
+(Production and Preview) and in `web/.env.local` before the agent-core
+deploy; the key is the owner's UN Population Data Portal bearer (see
+`UN_API_KEY` in `.env.example`).
+
+## 4. Vercel
+
+Done on 2026-10-08: project `epichat` in the owner's personal account, live at
+`https://epichat-ai.vercel.app` (`epichat-psi.vercel.app` is the
+auto-assigned alias and also works). The single-service config was accepted on
+the Hobby plan as written.
+
+1. From the repository root, `npx vercel link --yes --project epichat`. The
+   project root is the repository root; `vercel.json` there defines the `web`
+   service. Leave the Root Directory setting empty. Linking also connected
+   the GitHub repository, so every push to `main` is a production deploy and
+   a push to any other branch is a preview.
+2. Environment variables: either Settings > Environment Variables in the
+   dashboard, or from the repository root,
+   `printf '%s' "<value>" | npx vercel env add NAME production,preview --yes`
+   (add `--sensitive` for keys). The variables are the set ones in section 3.
+3. `npx vercel deploy` prints a preview address; `npx vercel deploy --prod`
+   puts the current code live. A project's very first deployment goes to
+   production regardless. Preview addresses sit behind Vercel Authentication:
+   open them in a browser signed in to Vercel. The production address is
+   public.
+4. After the first live deploy, Settings > Cron Jobs: confirm `/api/health`
+   runs daily. Then set the Supabase Site URL (section 1.4) to the live address.
+   The daily cron response also reports the simulation service's health
+   (section 7).
+5. Keep the Hobby plan for the pilot. Do not turn on Password Protection; it
+   adds a monthly charge.
+
+## 5. Verification after a deploy
+
+- Open the preview address: it redirects to `/sign-in`.
+- Sign in with an allowed address; the code arrives from the Resend sender.
+- The consent page appears; declining signs out with the declined message;
+  agreeing with a participant type opens `/chat`.
+- Table Editor: `profiles` has the row; `step_events` has `consent_given`,
+  `session_start`; `sessions` has a row with the browser's user agent.
+- `/api/health` answers 401 to a browser once `CRON_SECRET` is set, and
+  `{"ok":true,"participants":N}` when called with
+  `Authorization: Bearer <CRON_SECRET>` (as the Vercel cron does). Without
+  `CRON_SECRET` it answers `{"ok":true}` to anyone and reports no count.
+- `/admin` opens for an address in `RESEARCHER_EMAILS` and is a 404 for
+  anyone else.
+
+## 6. Routine work
+
+- **Changing the consent text:** edit `web/content/consent.md`, bump its
+  `version`, deploy. Every participant is asked again on their next visit.
+- **Adding a researcher or a test address:** edit `RESEARCHER_EMAILS` or
+  `UNLIMITED_EMAILS` in Vercel and redeploy.
+- **Removing a participant's data on request** (SQL editor; replace the id):
+
+      delete from conversations where user_id = '<user_id>';   -- cascades to messages, turns, events, feedback, scenarios
+      delete from runs where user_id = '<user_id>';
+      delete from sessions where user_id = '<user_id>';
+      delete from step_events where user_id = '<user_id>';
+      delete from usage_daily where user_id = '<user_id>';
+      delete from profiles where user_id = '<user_id>';
+
+  then delete the user under Authentication > Users.
+- **Monthly:** check Supabase database size and Vercel usage against the free
+  allowances (500 MB; 4 active-CPU hours, 360 GB-hours, 1M invocations).
+
+- **Tuning the run diagnostics:** after the pilot's first weeks, run the two
+  diagnostics queries of section 7 and tune the thresholds.
+
+## 6b. Agent core verification
+
+Done on a preview deployment after the agent-core branch is pushed, by the
+owner and the session together (`docs/superpowers/specs/2026-10-08-agent-core-design.md`,
+section 1). Each line is one conversation; the Table Editor checks follow.
+
+1. English, end to end: "Model a measles outbreak in Kenya" → confirm the
+   configuration → "Fetch the data" → "Run it". Expect the disease lookup
+   line, the configuration line, three data lines (UN, World Bank, WHO), the
+   simulation line with peak and attack rate, suggestion chips after every
+   reply, and thumbs under each reply.
+2. Portuguese: "Simule um surto de dengue no Brasil" — the reply is in
+   Portuguese and the tools still run.
+3. A refusal: ask for something the model declines (for instance, how to
+   make an outbreak worse on purpose). Expect the refusal message
+   ("I'm unable to help with that request…") and nothing appended: the next
+   message continues the conversation as before.
+4. A pause_turn with web search: "Search the web for the latest measles
+   case counts in Kenya and summarize them" — expect web-search and read-page
+   lines, and a reply that cites pages.
+5. Resume: open the conversation from the list; every turn replays with its
+   tool lines; delete it; it leaves the list and its address answers 404.
+
+Table Editor, for the English conversation (replace the id):
+
+    select seq, stop, model, input_tokens, output_tokens, cache_read_tokens, cost_usd,
+           first_token_at - started_at as to_first_token, finished_at - started_at as total,
+           jsonb_array_length(api_calls) as calls, stage_before, stage_after
+    from turns where conversation_id = '<id>' order by seq;
+    select t.seq, e.seq, e.kind, e.at from turn_events e join turns t on t.id = e.turn_id
+    where t.conversation_id = '<id>' order by t.seq, e.seq;   -- thinking rows present, in order, timestamps ascending
+    select seq, disease, country_iso3, total_population, stage, stage_reached, has_run from scenarios where conversation_id = '<id>';
+    select turn_id, pop_scale, duration_ms, sim_cold_start, error is not null as failed from runs where conversation_id = '<id>';
+    select kind, stage, tool, meta, at from step_events where conversation_id = '<id>' order by at;
+    select rating, comment, created_at from feedback where conversation_id = '<id>';
+    select * from usage_daily where day = current_date;
+
+Expected: `turns.api_calls` has one entry per model call with tokens and
+latency; `thinking` events exist; `feedback` has the thumbs pressed;
+`step_events` shows conversation_started, tool_called, stage_reached (one per
+stage), run_completed, turn, suggestion_used, feedback_given, with ascending
+times; `usage_daily.cost_usd` grew by the sum of `turns.cost_usd`.
+
+## 6c. Workspace verification
+
+Done on a preview deployment after the workspace branch is pushed, with
+migration 0003 applied first (section 1.2). One browser at desktop width
+(1280 px or wider) and one phone.
+
+1. Desktop: three columns. New conversation at the top left; the welcome
+   card with three draft chips in the middle; the Dashboard on the right
+   with Scenario, Data, Parameters, Runs, Report, Activity and their empty
+   states.
+2. "Model a measles outbreak in Kenya" → confirm → "Fetch the data" →
+   "Run it". After each reply: one activity line (press it to see the
+   steps), the recap bar under the conversation growing by a line or two,
+   the stage strip advancing Understand → Configure → Ground in data →
+   Run → Interpret, chips that are the model's suggestions. After the run:
+   four tiles and the infected curve inline; the Runs section opens with
+   the chart, its four views, the effective parameters, and the sources.
+3. Phone: the menu button opens the conversation drawer; Dashboard opens
+   the sheet, with a dot on the button after the run completed while it was
+   closed; Escape and the backdrop close both.
+4. Resume the conversation from the sidebar: the same panel, the recap,
+   and the chart (loaded through `/api/runs/[id]`, visible in the
+   network tab as one request per run). Delete it from the sidebar: it
+   leaves the list and its address answers 404.
+5. Table Editor, for the conversation: `select seq, kind, payload from
+   turn_events where turn_id in (select id from turns where
+   conversation_id = '<id>') order by turn_id, seq` shows a `recap` row
+   before each `suggestions` row; `select kind, meta from step_events
+   where conversation_id = '<id>' and kind in ('suggestion_used',
+   'card_expanded', 'scenario_panel_opened', 'chart_view_changed')`
+   shows `source`, `card`, `section`, and `view` values.
+
+## 6d. Polish verification
+
+Done on a preview or production deployment after the polish branch is
+pushed. No migration. Two data files travel with the code and are
+regenerated by `npm --prefix web run sync-data` (`disease_refs.json`) and
+`py -3.12 scripts/export_country_names.py` (`country_names.json`, needs
+`UN_API_KEY` in the root `.env`); both are committed, so a deploy needs
+nothing from the UN API.
+
+1. Empty conversation, desktop: the line under the brand types "Which
+   infectious disease scenario would you like to explore today?", holds,
+   erases, and continues through Spanish, French, Portuguese, Chinese,
+   Arabic, German, Hindi, Japanese, and Swahili; the composer sits under it
+   with four introduction questions and "Or try an example" below. With
+   the operating system's reduce-motion setting on, the English line stands
+   still.
+2. Press "What is EpiChat?": the reply explains the tool without any tool
+   call, names Starsim and the three data sources, and ends by inviting a
+   scenario. Table Editor: `select kind, meta from step_events where
+   conversation_id = '<id>' and kind = 'suggestion_used'` shows
+   `{"source": "intro"}` for that first turn.
+3. "Model a measles outbreak in Kenya" → confirm → "Fetch the data": the
+   Scenario section reads "Country Kenya", "R₀ (approx.)", and the
+   infectious period in days; the literature table shows "R₀", typical
+   "15", range "12–18", with no "dimensionless" anywhere; the Data section
+   lists "Birth rate … per 1,000 per year", "Population", and "Age
+   structure" under "UN World Population Prospects · Kenya".
+4. In the literature table, press "11 sources" on the R₀ row: the list
+   opens under the row with "Consensus value from pubmed.ncbi.nlm.nih.gov"
+   first, then eleven linked titles, each with its value, year, country,
+   population, and study type. The network tab shows one request to
+   `/api/diseases/measles/references` however many rows are opened;
+   `step_events` gains a `card_expanded` row with `{"card": "references"}`.
+5. "Run it": the tiles read "Disease deaths", the Runs section's fourth
+   view is "Disease deaths", and with Kenya's demographics applied the
+   number is far below the population's background deaths for the year.
+6. Desktop columns: press the ☰ button and the conversations column
+   collapses, the middle widens; press Dashboard and the dashboard column
+   collapses; press again to restore. Drag the thin strip beside either
+   column to resize it; Tab to the strip and press the arrow keys, Home,
+   and End. Reload: the widths and the collapsed state are as left. On the
+   phone the two buttons still open the drawer and the sheet.
+
+## 6e. Report verification
+
+Done on a preview or production deployment after the report branch is
+pushed, with migration 0004 applied first (section 1.2). The sim service
+builds with two more libraries (`python-docx`, `reportlab`) and serves
+`POST /export` behind the shared secret.
+
+1. A measles conversation through a run ("Model a measles outbreak in
+   Kenya" → confirm → "Fetch the data" → "Run it"). After the interpretation,
+   the chips include "Create a report" and the stage strip reads Interpret.
+2. Press "Create a report": the activity line says "Wrote the report,
+   version 1"; the reply says the report is ready and names the four formats;
+   the stage strip's sixth step, Report, is current; the Dashboard's
+   Report section opens with the title, "Version 1 · 8 sections", the eight
+   headings, and Markdown, HTML, Word, PDF, Open; the same line sits under
+   the tool call in the conversation.
+3. Open each download: HTML in the browser (the figure drawn, the tables
+   present, a clean print preview), Word in Word (headings, tables, the
+   figure as a picture), PDF in a viewer (the figure, tables that repeat
+   their header across pages), Markdown in an editor (every table, the
+   figure note). The network tab shows `/api/reports/<id>?format=…` for
+   each.
+4. "Compare with 90% vaccine coverage" → "Run it": the strip drops back to
+   Interpret. "Update the report": version 2, the results table with two
+   rows ("Run 1", "Run 2, vaccine coverage 90%"), two curves in the figure.
+5. Ask for a report in a fresh conversation before any run: the assistant
+   says what has to happen first; no report row is written.
+6. Table Editor: `select version, title, jsonb_array_length(document->'sections')
+   from reports where conversation_id = '<id>' order by version` shows two
+   rows with 8 sections; `select kind, tool, meta from step_events where
+   conversation_id = '<id>' and (tool = 'write_report' or kind = 'export')
+   order by at` shows two `tool_called` rows and one `export` row per
+   download with its `format`; `select has_report, report_current, stage
+   from scenarios where conversation_id = '<id>'` reads true, true, report
+   after step 4. Once, after applying 0004: `select relrowsecurity from
+   pg_class where relname = 'reports'` reads true and
+   `select has_table_privilege('service_role', 'reports', 'insert')` reads
+   true, so the server can write reports and the browser roles cannot read
+   them.
+
+## 6f. Share verification
+
+Done on a preview or production deployment after the share branch is
+pushed, with migration 0005 applied first (section 1.2). Two browsers: one
+signed in, one private window.
+
+1. Signed in, open a conversation with a run. The header shows Share. Press
+   it: the dialog explains that anyone with the link can read the
+   conversation and that your email is not shown; press "Create link". The
+   link appears with Copy, "Snapshot taken <date> · N turns", "Update
+   snapshot", and "Stop sharing". Copy reads "Copied" for a moment. The
+   network tab shows one `POST /api/shares` answering the token and the link.
+2. Private window: open the link (`/s/<token>`). No sign-in; the brand, the
+   title, "A frozen
+   copy of an EpiChat conversation, shared by a study participant on
+   <date>", the turns without thumbs or chips, the Dashboard's sections with
+   the charts, and "View report" when the conversation has a report (it opens the
+   report's HTML in a new tab). The network tab shows `X-Robots-Tag:
+   noindex, nofollow` and `Cache-Control: no-store` on the page.
+3. Signed in: send one more message, reopen the dialog, press "Update
+   snapshot": the turn count grows by one; reload the private window: the
+   new turn is there.
+4. Press "Stop sharing": the dialog shows "Create link" again; reload the
+   private window: "This shared conversation is no longer available."
+5. Share again (a new link), then delete the conversation from the sidebar:
+   the new link answers the unavailable page too.
+6. Table Editor: `select token, turn_count, view_count, revoked_at from shares
+   where conversation_id = '<id>' order by created_at` shows two rows, both
+   revoked, the first with `view_count` 2 or more; `select kind, meta from
+   step_events where kind like 'share_%' order by at` shows share_created,
+   share_opened (one per open), share_updated, share_revoked, share_created,
+   share_revoked.
+7. Any participant who signs in sees the consent page once more (version
+   2026-10-09) and continues after accepting.
+
+## 6g. Profile verification
+
+Done on a preview or production deployment after the profile branch is
+pushed, with migration 0006 applied first (section 1.2).
+
+1. Sign in. The consent page shows version 2026-10-10 with the new bullet
+   ("Your answers to the profile questions and what the assistant remembers
+   about you"); accept. "Tell us about yourself" opens, the role pre-filled
+   from the study category where it maps (Graduate student → Student). Press
+   "Save and continue" with no experience chosen: the field is marked and
+   nothing is sent. Type "Narnia" as the country: "Pick a country from the
+   list". Fill the required fields, pick a disease from the list, and save:
+   the chat opens; the network tab shows `POST /api/profile/setup` answering
+   204.
+2. The right column has two tabs, Details and Profile. Profile shows three
+   sections: the fields as saved, the preferences (results, report format,
+   the memory switch on), and "Nothing remembered yet…". Change a goal and
+   press Save: "Saved." appears and `PATCH /api/profile` answers the
+   profile. Switch memory off and on again.
+3. Start a conversation and state something about yourself ("I work at a
+   county health office and I prefer tables"). The activity line reads
+   "Remembered: …" and the Profile tab's Memory section lists it with "Added
+   by the assistant on <date>". Edit its text, delete it, add one of your
+   own (`POST /api/memories` answers 201), then "Forget everything" and
+   Forget: the list empties.
+4. Start a new conversation. Table Editor: `select content from messages
+   where conversation_id = '<id>' and seq = 1` shows the About block between
+   the date line and your text (the profile lines and, when memories exist,
+   the Remembered line); `select user_text from turns where conversation_id
+   = '<id>'` shows the typed text only.
+5. Switch memory off, start another conversation, and state a preference:
+   no "Remembered:" line appears, and the first stored message has no
+   Remembered line.
+6. Table Editor: `select kind, meta from step_events where kind in
+   ('profile_completed', 'profile_updated', 'memory_added',
+   'memory_updated', 'memory_removed', 'memory_toggled') order by at` shows
+   the sequence above; `meta` holds field names, kinds, and flags, never
+   typed text.
+7. In a chat tab opened before the deploy (or with the profile row's
+   `profile_completed_at` set to null in the Table Editor), send a message:
+   the chat goes to the profile page (403 `profile_required`), not to a
+   dead end.
+
+## 6h. Dashboard verification
+
+Done on a preview or production deployment after the dashboard branch is
+pushed. No migration. One browser at desktop width and one phone.
+
+1. Desktop: the header holds the ☰ button, the brand, Share (once a
+   conversation exists), and Dashboard; no New, no email, no Sign out. New
+   conversation sits at the top of the left column. Press Dashboard: the
+   right column collapses; press again: it is back. On the phone, Dashboard
+   opens the sheet.
+2. The bottom of the left column shows a round avatar with the email's
+   first letter and the email. Press it: a menu opens with Profile,
+   Contact support, Consent form, Homepage, Sign out; Escape and a press
+   outside close it; the arrow keys move between the items.
+3. Collapse the dashboard, then Profile from the menu: the column returns
+   on its Profile tab (`step_events` gains a `scenario_panel_opened` row
+   with `{"section": "profile"}` when a conversation is open). The item
+   Contact support is a `mailto:` link to `CONTACT_EMAIL` and is absent
+   when none is configured. Consent form opens `/consent` with the text you agreed
+   to, "You agreed to this text on <date> (version …)", and "Back to the
+   chat"; no Agree or Decline buttons. Homepage opens `WEBSITE_URL` in a
+   new tab. Sign out returns to the sign-in page.
+4. "Model a measles outbreak in Kenya" → confirm: Scenario shows only
+   Disease, Model, Country, Duration, Interventions; Data starts with
+   "Measles in the literature" (the table with the reference buttons) above
+   "Real data appears here once it is fetched."; Parameters sits between
+   Data and Runs and lists, in five groups (section 6k, step 6), R₀, the
+   transmission rate, the periods, the death probability, the initial
+   infections, contacts per day, "Births and deaths" as "not modelled",
+   "No interventions.", the agents and the duration.
+5. "Fetch the data": Parameters now reads the births and deaths, the age
+   structure, and "age-structured" for the contact network. "Run it", then
+   "Set the vaccine coverage to 90%": the Parameters section opens by
+   itself with the vaccination line, before the next run. `step_events`
+   gains `scenario_panel_opened` rows with `{"section": "parameters"}` when
+   you open the section by hand.
+6. Share the conversation and open the link in a private window: the same
+   six sections, Parameters included, with the literature table at the top
+   of Data and no reference buttons.
+
+## 6i. Parameters verification
+
+Done after the sim-parameters phases 3 and 4 are pushed, with migration
+0007 applied first (section 1.2). One browser; a phone is enough.
+
+1. New conversation: "Model measles in Kenya for a year." Configure as
+   usual, then ask "What can I change?": the activity shows a Parameter
+   list call, and the reply names parameters with their current values and
+   where each came from (database, default, …), not from memory.
+2. "Use five replicates." The panel's Parameters section shows
+   "Replicates" at 5 in its Run group, with the tag "set in chat", and the
+   configured card's line carries `run.n_replicates: 5`.
+3. "Run it." Measles with the default fatality ratio of 0 is outside the
+   literature range (0.5 to 6%), so the reply says so and offers at most
+   three options, one of them keeping things as they are. Press the option
+   that applies the database's fatality ratio (1.5%): the configure call
+   that follows sets `disease.p_death` to 0.015, and the next run's reply
+   reports what changed against the previous run (the fatality ratio, the
+   deaths) before interpreting.
+4. In the SQL editor:
+
+       select kind, tool, meta from step_events
+       where kind in ('diagnostic_shown', 'option_chosen') order by at desc limit 5;
+       select id, jsonb_array_length(diagnostics) from runs order by created_at desc limit 3;
+
+   The first shows a `diagnostic_shown` row whose `ids` names
+   `cfr_out_of_range` and an `option_chosen` row carrying the patch; the
+   second shows the run rows with their diagnostics.
+5. Open a conversation from before this deploy and say "run it again": the
+   run completes and the reply reports what changed against that earlier
+   run (nothing, or the seeds), then interprets.
+
+## 6j. Networks, interventions and the fit verification
+
+Done after the sim-parameters Part 2 phases (2A to 2D) are pushed. No
+migration. One browser; a phone is enough.
+
+1. New conversation: "Model seasonal influenza in a town with households,
+   schools and workplaces, for six months, with 10,000 agents." (Keep the
+   10,000 agents: step 4 fits this scenario, and a fitted hybrid run with
+   more agents does not fit the service's timeout on Vercel; see section 7.)
+   The configure call sets `network_type: hybrid`; the panel's Parameters
+   section shows, in its Contact network group, "Contact network" as
+   "hybrid (households, schools, workplaces, community)" and a
+   "Household size" row; the reply says the hybrid network was chosen for
+   the setting. The default seeding (0.05% of the agents: six of the 10,000
+   under the service's seed 1, measured by probe on 2026-10-14) takes off
+   here; the peak comes near day 90 and the run infects about 44%.
+2. "Run it." The reply says in one sentence that beta was adjusted to the
+   measured R0 (the run payload carries `applied.beta_calibrated_by_measurement`
+   and `stats.r0_calibration`). Then "Create a report": its "What was
+   modelled" block shows an "R₀ measured" row under the configured R₀ (the
+   report is the only place that row appears; the panel has none). The row
+   is the pilot's measurement, `stats.r0_calibration.measured`: the live
+   run's own is withheld under 30 seeds.
+3. "Close the schools from day 30 for six weeks and run it again." The
+   configure call carries `interventions: [{type: contact_reduction, layer:
+   school, scale: 1, start_day: 30, end_day: 72}]`; the Parameters
+   section's Interventions group reads "School contacts reduced by 100% from
+   day 30 to day 72"; the reply reports what changed against the previous run before
+   interpreting, and calls the closure's effect size an illustrative
+   assumption.
+4. "The R0 is not known here. Fit the transmission rate so that 30% of the
+   town is infected, and run it." (Say that the R0 is not known: since the
+   follow-up round a known attack rate with a database R0 is fitted with the
+   variation between people, which section 6k checks, and beta is the lever
+   only when the R0 itself is in doubt.) The configure call carries
+   `fit: {target: attack_rate, value: 0.3}` with no lever or with
+   `lever: disease.beta`; the panel's Run group shows a "Fitted to" row
+   ("attack rate 30% by moving the transmission rate"). The run takes
+   longer (the fit's search, at most eight runs before the replicates); the
+   reply says beta was set so that the attack rate is 30% and labels the
+   run as fitted in the limitations. "Create a report" again:
+   its "What was modelled" block shows "Fitted to: attack rate 30% (reached
+   …% in N runs)".
+5. New conversation: "Model measles in a city of 20,000 people for a year."
+   Name no country here: a country brings the demographics fetch, which
+   moves the scenario to the age-structured network, and this step checks
+   the random one. Run it, then ask "Why were so many infected?": the reply
+   says that at this R0 nearly everyone is infected on any network, because
+   only the depletion of susceptibles limits the epidemic, and offers
+   variation between people or a behaviour response as illustrative
+   assumptions (section 6k). It may add the hybrid network, as the
+   structure that school closures and distancing act on, without promising
+   that the switch alone lowers the final size.
+6. In the SQL editor:
+
+       select id, stats->'fit' as fit, stats->'r0_calibration' as calibration, stats->'r0_measured' as measured
+       from runs order by created_at desc limit 4;
+
+   The fitted run's row carries `fit` with `target`, `wanted`, `achieved`,
+   `lever`, `value` and `runs`, and no `calibration` (the fit replaces the
+   pilot); the two unfitted hybrid runs of steps 2 and 3 carry `calibration`;
+   the random run of step 5 carries neither. Every row here carries
+   `measured`, and since the seed default of 2026-10-14 (0.05% of the
+   agents, five of 10,000) it is null on all four: a live run's measured R0
+   is withheld under 30 day-0 seeds, as it is on an age-structured run,
+   where Starsim's mixing pools do not log the source, and on a run seeded
+   so heavily that the population was exhausted while the seeds were still
+   infectious. The hybrid rows' `calibration.measured` is the pilot's
+   measurement over 20 to 1,000 seeds, which the report's "R₀ measured" row
+   shows in its place.
+
+## 6k. Limits on spread, suggested interventions, the Parameters section and chosen references verification
+
+Done after the follow-up round (the pilot fix and its phases A to E) is
+pushed. No migration. One browser at desktop width. The percentages were
+measured on 2026-10-14 with 10,000 agents, no seed set (the default seeding
+of 0.05% drew six seeds under the service's seed 1), and the SEIR model
+(the database carries RSV's incubation period, so the agent normally sets a
+latent period); expect them within a few points. If the Parameters section
+shows SIR instead, steps 1 to 4 read the same and step 5 lands a little lower.
+
+1. New conversation: "Model RSV in a city of 10,000 people for a year, with
+   the database's R0." Confirm and run it. The attack rate is about 94%
+   (R0 3.0). Under the run sits a row "Try next" with up to three buttons,
+   the labels of the run's `what_if` levers: a cut in contacts, masks, and
+   "Let people become careful as cases rise and rerun". The reply reports
+   the run, offers at most two changes, and says that their sizes are
+   illustrative.
+2. "Why were so many infected?" The reply says that nearly everyone is
+   infected at this R0 because only the depletion of susceptibles limits
+   the epidemic, and offers variation between people and a behaviour
+   response, both as illustrative assumptions. The "Try next" buttons are
+   gone: they stay only while the run is the latest turn.
+3. Send "Add variation between people (CV 1) and rerun" (a suggested reply
+   after step 1 or 2, or typed). The configure call sets
+   `disease.rel_sus_cv` to 1. In the panel's Parameters section the Disease
+   group gains "Variation in susceptibility" at "CV 1" with the tag
+   "assumption", and "R₀ (approx.)" still reads 3.0. The run infects about
+   67%; the reply reports the change against the first run and says that R0
+   did not change.
+4. "In the real outbreak 50% of the city was infected. Fit the model to
+   that and run it." The configure call carries `fit: {target: attack_rate,
+   value: 0.5, lever: disease.rel_sus_cv}`, not a fit on beta. The Run
+   group shows "Fitted to" as "attack rate 50% by moving the variation in
+   susceptibility", with the tag "set in chat". The run takes longer (a
+   handful of trial runs, at most eight). It infects about 51%; the reply
+   says the variation was set so that 50% are infected and that R0 stays
+   3.0. After the run "Variation in susceptibility" reads its fitted value,
+   near CV 1.4, with the tag "set by the run".
+5. Press "Let people become careful as cases rise and rerun" under that
+   run. The message is sent in your name. The configure result warns that
+   the change "ended the fit" and kept the fitted variation, and the reply
+   says so in one sentence. The Interventions group reads "Behaviour
+   response: transmission falls by up to 50% as infections rise (half of
+   that at 1% infectious, 7-day memory)". The "Fitted to" row leaves the
+   default view. "Variation in susceptibility" keeps its fitted value and
+   its tag changes from "set by the run" to "set in chat": the configure
+   call wrote the fitted value into the scenario. The run infects about
+   36%, below the fitted 50%: the response is compared with the fitted
+   baseline, it is not fitted away. The reply gives the strongest reduction
+   the response reached.
+6. The Parameters section, on this conversation: five groups, Disease,
+   Contact network, Demographics, Interventions and Run. A group shows its
+   main values and every value that is not a default, and keeps its other
+   parameters behind "Show all (N)", N being the group's count. The tag
+   after a value says where it came from (a derived row such as
+   "R₀ (approx.)" and the intervention lines carry none); at this point the
+   conversation shows "database", "assumption", "default" and "set in
+   chat". On the hybrid conversation of section 6j, "Show all" in the
+   Contact network group holds the Layers table: the contacts per day and
+   the transmissibility of each layer.
+7. New conversation: "Model measles in a city of 20,000 people for a year."
+   In the Data section, "Measles in the literature" lists the parameters.
+   Press the sources button in the References column of R₀: every estimate
+   that is one number has a "Use this value" button. Press one whose value
+   is not the scenario's R₀ and not far from it (the list holds an outlier
+   the tool may refuse). The message "Use Measles reference N for R₀:
+   <value> (<title>, <year>)." is sent in your name; the configure call
+   carries `use_reference` with the disease, the parameter, the number and
+   the value; "R₀ (approx.)" reads the estimate's value, and
+   "Transmission rate (β)" carries the tag "reference" with the paper's
+   title and year under it. Then open the sources of "Contacts per day" and
+   press "Use this value" on an estimate that is not the scenario's
+   contacts per day (4 unless the agent set another; again not the
+   outlier): the configure result
+   says "R0 moved from" the value just chosen to a new one, roughly in
+   proportion to the contacts (the reference keeps beta), the reply says so
+   and offers to set R0 again, and the tag "reference" is now on "Contacts
+   per day" and no longer on the transmission rate. Run it and "Create a
+   report": the "Data sources" table has a row whose source is
+   "Literature", with the paper's citation, and the report still says
+   "No real data was fetched; every value is a literature value or an
+   assumption."
+8. In the SQL editor:
+
+       select kind, tool, meta from step_events
+       where kind in ('option_chosen', 'suggestion_used') order by at desc limit 10;
+
+   An `option_chosen` row carries the `diagnostic_id` `what_if` and, under
+   `interventions`, the behaviour response of step 5; another carries
+   `well_mixed` with the patch of step 3. The `suggestion_used` rows carry
+   `{"source": "option"}` for the button of step 5 and
+   `{"source": "reference"}` for each press of step 7.
+
+## 7. Simulation service (`sim/`)
+
+The second Vercel service. Private: no rewrite reaches it; the web app calls
+it through the binding (`SIM_INTERNAL_URL`) with `SIM_SHARED_SECRET`.
+
+**Environment.** Add `SIM_SHARED_SECRET` (any long random string) to the
+Vercel project for Production and Preview; the same project variables reach
+both services. `ANTHROPIC_API_KEY` is already set and is used only when a
+run fails and the parameters are repaired. The report export (`POST
+/export`, sub-project 4c) needs `python-docx` and `reportlab`, listed in
+`sim/requirements.txt` and installed by the build. Locally, export both in the
+shell that runs the service and put `SIM_INTERNAL_URL=http://localhost:8000`
+plus the secret in `web/.env.local`.
+
+**Bundle size.** The sim's Python bundle is about 590 MB (scipy, llvmlite,
+pandas, matplotlib, and sciris's dependencies), above Vercel's 500 MB
+default for Python functions. The project therefore sets
+`VERCEL_SUPPORT_LARGE_FUNCTIONS=1` (Production and Preview), which turns on
+Vercel's large-functions beta (up to 5 GB). Without it the sim build fails
+with "Total bundle size exceeds the maximum function size". Set it first on
+any new project that hosts this service.
+
+**Local run.** Two processes, from the repository root:
+
+    SIM_SHARED_SECRET=<secret> sim/.venv/Scripts/python.exe -m uvicorn main:app --app-dir sim --port 8000
+    npm --prefix web run dev
+
+`sim/.venv` is a Python 3.12 virtualenv: `py -3.12 -m venv sim/.venv` then
+`sim/.venv/Scripts/python.exe -m pip install -r sim/requirements.txt pytest`.
+The root package tests (which include the Starsim 3.7.2 builder tests) use a
+second 3.12 virtualenv: `py -3.12 -m venv .venv` then
+`.venv/Scripts/python.exe -m pip install -r requirements.txt -r evals/requirements.txt pytest`;
+CI runs them on 3.12 too. Both requirement files pin `starsim==3.7.2`.
+`npx vercel dev` from the root runs both with the binding injected.
+
+**Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 40 s;
+ten child processes run real Starsim through `python -m epichat.sim.run_params`,
+the entry point the runner spawns). CI runs them on Python 3.12 as the `sim` job.
+
+**Settings** (all optional except the secret): `SIM_TIMEOUT_SECONDS` 120,
+`SIM_MAX_REPAIRS` 2, `SIM_REPAIR_MODEL` claude-opus-5-5,
+`SIM_MAX_AGENT_YEARS` 500000 (a request exactly at the cap is accepted), `SIM_SERIES_MAX_POINTS` 2000.
+
+**Parameters.** `/simulate` takes `params` in the v1 flat shape or in
+schema v2 (`docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md`,
+section 6); a v1 body is migrated before validation, and `effective_params`
+in the answer is always v2. `run.n_replicates` (1 to 5) runs that many seeds
+in one child process; the answer's `replicates` block (scaled to the
+population like `stats`, bands thinned like the series) is `null` for one
+replicate. The agent-years cap
+counts `n_agents × sim_dur_years × n_replicates`. The web app migrates stored
+v1 rows on every read and writes v2; no database migration was needed.
+The request may also carry `disease` (the scenario's disease name, at most
+80 characters); the 200 answer then carries `diagnostics`: the list of
+section 10 of the same spec, computed on the child's full series in agent
+units (evidence and lever values alike), each with its levers, empty when
+nothing fired. A v1 body the migration cannot read (a non-numeric
+`start_day`, say) answers 422 like any other invalid body.
+
+**Diagnostics.** The rules and their thresholds are the named constants at
+the top of `epichat/sim/diagnostics.py` (spec section 10; the values are
+starting points). They run on the child's full series in agent units, so the
+evidence they report is in agents, not people. Tune them from what the pilot
+recorded:
+
+    -- how often each rule fired
+    select d.rule, count(*) from step_events e,
+      unnest(string_to_array(e.meta->>'ids', ',')) as d(rule)
+    where e.kind = 'diagnostic_shown' group by d.rule order by 2 desc;
+    -- how often each rule's option was taken
+    select meta->>'diagnostic_id' as id, count(*) from step_events
+    where kind = 'option_chosen' group by 1 order by 2 desc;
+
+A rule that fires on most runs and is rarely taken is too eager; one that
+never fires is too strict or its trigger regime is narrow (`instant_peak`
+needs the peak within three days). Change the constant, add the case to
+`tests/test_sim_diagnostics.py`, and note the change in the spec's section 19.
+
+**First two-service deploy, verification.** Done on 2026-10-08: the
+build-time copy of the package was bundled and ran, so the fallback in step 1
+was not needed; the only surprise was the bundle size (see above).
+
+1. `npx vercel deploy` from the root. Both services build. If the sim build
+   fails because `../epichat` is not visible, change the sim service in
+   `vercel.json` to `"root": "."` with `"entrypoint": "sim/main:app"`, drop
+   the `buildCommand`, and add `web/**` and the Streamlit folders to its
+   `excludeFiles`; record the switch here.
+2. Public probe: `curl -s -o /dev/null -w "%{http_code}\n" https://epichat-ai.vercel.app/health`
+   and the same for `/simulate` print `404` (the web app answers, never the
+   sim).
+3. `curl -s -H "Authorization: Bearer $CRON_SECRET" https://epichat-ai.vercel.app/api/health`
+   returns `"sim":{"ok":true,"starsim_version":"3.7.2",...}`.
+4. Timing through the binding, bearer only:
+   `.../api/health?run=10000` twice (the first is the cold start), then
+   `.../api/health?run=100000` once. Each answer carries `sim_run.duration_ms`
+   and `sim_run.cold_start`.
+5. Record the numbers below from step 4; the Usage page's Active CPU
+   reading is the owner's to note alongside them.
+
+| Measured on Vercel, 2026-10-12, Starsim 3.7.2 through the builder (iad1, Hobby, 2 GB) | Value |
+|---|---|
+| Cold start, 10k agents, 1 year | `duration_ms` 7736 |
+| Warm, 10k agents, 1 year | `duration_ms` 3980 |
+| Warm, 100k agents, 1 year | `duration_ms` 8871 |
+
+The template pipeline on Starsim 3.3 (2026-10-08) measured 12257, 6755 and
+18224 ms for the same three runs, so the builder is about 1.7× faster for 10k
+agents and 2× faster for 100k. The warm 10k run is about 1.5× the local wall
+time (the child process re-imports Starsim on a slower vCPU); both runs are
+well within the per-attempt timeout, and 100k agents for 5 years (about 25 s
+locally) still fits.
+
+Local baseline (Python 3.12, Starsim 3.7.2 through `run_params`, one core,
+2026-10-11): child import 2.0 s; 10k agents 1 year 2.6 s wall (2.9 s with a
+cold numba cache); 100k agents 1 year 4.8 s wall. The template pipeline on
+Starsim 3.3 (2026-10-08) took 1.5 s CPU for 10k and 11 s for 100k.
+
+Networks (sim-parameters Part 2; local, Python 3.12, one core, 2026-10-13; 10k
+agents, 1 year, R0 2.5, through `run_replicates`): random 4.2 s; age-structured
+5.3 s; hybrid 7.0 s, and 9.8 s with the pilot that calibrates beta to the
+measured R0 (the default on the hybrid network). The hybrid network builds four
+edge sets, so a 10k-agent year costs about 1.7× the random net's, 2.3× with the
+pilot. Owner: after the deploy, time a hybrid scenario through the binding as in
+step 4 and add the row to the table above.
+
+A fitted run (Part 2, 7.7) costs one full run per search step before the
+replicates, at most eight. Locally (the same machine and settings,
+2026-10-13), fitting the attack rate to 30% at 10k agents took 8 runs and
+41 s on the random network for a year (the search reached 31.4%), and 7 runs
+and 29 s on the hybrid network with a school closure for six months (29.5%);
+the same hybrid scenario at 50k agents took 82 s. The service's per-attempt
+timeout is 120 s (`SIM_TIMEOUT_SECONDS`) and Vercel runs at about 1.5× the
+local time, so a fit at 10k agents fits and a hybrid fit at 50k agents does
+not: keep fitted scenarios to 10k agents on Vercel (section 6j's first step
+does), or run larger ones against the local service. Owner: after the
+deploy, time a fitted scenario once from the activity's run duration and add
+it here.
+
+A fit that keeps R0 (follow-up spec 6) moves `disease.rel_sus_cv` or
+`behavior_response.scale` instead of beta. Where a pilot sets beta (the
+hybrid network), the variation's fit calibrates beta again at every trial,
+because the pilot depends on the variation; the response's fit calibrates
+once, before the search. Locally (2026-10-13; hybrid, 10k agents, R0 2.5, a
+year): the variation to an attack rate of 50% took 6 runs and 63 s, the
+response's scale to 70% took 5 runs and 52 s, and a beta fit to 50% took 6
+runs and 58 s, so a trial costs about 10 s whatever the lever. A search that
+needs all eight trials would then take about 85 s locally and about 125 s at
+Vercel's 1.5×, past the 120 s timeout: a year-long hybrid fit at 10k agents
+is at the limit, with any lever. Six months is not (50 s for the same six
+runs of the variation). The random network has no pilot: section 6k's fit
+(10k agents, a year, the attack rate to 50%) took 5 runs and 33 s. Owner:
+time one year-long hybrid fit after the deploy; if it is cut off, raise
+`SIM_TIMEOUT_SECONDS` (the function allows 300 s) or fit over six months.
+
+**Hobby watch rule.** The project runs on Vercel Hobby, which includes 4
+Active CPU hours a month and pauses the whole project for the rest of the
+30-day window when exceeded. During the study check Usage > Active CPU
+weekly. If it passes 2 hours before mid-month, or a participant reports the
+app paused, upgrade the team to Pro ($20 a month; usage at this scale is a
+dollar or two and covered by the plan's credit). Nothing in the code changes.
+
+**Moving the service elsewhere.** `sim/Dockerfile` builds the same service as
+a container (`docker build -f sim/Dockerfile -t epichat-sim .`). Run it on
+Render, Cloud Run, or a VM, set `SIM_INTERNAL_URL` to its address and
+`SIM_SHARED_SECRET` to the same secret on both sides, and remove the `sim`
+service and the binding from `vercel.json`. The web app does not change.

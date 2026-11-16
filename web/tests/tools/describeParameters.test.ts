@@ -1,0 +1,186 @@
+import { describe, expect, it } from "vitest";
+
+import { configureSimulation } from "@/lib/tools/configureSimulation";
+import { describeParameters, type DescribedParam } from "@/lib/tools/describeParameters";
+import { fetchDemographics } from "@/lib/tools/fetchDemographics";
+import { valueSources } from "@/lib/tools/sources";
+import { emptyScenario } from "@/lib/tools/types";
+import { makeDeps, params, rf } from "./helpers";
+
+type Body = { note: string; model: string; network: string; disease: string | null; interventions: string[]; parameters: DescribedParam[] };
+const configure = (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) => configureSimulation(input as never, deps);
+const describe_ = async (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown> = {}): Promise<Body> => JSON.parse((await describeParameters(input as never, deps)).content);
+const byPath = (body: Body) => Object.fromEntries(body.parameters.map((p) => [p.path, p]));
+
+describe("describe_parameters", () => {
+  it("lists the sir defaults and says no scenario exists", async () => {
+    const body = await describe_(makeDeps());
+    expect(body.note).toMatch(/^No scenario is configured yet/);
+    expect(body.note).toContain("configure_simulation's interventions field");
+    expect(body.model).toBe("sir");
+    const p = byPath(body);
+    expect(p["disease.dur_exp.mean_days"]).toBeUndefined();
+    expect(p["run.n_agents"]).toMatchObject({ label: "Agents", current: 10000, source: null, tier: "core", bounds: [10, 1000000], db_range: null, affects: ["stochasticity"] });
+    expect(p["disease.dur_inf.dist"]).toMatchObject({ current: "constant", choices: ["constant", "lognormal", "gamma"], requires: ["disease.dur_inf.sd_days"] });
+    expect(p["interventions[].coverage"]).toBeUndefined();
+    expect(body.interventions).toEqual([]);
+    expect(body.parameters.map((x) => x.path)).toEqual(body.parameters.map((x) => x.path).filter((x) => !x.startsWith("interventions")));
+  });
+
+  it("attributes each value to the user, the database, a default or an illustrative spread", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles", r0: 15, dur_inf_days: 8, n_agents: 50000, treatment_capacity: 20 });
+    const body = await describe_(deps);
+    expect(body.note).toMatch(/^Parameters of the current sir scenario \(measles\)/);
+    expect(body.disease).toBe("measles");
+    expect(body.interventions).toEqual(["treatment"]);
+    const p = byPath(body);
+    expect(p["disease.beta"].source).toBe("database"); // R0 15 is the measles consensus
+    expect(p["disease.dur_inf.mean_days"]).toMatchObject({ current: 8, source: "database", db_range: { min: 8, max: 8, typical: 8, unit: "days" } });
+    expect(p["disease.dur_inf.sd_days"]).toMatchObject({ current: 2.4, source: "illustrative" });
+    expect(p["disease.dur_inf.dist"]).toMatchObject({ current: "gamma", source: "illustrative" });
+    expect(p["run.n_agents"].source).toBe("user");
+    expect(p["run.sim_dur_years"].source).toBe("default");
+    expect(p["disease.p_death"]).toMatchObject({ current: 0, source: "default" });
+    expect(p["disease.p_death"].db_range).toMatchObject({ unit: "fraction" });
+    expect(p["disease.p_death"].db_range?.min).toBeCloseTo(0.005, 9);
+    expect(p["disease.p_death"].db_range?.max).toBeCloseTo(0.06, 9);
+    expect(p["disease.p_death"].db_range?.typical).toBeCloseTo(0.015, 9);
+    await configure(deps, { r0: 12, advanced: { "disease.dur_inf.sd_days": 1 } });
+    const again = byPath(await describe_(deps));
+    expect(again["disease.beta"].source).toBe("user");
+    expect(again["disease.dur_inf.sd_days"].source).toBe("user");
+    expect(again["disease.dur_inf.dist"].source).toBe("user");
+  });
+
+  it("marks fetched values as fetch until the user changes them, and filters by module and tier", async () => {
+    const kenya = [
+      rf("age_distribution_pct", { "0-17": 38.6, "18-64": 57.6, "65+": 3.8 }, "UN WPP"),
+      rf("total_population", 55_000_000, "UN WPP"),
+      rf("birth_rate", 27.3, "UN WPP"),
+      rf("death_rate", 7.2, "UN WPP"),
+    ];
+    const deps = makeDeps({ unWpp: kenya });
+    await configure(deps, { disease: "measles", r0: 15, dur_inf_days: 8 });
+    await fetchDemographics({ country_iso3: "KEN" }, deps);
+    let p = byPath(await describe_(deps, { module: "demographics" }));
+    expect(p["demographics.birth_rate"]).toMatchObject({ current: 27.3, source: "fetch" });
+    expect(p["demographics.use_demographics"].source).toBe("fetch");
+    expect(p["demographics.age_pct_under18"]).toMatchObject({ current: 43.9, source: "fetch" });
+    expect(p["demographics.country"]).toMatchObject({ current: "KEN", source: "user" });
+    expect(p["disease.beta"]).toBeUndefined();
+    expect(byPath(await describe_(deps, { module: "network" }))["network.network_type"]).toMatchObject({ current: "age_structured", source: "fetch" });
+    await configure(deps, { advanced: { "demographics.birth_rate": 30 } });
+    p = byPath(await describe_(deps));
+    expect(p["demographics.birth_rate"].source).toBe("user");
+    expect(p["demographics.death_rate"].source).toBe("fetch");
+    expect(Object.keys(byPath(await describe_(deps, { tier: "expert" })))).toEqual(["network.contacts_source", "demographics.auto_demographics", "demographics.demographics_year", "demographics.demographics_source", "demographics.age_source", "run.rand_seed"]);
+    expect((await describe_(deps, { module: "interventions" })).parameters.every((x) => x.path.startsWith("interventions[]"))).toBe(true);   // the entry fields, on request (follow-up spec 8.5)
+  });
+
+  it("handles a migrated v1 scenario with an unknown disease", async () => {
+    const deps = makeDeps({ scenario: { ...emptyScenario(), params: params({ disease_type: "seir", dur_exp: 5, dur_inf: 7, beta: 50, n_agents: 2000 }), disease: "mystery pox" } });
+    const body = await describe_(deps);
+    expect(body.disease).toBe("mystery pox");
+    expect(body.model).toBe("seir");
+    const p = byPath(body);
+    expect(p["disease.dur_exp.mean_days"]).toMatchObject({ current: 5, source: "user", db_range: null });
+    expect(p["disease.dur_exp.dist"]).toMatchObject({ current: "constant", source: "default" });
+    expect(p["disease.beta"]).toMatchObject({ current: 50, source: "user", db_range: null });
+    expect(p["run.n_agents"].source).toBe("user");
+    expect(p["run.rand_seed"]).toMatchObject({ current: null, source: "default" });
+    expect(body.parameters.every((x) => x.db_range === null)).toBe(true);
+  });
+
+  it("carries a small parameters payload for the card and the activity line", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles", model: "seir", dur_exp_days: 11 });
+    const out = await describeParameters({} as never, deps);
+    const body = JSON.parse(out.content) as Body;
+    expect(out.payload).toEqual({ kind: "parameters", model: "seir", disease: "measles", count: body.parameters.length });
+    expect((await describeParameters({ tier: "expert" } as never, makeDeps())).payload).toMatchObject({ kind: "parameters", model: "sir", disease: null, count: 5 });   // without a scenario: the random network, so no contact-matrix source
+  });
+
+  it("valueSources covers every set path", () => {
+    const p = params({ disease_type: "sirs", dur_immune: 200, dur_inf: 10 });
+    const sources = valueSources(p, { ...emptyScenario(), params: p }, null);
+    expect(sources["disease.dur_immune.mean_days"]).toBe("user");
+    expect(sources["disease.sis_waning"]).toBe("default");
+    expect(sources["demographics.country"]).toBe("default");
+    expect(sources["disease.initial_immune_frac"]).toBe("default");
+    expect(sources["disease.beta"]).toBe("default");
+    expect(sources["disease.dur_exp.mean_days"]).toBeUndefined();
+  });
+});
+
+describe("describe_parameters by network (follow-up spec 8.5)", () => {
+  it("lists the parameters of the scenario's network only", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles" });
+    const random = (await describe_(deps)).parameters.map((p) => p.path);
+    expect(random).toContain("network.n_contacts");
+    for (const path of ["network.household_size", "network.layer_beta.school", "network.contacts.children_children"]) expect(random).not.toContain(path);
+    await configure(deps, { network_type: "hybrid" });
+    const hybrid = (await describe_(deps)).parameters.map((p) => p.path);
+    for (const path of ["network.household_size", "network.layer_beta.school", "network.network_beta"]) expect(hybrid).toContain(path);
+    for (const path of ["network.n_contacts", "network.contacts.children_children"]) expect(hybrid).not.toContain(path);
+    await configure(deps, { network_type: "age_structured" });
+    const aged = (await describe_(deps, { module: "network" })).parameters.map((p) => p.path);
+    expect(aged).toContain("network.contacts.children_children");
+    expect(aged).not.toContain("network.household_size");
+    const unset = (await describe_(makeDeps())).parameters.map((p) => p.path);                 // no scenario: the random network's defaults
+    expect(unset).toContain("network.n_contacts");
+    expect(unset).not.toContain("network.household_size");
+  });
+
+  it("lists the intervention fields when asked for that module, and names the six types", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles" });
+    const out = await describe_(deps, { module: "interventions" });
+    const paths = out.parameters.map((p) => p.path);
+    for (const path of ["interventions[].type", "interventions[].half_prevalence", "interventions[].memory_days", "interventions[].layer"]) expect(paths).toContain(path);
+    expect(paths.every((path) => path.startsWith("interventions[]"))).toBe(true);
+    expect(out.parameters.every((p) => p.current === null && p.source === null)).toBe(true);
+    expect(byPath(out)["interventions[].half_prevalence"]).toMatchObject({ label: "Half-point of the response", bounds: [0.0001, 0.5] });
+    for (const type of ["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"]) expect(out.note).toContain(type);
+    expect(out.note).toContain("interventions field");
+    expect((await describe_(deps)).parameters.map((p) => p.path).some((path) => path.startsWith("interventions[]"))).toBe(false);
+    expect((await describe_(deps, { module: "interventions", tier: "core" })).parameters.map((p) => p.path)).not.toContain("interventions[].half_prevalence");
+  });
+});
+
+describe("describe_parameters says which network it lists (review of phase C)", () => {
+  it("names the network and says the other networks' parameters are not in the list", async () => {
+    const before = await describe_(makeDeps());
+    expect(before.network).toBe("random");
+    expect(before.note).toContain("random network");
+    expect(before.note).toContain("other contact networks");
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles", network_type: "hybrid" });
+    const hybrid = await describe_(deps);
+    expect(hybrid.network).toBe("hybrid");
+    expect(hybrid.note).toContain("hybrid network");
+    expect(hybrid.note).toContain("network.network_type");
+  });
+
+  it("does not promise current values or the advanced patch for the fields of an intervention entry", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles", interventions: [{ type: "seasonality", scale: 0.3 }] });
+    const out = await describe_(deps, { module: "interventions" });
+    expect(out.note).toContain("no current value of their own");
+    expect(out.note).toContain("not through advanced");
+    expect(out.note).not.toContain("current values with their source");
+    expect(out.interventions).toEqual(["seasonality"]);
+  });
+});
+
+describe("describe_parameters names a chosen reference as a source (follow-up spec 9.4)", () => {
+  it("reports reference for the value a chosen estimate set, and lists it among the sources it names", async () => {
+    const deps = makeDeps();
+    await configure(deps, { disease: "measles" });
+    await configure(deps, { use_reference: { parameter: "infectious_days", index: 1 } });
+    const body = await describe_(deps);
+    expect(byPath(body)["disease.dur_inf.mean_days"].source).toBe("reference");
+    expect(body.note).toContain("reference");
+  });
+});

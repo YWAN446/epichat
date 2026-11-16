@@ -1,0 +1,799 @@
+import json
+from unittest.mock import MagicMock, patch
+
+from epichat.parser import (
+    IntentResult,
+    _apply_age_distribution,
+    _apply_vaccination_coverage,
+    _apply_surveillance,
+    _apply_population_scale,
+    _apply_wb_disease_prevalence,
+    _apply_health_system,
+    _llm_call_1,
+    _llm_call_2,
+    parse_query,
+)
+from epichat.resolver import ResolvedField
+from epichat.schema import OutbreakContext, SimParams
+
+
+def _mock_llm(response_text: str):
+    """Return a mock anthropic client whose messages.create() returns response_text."""
+    mock_msg = MagicMock()
+    mock_msg.content = [MagicMock(text=response_text)]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_msg
+    return mock_client
+
+
+_PRELIM_JSON = json.dumps({
+    "disease_type": "sir",
+    "n_agents": 10000,
+    "n_contacts": 4,
+    "network_type": "random",
+    "network_beta": 1.0,
+    "beta": 22.8125,
+    "init_prev": 0.01,
+    "dur_inf": 10.0,
+    "p_death": 0.0,
+    "sim_dur_years": 1.0,
+    "interventions": [],
+})
+
+_INTENT_WITH_QUERIES = json.dumps({
+    "preliminary_params": json.loads(_PRELIM_JSON),
+    "data_queries": [
+        {
+            "source": "un_wpp",
+            "indicators": [55, 59, 71],
+            "location_id": 404,
+            "start_year": 2020,
+            "end_year": 2024,
+        }
+    ],
+})
+
+_INTENT_NO_QUERIES = json.dumps({
+    "preliminary_params": json.loads(_PRELIM_JSON),
+    "data_queries": [],
+})
+
+
+def test_llm_call_1_parses_intent_with_queries():
+    client = _mock_llm(_INTENT_WITH_QUERIES)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = _llm_call_1("simulate measles in Kenya")
+    assert isinstance(result, IntentResult)
+    assert isinstance(result.preliminary_params, SimParams)
+    assert len(result.data_queries) == 1
+    assert result.data_queries[0].source == "un_wpp"
+    assert result.data_queries[0].location_id == 404
+
+
+def test_llm_call_1_parses_intent_no_queries():
+    client = _mock_llm(_INTENT_NO_QUERIES)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = _llm_call_1("run a default SIR model")
+    assert isinstance(result, IntentResult)
+    assert result.data_queries == []
+
+
+def test_llm_call_1_handles_legacy_format():
+    """LLM returns raw SimParams JSON (old format) — should still parse."""
+    client = _mock_llm(_PRELIM_JSON)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = _llm_call_1("run a default SIR model")
+    assert isinstance(result, IntentResult)
+    assert result.data_queries == []
+    assert isinstance(result.preliminary_params, SimParams)
+
+
+_REFINED_JSON = json.dumps({
+    "disease_type": "sir",
+    "n_agents": 10000,
+    "n_contacts": 4,
+    "network_type": "random",
+    "network_beta": 1.0,
+    "beta": 22.8125,
+    "init_prev": 0.01,
+    "dur_inf": 10.0,
+    "p_death": 0.0,
+    "sim_dur_years": 1.0,
+    "use_demographics": True,
+    "birth_rate": 28.5,
+    "death_rate": 6.2,
+    "interventions": [],
+})
+
+
+def test_llm_call_2_passthrough_when_no_resolved():
+    prelim = SimParams(beta=22.8125, birth_rate=20.0, death_rate=10.0)
+    result = _llm_call_2("query", prelim, [])
+    assert result is prelim  # exact same object — no LLM call made
+
+
+def test_llm_call_2_calls_llm_when_resolved_present():
+    prelim = SimParams(beta=22.8125, birth_rate=20.0, death_rate=10.0)
+    resolved = [
+        ResolvedField(field="birth_rate", value=28.5, citation="UN WPP 2024, KEN, 2023"),
+        ResolvedField(field="death_rate", value=6.2, citation="UN WPP 2024, KEN, 2023"),
+    ]
+    client = _mock_llm(_REFINED_JSON)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = _llm_call_2("simulate in Kenya", prelim, resolved)
+    assert isinstance(result, SimParams)
+    assert abs(result.birth_rate - 28.5) < 0.01
+    assert abs(result.death_rate - 6.2) < 0.01
+
+
+def test_llm_call_2_formats_resolved_fields_in_prompt():
+    prelim = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="UN WPP 2024, KEN, 2023")]
+    client = _mock_llm(_REFINED_JSON)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        _llm_call_2("simulate in Kenya", prelim, resolved)
+    call_args = client.messages.create.call_args
+    user_content = call_args[1]["messages"][0]["content"]
+    assert "birth_rate: 28.5" in user_content
+    assert "UN WPP 2024, KEN, 2023" in user_content
+
+
+def test_parse_query_skips_resolver_when_no_queries():
+    """End-to-end: no geography → single LLM call, no resolver."""
+    client = _mock_llm(_INTENT_NO_QUERIES)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = parse_query("run a default SIR model")
+    assert isinstance(result, SimParams)
+    # Only one LLM call was made (LLM-1 only)
+    assert client.messages.create.call_count == 1
+
+
+def test_parse_query_uses_resolver_when_queries_present():
+    """End-to-end: geography present → resolver runs → LLM-2 refines."""
+    mock_resolver = MagicMock()
+    mock_resolver.resolve.return_value = [
+        ResolvedField(field="birth_rate", value=28.5, citation="UN WPP 2024, KEN, 2023"),
+        ResolvedField(field="death_rate", value=6.2, citation="UN WPP 2024, KEN, 2023"),
+    ]
+
+    client = MagicMock()
+    lm1_msg = MagicMock()
+    lm1_msg.content = [MagicMock(text=_INTENT_WITH_QUERIES)]
+    lm2_msg = MagicMock()
+    lm2_msg.content = [MagicMock(text=_REFINED_JSON)]
+    client.messages.create.side_effect = [lm1_msg, lm2_msg]
+
+    with patch("epichat.parser._resolver", mock_resolver), \
+         patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = parse_query("simulate measles in Kenya")
+
+    assert isinstance(result, SimParams)
+    assert client.messages.create.call_count == 2
+
+
+def test_apply_age_distribution_no_op_when_absent():
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_age_distribution(params, resolved)
+    assert result is params  # exact same object — untouched
+
+
+def test_apply_age_distribution_sets_fields_and_network_type():
+    params = SimParams(beta=22.8125)
+    resolved = [
+        ResolvedField(
+            field="age_distribution_pct",
+            value={"0-17": 42.1, "18-64": 54.8, "65+": 3.1},
+            citation="UN WPP 2024, Kenya (KEN), 2023",
+        )
+    ]
+    result = _apply_age_distribution(params, resolved)
+    assert result.network_type == "age_structured"
+    assert abs(result.age_pct_under18 - 42.1) < 0.01
+    assert abs(result.age_pct_18_64   - 54.8) < 0.01
+    assert abs(result.age_pct_over65  -  3.1) < 0.01
+
+
+def test_apply_age_distribution_returns_new_simparams_object():
+    params = SimParams(beta=22.8125, network_type="random")
+    resolved = [
+        ResolvedField(
+            field="age_distribution_pct",
+            value={"0-17": 20.0, "18-64": 70.0, "65+": 10.0},
+            citation="x",
+        )
+    ]
+    result = _apply_age_distribution(params, resolved)
+    assert result is not params
+    assert params.network_type == "random"   # original unchanged
+
+
+def test_parse_query_applies_age_distribution_end_to_end():
+    """parse_query() sets network_type=age_structured when resolver returns age data."""
+    mock_resolver = MagicMock()
+    mock_resolver.resolve.return_value = [
+        ResolvedField(field="birth_rate", value=28.5, citation="x"),
+        ResolvedField(
+            field="age_distribution_pct",
+            value={"0-17": 42.0, "18-64": 55.0, "65+": 3.0},
+            citation="y",
+        ),
+    ]
+
+    lm1_msg = MagicMock()
+    lm1_msg.content = [MagicMock(text=_INTENT_WITH_QUERIES)]
+    lm2_msg = MagicMock()
+    lm2_msg.content = [MagicMock(text=_REFINED_JSON)]
+    client = MagicMock()
+    client.messages.create.side_effect = [lm1_msg, lm2_msg]
+
+    with patch("epichat.parser._resolver", mock_resolver), \
+         patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = parse_query("simulate measles in Kenya")
+
+    assert result.network_type == "age_structured"
+    assert result.age_pct_under18 == 42.0
+
+
+# ── _apply_vaccination_coverage ───────────────────────────────────────────────
+
+def test_apply_vaccination_coverage_no_op_when_no_coverage_field():
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_vaccination_coverage(params, resolved)
+    assert result is params
+
+
+def test_apply_vaccination_coverage_no_op_when_llm_already_set_vaccine():
+    from epichat.schema import Intervention
+    vaccine = Intervention(type="vaccine", coverage=0.5, start_day=0)
+    params = SimParams(beta=22.8125, interventions=[vaccine])
+    resolved = [ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    # LLM set vaccine → post-processor must not override it
+    assert result is params
+
+
+def test_apply_vaccination_coverage_adds_vaccine_intervention():
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    assert result is not params
+    vaccine = result.get_vaccine()
+    assert vaccine is not None
+    assert abs(vaccine.coverage - 0.76) < 1e-9
+    assert vaccine.start_day == 0
+
+
+def test_apply_vaccination_coverage_returns_new_simparams_via_model_validate():
+    """model_validate must be used (not model_copy) so validators run."""
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="dtp3_coverage", value=85.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    assert isinstance(result, SimParams)
+    assert result.get_vaccine() is not None
+    assert abs(result.get_vaccine().coverage - 0.85) < 1e-9
+
+
+# ── _apply_surveillance ───────────────────────────────────────────────────────
+
+def test_apply_surveillance_no_op_when_no_cases_field():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [ResolvedField(field="total_population", value=54000000, citation="x")]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
+def test_apply_surveillance_no_op_when_no_population_field():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [ResolvedField(field="measles_cases", value=4810, citation="x")]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
+def test_apply_surveillance_sets_init_prev():
+    # Use enough cases that computed init_prev exceeds the 0.0001 floor
+    # 300_000 / 54027487 / 365 * 8 ≈ 0.000122 > 0.0001
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=8.0)
+    resolved = [
+        ResolvedField(field="measles_cases", value=300_000.0, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="total_population", value=54027487, citation="UN WPP, KEN, 2023"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result is not params
+    expected = (300_000.0 / 54027487 / 365) * 8.0
+    assert abs(result.init_prev - expected) < 1e-12
+
+
+def test_apply_surveillance_enforces_minimum_init_prev():
+    """Very sparse case counts must not produce init_prev below 0.01%."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=8.0)
+    resolved = [
+        ResolvedField(field="polio_cases", value=1.0, citation="x"),   # near-eliminated disease
+        ResolvedField(field="total_population", value=54_000_000, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result.init_prev == 0.0001
+
+
+def test_apply_surveillance_caps_at_0_5():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [
+        ResolvedField(field="measles_cases", value=99999999, citation="x"),
+        ResolvedField(field="total_population", value=100, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result.init_prev == 0.5
+
+
+def test_apply_surveillance_no_op_when_population_is_zero():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [
+        ResolvedField(field="measles_cases", value=4810, citation="x"),
+        ResolvedField(field="total_population", value=0, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
+def test_apply_surveillance_no_op_when_zero_cases():
+    """Zero cases → init_prev=0 would fail Pydantic gt=0 constraint; must skip."""
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [
+        ResolvedField(field="polio_cases", value=0, citation="x"),
+        ResolvedField(field="total_population", value=54000000, citation="x"),
+    ]
+    result = _apply_surveillance(params, resolved)
+    assert result is params
+
+
+def test_apply_vaccination_coverage_clamps_above_100_percent():
+    """WHO GHO occasionally reports coverage > 100%; must clamp to 1.0."""
+    params = SimParams(beta=22.8125)
+    resolved = [ResolvedField(field="mcv1_coverage", value=102.0, citation="WHO GHO, KEN, 2022")]
+    result = _apply_vaccination_coverage(params, resolved)
+    vaccine = result.get_vaccine()
+    assert vaccine is not None
+    assert vaccine.coverage == 1.0
+
+
+# ── _apply_population_scale ───────────────────────────────────────────────────
+
+def test_apply_population_scale_no_op_when_no_population_field():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result is params
+
+
+def test_apply_population_scale_caps_at_100k_for_large_population():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="total_population", value=54_000_000, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result.n_agents == 100_000
+
+
+def test_apply_population_scale_uses_actual_count_for_small_population():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="total_population", value=50_000, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result.n_agents == 50_000
+
+
+def test_apply_population_scale_enforces_minimum_1000():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="total_population", value=500, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result.n_agents == 1_000
+
+
+def test_apply_population_scale_no_op_when_already_correct():
+    params = SimParams(beta=22.8125, n_agents=100_000)
+    resolved = [ResolvedField(field="total_population", value=54_000_000, citation="x")]
+    result = _apply_population_scale(params, resolved)
+    assert result is params
+
+
+def test_parse_query_applies_all_post_processors_in_order():
+    """parse_query() chains all post-processors including the prevalence-incidence correction."""
+    mock_resolver = MagicMock()
+    # Use enough cases that init_prev stays above the 0.0001 floor
+    # (4810 / 54M / 365 * 10 = 2.4e-6, below floor; use 500K cases instead)
+    mock_resolver.resolve.return_value = [
+        ResolvedField(field="mcv1_coverage", value=76.0, citation="WHO GHO, KEN, 2022"),
+        ResolvedField(field="measles_cases", value=500_000.0, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="total_population", value=54027487, citation="UN WPP, KEN, 2023"),
+    ]
+
+    lm1_msg = MagicMock()
+    lm1_msg.content = [MagicMock(text=_INTENT_WITH_QUERIES)]
+    lm2_msg = MagicMock()
+    lm2_msg.content = [MagicMock(text=_REFINED_JSON)]
+    client = MagicMock()
+    client.messages.create.side_effect = [lm1_msg, lm2_msg]
+
+    with patch("epichat.parser._resolver", mock_resolver), \
+         patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = parse_query("simulate measles in Kenya")
+
+    vaccine = result.get_vaccine()
+    assert vaccine is not None
+    assert abs(vaccine.coverage - 0.76) < 1e-9
+    # init_prev = (cases / population / 365) * dur_inf
+    dur_inf = result.dur_inf
+    expected_prev = (500_000.0 / 54027487 / 365) * dur_inf
+    assert abs(result.init_prev - expected_prev) < 1e-12
+
+
+# ── _apply_wb_disease_prevalence ──────────────────────────────────────────────
+
+def test_apply_wb_disease_prevalence_no_op_when_cases_field_present():
+    """WHO GHO cases field takes precedence — WB disease prevalence must be skipped."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [
+        ResolvedField(field="measles_cases", value=5000, citation="WHO GHO, KEN, 2023"),
+        ResolvedField(field="total_population", value=54_000_000, citation="x"),
+        ResolvedField(field="tb_incidence", value=245.0, citation="WB WDI, KEN, 2022",
+                      description="per 100,000/yr"),
+    ]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is params   # unchanged
+
+
+def test_apply_wb_disease_prevalence_no_op_when_no_disease_field():
+    params = SimParams(beta=22.8125, init_prev=0.01)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is params
+
+
+def test_apply_wb_disease_prevalence_uses_prevalence_percent():
+    """HIV prevalence: 6.3% → init_prev = 0.063"""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="hiv_prevalence", value=6.3, citation="WB WDI, KEN, 2020",
+                              description="% of population ages 15–49")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is not params
+    assert abs(result.init_prev - 0.063) < 1e-9
+
+
+def test_apply_wb_disease_prevalence_uses_incidence_per_100k():
+    """TB: 500/100k/yr, dur_inf=10 days → init_prev = 500/100000/365*10 = 1.37e-4 (above floor)"""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="tb_incidence", value=500.0, citation="WB WDI, KEN, 2022",
+                              description="per 100,000/yr")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is not params
+    expected = 500.0 / 100_000 / 365 * 10.0
+    assert abs(result.init_prev - expected) < 1e-12
+
+
+def test_apply_wb_disease_prevalence_uses_incidence_per_1k():
+    """Malaria: 120/1k/yr, dur_inf=7 days → init_prev = 120/1000/365*7"""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=7.0)
+    resolved = [ResolvedField(field="malaria_incidence", value=120.0, citation="WB WDI, KEN, 2022",
+                              description="per 1,000 population at risk/yr")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is not params
+    expected = 120.0 / 1_000 / 365 * 7.0
+    assert abs(result.init_prev - expected) < 1e-12
+
+
+def test_apply_wb_disease_prevalence_caps_at_0_5():
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="hiv_prevalence", value=99.0, citation="x",
+                              description="% of population ages 15–49")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result.init_prev == 0.5
+
+
+def test_apply_wb_disease_prevalence_enforces_minimum():
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="tb_incidence", value=0.001, citation="x",
+                              description="per 100,000/yr")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result.init_prev == 0.0001
+
+
+def test_apply_wb_disease_prevalence_no_op_when_scale_missing():
+    """Disease field present but not in INCIDENCE_SCALE → silent no-op."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [ResolvedField(field="unknown_prevalence", value=5.0, citation="x")]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert result is params
+
+
+def test_apply_wb_disease_prevalence_first_disease_field_wins():
+    """When multiple disease fields are present, the first one in resolved is used."""
+    params = SimParams(beta=22.8125, init_prev=0.01, dur_inf=10.0)
+    resolved = [
+        ResolvedField(field="hiv_prevalence", value=6.3, citation="x"),
+        ResolvedField(field="diabetes_prevalence", value=9.0, citation="x"),
+    ]
+    result = _apply_wb_disease_prevalence(params, resolved)
+    assert abs(result.init_prev - 0.063) < 1e-9  # hiv_prevalence wins (first)
+
+
+# ── _apply_health_system ──────────────────────────────────────────────────────
+
+def test_apply_health_system_no_op_when_llm_set_treatment():
+    from epichat.schema import Intervention
+    treatment = Intervention(type="treatment", coverage=0.8, capacity=50, start_day=0)
+    params = SimParams(beta=22.8125, interventions=[treatment], n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="x")]
+    result = _apply_health_system(params, resolved)
+    assert result is params   # LLM wins
+
+
+def test_apply_health_system_no_op_when_no_health_fields():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="birth_rate", value=28.5, citation="x")]
+    result = _apply_health_system(params, resolved)
+    assert result is params
+
+
+def test_apply_health_system_uses_beds_for_capacity():
+    """2.3 beds/1,000 × 10,000 agents → capacity = 23"""
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="WB WDI, KEN, 2021",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    assert result is not params
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.capacity == 23
+
+
+def test_apply_health_system_uses_uhc_for_coverage():
+    """UHC index 56 → treatment coverage = 0.56"""
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="uhc_coverage", value=56.0, citation="WB WDI, KEN, 2022")]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert abs(treatment.coverage - 0.56) < 1e-9
+
+
+def test_apply_health_system_creates_treatment_with_both_fields():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [
+        ResolvedField(field="treatment_capacity", value=2.3, citation="WB WDI, KEN, 2021",
+                      description="hospital beds/1,000"),
+        ResolvedField(field="uhc_coverage", value=56.0, citation="WB WDI, KEN, 2022"),
+    ]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.capacity == 23
+    assert abs(treatment.coverage - 0.56) < 1e-9
+    assert treatment.start_day == 0
+
+
+def test_apply_health_system_capacity_minimum_one():
+    """Very small bed count must not produce capacity=0 (Pydantic constraint: ge=1)."""
+    params = SimParams(beta=22.8125, n_agents=100)
+    resolved = [ResolvedField(field="treatment_capacity", value=0.001, citation="x",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.capacity >= 1
+
+
+def test_apply_health_system_returns_new_simparams_via_model_validate():
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="x",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    assert isinstance(result, SimParams)
+    assert result is not params
+    assert params.get_treatment() is None   # original unchanged
+
+
+def test_apply_health_system_coverage_defaults_to_1_when_no_uhc():
+    """When only capacity is resolved and UHC is absent, coverage defaults to 1.0."""
+    params = SimParams(beta=22.8125, n_agents=10000)
+    resolved = [ResolvedField(field="treatment_capacity", value=2.3, citation="x",
+                              description="hospital beds/1,000")]
+    result = _apply_health_system(params, resolved)
+    treatment = result.get_treatment()
+    assert treatment is not None
+    assert treatment.coverage == 1.0
+
+
+def _make_intent_response(disease_type="sir", beta=22.8125):
+    payload = (
+        '{"preliminary_params":{"disease_type":"' + disease_type + '",'
+        '"n_agents":10000,"n_contacts":4,"network_type":"random",'
+        '"network_beta":1.0,"beta":' + str(beta) + ',"init_prev":0.01,'
+        '"dur_inf":10.0,"dur_exp":null,"dur_immune":null,"p_asymp":0.3,'
+        '"rel_trans_asymp":0.5,"p_death":0.0,"sim_dur_years":1.0,'
+        '"rand_seed":null,"use_demographics":false,"birth_rate":20.0,'
+        '"death_rate":10.0,"interventions":[]},"data_queries":[]}'
+    )
+    block = MagicMock()
+    block.type = "text"
+    block.text = payload
+    resp = MagicMock()
+    resp.stop_reason = "end_turn"
+    resp.content = [block]
+    return resp
+
+
+def test_parse_query_forwards_context_to_llm():
+    ctx = OutbreakContext(
+        input_type="report",
+        disease_name="Ebola",
+        location="DRC",
+        total_cases=500,
+        confidence="high",
+    )
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _make_intent_response()
+
+    with patch("epichat.parser.anthropic.Anthropic") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.side_effect = fake_create
+        from epichat.parser import parse_query
+        parse_query("run ebola sim", context=ctx)
+
+    user_content = captured["messages"][0]["content"]
+    assert "Outbreak context" in user_content
+    assert "Ebola" in user_content
+    assert "DRC" in user_content
+
+
+def test_parse_query_without_context_unchanged():
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _make_intent_response()
+
+    with patch("epichat.parser.anthropic.Anthropic") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.side_effect = fake_create
+        from epichat.parser import parse_query
+        parse_query("run a default SIR model")
+
+    user_content = captured["messages"][0]["content"]
+    assert "Outbreak context" not in user_content
+
+
+def test_parse_query_with_all_null_context_not_injected():
+    ctx = OutbreakContext(input_type="query")  # all fields null
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _make_intent_response()
+
+    with patch("epichat.parser.anthropic.Anthropic") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.side_effect = fake_create
+        from epichat.parser import parse_query
+        parse_query("run a default SIR model", context=ctx)
+
+    user_content = captured["messages"][0]["content"]
+    assert "Outbreak context" not in user_content
+
+
+# ── Clarification handling ────────────────────────────────────────────────────
+
+def test_llm_call_1_clarification_raises_typed_exception():
+    import pytest
+    from epichat.parser import ClarificationNeeded
+
+    client = _mock_llm(json.dumps(
+        {"clarification_needed": "Which population size should I use?"}
+    ))
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        with pytest.raises(ClarificationNeeded) as exc_info:
+            _llm_call_1("model something vague")
+    assert exc_info.value.question == "Which population size should I use?"
+
+
+def test_clarification_needed_is_a_value_error():
+    """epichat.py and older callers catch ValueError — must stay compatible."""
+    from epichat.parser import ClarificationNeeded
+
+    exc = ClarificationNeeded("Which disease?")
+    assert isinstance(exc, ValueError)
+    assert exc.question == "Which disease?"
+    assert "Which disease?" in str(exc)
+
+
+# ── Staged API ────────────────────────────────────────────────────────────────
+
+def test_extract_intent_returns_intent_result():
+    client = _mock_llm(_PRELIM_JSON)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        from epichat.parser import extract_intent
+        intent = extract_intent("run a default SIR model")
+    assert isinstance(intent, IntentResult)
+    assert intent.preliminary_params.disease_type == "sir"
+
+
+def test_fetch_query_resolves_single_query():
+    from epichat.parser import fetch_query, _resolver
+    from epichat.resolver import DataQuery
+
+    field = ResolvedField(field="total_population", value=1000, citation="test")
+    fake_adapter = MagicMock()
+    fake_adapter.source_name = "fake_src"
+    fake_adapter.fetch.return_value = [field]
+    _resolver.register(fake_adapter)
+    try:
+        result = fetch_query(DataQuery(source="fake_src"))
+    finally:
+        _resolver._adapters.pop("fake_src", None)
+    assert result == [field]
+
+
+def test_finalize_params_updates_last_resolved():
+    from epichat.parser import finalize_params, get_last_resolved, get_last_location_queried
+    from epichat.resolver import DataQuery
+    from epichat.schema import SimParams
+
+    intent = IntentResult(
+        preliminary_params=SimParams(beta=1.0),
+        data_queries=[DataQuery(source="un_wpp", location_id=76)],
+    )
+    resolved = [ResolvedField(field="total_population", value=5000, citation="test")]
+    with patch("epichat.parser._llm_call_2", side_effect=lambda ui, prelim, res: prelim):
+        params = finalize_params("run a default SIR model", intent, resolved)
+    assert isinstance(params, SimParams)
+    assert get_last_resolved() == resolved
+    assert get_last_location_queried() is True
+
+
+# ── repair_params ─────────────────────────────────────────────────────────────
+from epichat.parser import RepairResult, fix_params, repair_params  # noqa: E402
+
+
+def _mock_llm_with_usage(response_text: str, input_tokens: int, output_tokens: int):
+    client = _mock_llm(response_text)
+    msg = client.messages.create.return_value
+    msg.usage = MagicMock(input_tokens=input_tokens, output_tokens=output_tokens)
+    return client
+
+
+_REPAIRED = json.dumps({"disease_type": "seir", "beta": 0.05, "dur_exp": 5.0, "n_agents": 1000})
+
+
+def test_repair_params_returns_params_model_and_usage():
+    client = _mock_llm_with_usage(_REPAIRED, 1200, 300)
+    before = SimParams(disease_type="sir", beta=0.05, n_agents=1000)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = repair_params("measles", before, "KeyError: dur_exp", "claude-opus-5-5")
+    assert isinstance(result, RepairResult)
+    assert result.params.disease_type == "seir" and result.params.dur_exp == 5.0
+    assert result.model == "claude-opus-5-5"
+    assert (result.input_tokens, result.output_tokens) == (1200, 300)
+    assert client.messages.create.call_args.kwargs["model"] == "claude-opus-5-5"
+
+
+def test_repair_params_tolerates_missing_usage():
+    client = _mock_llm(_REPAIRED)
+    client.messages.create.return_value.usage = None
+    before = SimParams(disease_type="sir", beta=0.05, n_agents=1000)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        result = repair_params("measles", before, "err", "claude-opus-5-5")
+    assert (result.input_tokens, result.output_tokens) == (0, 0)
+
+
+def test_fix_params_still_returns_sim_params_with_the_parser_model():
+    client = _mock_llm_with_usage(_REPAIRED, 1, 1)
+    before = SimParams(disease_type="sir", beta=0.05, n_agents=1000)
+    with patch("epichat.parser.anthropic.Anthropic", return_value=client):
+        repaired = fix_params("measles", before, "err")
+    assert isinstance(repaired, SimParams)
+    assert repaired.dur_exp == 5.0
+    from epichat.parser import _MODEL
+    assert client.messages.create.call_args.kwargs["model"] == _MODEL

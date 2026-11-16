@@ -1,3 +1,6 @@
-epichat/data/households/*.DTA
-epichat/data/households/*.csv
-epichat/data/households/*.csv.gz
+# Licensed survey microdata (DHS) — never commit
+data/households/*.DTA
+data/households/*.csv
+data/households/*.csv.gz
+# Per-country demographics disk cache
+data/demographics/cache/

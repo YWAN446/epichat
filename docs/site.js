@@ -1,0 +1,194 @@
+// Shared nav + footer + tweaks wiring. Pure-vanilla to keep things snappy.
+(function () {
+  const NAV_LINKS = [
+    { href: "index.html", label: "OVERVIEW" },
+    { href: "docs.html", label: "DOCS" },
+  ];
+
+  const CURRENT = (document.body.dataset.page || "index") + ".html";
+
+  function mountNav() {
+    const host = document.querySelector("[data-mount='nav']");
+    if (!host) return;
+    host.innerHTML = `
+      <nav class="nav">
+        <div class="nav-inner">
+          <a href="index.html" class="brand">
+            <img src="brand/epichat-icon.png" alt="" class="brand-mark theme-light-only">
+            <img src="brand/epichat-icon-dark.png" alt="" class="brand-mark theme-dark-only">
+            <span>EpiChat</span>
+            <span class="brand-meta">web agent · pilot</span>
+          </a>
+          <div class="nav-links">
+            ${NAV_LINKS.map(l => `
+              <a href="${l.href}" class="${l.href === CURRENT ? "active" : ""}">${l.label}</a>
+            `).join("")}
+          </div>
+          <a href="https://epichat-ai.vercel.app" target="_blank" rel="noopener" class="nav-cta">Open the app ↗</a>
+          <button class="nav-burger" aria-label="Toggle menu" aria-expanded="false">☰</button>
+        </div>
+      </nav>
+    `;
+
+    const nav = host.querySelector('.nav');
+    const burger = host.querySelector('.nav-burger');
+    burger.addEventListener('click', () => {
+      const open = nav.classList.toggle('nav-open');
+      burger.setAttribute('aria-expanded', String(open));
+      burger.textContent = open ? '✕' : '☰';
+    });
+    host.querySelectorAll('.nav-links a').forEach(a => {
+      a.addEventListener('click', () => {
+        nav.classList.remove('nav-open');
+        burger.setAttribute('aria-expanded', 'false');
+        burger.textContent = '☰';
+      });
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 640) {
+        nav.classList.remove('nav-open');
+        burger.setAttribute('aria-expanded', 'false');
+        burger.textContent = '☰';
+      }
+    });
+  }
+
+  function mountFooter() {
+    const host = document.querySelector("[data-mount='footer']");
+    if (!host) return;
+    host.innerHTML = `
+      <footer class="site">
+        <div class="wrap">
+          <div class="cols">
+            <div>
+              <h4>
+                <img src="brand/epichat-icon.png" alt="" class="footer-mark theme-light-only">
+                <img src="brand/epichat-icon-dark.png" alt="" class="footer-mark theme-dark-only">
+                EpiChat
+              </h4>
+              <p style="font-family: var(--serif); color: var(--ink-2); font-size: 0.95rem; line-height: 1.5; max-width: 36ch;">
+                A conversational AI agent for epidemiological simulation. Natural language in. Validated simulation out.
+              </p>
+              <pre class="ascii" style="margin-top: 1rem;">
+    S ──▶ E ──▶ I ──▶ R
+    ↑                  │
+    └───────── waning ──┘</pre>
+            </div>
+            <div>
+              <h4>Project</h4>
+              <ul>
+                <li><a href="index.html">Overview</a></li>
+                <li><a href="docs.html">Docs</a></li>
+                <li><a href="https://epichat-ai.vercel.app" target="_blank" rel="noopener">The app (pilot) ↗</a></li>
+                <li><a href="https://github.com/YWAN446/epichat/blob/main/docs/data-review-requests.md" target="_blank" rel="noopener">Data review list ↗</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4>Code</h4>
+              <ul>
+                <li><a href="https://github.com/YWAN446/epichat" target="_blank" rel="noopener">GitHub ↗</a></li>
+                <li><a href="https://starsim.org" target="_blank" rel="noopener">Starsim ↗</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4>Contact</h4>
+              <ul>
+                <li><a href="mailto:yuke.wang@emory.edu">yuke.wang@emory.edu</a></li>
+                <li style="color: var(--ink-3);">RSPH · Emory</li>
+                <li style="color: var(--ink-3);">CIDMATH</li>
+              </ul>
+            </div>
+          </div>
+          <div class="bottom">
+            <span>© Copyright 2026. Emory CIDMATH. All Rights Reserved.</span>
+          </div>
+        </div>
+      </footer>
+    `;
+  }
+
+  // --------- Tweaks ---------
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "accent": "burgundy",
+    "density": "comfortable",
+    "theme": "light"
+  }/*EDITMODE-END*/;
+
+  const ACCENTS = {
+    burgundy: { h: 25, label: "Burgundy" },
+    navy:     { h: 250, label: "Navy" },
+    forest:   { h: 155, label: "Forest" },
+    oxblood:  { h: 10, label: "Oxblood" },
+    ink:      { h: 280, label: "Ink" }
+  };
+
+  const state = Object.assign({}, TWEAK_DEFAULTS);
+
+  function apply() {
+    document.documentElement.style.setProperty("--accent-h", ACCENTS[state.accent]?.h ?? 25);
+    document.documentElement.style.setProperty("--density", state.density === "compact" ? 0.72 : state.density === "airy" ? 1.25 : 1);
+    document.documentElement.dataset.theme = state.theme;
+  }
+
+  function mountTweaks() {
+    // Register listener FIRST
+    const panel = document.createElement("div");
+    panel.className = "tweaks";
+    panel.innerHTML = `
+      <h3>Tweaks</h3>
+      <div class="group">
+        <label>Accent</label>
+        <div class="swatches" data-group="accent">
+          ${Object.entries(ACCENTS).map(([k, v]) => `
+            <button class="sw ${state.accent === k ? "on" : ""}" data-val="${k}"
+              style="background: oklch(0.42 0.12 ${v.h});" title="${v.label}"></button>
+          `).join("")}
+        </div>
+      </div>
+      <div class="group">
+        <label>Theme</label>
+        <div class="opts" data-group="theme">
+          ${["light","dark"].map(t => `
+            <button class="opt ${state.theme === t ? "on" : ""}" data-val="${t}">${t}</button>
+          `).join("")}
+        </div>
+      </div>
+      <div class="group">
+        <label>Density</label>
+        <div class="opts" data-group="density">
+          ${["compact","comfortable","airy"].map(d => `
+            <button class="opt ${state.density === d ? "on" : ""}" data-val="${d}">${d}</button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(panel);
+
+    panel.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-val]");
+      if (!btn) return;
+      const group = btn.parentElement.dataset.group;
+      const val = btn.dataset.val;
+      state[group] = val;
+      panel.querySelectorAll(`[data-group="${group}"] button`).forEach(b => b.classList.remove("on"));
+      btn.classList.add("on");
+      apply();
+      window.parent.postMessage({ type: "__edit_mode_set_keys", edits: { [group]: val } }, "*");
+    });
+
+    window.addEventListener("message", (e) => {
+      const d = e.data || {};
+      if (d.type === "__activate_edit_mode") panel.classList.add("on");
+      if (d.type === "__deactivate_edit_mode") panel.classList.remove("on");
+    });
+
+    window.parent.postMessage({ type: "__edit_mode_available" }, "*");
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    mountNav();
+    mountFooter();
+    apply();
+    mountTweaks();
+  });
+})();

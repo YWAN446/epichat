@@ -1,4 +1,17 @@
-"""Disease parameter database loader and lookup utilities."""
+"""Disease parameter database loader and lookup utilities.
+
+The JSON database (data/disease_parameters.json) uses a rich, citation-backed
+format: each disease has a "parameters" mapping where every parameter carries
+a unit, a consensus range (min/max/typical), and a list of literature
+estimates with full citations (title, url, doi, country, year). covid19 is
+special-cased with per-variant R0 under "variants" plus shared parameters;
+"default_variant" names the variant surfaced by default.
+
+load_db() normalizes each disease into an entry that also exposes the legacy
+flat view (entry["r0"] == {"min", "max", "typical", "source", ...}) that
+callers and tests rely on, while keeping the full rich detail available under
+entry["parameters"] / entry["variants"].
+"""
 from __future__ import annotations
 
 import json
@@ -8,16 +21,91 @@ from pathlib import Path
 _DB_PATH = Path(__file__).parent / "data" / "disease_parameters.json"
 _db: dict | None = None
 
+# Days per unit for immunity-duration comparisons.
+_DAYS_PER_UNIT = {"days": 1.0, "weeks": 7.0, "months": 30.44, "years": 365.25}
+
+
+def _num(x) -> float | None:
+    """Return x if it is a real number, else None (filters 'N/A', 'lifelong', null)."""
+    return x if isinstance(x, (int, float)) and not isinstance(x, bool) else None
+
+
+def _flatten_param(param: dict) -> dict | None:
+    """Collapse a rich parameter block into the legacy flat view.
+
+    Returns None when the consensus has no numeric values (qualitative
+    entries such as "lifelong", or in-progress placeholders).
+    """
+    cons = param.get("consensus") or {}
+    lo, hi, typ = _num(cons.get("min")), _num(cons.get("max")), _num(cons.get("typical"))
+    if lo is None and hi is None and typ is None:
+        return None
+
+    flat: dict = {}
+    if lo is not None:
+        flat["min"] = lo
+    if hi is not None:
+        flat["max"] = hi
+    if typ is not None:
+        flat["typical"] = typ
+
+    source = cons.get("source")
+    if not source:
+        for est in param.get("estimates", []):
+            if est.get("url"):
+                source = est["url"]
+                break
+            doi = est.get("doi")
+            if doi and doi != "N/A":
+                source = f"https://doi.org/{doi}"
+                break
+    flat["source"] = source or ""
+    if cons.get("notes"):
+        flat["note"] = cons["notes"]
+    if param.get("unit"):
+        flat["unit"] = param["unit"]
+    return flat
+
+
+def _normalize_disease(entry: dict) -> dict:
+    """Build a disease entry exposing both the rich data and the flat view."""
+    norm = dict(entry)
+    for pname, pdata in (entry.get("parameters") or {}).items():
+        flat = _flatten_param(pdata)
+        if flat is not None:
+            norm[pname] = flat
+
+    variants = entry.get("variants")
+    if variants:
+        for pname, pdata in (variants.get("shared_parameters") or {}).items():
+            flat = _flatten_param(pdata)
+            if flat is not None:
+                norm[pname] = flat
+        default = variants.get(entry.get("default_variant", ""), {})
+        for pname, pdata in (default.get("parameters") or {}).items():
+            flat = _flatten_param(pdata)
+            if flat is not None:
+                norm[pname] = flat
+    return norm
+
 
 def load_db() -> dict:
     """Load the disease parameters database from JSON file.
 
     Returns:
-        dict: The loaded database with "diseases" key containing disease entries.
+        dict: The loaded database with "diseases" key containing normalized
+        disease entries (rich data plus the legacy flat parameter view).
     """
     global _db
     if _db is None:
-        _db = json.loads(_DB_PATH.read_text(encoding="utf-8"))
+        raw = json.loads(_DB_PATH.read_text(encoding="utf-8"))
+        _db = {
+            **raw,
+            "diseases": {
+                name: _normalize_disease(entry)
+                for name, entry in raw["diseases"].items()
+            },
+        }
     return _db
 
 
@@ -47,17 +135,137 @@ def lookup(disease_name: str) -> dict | None:
 def detect_disease(user_input: str) -> str | None:
     """Return canonical disease name if any disease name/alias appears in the query.
 
-    Uses word-boundary matching to avoid false positives (e.g. "flu" in "fluid").
+    Uses word-boundary matching to avoid false positives (e.g. "flu" in
+    "fluid"), and tries longer terms first so a multi-word alias wins over a
+    name embedded inside it (e.g. "german measles" detects rubella, not
+    measles).
     """
     db = load_db()
     text = user_input.lower()
+    terms: list[tuple[str, str]] = []
     for canonical, entry in db["diseases"].items():
-        if re.search(r"\b" + re.escape(canonical) + r"\b", text):
-            return canonical
+        terms.append((canonical, canonical))
         for alias in entry.get("aliases", []):
-            if re.search(r"\b" + re.escape(alias.lower()) + r"\b", text):
-                return canonical
+            terms.append((alias.lower(), canonical))
+    terms.sort(key=lambda t: len(t[0]), reverse=True)
+    for term, canonical in terms:
+        if re.search(r"\b" + re.escape(term) + r"\b", text):
+            return canonical
     return None
+
+
+def _range_of(entry: dict, param: str) -> tuple[float, float, dict] | None:
+    """Return (min, max, flat_data) for a parameter, or None if unavailable."""
+    data = entry.get(param)
+    if not isinstance(data, dict):
+        return None
+    lo, hi = _num(data.get("min")), _num(data.get("max"))
+    if lo is None or hi is None:
+        return None
+    return lo, hi, data
+
+
+def _rich_param(entry: dict, param: str) -> dict | None:
+    """The citation-carrying block for a parameter, variants included."""
+    params = entry.get("parameters") or {}
+    if param in params:
+        return params[param]
+    variants = entry.get("variants") or {}
+    shared = variants.get("shared_parameters") or {}
+    if param in shared:
+        return shared[param]
+    default = variants.get(entry.get("default_variant", "")) or {}
+    return (default.get("parameters") or {}).get(param)
+
+
+def listed_estimates(rich: dict | None) -> list[dict]:
+    """The estimates the app's reference list shows for a parameter, in its order: the ones with a title.
+
+    The export writes that list and the review list cites its numbers, so both read it here.
+    """
+    estimates = rich.get("estimates") if isinstance(rich, dict) else None
+    return [e for e in estimates or [] if isinstance(e, dict) and e.get("title")]
+
+
+def parameter_summary(entry: dict, param: str) -> dict | None:
+    """Uncertainty-aware view of one parameter, for the agent's lookup tool.
+
+    Returns None when the disease has no such parameter at all. Otherwise the
+    result always carries a "status" so the agent can tell four situations
+    apart — the same four states scripts/param_coverage.py prints:
+
+      "ok"              a usable consensus number, with the spread of the
+                        underlying estimates alongside it
+      "under_review"    held back pending review — cite the note, never the
+                        number
+      "estimates_only"  cited estimates exist but the database has adopted no
+                        consensus value; report the estimates and their
+                        spread, and say there is no agreed value
+      "no_source"       nothing at all: no consensus, no citations
+
+    estimate_range is the span of individual study point-estimates, which
+    includes narrow-population and outbreak-specific figures the consensus
+    deliberately excludes. estimate_extremes carries the provenance of the two
+    bounds so a caller can attribute them instead of asserting the range.
+
+    Never raises: a malformed block degrades to "no_source".
+    """
+    rich = _rich_param(entry, param)
+    if rich is None:
+        return None
+    if not isinstance(rich, dict):
+        return {"status": "no_source", "n_estimates": 0}
+
+    consensus = rich.get("consensus") or {}
+    estimates = rich.get("estimates") or []
+    values = [e["value"] for e in estimates if _num(e.get("value")) is not None]
+    flat = entry.get(param) if isinstance(entry.get(param), dict) else None
+
+    if rich.get("status") == "under_review":
+        status = "under_review"
+    elif flat is not None:
+        status = "ok"
+    elif (estimates or rich.get("url") or rich.get("special_value")
+          or consensus.get("special_value")):
+        # Citations (or a qualitative value such as "lifelong") exist but no
+        # number the simulation can use. Saying "nothing published" here would
+        # deny evidence the database holds. Same predicate as
+        # scripts/param_coverage.py's "cites" state, so the two agree.
+        status = "estimates_only"
+    else:
+        status = "no_source"
+
+    summary: dict = {"status": status, "n_estimates": len(estimates)}
+    if rich.get("unit"):
+        summary["unit"] = rich["unit"]
+    if status == "ok":
+        summary.update({k: flat[k] for k in ("min", "max", "typical", "source")
+                        if k in flat})
+    elif status == "estimates_only" and rich.get("url"):
+        # The only citation a block with no estimates carries.
+        summary["source"] = rich["url"]
+    if values:
+        summary["estimate_range"] = [min(values), max(values)]
+        # The bounds with their provenance: an extreme is often a
+        # narrow-population or outbreak-specific figure, and the agent is told
+        # to name what a bound came from rather than quote a bare range.
+        numeric = [e for e in estimates if _num(e.get("value")) is not None]
+        lo = min(numeric, key=lambda e: e["value"])
+        hi = max(numeric, key=lambda e: e["value"])
+        summary["estimate_extremes"] = [
+            {k: e[k] for k in ("value", "population", "source_type", "title")
+             if e.get(k) is not None}
+            for e in {id(lo): lo, id(hi): hi}.values()
+        ]
+    for key in ("notes", "special_value"):
+        # special_value sits on the consensus for most blocks and on the block
+        # itself for a few (measles.immunity_duration); take either.
+        value = consensus.get(key) or (rich.get(key) if key != "notes" else None)
+        if value:
+            summary[key] = value
+    if rich.get("review_note"):
+        summary["review_note"] = rich["review_note"]
+    return summary
 
 
 def check_params(
@@ -69,12 +277,15 @@ def check_params(
     n_contacts: float | None = None,
     dur_immune: float | None = None,
     p_asymp: float | None = None,
-
 ) -> list[str]:
     """Return warning strings for values outside the literature range.
 
-    Returns [] if the disease is not in the database or all values are in range.
-    Never raises.
+    The optional parameters use simulation units (p_death and p_asymp as
+    fractions of 1, dur_immune in days) and are converted to each database
+    parameter's declared unit before comparison.
+
+    Returns [] if the disease is not in the database or all values are in
+    range. Never raises.
     """
     try:
         entry = lookup(disease_name)
@@ -83,68 +294,74 @@ def check_params(
 
         warnings: list[str] = []
 
-        r0_data = entry.get("r0", {})
-        if r0_data and not (r0_data["min"] <= r0 <= r0_data["max"]):
+        rng = _range_of(entry, "r0")
+        if rng and not (rng[0] <= r0 <= rng[1]):
             warnings.append(
                 f"R₀ ≈ {r0:.1f} is outside the literature range for "
-                f"{disease_name} ({r0_data['min']}–{r0_data['max']}). "
-                f"Source: {r0_data['source']}"
+                f"{disease_name} ({rng[0]}–{rng[1]}). "
+                f"Source: {rng[2]['source']}"
             )
 
-        inf_data = entry.get("infectious_days", {})
-        if inf_data and not (inf_data["min"] <= dur_inf <= inf_data["max"]):
+        rng = _range_of(entry, "infectious_days")
+        if rng and not (rng[0] <= dur_inf <= rng[1]):
             warnings.append(
                 f"Infectious period {dur_inf:.4g} days is outside the literature range for "
-                f"{disease_name} ({inf_data['min']}–{inf_data['max']} days). "
-                f"Source: {inf_data['source']}"
+                f"{disease_name} ({rng[0]}–{rng[1]} days). "
+                f"Source: {rng[2]['source']}"
             )
 
         if dur_exp is not None:
-            inc_data = entry.get("incubation_days", {})
-            if inc_data and not (inc_data["min"] <= dur_exp <= inc_data["max"]):
+            rng = _range_of(entry, "incubation_days")
+            if rng and not (rng[0] <= dur_exp <= rng[1]):
                 warnings.append(
                     f"Incubation period {dur_exp:.4g} days is outside the literature range for "
-                    f"{disease_name} ({inc_data['min']}–{inc_data['max']} days). "
-                    f"Source: {inc_data['source']}"
+                    f"{disease_name} ({rng[0]}–{rng[1]} days). "
+                    f"Source: {rng[2]['source']}"
                 )
-        
-        if p_death is not None:
-            death_data = entry.get("fatality_rate", {})
-            if death_data and not (death_data["min"] <= p_death <= death_data["max"]):
-                warnings.append(
-                    f"Infection fatality rate {p_death:.4g} is outside the literature range for "
-                    f"{disease_name}  ({death_data['min']}–{death_data['max']})."
-                    f"Source: {death_data['source']}"
-                )
-        
-        if n_contacts is not None:
-            contacts_data = entry.get("average_contacts_daily", {})
-            if contacts_data and not (contacts_data["min"] <= n_contacts <= contacts_data["max"]):
-                warnings.append(
-                    f"Daily contacts {n_contacts:.4g} is outside the literature range for"
-                    f"{disease_name} ({contacts_data['min']}-{contacts_data['max']})."
-                    f"Source: {contacts_data['source']}"
-                )
-        
-        if dur_immune is not None:
-            immune_data = entry.get("immunity_duration", {})
-            if immune_data and not (immune_data['min'] <= dur_immune <= immune_data['max']):
-                warnings.append(
-                    f"Immunity duration {dur_immune:.4g} is outside the literature range for"
-                    f"{disease_name} ({immune_data['min']}-{immune_data['max']})."
-                    f"Source: {immune_data['source']}"
-                )
-        
-        if p_asymp is not None:
-            asymp_data = entry.get("asymptomatic_fraction", {})
-            if asymp_data and not (asymp_data['min'] <= p_asymp <= asymp_data['max']):
-                warnings.append(
-                    f"Asymptomatic fraction {p_asymp:.4g} is outside the literature range for"
-                    f"{disease_name} ({asymp_data['min']}-{asymp_data['max']})."
-                    f"Source: {asymp_data['source']}"
-                )
-        
 
+        if p_death is not None:
+            rng = _range_of(entry, "fatality_rate")
+            if rng:
+                value = p_death * 100.0 if rng[2].get("unit") == "percentage" else p_death
+                if not (rng[0] <= value <= rng[1]):
+                    unit = "%" if rng[2].get("unit") == "percentage" else ""
+                    warnings.append(
+                        f"Fatality rate {value:.4g}{unit} is outside the literature range for "
+                        f"{disease_name} ({rng[0]}–{rng[1]}{unit}). "
+                        f"Source: {rng[2]['source']}"
+                    )
+
+        if n_contacts is not None:
+            rng = _range_of(entry, "average_contacts_daily")
+            if rng and not (rng[0] <= n_contacts <= rng[1]):
+                warnings.append(
+                    f"Daily contacts {n_contacts:.4g} is outside the literature range for "
+                    f"{disease_name} ({rng[0]}–{rng[1]}). "
+                    f"Source: {rng[2]['source']}"
+                )
+
+        if dur_immune is not None:
+            rng = _range_of(entry, "immunity_duration")
+            if rng:
+                factor = _DAYS_PER_UNIT.get(rng[2].get("unit", "days"), 1.0)
+                lo_days, hi_days = rng[0] * factor, rng[1] * factor
+                if not (lo_days <= dur_immune <= hi_days):
+                    warnings.append(
+                        f"Immunity duration {dur_immune:.4g} days is outside the literature range for "
+                        f"{disease_name} ({lo_days:.4g}–{hi_days:.4g} days). "
+                        f"Source: {rng[2]['source']}"
+                    )
+
+        if p_asymp is not None:
+            rng = _range_of(entry, "asymptomatic_fraction")
+            if rng:
+                value = p_asymp * 100.0 if rng[2].get("unit") == "percentage" else p_asymp
+                if not (rng[0] <= value <= rng[1]):
+                    warnings.append(
+                        f"Asymptomatic fraction {p_asymp:.4g} is outside the literature range for "
+                        f"{disease_name} ({rng[0]}–{rng[1]} {rng[2].get('unit', '')}). "
+                        f"Source: {rng[2]['source']}"
+                    )
 
         return warnings
     except Exception:

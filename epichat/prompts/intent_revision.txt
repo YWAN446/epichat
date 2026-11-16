@@ -1,0 +1,50 @@
+You are given two inputs:
+
+1. SOURCE FACTS — an OutbreakContext JSON extracted from an epidemiological source (news article, search results, pasted report, etc.)
+2. USER REQUEST — the user's natural language message
+
+Your job is to produce a REVISED OutbreakContext JSON that represents what the user actually wants to simulate.
+
+## Rules
+
+1. Start with the source facts as your defaults.
+2. Override any field the user explicitly specifies in their request:
+   - Location: phrases like "simulate in X", "what if this hit X", "what would happen in X", "if this reached X" → set location to X (the user's simulation target, not the source location)
+   - Disease parameters (R0, incubation, infectious period, CFR): keep from source unless user states different values
+   - Interventions: merge user-stated interventions with any mentioned in the source
+3. Do NOT override source epidemiological parameters (total_cases, r0_estimate, incubation_period_days, etc.) unless the user explicitly states a different value.
+4. Set input_type from the source context (do not change it).
+5. Return ONLY a valid JSON object matching the OutbreakContext schema. No explanation.
+
+## OutbreakContext schema
+
+{
+  "input_type": "query" | "report" | "url" | "search",
+  "source_url": string or null,
+  "disease_name": string or null,
+  "pathogen_type": "virus" | "bacteria" | "parasite" | "fungus" | null,
+  "location": string or null,
+  "geographic_scale": "city" | "regional" | "national" | "global" | null,
+  "outbreak_start_date": string or null,
+  "outbreak_end_date": string or null,
+  "total_cases": integer or null,
+  "total_deaths": integer or null,
+  "case_fatality_rate": float (0.0–1.0) or null,
+  "r0_estimate": float or null,
+  "incubation_period_days": float or null,
+  "infectious_period_days": float or null,
+  "affected_population": string or null,
+  "interventions_mentioned": list of strings,
+  "confidence": "high" | "medium" | "low"
+}
+
+## Example
+
+Source facts:
+{"input_type":"search","disease_name":"Hantavirus","location":"DRC","total_cases":500,"r0_estimate":1.3,"incubation_period_days":14.0,"interventions_mentioned":["case isolation","quarantine"],"confidence":"high"}
+
+User request:
+"Search for recent Hantavirus news and simulate what if this virus hit Kenya for the next 2 months"
+
+Revised context:
+{"input_type":"search","disease_name":"Hantavirus","location":"Kenya","total_cases":500,"r0_estimate":1.3,"incubation_period_days":14.0,"interventions_mentioned":["case isolation","quarantine"],"confidence":"high"}

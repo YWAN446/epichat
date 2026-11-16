@@ -2,19 +2,90 @@ from __future__ import annotations
 
 from typing import List, Literal, Optional
 
+import numpy as np
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Intervention(BaseModel):
-    type: Literal["vaccine", "treatment", "seasonality"]
+    type: Literal["vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"]
     # vaccine / treatment
     coverage: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     start_day: int = Field(default=0, ge=0)
+    end_day: Optional[int] = Field(default=None, ge=0)           # null: the run's end (Part 2, 7.1)
+    efficacy: float = Field(default=1.0, ge=0.0, le=1.0)
+    # vaccine
+    kind: Literal["routine", "campaign"] = "routine"
+    leaky: bool = True
+    age_min: Optional[int] = Field(default=None, ge=0, le=120)
+    age_max: Optional[int] = Field(default=None, ge=0, le=120)
+    protection_days: Optional[int] = Field(default=None, ge=1)
     # treatment
     capacity: Optional[int] = Field(default=None, ge=1)
-    # seasonality
+    delay_days: int = Field(default=0, ge=0)
+    rel_trans_treated: float = Field(default=1.0, ge=0.0, le=1.0)
+    symptomatic_only: bool = False
+    # seasonality and the reductions
     scale: float = Field(default=0.2, ge=0.0, le=1.0)
     shift: float = Field(default=0.0, ge=0.0, le=1.0)
+    # contact reduction
+    layer: Literal["all", "household", "school", "work", "community"] = "all"
+    # behaviour response (follow-up spec, 5.1): scale is the largest reduction
+    half_prevalence: float = Field(default=0.01, ge=0.0001, le=0.5)
+    memory_days: int = Field(default=7, ge=1, le=90)
+
+    @model_validator(mode="before")
+    @classmethod
+    def peak_day_is_an_alias_of_shift(cls, data):
+        if isinstance(data, dict) and "peak_day" in data:
+            data = dict(data)
+            peak = data.pop("peak_day")
+            if peak is not None and "shift" not in data:
+                data["shift"] = (float(peak) / 365.0) % 1.0
+        return data
+
+    @model_validator(mode="after")
+    def check_window_and_ages(self) -> "Intervention":
+        if self.end_day is not None and self.end_day < self.start_day:
+            raise ValueError("interventions[].end_day must not be before start_day")
+        if self.age_min is not None and self.age_max is not None and self.age_min >= self.age_max:
+            raise ValueError("interventions[].age_min must be below age_max")
+        if self.type == "behavior_response" and self.layer != "all":
+            raise ValueError("interventions[].layer must be all for a behavior_response")
+        return self
+
+    def is_v1_vaccine(self) -> bool:
+        """A vaccine entry the v1 shape can express: routine, full efficacy, leaky, no window, no ages, no waning."""
+        return (self.type == "vaccine" and self.kind == "routine" and self.end_day is None and self.efficacy >= 1.0 and self.leaky
+                and self.age_min is None and self.age_max is None and self.protection_days is None)
+
+    def is_day0_immunity(self) -> bool:
+        """Part 1 section 18 and Part 2 7.1: a v1-shaped day-0 vaccine is disease.initial_immune_frac; any other day-0 entry (an efficacy
+        below 1, ages, a window, waning, all-or-nothing) keeps its fields and runs as a one-day campaign at day 0 (review I4)."""
+        return self.is_v1_vaccine() and self.start_day <= 0
+
+    def is_v1_treatment(self) -> bool:
+        """A treatment entry the v1 SimpleTreatment can run (the parity baseline depends on it)."""
+        return (self.type == "treatment" and self.delay_days == 0 and self.efficacy >= 1.0 and self.rel_trans_treated >= 1.0
+                and not self.symptomatic_only and self.end_day is None)
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def normalize_type(cls, v):
+        _aliases = {"vaccination": "vaccine", "vaccinate": "vaccine",
+                    "treat": "treatment", "treatment_intervention": "treatment",
+                    "seasonal": "seasonality",
+                    "school_closure": "contact_reduction", "distancing": "contact_reduction", "contact-reduction": "contact_reduction",
+                    "masks": "transmission_reduction", "transmission-reduction": "transmission_reduction",
+                    "behaviour_response": "behavior_response", "behavior": "behavior_response", "behaviour": "behavior_response",
+                    "behavior_change": "behavior_response", "behaviour_change": "behavior_response", "awareness": "behavior_response"}
+        return _aliases.get(str(v).lower(), v)
+
+    @field_validator("capacity", mode="before")
+    @classmethod
+    def coerce_capacity_to_int(cls, v):
+        if isinstance(v, float):
+            return int(round(v))
+        return v
 
 
 class SimParams(BaseModel):
@@ -37,13 +108,23 @@ class SimParams(BaseModel):
     use_demographics: bool = False
     birth_rate: float = Field(default=20.0, gt=0.0)
     death_rate: float = Field(default=10.0, gt=0.0)
-    ##added
-    country:             Optional[str] = None
-    auto_demographics:   bool          = True
-    demographics_year:   int           = Field(default=2022)
+    age_pct_under18: Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    age_pct_18_64:   Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    age_pct_over65:  Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    # Country-driven demographics (auto-filled from UN WPP / WHO / World Bank)
+    country: Optional[str] = None
+    auto_demographics: bool = True
+    demographics_year: int = Field(default=2022, ge=1950, le=2100)
     demographics_source: Optional[str] = None
-    network_type:           Literal["random", "age_structured", "household"] = "random"
-    household_data_country: Optional[str] = None
+
+    @model_validator(mode="after")
+    def check_age_pcts_sum(self) -> SimParams:
+        pcts = [self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]
+        if all(x is not None for x in pcts):
+            total = sum(pcts)
+            if abs(total - 100.0) > 1.0:
+                raise ValueError(f"age_pct fields must sum to 100 (got {total:.1f})")
+        return self
 
     @model_validator(mode="after")
     def check_required_params(self) -> SimParams:
@@ -58,28 +139,37 @@ class SimParams(BaseModel):
     def warn_high_r0(cls, v: float) -> float:
         return v
 
-    @field_validator('country') ##added
+    @field_validator("country")
     @classmethod
     def normalize_country(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            v = v.strip().upper()
-            if len(v) != 3:
-                raise ValueError(f"country must be an ISO3 code (3 letters), got: '{v}'")
-        return v
+        """Normalize to an upper-case ISO3 code; drop anything else.
+
+        The refinement LLM sometimes emits full country names ("Brazil") when
+        reconstructing params. country is auxiliary — the parser re-fills the
+        correct ISO3 from resolver queries — so dropping an unusable value is
+        safer than failing the entire parameter set.
+        """
+        if v is None:
+            return None
+        v = v.strip().upper()
+        return v if len(v) == 3 and v.isalpha() else None
 
     def approx_r0(self) -> float:
-        """Approximate R0. Age-structured uses spectral radius of POLYMOD NGM."""
-        # SEIAR: asymptomatics are partially infectious, so effective beta is reduced
         asymp_factor = 1.0
         if self.disease_type == "seiar":
             asymp_factor = 1 - self.p_asymp * (1 - self.rel_trans_asymp)
 
         if self.network_type == "age_structured":
-            import numpy as np
             C = np.array([[7.0, 2.5, 0.5],
                           [2.5, 9.0, 1.5],
                           [0.5, 1.5, 3.5]])
-            ngm = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * C
+            scale = self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0)
+            if all(x is not None for x in [self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]):
+                pop = np.array([self.age_pct_under18, self.age_pct_18_64, self.age_pct_over65]) / 100.0
+                # NGM[i,j] = scale * C[i,j] * pop[j]; R0 = spectral radius
+                ngm = scale * (C * pop[np.newaxis, :])
+            else:
+                ngm = scale * C
             return float(np.linalg.eigvals(ngm).real.max())
         return self.beta * self.network_beta * asymp_factor * (self.dur_inf / 365.0) * self.n_contacts
 
@@ -101,4 +191,23 @@ class SimParams(BaseModel):
         d["seasonality_int"]= seas.model_dump()  if seas  else None
         d["treatment_int"]  = treat.model_dump() if treat else None
         return d
-    
+
+
+class OutbreakContext(BaseModel):
+    input_type: Literal["query", "report", "url", "search"]
+    source_url: Optional[str] = None
+    disease_name: Optional[str] = None
+    pathogen_type: Optional[str] = None
+    location: Optional[str] = None
+    geographic_scale: Optional[Literal["city", "regional", "national", "global"]] = None
+    outbreak_start_date: Optional[str] = None  # ISO date or descriptive, e.g. "2024-01"
+    outbreak_end_date:   Optional[str] = None  # None if ongoing or unknown
+    total_cases:  Optional[int] = Field(default=None, ge=0)
+    total_deaths: Optional[int] = Field(default=None, ge=0)
+    case_fatality_rate: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    r0_estimate: Optional[float] = Field(default=None, gt=0.0)
+    incubation_period_days: Optional[float] = Field(default=None, gt=0.0)
+    infectious_period_days: Optional[float] = Field(default=None, gt=0.0)
+    affected_population: Optional[str] = None
+    interventions_mentioned: List[str] = []
+    confidence: Literal["high", "medium", "low"] = "low"

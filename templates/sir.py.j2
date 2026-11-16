@@ -1,6 +1,8 @@
 import starsim as ss
+{% if output_mode == 'plot' -%}
 import matplotlib
 matplotlib.use('Agg')
+{% endif -%}
 import json
 import numpy as np
 
@@ -26,14 +28,35 @@ connectors_list.append(ss.seasonality(
 {% endif %}
 
 {% if treatment_int %}
-from starsim.interventions import treat_num as _treat_num
-_tx = ss.Tx()
-_treatment = _treat_num(
-    product=_tx,
+class _SimpleTreatment(ss.Intervention):
+    def __init__(self, prob=1.0, max_capacity=None, start_day=0):
+        super().__init__()
+        self._prob = prob
+        self._max_capacity = max_capacity
+        self._start_day = start_day
+
+    def step(self):
+        if self.sim.ti < self._start_day:
+            return
+        disease = list(self.sim.diseases.values())[0]
+        infected = disease.infected.uids
+        if len(infected) == 0:
+            return
+        n = int(self._prob * len(infected))
+        if self._max_capacity is not None:
+            n = min(n, self._max_capacity)
+        if n <= 0:
+            return
+        _rng = np.random.default_rng(int(self.sim.ti))
+        _treat_uids = ss.uids(_rng.choice(infected, size=min(n, len(infected)), replace=False))
+        if hasattr(disease, 'ti_recovered'):
+            disease.ti_recovered[_treat_uids] = self.sim.ti + 1
+
+interventions_list.append(_SimpleTreatment(
     prob={{ treatment_int.coverage if treatment_int.coverage is not none else 1.0 }},
     {% if treatment_int.capacity is not none %}max_capacity={{ treatment_int.capacity }},{% endif %}
-)
-interventions_list.append(_treatment)
+    start_day={{ treatment_int.start_day }},
+))
 {% endif %}
 
 {% if vaccine and vaccine.start_day > 0 %}
@@ -73,8 +96,8 @@ pars = dict(
     diseases=disease_pars,
 {% if use_demographics %}
     demographics=[
-        ss.births(birth_rate={{ birth_rate }}),
-        ss.deaths(death_rate={{ death_rate }}),
+        ss.Births(birth_rate={{ birth_rate }}),
+        ss.Deaths(death_rate={{ death_rate }}),
     ],
 {% endif %}
     dur={{ sim_dur_years }},
@@ -87,10 +110,10 @@ pars = dict(
 if interventions_list:
     pars['interventions'] = interventions_list
 
-{% if vaccine and vaccine.start_day <= 0 %}
-# ── Pre-existing vaccination: initialize then set immune ──────────────────────
 sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
 sim.init()
+
+{% if vaccine and vaccine.start_day <= 0 %}
 _sir = sim.diseases['sir']
 _sus = _sir.susceptible.uids
 _n_vax = int({{ vaccine.coverage }} * len(_sus))
@@ -100,33 +123,40 @@ _rng = np.random.default_rng({{ rand_seed }})
 _rng = np.random.default_rng()
 {% endif %}
 _vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
-_sir.susceptible[_vax_uids] = False
-_sir.recovered[_vax_uids] = True
-sim.run()
-{% else %}
-# ── Run simulation ────────────────────────────────────────────────────────────
-sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
-sim.run()
+_sir.susceptible[ss.uids(_vax_uids)] = False
+_sir.recovered[ss.uids(_vax_uids)] = True
 {% endif %}
 
-fig = sim.plot()
-fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
+{% if age_pct_under18 is not none and network_type == 'age_structured' %}
+_n = len(sim.people)
+_n_c = round({{ age_pct_under18 }} / 100 * _n)
+_n_e = round({{ age_pct_over65  }} / 100 * _n)
+_n_a = max(0, _n - _n_c - _n_e)
+{% if rand_seed is not none %}
+_rng_age = np.random.default_rng({{ rand_seed }} + 1)
+{% else %}
+_rng_age = np.random.default_rng()
+{% endif %}
+_ages = np.concatenate([
+    _rng_age.uniform(0, 18, _n_c),
+    _rng_age.uniform(18, 65, _n_a),
+    _rng_age.uniform(65, 95, _n_e),
+])
+_rng_age.shuffle(_ages)
+sim.people.age[:] = _ages[:_n]
+{% endif %}
+
+sim.run()
 
 res = sim.results
-_skip = {'timevec', 'n_alive', 'n_female', 'new_deaths', 'new_emigrants',
-         'cum_deaths', 'randomnet', 'mixingpools', 'seasonality'}
-disease_key = next(k for k in res.keys() if k not in _skip and not k.startswith('pool:'))
-dr = res[disease_key]
+dr = res[list(sim.diseases.keys())[0]]
 
 n_infected     = dr['n_infected'].values
 cum_infections = dr['cum_infections'].values
-cum_deaths     = res['cum_deaths'].values
+# Deaths the disease caused: every death in the population less the background mortality (ss.Deaths).
+_all_deaths = res['new_deaths'].values if 'new_deaths' in res else np.zeros(len(res['timevec']))
+_bg_deaths = sim.demographics['deaths'].results['new'].values if 'deaths' in sim.demographics else 0
+new_deaths = np.clip(_all_deaths - _bg_deaths, 0, None)
+cum_deaths = np.cumsum(new_deaths)
 
-print(json.dumps({
-    'peak_infections': int(n_infected.max()),
-    'peak_day':        int(n_infected.argmax()),
-    'total_infected':  int(cum_infections[-1]),
-    'total_deaths':    int(cum_deaths[-1]),
-    'n_agents':        {{ n_agents }},
-    'sim_days':        len(res['timevec']),
-}))
+{% include "_output.py.j2" %}

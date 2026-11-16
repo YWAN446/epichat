@@ -38,7 +38,7 @@ def main() -> None:
         print(result.format_cli())
     else:
         # Interactive mode
-        print("EpiChat v0.1 — Interactive Mode  (type 'quit' to exit)")
+        print("EpiChat v0.3 — Interactive Mode  (type 'quit' to exit)")
         print("=" * 55)
         while True:
             try:

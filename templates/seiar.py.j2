@@ -1,6 +1,8 @@
 import starsim as ss
+{% if output_mode == 'plot' -%}
 import matplotlib
 matplotlib.use('Agg')
+{% endif -%}
 import json
 import numpy as np
 
@@ -136,8 +138,8 @@ pars = dict(
     diseases=[disease],
 {% if use_demographics %}
     demographics=[
-        ss.births(birth_rate={{ birth_rate }}),
-        ss.deaths(death_rate={{ death_rate }}),
+        ss.Births(birth_rate={{ birth_rate }}),
+        ss.Deaths(death_rate={{ death_rate }}),
     ],
 {% endif %}
     dur={{ sim_dur_years }},
@@ -150,9 +152,10 @@ pars = dict(
 if interventions_list:
     pars['interventions'] = interventions_list
 
-{% if vaccine and vaccine.start_day <= 0 %}
 sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
 sim.init()
+
+{% if vaccine and vaccine.start_day <= 0 %}
 _d = list(sim.diseases.values())[0]
 _sus = _d.susceptible.uids
 _n_vax = int({{ vaccine.coverage }} * len(_sus))
@@ -162,33 +165,40 @@ _rng = np.random.default_rng({{ rand_seed }})
 _rng = np.random.default_rng()
 {% endif %}
 _vax_uids = _rng.choice(_sus, size=_n_vax, replace=False) if _n_vax > 0 else np.array([], dtype=int)
-_d.susceptible[_vax_uids] = False
-_d.recovered[_vax_uids]   = True
-sim.run()
-{% else %}
-sim = ss.Sim(pars, connectors=connectors_list or None, verbose=0)
-sim.run()
+_d.susceptible[ss.uids(_vax_uids)] = False
+_d.recovered[ss.uids(_vax_uids)]   = True
 {% endif %}
 
-fig = sim.plot()
-fig.savefig(r'{{ output_path }}', dpi=150, bbox_inches='tight')
+{% if age_pct_under18 is not none and network_type == 'age_structured' %}
+_n = len(sim.people)
+_n_c = round({{ age_pct_under18 }} / 100 * _n)
+_n_e = round({{ age_pct_over65  }} / 100 * _n)
+_n_a = max(0, _n - _n_c - _n_e)
+{% if rand_seed is not none %}
+_rng_age = np.random.default_rng({{ rand_seed }} + 1)
+{% else %}
+_rng_age = np.random.default_rng()
+{% endif %}
+_ages = np.concatenate([
+    _rng_age.uniform(0, 18, _n_c),
+    _rng_age.uniform(18, 65, _n_a),
+    _rng_age.uniform(65, 95, _n_e),
+])
+_rng_age.shuffle(_ages)
+sim.people.age[:] = _ages[:_n]
+{% endif %}
+
+sim.run()
 
 res = sim.results
-disease_key = [k for k in res.keys() if k not in (
-    'timevec', 'n_alive', 'n_female', 'new_deaths', 'new_emigrants',
-    'cum_deaths', 'randomnet', 'mixingpools', 'seasonality',
-) and not k.startswith('pool:')][0]
-dr = res[disease_key]
+dr = res[list(sim.diseases.keys())[0]]
 
 n_infected     = dr['n_infected'].values
 cum_infections = dr['cum_infections'].values
-cum_deaths     = res['cum_deaths'].values
+# Deaths the disease caused: every death in the population less the background mortality (ss.Deaths).
+_all_deaths = res['new_deaths'].values if 'new_deaths' in res else np.zeros(len(res['timevec']))
+_bg_deaths = sim.demographics['deaths'].results['new'].values if 'deaths' in sim.demographics else 0
+new_deaths = np.clip(_all_deaths - _bg_deaths, 0, None)
+cum_deaths = np.cumsum(new_deaths)
 
-print(json.dumps({
-    'peak_infections': int(n_infected.max()),
-    'peak_day':        int(n_infected.argmax()),
-    'total_infected':  int(cum_infections[-1]),
-    'total_deaths':    int(cum_deaths[-1]),
-    'n_agents':        {{ n_agents }},
-    'sim_days':        len(res['timevec']),
-}))
+{% include "_output.py.j2" %}

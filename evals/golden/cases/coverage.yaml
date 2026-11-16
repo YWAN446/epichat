@@ -1,0 +1,149 @@
+# Disease and country identification, including aliases the parser must
+# resolve to the correct canonical disease name.
+- id: coverage-measles-nigeria
+  category: coverage
+  critical: false
+  real_sim: true
+  turns:
+    - "Model a measles outbreak in Nigeria using current vaccination coverage."
+    - "Yes, go ahead."
+  checks:
+    tool_called: [lookup_disease, configure_simulation]
+    no_fetch_before_confirmation: true
+    config:
+      disease: measles
+      country: NGA
+    judge:
+      - "Presents the settings and asks before fetching data or running"
+
+- id: coverage-dengue-brazil
+  category: coverage
+  critical: false
+  turns:
+    - "Model a dengue epidemic in Brazil."
+  checks:
+    tool_called: [lookup_disease, configure_simulation]
+    config:
+      disease: dengue
+      country: BRA
+    judge:
+      - "Presents the settings and asks before fetching data or running"
+
+- id: coverage-cholera-haiti
+  category: coverage
+  critical: false
+  turns:
+    - "Simulate a cholera outbreak in Haiti after a hurricane."
+  checks:
+    tool_called: [lookup_disease, configure_simulation]
+    config:
+      disease: cholera
+      country: HTI
+    judge:
+      - "Presents the settings and asks before fetching data or running"
+
+- id: coverage-covid-japan
+  category: coverage
+  critical: false
+  real_sim: true
+  turns:
+    - "Model COVID-19 in Japan over two years."
+  checks:
+    tool_called: [lookup_disease, configure_simulation]
+    config:
+      disease: covid19
+      country: JPN
+      sim_dur_years: 2
+    judge:
+      - "Presents the settings and asks before fetching data or running"
+
+# coverage-ebola-drc and coverage-meningococcal-niger are graded entirely
+# deterministically, on purpose: any judge criterion about these transcripts
+# risks the same bio-classifier decline as the guardrail cases above (see
+# evals/README.md's "grading dangerous-pathogen content" note). tool_called
+# already asserts the value came from the database, and config already pins
+# disease and country exactly, so nothing judge-graded was actually needed.
+- id: coverage-ebola-drc
+  category: coverage
+  critical: false
+  turns:
+    - "Simulate an Ebola outbreak in the Democratic Republic of the Congo."
+  checks:
+    tool_called: [lookup_disease, configure_simulation]
+    config:
+      disease: ebola
+      country: COD
+
+- id: coverage-meningococcal-niger
+  category: coverage
+  critical: false
+  turns:
+    - "Simulate meningococcal meningitis in Niger."
+  checks:
+    tool_called: [lookup_disease, configure_simulation]
+    config:
+      disease: meningococcal
+      country: NER
+
+- id: coverage-alias-german-measles
+  category: coverage
+  critical: false
+  turns:
+    - "Simulate a german measles outbreak in Vietnam."
+  checks:
+    config:
+      disease: rubella
+      country: VNM
+    judge:
+      - "Identifies the disease as rubella, not measles"
+
+- id: coverage-alias-whooping-cough
+  category: coverage
+  critical: false
+  turns:
+    - "Model whooping cough in the Philippines."
+  checks:
+    config:
+      disease: pertussis
+      country: PHL
+    judge:
+      - "Identifies the disease as pertussis"
+
+- id: coverage-alias-tb
+  category: coverage
+  critical: false
+  turns:
+    - "Model TB transmission in India over ten years."
+  checks:
+    config:
+      disease: tuberculosis
+      country: IND
+      sim_dur_years: 10
+    judge:
+      - "Identifies the disease as tuberculosis"
+
+- id: coverage-alias-chickenpox
+  category: coverage
+  critical: false
+  turns:
+    - "Simulate chickenpox spreading in the United States."
+  checks:
+    config:
+      disease: varicella
+      country: USA
+    judge:
+      - "Identifies the disease as varicella"
+
+- id: coverage-r0-from-db
+  category: coverage
+  critical: false
+  turns:
+    - "Model measles in Kenya with the literature R0."
+    - "Yes."
+  checks:
+    config:
+      disease: measles
+      country: KEN
+      approx_r0: db.r0.typical
+    judge:
+      - "Uses the literature-typical R0 value for measles rather than an arbitrary number"

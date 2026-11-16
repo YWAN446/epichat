@@ -15,7 +15,7 @@ _PROMPT_PATH = Path(__file__).parent / "prompts" / "narration.txt"
 _MODEL = "claude-sonnet-4-6"
 
 
-def narrate(user_input: str, params: SimParams, stats: dict) -> dict:
+def narrate(user_input: str, params: SimParams, stats: dict, lang: str = "English") -> dict:
     """
     Generate a plain-language interpretation of simulation results.
 
@@ -24,6 +24,11 @@ def narrate(user_input: str, params: SimParams, stats: dict) -> dict:
     """
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     system_prompt = _PROMPT_PATH.read_text(encoding="utf-8")
+    if lang.lower() != "english":
+        system_prompt += (
+            f"\n\nIMPORTANT: Write your ENTIRE response in {lang}. "
+            f"All text in the JSON values (summary and key_findings) must be in {lang}."
+        )
 
     pct_infected = (
         stats.get("total_infected", 0) / stats.get("n_agents", 1) * 100
@@ -45,7 +50,7 @@ def narrate(user_input: str, params: SimParams, stats: dict) -> dict:
 
     message = client.messages.create(
         model=_MODEL,
-        max_tokens=1024,
+        max_tokens=2048,
         system=system_prompt,
         messages=[{"role": "user", "content": user_message}],
     )

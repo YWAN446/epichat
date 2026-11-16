@@ -12,11 +12,20 @@ Type a natural language question about an epidemic. EpiChat translates it into a
 ## Architecture
 
 ```
-User NL query
+User input (query · report · URL · search request)
      │
      ▼
+Layer 0: Input Enricher        (Claude Haiku + web_search tool)
+     │  OutbreakContext — structured facts, all fields nullable
+     ▼
 Layer 1: LLM Parameter Parser  (Claude API + extraction prompt)
-     │  Structured JSON (SimParams)
+     │  Structured JSON (SimParams) — context informs defaults
+     │  ├─ Resolver: pulls real-world data (UN WPP · WHO GHO · WB WDI)
+     │  └─ Beta calibration: corrects β for age-structured networks
+     ▼
+Layer 1b: Fact-Checker         (disease_parameters.json — no LLM)
+     │  Compares R₀, dur_inf, dur_exp against literature ranges
+     │  Emits ⚠️ warnings shown in chat summary and CLI output
      ▼
 Layer 2: Code Generator        (Jinja2 templates → Starsim Python)
      │  Python script
@@ -29,6 +38,261 @@ Layer 4: Results Narrator      (Claude API + narration prompt)
      ▼
 User: epidemic curve + interpretation
 ```
+
+---
+
+## What's New in v0.3
+
+### Disease Parameter Database & Fact-Checking
+
+EpiChat now ships a literature-backed database of 16 infectious diseases (`epichat/data/disease_parameters.json`). When a named disease is detected in a query, EpiChat compares the simulation's R₀, infectious period, and incubation period against published ranges — and shows a warning if any value is out of range.
+
+```
+⚠️  Parameter notes
+  • R₀ ≈ 100.0 is outside the literature range for measles (12–18).
+    Source: https://pubmed.ncbi.nlm.nih.gov/28757186/
+```
+
+The database is **student-extensible**: adding a new disease requires only editing the JSON file — no Python changes needed. Covered diseases: measles, mumps, rubella, varicella, pertussis, influenza (seasonal), meningococcal, hepatitis A.
+
+#### Adding or editing a disease
+
+The database lives in `epichat/data/disease_parameters.json`. Every
+parameter carries a `unit`, a `consensus` (`min` / `max` / `typical`, each a
+number or `null`), and a list of `estimates` with full citations.
+
+    # see what is filled in, held back, or missing
+    py -3.12 scripts/param_coverage.py
+
+    # validate your edit before pushing
+    py -3.12 -m pytest tests/test_disease_parameters.py -q
+
+Branch from `main`. A value that is disputed or not yet checked goes in with
+`null` consensus numbers plus `"status": "under_review"` and a
+`"review_note"` — the agent then quotes the review note instead of simulating
+a number nobody stands behind.
+
+The agent sees one of four states per parameter, the same four
+`scripts/param_coverage.py` prints: `ok` (a consensus number it may use),
+`under_review` (held back), `estimates_only` (citations exist but no consensus
+number has been adopted — it reports the estimates and says there is no agreed
+value), and `no_source` (nothing at all). A parameter with citations is never
+reported as "nothing published".
+
+### Age-Structured Network β Calibration
+
+When real-world demographic data (e.g. Kenya's young age distribution from UN WPP) triggers an age-structured contact network, EpiChat back-solves β so that `approx_R₀()` still equals the intended R₀ — not the random-network approximation. This holds on both paths: the staged pipeline calibrates to the literature typical, and the agent's `fetch_demographics` re-solves β to hold whatever R₀ the user confirmed, then re-runs the literature range checks and reports `approx_r0` with them. The same calibration applies when a user modifies R₀ or `dur_inf` mid-conversation.
+
+### Multilingual Support
+
+EpiChat now accepts queries in any language and responds in kind. Language is detected automatically; the UI, parameter summaries, and narration all follow the user's language. Priority languages: Spanish, French, Portuguese, Arabic, Chinese (Simplified).
+
+### PDF/Word Export with CJK Support
+
+PDF export now renders Chinese, Japanese, and Korean characters correctly via ReportLab with a CJK-capable font (STSong-Light), replacing the previous fpdf2 implementation.
+
+---
+
+## Web agent: parameters, diagnostics and options (2026)
+
+The web app (`web/`, Next.js on Vercel) and its simulation service (`sim/`,
+FastAPI running Starsim 3.7 through `epichat/sim/`) replace the templates
+above for the usability study. Their parameters are the sim-parameters
+design in two parts,
+`docs/superpowers/specs/2026-10-09-sim-parameters-disease-design.md` (the
+registry, schema v2, the exact R0, diagnostics and options) and
+`docs/superpowers/specs/2026-10-12-sim-parameters-modules-design.md`
+(networks, demographics, interventions and the fit); the runbook is
+`web/docs/DEPLOY.md`.
+
+- **One registry.** Every parameter is described once in
+  `epichat/params/registry.py` (path, label, unit, bounds, default, the
+  models it applies to, the database field it comes from). The pydantic
+  schema v2 (`epichat/params/schema_v2.py`) and the zod schema
+  (`web/lib/sim/params.ts`) take their bounds and defaults from it, and
+  `scripts/export_web_data.py` writes it to `web/data/param_registry.json`.
+- **Schema v2** nests the parameters by module: `disease` (model, beta,
+  durations as mean, distribution and sd, case fatality ratio, seeding,
+  initial immunity), `network`, `demographics`, `interventions`, `run`
+  (agents, years, replicates, seed). Stored v1 rows migrate on read.
+- **The agent's tools.** `configure_simulation` takes the common fields
+  (`model`, `r0`, `dur_inf_days`, `dur_exp_days`, `dur_immune_days`,
+  `p_death`, `seed_fraction` or `seed_count`, the interventions) and an
+  `advanced` patch keyed by registry path for everything else, applied
+  together and validated once; a failure names the path. `describe_parameters`
+  lists the registry for the current model and network with each value's
+  source: the user, the database, a fetch, a default, an illustrative
+  assumption, or a chosen reference.
+- **Diagnostics.** After every run the service runs `epichat/sim/diagnostics.py`
+  on the full series: `early_fadeout`, `instant_peak`, `unfinished`,
+  `final_size_gap`, `sharp_curve`, `cfr_out_of_range`,
+  `fatality_on_all_infections`, `no_reinfection`, `high_variance`. Each
+  carries levers (a patch of paths with suggested values, clamped to the
+  registry and the literature range). The agent offers at most three as
+  suggested replies, applies the chosen one, reruns, and reports what changed
+  against the previous run.
+- **Recording.** Runs keep their diagnostics (`runs.diagnostics`, migration
+  `web/supabase/migrations/0007_run_diagnostics.sql`); the step events
+  `diagnostic_shown` and `option_chosen` say which fired and which were taken,
+  so the thresholds (named constants at the top of the diagnostics module)
+  can be tuned from the pilot.
+- **Disease extensions (Part 2).** Susceptibility by age (`rel_sus_age`:
+  children under 18, adults, the elderly), fatality by age (`p_death_age`)
+  and presymptomatic transmissibility (`rel_trans_exposed`). On every step
+  the disease composes its own `rel_sus` (age, the personal multiplier,
+  vaccine protection, the SIS model's immunity) and a connector composes
+  `rel_trans` (treatment, seasonality, the transmission reductions, the
+  behaviour response); the exact R0 carries the multipliers.
+- **Networks.** `network_type` is `random` (fresh contacts daily, constant or
+  Poisson, optionally lasting `contact_duration_days`), `age_structured`
+  (three age groups mixing by a 3×3 contact matrix: POLYMOD's European
+  defaults, or the country's Prem 2021 matrix once `fetch_demographics` has
+  run) or `hybrid` (households, schools, workplaces and community as in
+  Covasim, with the country's household size and the layers' sizes and
+  transmissibilities as parameters). The R0 formula is exact on the random
+  and age-structured networks and approximate on the hybrid network or with a
+  `contact_duration_days` above 0. A run reports the measured R0 (the
+  infections a day-0 seed causes in its first infectious period, corrected
+  for depletion; null on the age-structured network, where Starsim's mixing
+  pools do not record who infected whom, when the seeds were too many to
+  measure it, and when fewer than 30 were seeded, which the default 0.05%
+  seeding is), and where the formula is approximate a short pilot, in which
+  only the seeds transmit, adjusts beta to it
+  (`applied.beta_calibrated_by_measurement`; `run.calibrate_r0` switches it
+  off; a fit on beta replaces it, a fit that keeps R0 does not). At the same
+  R0 the final size is close
+  on every network: the networks differ in who meets whom and in what the
+  interventions act on.
+- **Demographics.** Once `fetch_demographics` has run for a country (it sets
+  `demographics.age_source` to `un_wpp`; a country alone leaves Starsim's
+  default ages), the agents' ages follow the UN WPP 2024 pyramid
+  (`epichat/data/un_wpp_age.csv`); with births and deaths on, a multi-year
+  run for a known country follows the projected crude birth rates after its
+  first year (`un_wpp_cbr.csv`); the household size comes
+  from the UN household database (`un_household_size.csv`) and the contact
+  matrix from Prem 2021 (`contact_matrices.csv`). `scripts/fetch_un_wpp_tables.py`,
+  `scripts/fetch_household_size.py` and `scripts/fetch_contact_matrices.py`
+  rebuild the tables. The older per-country loader
+  (`epichat/data_loaders/contact_matrices.py`), which `generator.py` and
+  `params/resolve.py` still call through `get_mean_contacts` for a country's
+  mean number of contacts, reads a directory of per-source files that is not
+  bundled; it finds nothing, and `n_contacts` keeps its value.
+- **Interventions.** Six types: a vaccine (routine or a campaign over a
+  window, with an efficacy, an age range and a protection duration), a
+  treatment (with a delay, an efficacy and a transmissibility while waiting,
+  optionally symptomatic cases only), seasonality, a contact reduction on one
+  layer (a school closure is the school layer at scale 1), a transmission
+  reduction (masks) and a behaviour response (below). `configure_simulation`
+  takes them as structured entries
+  (`interventions`, `remove_interventions`) beside the shortcut fields; every
+  effect size is an illustrative assumption unless the database carries it,
+  and `fetch_vaccination_coverage` writes a day-0 campaign with the database's
+  vaccine efficacy when it has one.
+- **The fit.** `run.fit` (`configure_simulation`'s `fit` field) fits the run
+  to one outcome the user knows: the attack rate, the peak day or the peak
+  size. The service searches the transmission rate (or the network
+  multiplier) in at most eight runs and reports `stats.fit`; the report shows
+  the target and what the search reached.
+- **Limits on spread.** Without an intervention an epidemic reaches the share
+  the final-size equation gives for its R0 on every network (89% at R0 2.5):
+  the only brake is the depletion of susceptibles. Two mechanisms limit it
+  without a dated measure, both off by default and both illustrative
+  assumptions the agent offers and names
+  (`docs/superpowers/specs/2026-10-13-limits-suggestions-parameters-design.md`).
+  `disease.rel_sus_cv` gives each agent a personal susceptibility multiplier
+  with mean 1 and that coefficient of variation: the most susceptible are
+  infected first, so the epidemic ends smaller at the same R0 (60% at a
+  coefficient of 1). A `behavior_response` entry makes transmission fall as
+  the share infectious rises and recover as it falls: it flattens the peak
+  and removes the overshoot, and because it relaxes it cannot, in the long
+  run, take the total far below the herd immunity threshold (a run that ends
+  well below it has not finished). The fit can move either one instead of
+  beta (`lever: disease.rel_sus_cv` or `behavior_response.scale`), which
+  matches a known attack rate while R0 stays where it was set: with variation
+  the service keeps R0 by correcting beta, by a closed form on the random
+  network (where a very susceptible agent's chance per contact is capped at
+  1) and by the pilot on the hybrid one, at every value a fit tries.
+- **Diagnostics, continued.** `well_mixed` (nearly everyone was infected:
+  it fires on every network, since at the same R0 they all end close, and
+  offers the two limits on spread, plus the hybrid network on the random one)
+  and `r0_gap` (the measured R0 far from the configured one) join the list
+  above.
+- **Suggested interventions.** A lever may carry intervention entries (for
+  `configure_simulation`'s interventions field) and a label, a ready reply.
+  After a run that had an epidemic, `what_if` offers up to four: a vaccination
+  campaign (a disease with a routine-immunization indicator; the list lives
+  in `epichat/params/indicators.py` and is exported to the web app), a school
+  closure (the hybrid network), distancing, masks and a behaviour response,
+  leaving out what the scenario already has. Each window starts the day 1% of
+  the agents had been infected. The sizes are named constants at the top of
+  `epichat/sim/diagnostics.py` and illustrative until the database carries
+  them. The conversation shows up to three of the labels as "Try next"
+  buttons under the latest run; the agent offers a warning diagnostic's
+  options first and interventions only on a baseline that is sound, and the
+  buttons follow the same rule. On a scenario fitted to a known outcome, a
+  change to the interventions after the fitted run ends the fit and keeps the
+  fitted value, so the next run shows the intervention against the fitted
+  baseline (it used to be fitted away).
+- **The Parameters section.** The panel lists every parameter the scenario
+  has, generated from the registry (`web/lib/client/parameters.ts`): five
+  groups (Disease, Contact network, Demographics, Interventions, Run), one
+  row per parameter or natural bundle (a duration, the seeding, the contact
+  matrix as a grid, the hybrid layers as a table). A group shows its core
+  parameters and every value that is not the registry default; "Show all"
+  opens the rest of what applies to the scenario's model and network. A
+  test walks the registry and fails when a parameter has no row, and another
+  changes every parameter and fails when its row does not move. A tag after
+  a value says where each value came from (database, fetched, default,
+  assumption, set in chat, set by the run), sent with the payloads that carry
+  the parameters. The
+  runs panel and the report's appendix list the same rows, and
+  `describe_parameters` lists by network as well as by model, with the
+  fields of an intervention entry on request.
+- **Chosen references.** In the Data section's reference list every literature
+  estimate that is one number has a "Use this value" button. It sends a
+  message in the participant's name; the agent then calls
+  `configure_simulation` with `use_reference: {parameter, index}`, and the
+  tool reads the value and the citation from the reference data itself
+  (`web/lib/tools/chosenReference.ts`), so neither can be mistyped. It converts
+  the unit, refuses what the model or the registry cannot take with what to
+  do, and records the choice as the data source `ref:<parameter>` for as long
+  as the value stands. The message names the disease and the value as a
+  check, so a number from another disease's list is refused. The value
+  carries the tag "reference" with the paper's title for as long as it
+  stands, and the report lists it among its data sources as literature.
+- **The review list.** `scripts/review_requests.py` renders
+  `docs/data-review-requests.md`: for every disease, the status of every
+  database field the registry names, the fields the database does not have
+  yet (fatality by age, vaccine and treatment efficacy, presymptomatic
+  transmission, the school-closure, distancing and mask effects, the
+  variation in susceptibility and the behaviour response) with what a
+  reviewer should find, the entries worth a second look (an estimate outside
+  its own range, a consensus range none of its estimates is in, each with
+  its number in the app's reference list), and the bundled tables' checks.
+  A test keeps the
+  committed file equal to the script's output; regenerate it with
+  `.venv/Scripts/python.exe scripts/review_requests.py --write docs/data-review-requests.md`
+  whenever the database or the registry changes.
+
+The CLI, the Streamlit app and the templates below still use the v1 flat
+parameters; the web app accepts both shapes and writes v2.
+
+---
+
+## Input Types
+
+EpiChat accepts four kinds of input — the enrichment layer classifies and handles each automatically.
+
+| Input type | Example | What happens |
+|-----------|---------|--------------|
+| **Query** | `"Simulate Ebola in DRC"` | Fast path — LLM extracts parameters directly |
+| **Report** | Paste a WHO situation report or epidemiological bulletin | Structured facts (cases, CFR, interventions) are extracted before simulation |
+| **URL** | `"Read this article: https://www.nicd.ac.za/..."` | Page is fetched and parsed client-side; facts are extracted from the full text |
+| **Search** | `"Search for the latest Mpox outbreak news in Africa"` | Built-in web search retrieves recent news; facts are extracted from results |
+
+In all cases EpiChat produces an `OutbreakContext` object (disease name, location, case counts, R₀ estimate, interventions mentioned, etc.) before generating `SimParams`. Fields that cannot be determined are left null — the model never guesses.
+
+**Dev mode** — set `EPICHAT_DEV_MODE=true` to see the extracted `OutbreakContext` as a table in the chat after each enrichment step. Off by default.
 
 ---
 
@@ -52,7 +316,21 @@ python cli.py
 
 # 5. Streamlit web app
 streamlit run app.py
+
+# 6. Streamlit web app — dev mode (shows OutbreakContext extraction card)
+EPICHAT_DEV_MODE=true streamlit run app.py
+
+# 7. Chat engine selection — the tool-calling agent (claude-opus-5) is the
+#    default; set EPICHAT_AGENT=0 to fall back to the staged pipeline
+EPICHAT_AGENT=0 streamlit run app.py
 ```
+
+The default chat flow is a Claude tool-calling agent that owns the whole
+workflow — configure → confirm → fetch data → parameterize → confirm → run →
+report — with every tool call shown in the chat and all epidemiological
+values produced by deterministic tools (never by the language model). It
+responds in the user's language. `EPICHAT_AGENT=0` restores the previous
+staged pipeline; the CLI always uses the classic pipeline.
 
 ---
 
@@ -122,7 +400,54 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 
 ---
 
+## Data Sources
+
+EpiChat grounds simulations in real data from two layers. Which sources a
+query uses is shown in the chat (the understanding card lists the fetch plan,
+each completed fetch gets its own 🔧 line, and the post-run results include a
+"Data sources used" block that also appears in PDF/DOCX exports).
+
+### Live API fetches (planned per query, run in parallel)
+
+| Source | API | Parameters fetched | Used for |
+|--------|-----|--------------------|----------|
+| **UN World Population Prospects 2024** | UN Population Data Portal (`UN_API_KEY`) | Crude birth rate (55), crude death rate (59), total population (49), age shares 0–17/18–64/65+ (71) | Vital dynamics, result scaling to real population, age-structured contact network |
+| **World Bank Data360 (WDI)** | `data360api.worldbank.org` (no key) | Hospital beds / physicians / nurses per 1,000; UHC coverage index; TB incidence; HIV, hepatitis-B, diabetes prevalence; malaria incidence; birth/death rate, population, age shares (fallback) | Treatment-intervention capacity, initial prevalence for those diseases, demographic fallback |
+| **WHO Global Health Observatory** | GHO OData API (no key) | Vaccination coverage (MCV1/2, DTP3, polio, BCG, HepB3, Hib3, PCV3, rotavirus, HPV, MenA, yellow fever, PAB); reported case counts (measles, pertussis, polio, rubella, mumps, diphtheria, tetanus, yellow fever, …) | Auto-added vaccine interventions at reported coverage; surveillance-based initial prevalence |
+
+### Bundled / local data (no API call)
+
+| Source | Location | Provides |
+|--------|----------|----------|
+| **Disease parameter database** | `epichat/data/disease_parameters.json` (16 diseases, citation-backed) | R₀ used for beta calibration; literature ranges (infectious/incubation period, fatality, contacts, immunity, asymptomatic fraction) behind parameter warnings |
+| **UN WPP 2024 indicators CSV** | `epichat/data/demographics/` | Offline birth/death-rate fill for any country at generation time |
+| **WHO Mortality Database CSV** | `epichat/data/demographics/` | Age-specific death rates (supplement) |
+| **Contact matrices (Prem et al. 2021)** | `epichat/data/contact_matrices.csv` (177 countries, 16 age bands aggregated to under 18 / 18–64 / 65+ with each country's pyramid; `scripts/fetch_contact_matrices.py`) | The age-structured network's matrix for the scenario's country |
+| **UN WPP 2024 population by single age** | `epichat/data/un_wpp_age.csv` (every country, 2024 and 2030; `scripts/fetch_un_wpp_tables.py`) | The agents' age pyramid and the three age shares |
+| **UN WPP 2024 projected crude birth rates** | `epichat/data/un_wpp_cbr.csv` (2020–2050; the same script) | The birth rate after the first year of a multi-year run |
+| **UN household size** | `epichat/data/un_household_size.csv` (189 countries, the 2026 household database; `scripts/fetch_household_size.py`) | The hybrid network's mean household size |
+
+Additional loaders included for future phases: CMU Delphi CovidCast/FluView
+surveillance (`data_loaders/epidata.py`), UN/DHS/Census household size
+distributions (`data_loaders/households.py`), and OWID calibration data
+(`data_loaders/calibration.py`).
+
+> **Known gap (future work):** the seasonality intervention amplitude is the
+> one epidemiological value not yet backed by `disease_parameters.json` — in
+> agent mode the model proposes it from general knowledge (always surfaced for
+> user confirmation before running). Planned: a citation-backed `seasonality`
+> field per disease; see the *Future work* section of
+> `docs/superpowers/specs/2026-08-07-agent-chat-design.md`.
+
+---
+
 ## Parameters Reference
+
+The tables below are the v1 flat shape, as the CLI and the Streamlit app read
+it and as `/simulate` still accepts it. The web agent's parameters are schema
+v2, generated from the registry (`web/data/param_registry.json` lists every
+path with its label, unit, bounds and default); see the web-agent section
+above.
 
 ### Core Disease Parameters
 
@@ -130,7 +455,7 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 |-----------|------|-------|---------|-------------|
 | `disease_type` | string | sir, seir, sis, sirs, seirs, seiar | `sir` | Compartmental model |
 | `n_agents` | integer | 10–1,000,000 | 10,000 | Population size |
-| `beta` | float | 0–1000 | computed | Per-year transmission rate. EpiChat computes this from R0: `beta = R0 × 365 / (n_contacts × dur_inf_days)` |
+| `beta` | float | 0–1000 | computed | Per-year transmission rate. EpiChat computes this from R0: `beta = R0 × 365 / (n_contacts × dur_inf_days)` for random networks; for age-structured networks the correct value is back-solved from the POLYMOD spectral radius so that `approx_R₀()` equals the intended R0. |
 | `init_prev` | float | 0–1 | 0.01 | Initial fraction infected (seed cases) |
 | `dur_inf` | float | >0 | 10.0 | Infectious period (days) |
 | `dur_exp` | float or null | >0 | null | Latent/exposed period (days). **Required for SEIR, SEIRS, SEIAR** |
@@ -145,7 +470,7 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 
 | Parameter | Type | Options / Range | Default | Description |
 |-----------|------|----------------|---------|-------------|
-| `network_type` | string | `random`, `age_structured` | `random` | Contact network structure |
+| `network_type` | string | `random`, `age_structured`; `hybrid` (web agent and `/simulate` only) | `random` | Contact network structure |
 | `n_contacts` | integer | 1–100 | 4 | Average daily contacts per person |
 | `network_beta` | float | 0–10 | 1.0 | Transmission multiplier per contact (use <1 for masks/distancing) |
 
@@ -153,6 +478,17 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 
 - **`random`** — Each agent contacts `n_contacts` random others per day. Good default for most scenarios. Use higher `n_contacts` for crowded settings.
 - **`age_structured`** — Uses a built-in POLYMOD-style contact matrix with three age groups (children 0–17, adults 18–64, elderly 65+). Accounts for the fact that children mix more with children, adults with adults, etc. Use when age heterogeneity matters (school outbreaks, elderly vulnerability).
+- **`hybrid`** — Schema v2 only: the web agent and `/simulate` take it, the
+  CLI and the Streamlit app reject it. Households (the country's mean size),
+  schools, workplaces and community, as in Covasim: each layer has its own
+  contacts per day and
+  transmissibility (schema v2: `household_size`, `school_contacts`,
+  `work_contacts`, `community_contacts`, `layer_beta.household` and so on, the
+  school and working age ranges). The structure a school closure or
+  distancing acts on. Schema v2 also adds `contacts_dist` (constant or
+  Poisson) and `contact_duration_days` for the random network, and the nine
+  `contacts.<group>_<group>` cells and `contacts_source` for the
+  age-structured network.
 
 **`n_contacts` guidance:**
 
@@ -170,6 +506,10 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 | 50% mask uptake, 50% efficacy | ~0.75 |
 | Strict physical distancing | ~0.4–0.6 |
 
+Schema v2 prefers a `transmission_reduction` (masks) or a `contact_reduction`
+(distancing, a school closure) intervention over a hand-set `network_beta`:
+both have a window, and a contact reduction names its layer.
+
 ### Demographics Parameters
 
 | Parameter | Type | Default | Description |
@@ -182,7 +522,10 @@ When you name a disease without specifying all parameters, EpiChat uses these de
 
 ## Interventions
 
-Up to three intervention types can be combined in a single simulation.
+Six intervention types can be combined in a single simulation (`vaccine`,
+`treatment`, `seasonality`, `contact_reduction`, `transmission_reduction`,
+`behavior_response`): the CLI and the templates know the first three; the web
+agent takes all six, with the schema v2 fields marked below.
 
 ### Vaccine
 
@@ -191,7 +534,13 @@ Removes a fraction of agents from the susceptible pool.
 | Field | Type | Description |
 |-------|------|-------------|
 | `coverage` | float (0–1) | Fraction of population vaccinated |
-| `start_day` | integer | `0` = pre-existing immunity (applied before simulation starts); `>0` = ongoing campaign starting on that day |
+| `start_day` | integer | `0` = pre-existing immunity (applied before simulation starts); `>0` = ongoing campaign starting on that day. In v2 this holds for a plain entry only; see `efficacy` |
+| `kind` | string | v2: `routine` (default: a yearly probability over the window) or `campaign` (reaches the coverage uniformly over the window) |
+| `end_day` | integer or null | v2: last day of the window (null = the run's end) |
+| `efficacy` | float (0–1) | v2: protection per dose (1.0 = full). Only a plain day-0 vaccine (routine, full efficacy, no end day) is pre-existing immunity; one with an efficacy below 1, ages, a protection duration or all-or-nothing protection keeps its fields and runs as a one-day campaign on day 0 (a `campaign` or an entry with an `end_day` runs over its window) |
+| `leaky` | bool | v2: `true` scales susceptibility by 1 − efficacy; `false` protects a fraction fully |
+| `age_min`, `age_max` | integer or null | v2: the ages vaccinated |
+| `protection_days` | integer or null | v2: days before the protection wanes (null = permanent) |
 
 **Examples in natural language:**
 - *"80% of the population is vaccinated"* → `coverage=0.8, start_day=0`
@@ -206,6 +555,11 @@ Reduces infectious duration or mortality for a fraction of infected agents.
 | `coverage` | float (0–1) | Fraction of eligible infected agents who receive treatment |
 | `capacity` | integer or null | Maximum treatments administered per day; `null` = unlimited |
 | `start_day` | integer | Day treatment becomes available |
+| `end_day` | integer or null | v2: last day treatment is available |
+| `efficacy` | float (0–1) | v2: share of treated cases cured |
+| `delay_days` | integer | v2: days from becoming infectious to seeking treatment |
+| `rel_trans_treated` | float (0–1) | v2: transmissibility while queued for treatment behind `capacity` (without a capacity nobody queues, so it has no effect) |
+| `symptomatic_only` | bool | v2: skip asymptomatic cases (SEIAR) |
 
 **Examples in natural language:**
 - *"Treatment available from day 30 with 60% coverage"*
@@ -219,10 +573,56 @@ Modulates transmission rate sinusoidally over the year.
 |-------|------|-------|-------------|
 | `scale` | float | 0–1 | Seasonal variation strength (0.2 = ±20% around the annual mean) |
 | `shift` | float | 0–1 | Phase offset (0.0 = peak in winter/Jan 1; 0.5 = peak in summer/Jul 1) |
+| `peak_day` | integer | 0–365 | v2 alias of `shift`: the day of the year the transmission peaks |
 
 **Examples in natural language:**
 - *"Seasonal winter transmission"* → `scale=0.3, shift=0.0`
 - *"Mild seasonal variation with summer peak"* → `scale=0.2, shift=0.5`
+
+### Contact reduction (schema v2)
+
+Removes a fraction of one layer's contacts over a window: `type: contact_reduction`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `layer` | string | `all`, or on the hybrid network `household`, `school`, `work`, `community` |
+| `scale` | float (0–1) | The fraction of contacts removed; `1` closes the layer |
+| `start_day`, `end_day` | integer | The window (`end_day` null = the run's end) |
+
+- *"Close the schools from day 30 for six weeks"* → `{type: contact_reduction, layer: school, scale: 1, start_day: 30, end_day: 72}` on the hybrid network
+- *"Physical distancing"* → the `community` layer at a fraction
+
+### Transmission reduction (schema v2)
+
+Lowers every contact's transmission over a window: `type: transmission_reduction`
+with `scale` (the fraction removed), `start_day` and `end_day`.
+
+- *"Masks for the first three months"* → `{type: transmission_reduction, scale: 0.3, start_day: 0, end_day: 90}`
+
+### Behaviour response (schema v2)
+
+Transmission falls as the share of people infectious rises, and recovers as it
+falls: people being careful, not a measure: `type: behavior_response`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `scale` | float (0–1) | The largest reduction in transmission |
+| `half_prevalence` | float | The share infectious at which half of `scale` applies (default 0.01) |
+| `memory_days` | integer | Days over which the share infectious is averaged (default 7) |
+| `start_day`, `end_day` | integer | The window (`end_day` null = the run's end) |
+
+    factor = 1 − scale × P / (half_prevalence + P)      P = the recent share infectious
+
+- *"People become careful as cases rise"* → `{type: behavior_response, scale: 0.5}`
+
+It flattens the peak and removes the overshoot; because it relaxes as cases
+fall it cannot, in the long run, take the total far below the herd immunity
+threshold `1 − 1/R0` (58% against 60% at R0 2.5 with the value above). A run
+that ends well below the threshold has not finished: the response is still
+holding transmission down.
+
+Every effect size above is an illustrative assumption unless the database
+carries it (`docs/data-review-requests.md` asks for the cited ranges).
 
 ---
 
@@ -232,15 +632,18 @@ EpiChat's LLM parser understands a wide range of phrasing. A few patterns:
 
 | You say | What EpiChat does |
 |---------|------------------|
-| "R0 = 2.5" | Converts to beta using `R0 × 365 / (n_contacts × dur_inf)` |
-| "COVID", "flu", "measles", etc. | Applies built-in disease defaults |
-| "80% vaccinated" | Adds vaccine intervention, `start_day=0` |
-| "vaccination campaign starting month 3" | Vaccine intervention, `start_day=90` |
-| "seasonal transmission" or "winter peak" | Seasonality, `scale=0.3, shift=0.0` |
-| "endemic" or "long-run" | Sets `use_demographics=true` |
-| "age-structured" or "school-age children" | Sets `network_type=age_structured` |
-| "masks" or "50% mask uptake with 50% efficacy" | Sets `network_beta≈0.75` |
-| "reproducible" or "set seed 42" | Sets `rand_seed=42` |
+| `"R0 = 2.5"` | Converts to beta using `R0 × 365 / (n_contacts × dur_inf)` |
+| `"COVID"`, `"flu"`, `"measles"`, etc. | Applies built-in disease defaults |
+| `"80% vaccinated"` | Adds vaccine intervention, `start_day=0` |
+| `"vaccination campaign starting month 3"` | Vaccine intervention, `start_day=90` |
+| `"seasonal transmission"` or `"winter peak"` | Seasonality, `scale=0.3, shift=0.0` |
+| `"endemic"` or `"long-run"` | Sets `use_demographics=true` |
+| `"age-structured"` or `"school-age children"` | Sets `network_type=age_structured` |
+| `"masks"` or `"50% mask uptake with 50% efficacy"` | Sets `network_beta≈0.75` |
+| `"reproducible"` or `"set seed 42"` | Sets `rand_seed=42` |
+| Paste a situation report | Enricher extracts facts; parser uses them as defaults |
+| `"https://..."` URL | Page is fetched and parsed; facts inform simulation |
+| `"Search for recent Mpox news"` | Web search retrieves context before simulation |
 
 ---
 
@@ -253,15 +656,38 @@ epichat/
 ├── app.py                   # Streamlit web interface
 ├── ROADMAP.md               # Planned data integrations and future features
 ├── epichat/
-│   ├── schema.py            # Pydantic parameter model (single source of truth)
-│   ├── parser.py            # NL → SimParams (Claude API)
+│   ├── schema.py            # Pydantic models: SimParams + OutbreakContext
+│   ├── params/              # Registry, schema v2, migration, exact R0 (web agent)
+│   ├── sim/                 # Starsim 3.7 models, builder, outputs, diagnostics (web agent)
+│   ├── enricher.py          # Input enrichment: query/report/URL/search → OutbreakContext
+│   ├── parser.py            # NL + OutbreakContext → SimParams (Claude API)
+│   │                        #   incl. beta calibration for age-structured networks
+│   ├── disease_db.py        # Disease parameter DB: lookup, detect, fact-check
+│   ├── chat_controller.py   # Conversation state machine, summary builder
 │   ├── generator.py         # SimParams → Starsim code (Jinja2)
 │   ├── executor.py          # Sandboxed subprocess execution
 │   ├── narrator.py          # Results → plain-language (Claude API)
+│   ├── modifier.py          # Plain-text modification → updated SimParams
 │   ├── epichat.py           # Main orchestrator + error recovery loop
-│   └── prompts/
-│       ├── extraction.txt   # System prompt for parameter parsing
-│       └── narration.txt    # System prompt for interpretation
+│   ├── data/
+│   │   ├── disease_parameters.json   # Literature-backed R₀/incubation/infectious ranges
+│   │   ├── contact_matrices.csv      # Prem 2021 matrices, three age bands (web agent)
+│   │   ├── un_wpp_age.csv            # UN WPP 2024 pyramids, 2024 and 2030 (web agent)
+│   │   ├── un_wpp_cbr.csv            # UN WPP 2024 projected birth rates (web agent)
+│   │   └── un_household_size.csv     # UN household size by country (web agent)
+│   ├── prompts/
+│   │   ├── enrichment.txt   # System prompt for input enrichment (Layer 0)
+│   │   ├── extraction.txt   # System prompt for parameter parsing (Layer 1)
+│   │   └── narration.txt    # System prompt for interpretation (Layer 4)
+│   └── adapters/
+│       ├── un_wpp.py        # UN World Population Prospects — demographics
+│       ├── who_gho.py       # WHO Global Health Observatory — disease surveillance
+│       └── wb_data360.py    # World Bank WDI — health system + disease indicators
+├── assets/
+│   ├── logo-source.png      # Master logo artwork (2048px, opaque background)
+│   ├── build_logo_assets.py # Derives every logo variant; also writes docs/brand/
+│   ├── epichat-logo{,-dark}.png   # Full mark, transparent
+│   └── epichat-icon{,-dark}.png   # Simplified mark for small sizes
 ├── templates/
 │   ├── sir.py.j2            # SIR (+ SIS) simulation template
 │   ├── seir.py.j2           # SEIR simulation template
@@ -269,9 +695,20 @@ epichat/
 │   ├── seirs.py.j2          # SEIRS (latent + waning) template
 │   ├── seiar.py.j2          # SEIAR (asymptomatic track) template
 │   └── sis.py.j2            # SIS (no immunity) template
+├── sim/                     # The simulation service (FastAPI) the web app calls
+├── web/                     # The web app (Next.js); web/docs/DEPLOY.md is its runbook
+├── docs/data-review-requests.md  # The review list for the database team (generated)
+├── evals/golden/            # The golden set; cases/parameters.yaml is pending the API harness
 └── tests/
-    ├── test_queries.json    # Benchmark queries
-    └── test_parser.py       # Automated accuracy tests
+    ├── test_queries.json              # Benchmark queries
+    ├── test_parser.py                 # Automated accuracy tests
+    ├── test_disease_db.py             # Disease DB: lookup, detect, check_params
+    ├── test_param_warnings.py         # EpiChatResult.param_warnings + CLI display
+    ├── test_build_summary_warnings.py # build_summary() warning block
+    ├── test_outbreak_context.py       # OutbreakContext schema validation
+    ├── test_enricher.py               # Enricher unit tests (mocked LLM)
+    ├── test_parser_unit.py            # Parser unit tests with OutbreakContext
+    └── test_chat_controller.py        # Conversation state machine tests
 ```
 
 ---
@@ -281,11 +718,33 @@ epichat/
 | Risk | Mitigation |
 |------|-----------|
 | Invalid Starsim code | Template-based generation (not free-form LLM code) |
-| Parameter hallucination | Pydantic validation + plausibility checks |
+| Parameter hallucination | Pydantic validation; literature-range fact-checking via `disease_parameters.json`; ⚠️ warning shown when values are outside known ranges |
+| Wrong R₀ on age-structured network | β back-solved from POLYMOD spectral radius after demographics are applied; recalibrated on every R₀ / `dur_inf` modification |
 | Execution failure | 3-attempt error recovery loop with LLM re-parameterization |
 | Timeout | 90-second subprocess limit |
 | API instability | Starsim version pinned in requirements.txt |
 
 ---
 
-*EpiChat v0.1 — Prototype*
+## Brand
+
+The logo is a speech bubble containing a cluster of connected nodes, in red
+(`#F13A25`) and green (`#054E33`).
+
+Every variant is derived from `assets/logo-source.png`, so edit the master and
+regenerate rather than hand-editing the outputs:
+
+```bash
+python assets/build_logo_assets.py
+```
+
+This writes the app's assets into `assets/` and the website's into `docs/brand/`
+(GitHub Pages serves `docs/` and has to be self-contained). Two forms exist: the full
+mark for display sizes, and a simplified mark — bubble plus the major nodes only — for
+favicons and avatars, where the full cluster resolves to noise. Each comes in a light
+and a dark variant; the dark one re-inks the bubble outline so it survives a dark
+background.
+
+---
+
+*EpiChat v0.3 — Prototype*

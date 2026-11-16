@@ -1,0 +1,129 @@
+# The two cases of the sim-parameters spec (2026-10-09, section 1), written
+# for the harness that will drive the deployed web agent (sub-project 5).
+# The Python agent this harness drives has neither describe_parameters nor
+# run diagnostics, so both are pending (section 17): loaded, listed in the
+# report, never run. Until then web/tests/chat/handleChat.test.ts ("golden
+# flows") plays both scripts against the web handler with a scripted model.
+- id: parameters-describe
+  category: parameters
+  critical: false
+  pending: api-harness
+  pending_note: "describe_parameters is a web tool (spec 9.2); the Python agent has none."
+  turns:
+    - "Model measles in Kenya."
+    - "What can I change?"
+  checks:
+    tool_called: [configure_simulation, describe_parameters]
+    config:
+      disease: measles
+      country: KEN
+    judge:
+      - "Lists disease parameters of the active model with their current values"
+      - "Says where at least one value came from: the database, a default, a fetch, or the user"
+      - "Does not say that any listed parameter cannot be changed"
+
+- id: parameters-diagnostic-rerun
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "The diagnostics and the comparison come from the simulation service (spec 10, 11), which the Python agent does not call. The random seed is a placeholder: early_fadeout needs the outbreak to end below twice the seeds or, with nothing holding it down from day 0, below 1% of the agents, so once the harness exists run the service with a few seeds and pin one that fades out."
+  turns:
+    - "Model measles in Kenya with 20000 agents, one initial infection, R0 1.2, no deaths, and random seed 7."
+    - "Yes."
+    - "Yes, run it."
+    - "Take the first option and rerun."
+  checks:
+    tool_called: [run_simulation]
+    ran_simulation: true
+    judge:
+      - "After the first run, says the outbreak died out early (the early_fadeout diagnostic) rather than interpreting a non-epidemic as a result"
+      - "Offers at most three options, one of them keeping the configuration as it is"
+      - "After the second run, reports what changed against the previous run before interpreting it"
+
+# The two cases of the sim-parameters Part 2 spec (2026-10-12, section 13),
+# written for the same harness: a school closure on the hybrid network, and
+# "why were so many infected?" leading to the hybrid option (Part 2, 5.1).
+- id: parameters-school-closure
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "The hybrid network, the structured interventions field and the comparison come from the web agent and the simulation service (Part 2, 5.4 and 7.4); the Python agent has neither."
+  turns:
+    - "Model seasonal influenza in a town of 50,000 people with households, schools and workplaces, for six months."
+    - "Yes, run it."
+    - "Now close the schools from day 30 for six weeks and run it again."
+  checks:
+    tool_called: [configure_simulation, run_simulation]
+    ran_simulation: true
+    config:
+      disease: influenza
+      network_type: hybrid
+    judge:
+      - "Chooses the hybrid network for a setting with households, schools and workplaces, and says so"
+      - "Represents the closure as a contact_reduction on the school layer at scale 1 from day 30 to day 72 (six weeks), not as a change to R0 or to n_contacts"
+      - "Says the closure's effect size is an illustrative assumption (the database carries no school-closure effect)"
+      - "After the second run, reports what changed against the first run (the peak, the total infected) before interpreting the closure's effect"
+
+- id: parameters-why-so-many-infected
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "A web-agent rule (Part 2, 5.1, as broadened by the follow-up's 7.6): the random network is the default; asked why so many were infected, the agent explains that only the depletion of susceptibles limits the epidemic, and offers the limits on spread and the hybrid network. No country is named, so the scenario stays on the random network the config check names."
+  turns:
+    - "Model measles in a city of 20,000 people for a year."
+    - "Yes, run it."
+    - "Why were so many infected?"
+  checks:
+    tool_called: [run_simulation]
+    ran_simulation: true
+    config:
+      disease: measles
+      network_type: random
+    judge:
+      - "Explains that at this R0 nearly every susceptible is eventually infected on any network: nothing but the depletion of susceptibles limits the epidemic"
+      - "Offers variation between people or a behaviour response as illustrative assumptions that limit the spread"
+      - "May offer the hybrid network (households, schools, workplaces, community) as the structure that school closures and distancing act on"
+      - "Does not promise that switching the network alone lowers the final size (at the same R0 the final size is close on every network)"
+
+- id: parameters-known-attack-rate
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "A web-agent rule (follow-up spec 6): when the user knows the attack rate and the R0 comes from the database, the fit moves the variation between people, not beta. Needs the deployed agent's configure_simulation with fit.lever and the service's fit. The target sits inside the lever's range: at the database's R0 of 3 on the random network a run infects 94% without variation, 66% at CV 1, 47% at CV 1.5 and 34% at the largest, CV 2 (20,000 agents, one seed, 2026-10-13); the harness author checks that again if the database's R0 changes. The case runs 20,000 agents although fitted scenarios on the hybrid network stay at 10,000: the random network has no pilot, so a trial is one plain run and the eight-run search stays inside the service's timeout."
+  turns:
+    - "Model RSV in a city of 20,000 people for a year, with the database's R0."
+    - "In the real outbreak 50% of the city was infected. Fit the model to that and run it."
+  checks:
+    tool_called: [configure_simulation, run_simulation]
+    ran_simulation: true
+    config:
+      disease: rsv
+    judge:
+      - "Fits the variation between people (fit lever disease.rel_sus_cv), not beta"
+      - "Says the R0 stays at the database's value (it is unchanged by the fit)"
+      - "Says the variation between people is an illustrative assumption"
+      - "Says what the fit did in plain words: the variation between people was set so that about 50% are infected"
+
+- id: parameters-offer-intervention
+  category: parameters
+  critical: false
+  real_sim: true
+  pending: api-harness
+  pending_note: "A web-agent rule (follow-up spec 7.3): after a baseline run without a warning diagnostic, the agent offers up to two levers of the what_if diagnostic by their labels. If the run raises a warning (an unfinished run or an early fade-out, say) the agent must offer that diagnostic's options and no intervention; the harness author picks a seed and a duration that let the epidemic take off and finish."
+  turns:
+    - "Model seasonal influenza in a town of 20,000 people with households, schools and workplaces, for a year."
+    - "Yes, run it."
+  checks:
+    tool_called: [run_simulation]
+    ran_simulation: true
+    config:
+      disease: influenza
+      network_type: hybrid
+    judge:
+      - "After reporting the run, offers at least one intervention from the run's what_if diagnostic (a school closure, distancing, masks or a behaviour response) as a next step, by the lever's label; a dated one names the day it starts"
+      - "Says the effect sizes of the offered interventions are illustrative assumptions"
+      - "Does not predict what an offered intervention would do to the attack rate or the peak before it has been run"

@@ -1,0 +1,55 @@
+/** Dotted paths over nested parameter objects ("disease.dur_inf.mean_days"); mirrors epichat/params/paths.py. */
+type Obj = Record<string, unknown>;
+
+const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
+
+export function flattenParams(obj: Obj, prefix = ""): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const path = `${prefix}${key}`;
+    if (isObj(value)) Object.assign(out, flattenParams(value, `${path}.`));
+    else out[path] = value;
+  }
+  return out;
+}
+
+export function getPath(obj: Obj, path: string): unknown {
+  let node: unknown = obj;
+  for (const part of path.split(".")) {
+    if (!isObj(node) || !(part in node)) return undefined;
+    node = node[part];
+  }
+  return node;
+}
+
+export function setPath(obj: Obj, path: string, value: unknown): void {
+  const parts = path.split(".");
+  let node: Obj = obj;
+  for (const part of parts.slice(0, -1)) {
+    if (!isObj(node[part])) node[part] = {};
+    node = node[part] as Obj;
+  }
+  node[parts[parts.length - 1]] = value;
+}
+
+export type ParamChange = { field: string; from: unknown; to: unknown };
+
+/** A null leaf is an absent block (a latent period on sir, a seed not yet set): its turning into an object, or back, is its leaves' change only. */
+export function diffParams(before: Obj, after: Obj): ParamChange[] {
+  const old = flattenParams(before);
+  const now = flattenParams(after);
+  const changes: ParamChange[] = [];
+  for (const key of Object.keys(old)) {
+    if (!(key in now) && old[key] === null) continue;
+    if (JSON.stringify(old[key]) !== JSON.stringify(now[key])) changes.push({ field: key, from: old[key], to: now[key] ?? null });
+  }
+  for (const key of Object.keys(now)) if (!(key in old) && now[key] !== null) changes.push({ field: key, from: null, to: now[key] });
+  return changes;
+}
+
+/** A change by registry path: the config payload's `changed` and the run payload's `compare.changed` (spec 9.1, 11). */
+export type PathChange = { path: string; from: unknown; to: unknown };
+
+export function changedPaths(before: Obj, after: Obj): PathChange[] {
+  return diffParams(before, after).map((c) => ({ path: c.field, from: c.from, to: c.to }));
+}

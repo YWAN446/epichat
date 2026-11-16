@@ -532,10 +532,379 @@
           "source_type": "clinical_reference",
           "url": "https://www.msdmanuals.com/professional/pediatrics/common-viral-infections-in-infants-and-children/measles",
           "doi": "N/A"
-        }
+        },
 
+      
+  "fatality_rate_by_age": {
+    "unit": "fraction",
+    "registry_field": "disease.p_death_age",
+    "age_groups": { "children": "0-17", "adults": "18-64", "elderly": "65+" },
+    "consensus": {
+      "children": { "min": 0.0014, "max": 0.0064, "typical": 0.0039 },
+      "adults": { "min": 0.0028, "max": 0.0066, "typical": 0.0047 },
+      "elderly": { "min": 0.0013, "max": 0.0013, "typical": 0.0013 },
+      "notes": "Typical value is derived through taking the average of the reported estimates for each age group."
+    },
+    "estimates": [
+      {
+        "value": 0.0034,
+        "range": "N/A",
+        "age_group": "children",
+        "age_band_reported": "<5 years",
+        "population": "Reported measles cases with age information, United States, 1987-2000 (97 deaths / 28,730 cases)",
+        "source_type": "surveillance",
+        "title": "The clinical significance of measles: a review (Table 2, CDC surveillance data)",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15106083/",
+        "doi": "10.1086/377712",
+        "country": "United States",
+        "year": 2004,
+        "notes": "Range is an exact binomial 95% CI computed here from the published counts."
+      },
+      {
+        "value": 0.0014,
+        "range": "N/A",
+        "age_group": "children",
+        "age_band_reported": "5-9 years",
+        "population": "Reported measles cases, United States, 1987-2000 (9 / 6,492)",
+        "source_type": "surveillance",
+        "title": "The clinical significance of measles: a review (Table 2, CDC surveillance data)",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15106083/",
+        "doi": "10.1086/377712",
+        "country": "United States",
+        "year": 2004,
+        "notes": "Range is an exact binomial 95% CI computed here from the published counts."
+      },
 
+      {
+        "value": 0.0023,
+        "range": "N/A",
+        "age_group": "children",
+        "age_band_reported": "<20 years (aggregated; proxy for 0-17)",
+        "population": "Reported measles cases, United States, 1987-2000 (124 / 53,802)",
+        "source_type": "surveillance",
+        "title": "The clinical significance of measles: a review (Table 2, CDC surveillance data)",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15106083/",
+        "doi": "10.1086/377712",
+        "country": "United States",
+        "year": 2004,
+        "notes": "Aggregate of the <5, 5-9 and 10-19 rows computed here; exact binomial 95% CI."
+      },
+      {
+        "value": 0.0064,
+        "range": "N/A",
+        "metric":"CFR",
+        "age_group": "children",
+        "age_band_reported": "<1 year",
+        "population": "EU/EEA measles notifications, 1 January 2016 to 31 March 2019 (35 infant deaths)",
+        "source_type": "surveillance",
+        "title": "Who is at risk for measles in the EU/EEA? Identifying susceptible groups to close immunity gaps towards measles elimination (ECDC rapid risk assessment)",
+        "url": "https://www.ecdc.europa.eu/sites/default/files/documents/RRA-Measles-EU-EEA-May-2019.pdf",
+        "doi": "N/A",
+        "country": "EU/EEA (30 countries)",
+        "year": 2019,
+        "notes": "Infants had the highest CFR of any age group. Deaths counted from case-based data only, while the denominator includes aggregate data, which ECDC notes may underestimate CFR. Overall CFR all ages 0.0019 (84 deaths)."
+      },
+      {
+        "value": 0.0028,
+        "range": "N/A",
+        "age_group": "adults",
+        "age_band_reported": "20-29 years",
+        "population": "Reported measles cases, United States, 1987-2000 (26 / 9,161)",
+        "source_type": "surveillance",
+        "title": "The clinical significance of measles: a review (Table 2, CDC surveillance data)",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15106083/",
+        "doi": "10.1086/377712",
+        "country": "United States",
+        "year": 2004,
+        "notes": "Range is an exact binomial 95% CI computed here from the published counts."
+      },
+      {
+        "value": 0.0066,
+        "range": "N/A",
+        "age_group": "adults",
+        "age_band_reported": ">=30 years",
+        "population": "Reported measles cases, United States, 1987-2000 (27 / 4,069)",
+        "source_type": "surveillance",
+        "title": "The clinical significance of measles: a review (Table 2, CDC surveillance data)",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15106083/",
+        "doi": "10.1086/377712",
+        "country": "United States",
+        "year": 2004,
+        "notes": "Highest CFR of any stratum in the table. Range is an exact binomial 95% CI computed here."
+      },
+
+      {
+        "value": 0.0013,
+        "range": "N/A",
+        "age_group": "elderly",
+        "age_band_reported": "50-69 years",
+        "population": "Deaths from measles, by age, World, 2023",
+        "source_type": "surveillance",
+        "title": "Deaths from measles, by age",
+        "url": "https://doi.org/10.1086/378565",
+        "doi": "N/A",
+        "country": "Global",
+        "year": 2023,
+        "notes": "Derived from world surveillance data. The 50-69 age group is used as a proxy for 65+ because the 65+ stratum is not reported."
       }
+    ]
+  },
+
+  "vaccine_efficacy": {
+    "unit": "fraction",
+    "registry_field": "interventions[].efficacy",
+    "product": "MMR: live attenuated measles-mumps-rubella vaccine (US-licensed M-M-R II and PRIORIX; MMRV/ProQuad carries the same measles component)",
+    "dose_schedule": "2 doses: 12-15 months and 4-6 years (US routine). Older children and adults without evidence of immunity: 2 doses at least 28 days apart.",
+    "effect_measured": "Protection against clinical measles. Used here as protection against infection because people with inapparent subclinical infection are not known to transmit (Perry & Halsey 2004), and the registry already records no asymptomatic carrier state.",
+    "consensus": {
+      "min": 0.93,
+      "max": 0.97,
+      "typical": 0.97,
+      "notes": "Typical is the routine 2-dose schedule from CDC."
+    },
+    "estimates": [
+      {
+        "value": 0.93,
+        "range": [0.39, 1.0],
+        "doses": 1,
+        "population": "General",
+        "source_type": "government_report",
+        "title": "Measles, Mumps, and Rubella Vaccination: Information for Health Care Providers",
+        "url": "https://cdc.gov/vaccines/hcp/by-disease/mmr.html",
+        "doi": "N/A",
+        "country": "United States",
+        "year": 2021,
+        "notes": "Range is across studies, not a confidence interval."
+      },
+      {
+        "value": 0.97,
+        "range": [0.67, 1.0],
+        "doses": 2,
+        "population": "General",
+        "source_type": "government_report",
+        "title": "Measles, Mumps, and Rubella Vaccination: Information for Health Care Providers",
+        "url": "https://cdc.gov/vaccines/hcp/by-disease/mmr.html",
+        "doi": "N/A",
+        "country": "United States",
+        "year": 2021,
+        "notes": "Range is across studies, not a confidence interval. CDC considers 2 doses on the US schedule lifelong protection."
+      },
+      {
+        "value": 0.95,
+        "range": "N/A",
+        "doses": 1,
+        "population": "Children (51 effectiveness studies, about 10 million children)",
+        "source_type": "systematic_review",
+        "title": "Vaccines for measles, mumps, rubella, and varicella in children",
+        "url": "https://doi.org/10.1002/14651858.CD004407.pub4",
+        "doi": "10.1002/14651858.CD004407.pub4",
+        "country": "Multiple countries",
+        "year": 2020,
+        "notes": "Cochrane review; moderate-certainty evidence, mostly non-randomised studies."
+      },
+      {
+        "value": 0.96,
+        "range": "N/A",
+        "doses": 2,
+        "population": "Children",
+        "source_type": "systematic_review",
+        "title": "Vaccines for measles, mumps, rubella, and varicella in children",
+        "url": "https://doi.org/10.1002/14651858.CD004407.pub4",
+        "doi": "10.1002/14651858.CD004407.pub4",
+        "country": "Multiple countries",
+        "year": 2020,
+        "notes": "Cochrane review."
+      }
+    ]
+  },
+
+  "treatment_efficacy": {
+    "unit": "efficacy: fraction; delay_days: days",
+    "registry_field": "interventions[].efficacy, interventions[].delay_days",
+    "treatment": "Vitamin A (WHO/UNICEF regimen: 200,000 IU orally once daily for 2 days at >=12 months; 100,000 IU for infants <12 months) plus supportive care. No licensed antiviral.",
+    "efficacy_definition": "Relative reduction in the probability of death among treated cases. Measles is self-limiting, so 'share cured' does not apply; map this efficacy onto p_death, not recovery.",
+    "consensus": {
+      "efficacy": { "min": 0.30, "max": 0.79, "typical": 0.545 },
+      "delay_days": { "min": 2, "max": 4, "typical": 3 },
+      "notes": "Typical value is derived through taking the average of the reported estimates."
+    },
+    "estimates": [
+      {
+        "value": 0.79,
+        "range": "N/A",
+        "population": "Children <2 years with measles (2 doses of 200,000 IU on consecutive days)",
+        "source_type": "systematic_review",
+        "title": "Vitamin A for treating measles in children",
+        "url": "https://www.cochrane.org/evidence/CD001479_vitamin-measles-children",
+        "doi": "10.1002/14651858.CD001479.pub3",
+        "country": "Multiple countries",
+        "year": 2005,
+        "notes": "Mortality RR 0.21 (95% CI 0.07-0.66), converted to efficacy = 1 - RR. Review search updated to 2011 (8 trials, 2,574 participants)."
+      },
+      {
+        "value": 0.30,
+        "range": "N/A",
+        "population": "Children with measles, all ages, all regimens pooled",
+        "source_type": "systematic_review",
+        "title": "Vitamin A for treating measles in children",
+        "url": "https://www.cochrane.org/evidence/CD001479_vitamin-measles-children",
+        "doi": "10.1002/14651858.CD001479.pub3",
+        "country": "Multiple countries",
+        "year": 2005,
+        "notes": "Pooled mortality RR 0.70 (0.42-1.15), not statistically significant; single doses showed no mortality benefit."
+      },
+      {
+        "value": 0.50,
+        "range": "N/A",
+        "population": "Children with measles in countries with high measles mortality",
+        "source_type": "review_article",
+        "title": "The clinical significance of measles: a review",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15106083/",
+        "doi": "10.1086/377712",
+        "country": "Multiple countries",
+        "year": 2004,
+        "notes": "Approximately 50% reduction in mortality with the 2-day regimen."
+      },
+      {
+        "value": 3,
+        "unit_override": "days",
+        "range": [2, 4],
+        "population": "General",
+        "source_type": "review_article",
+        "title": "The clinical significance of measles: a review",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15106083/",
+        "doi": "10.1086/377712",
+        "country": "N/A",
+        "year": 2004,
+        "notes": "delay_days seed. Prodromal symptoms intensify over the 2-4 days before rash onset; vitamin A is usually started once measles is recognised, typically at the rash."
+      }
+    ]
+  },
+
+
+  "presymptomatic_transmission": {
+    "unit": "fraction",
+    "registry_field": "disease.rel_trans_exposed",
+    "consensus": {
+      "min": 0.36,
+      "max": 0.36,
+      "typical": 0.36,
+      "notes": "Value is presymptomatic days over infectious days with flat infectiousness"
+    },
+    "estimates": [
+
+      {
+        "value": 0.36,
+        "range": "N/A",
+        "presymptomatic_infectious_days": "2-3",
+        "population": "Synthetic population of Flanders, Belgium",
+        "method": "Natural-history assumption in an individual-based model (Stride), citing earlier measles studies",
+        "source_type": "modelling_study",
+        "title": "Clustering of susceptible individuals within households can drive measles outbreaks: an individual-based model exploration",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7665185/",
+        "doi": "10.1038/s41598-020-76746-3",
+        "country": "Belgium",
+        "year": 2020,
+        "notes": "Model assumption, not an estimate. People are infectious for 6-8 days and become symptomatic after 2-3 of them; once symptomatic they contact only their household. Value is presymptomatic days over infectious days with flat infectiousness, computed here (2.5/7). Because symptomatic people stop non-household contacts, the share of transmission that is presymptomatic in this model is higher than the time share. 'Symptomatic' here marks when people stay home, so it falls between prodrome onset and rash."
+      }
+    ]
+  },
+
+  "school_closure_effect": {
+    "unit": "fraction (reduction)",
+    "registry_field": "interventions[].scale (school layer)",
+    "illustrative_default": "Full closure: school-layer scale = 0",
+    "consensus": {
+      "min": 0.53,
+      "max": 0.53,
+      "typical": 0.53,
+      "notes": "These are reductions in overall contact or transmission rates while schools are out, not reductions in school-layer contacts alone, because children keep mixing elsewhere."
+    },
+    "estimates": [
+      {
+        "value": 0.53,
+        "range": "N/A",
+        "population": "Low-vaccination-coverage area, Netherlands, 2013-2014 measles epidemic",
+        "source_type": "modelling_study",
+        "method": "Dynamic transmission model fitted to notification and hospitalisation time series, using regionally staggered summer vacations",
+        "title": "The Reduction of Measles Transmission During School Vacations",
+        "url": "https://doi.org/10.1097/ede.0000000000000841",
+        "doi": "10.1097/EDE.0000000000000841",
+        "country": "Netherlands",
+        "year": 2018,
+        "notes": "Reduction in contact rate during school vacations (95% credible interval). About 4,900 cases averted; transmission shifted from local to cross-regional during vacations. Authors judge school closure unlikely to prevent a measles epidemic unless cases are still few and the community is well vaccinated."
+      }
+    ]
+  },
+
+  "distancing_effect": {
+    "unit": "fraction (reduction)",
+    "registry_field": "interventions[].scale (community layer)",
+    "consensus": {
+      "min": "N/A",
+      "max": "N/A",
+      "typical": "N/A",
+      "notes": "No measles data exist."
+    },
+    "estimates": []
+  },
+
+  "mask_effect": {
+    "unit": "fraction (reduction)",
+    "registry_field": "interventions[].scale",
+    "consensus": {
+      "min": 0.45,
+      "max": 0.45,
+      "typical": 0.45,
+      "notes": "Hypothetical estimate based on a modelling study of measles transmission in indoor settings. The study found that when infected and susceptible individuals wear surgical masks, the risk of airborne transmission can be reduced by up to approximately 45%, depending on the indoor ventilation conditions."
+    },
+    "estimates": [
+      {
+        "value": 0.45,
+        "range": "N/A",
+        "population": "Infected and susceptible individuals",
+        "source_type": "modelling_study",
+        "title": "Predicting the Airborne Transmission of Measles: Impact of Indoor Carbon Dioxide (CO2) Levels and Mitigation Strategies",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11330571/",
+        "doi": "10.7759/cureus.64882",
+        "country": "Multiple countries",
+        "year": 2024,
+        "notes": "When infected and susceptible individuals wear surgical masks, the risk of airborne transmission can be reduced by up to approximately 45%, depending on the indoor ventilation conditions."
+      }
+    ]
+  },
+
+  "susceptibility_variation": {
+    "unit": "dimensionless (coefficient of variation)",
+    "registry_field": "disease.rel_sus_cv",
+    "illustrative_value": 1,
+    "default": 0,
+    "consensus": {
+      "min": "N/A",
+      "max": "N/A",
+      "typical": "N/A",
+      "notes": "No measles-specific estimate of the CV of susceptibility or exposure was found."
+    },
+    "estimates": []
+  },
+
+  "behaviour_response_effect": {
+    "unit": "scale: fraction (reduction); half_prevalence: fraction infectious; memory_days: days",
+    "registry_field": "interventions[] behavior_response: scale, half_prevalence, memory_days",
+    "illustrative_values": { "scale": 0.5, "half_prevalence": 0.01, "memory_days": 7 },
+    "consensus": {
+      "min": "N/A",
+      "max": "N/A",
+      "typical": "N/A",
+      "notes": "No measles study measuring voluntary contact reduction was found."
+    },
+    "estimates": [
+    ]
+  }
+
+}
+
+      
     },
 
     "covid19": {

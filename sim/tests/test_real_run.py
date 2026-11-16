@@ -1,0 +1,114 @@
+"""One real Starsim run per model family through the app. Slow (about 3 s
+each: the child imports Starsim) but the only proof that the template's json
+branch, the runner, and the response assembly agree."""
+import importlib
+
+import pytest
+from fastapi.testclient import TestClient
+
+AUTH = {"Authorization": "Bearer test"}
+THIRTY_DAYS = 30 / 365
+
+
+@pytest.fixture
+def client(monkeypatch):
+    monkeypatch.setenv("SIM_SHARED_SECRET", "test")
+    import main as module
+    importlib.reload(module)
+    return TestClient(module.app)
+
+
+def _params(**over) -> dict:
+    base = {"disease_type": "sir", "beta": 0.05, "n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1}
+    base.update(over)
+    return base
+
+
+@pytest.mark.parametrize("params, expected_extra", [
+    (_params(), set()),
+    (_params(disease_type="seir", dur_exp=3.0), {"n_exposed"}),
+    (_params(disease_type="seiar", dur_exp=3.0), {"n_exposed", "n_asymptomatic"}),
+])
+def test_real_run_returns_consistent_stats_and_series(client, params, expected_extra):
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    series = body["series"]
+    base_keys = {"day", "n_susceptible", "n_infectious", "n_infected", "n_recovered", "new_infections", "cum_infections",
+                 "new_deaths", "cum_deaths"}
+    assert set(series) == base_keys | expected_extra
+    lengths = {len(v) for v in series.values()}
+    assert lengths == {31}
+    assert series["day"][0] == 0 and series["day"][-1] == 30
+    assert body["stats"]["sim_days"] == 31
+    assert body["stats_agents"]["total_infected"] == round(series["cum_infections"][-1])
+    assert body["stats"] == body["stats_agents"]
+    assert body["repairs"] == [] and body["attempts"] == 1
+    assert body["effective_params"]["run"]["rand_seed"] == 1 and body["effective_params"]["schema_version"] == 2
+    assert body["duration_ms"] > 0
+
+
+def test_pop_scale_scales_stats_but_not_agent_counts(client):
+    r = client.post("/simulate", json={"params": _params(), "pop_scale": 100}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["population"] == 100000
+    assert body["stats"]["total_infected"] == body["stats_agents"]["total_infected"] * 100
+    assert body["stats"]["peak_day"] == body["stats_agents"]["peak_day"]
+    assert body["series"]["cum_infections"][-1] == body["stats"]["total_infected"]
+
+
+def test_same_seed_is_deterministic(client):
+    a = client.post("/simulate", json={"params": _params()}, headers=AUTH).json()
+    b = client.post("/simulate", json={"params": _params()}, headers=AUTH).json()
+    assert a["stats_agents"] == b["stats_agents"]
+
+
+def test_demographics_add_the_all_causes_deaths_and_keep_disease_deaths_apart(client):
+    """Background mortality (ss.Deaths) is not a disease outcome: with p_death 0 the
+    death series and the total stay at zero; the all-causes pair carries the rest (spec 8.6)."""
+    params = _params(use_demographics=True, birth_rate=20.0, death_rate=500.0, p_death=0.0)
+    body = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH).json()
+    assert body["stats"]["total_deaths"] == 0 and body["series"]["cum_deaths"][-1] == 0
+    assert max(body["series"]["new_deaths"]) == 0
+    assert body["series"]["cum_deaths_all"][-1] > 0
+
+
+def test_two_replicates_run_for_real(client):
+    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"beta": 0.05, "seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 2}}, "pop_scale": 1}, headers=AUTH).json()
+    rep = body["replicates"]
+    assert rep["seeds"] == [1, 2] and len(rep["stats"]) == 2 and rep["representative"] in (1, 2)
+    assert len(rep["bands"]["cum_infections"]["p90"]) == len(body["series"]["day"]) == 31
+    assert body["stats"]["total_infected"] == min(s["total_infected"] for s in rep["stats"])
+
+
+def test_hybrid_run_calibrates_beta_and_reports_the_measured_r0(client):
+    from epichat.params.r0 import with_r0
+    from epichat.params.schema_v2 import SimParamsV2
+    params = {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 30}}, "network": {"network_type": "hybrid"},
+              "run": {"n_agents": 3000, "sim_dur_years": 90 / 365, "rand_seed": 1}}
+    moderate = with_r0(SimParamsV2.model_validate(params), 2.5).model_dump(mode="json")
+    r = client.post("/simulate", json={"params": moderate, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    calibration = body["stats"]["r0_calibration"]
+    assert isinstance(body["stats"]["r0_measured"], float) and calibration["corrections"] <= 3
+    assert set(calibration) == {"target", "measured", "se", "corrections", "reached"} and calibration["target"] == 2.5
+    assert body["effective_params"]["network"]["network_type"] == "hybrid"
+    assert body["stats"]["r0_measured"] == body["stats_agents"]["r0_measured"]          # a ratio: never scaled
+    # the default beta is an R0 near 11 on the hybrid network: with 1% seeded the population is exhausted while the seeds are still
+    # infectious, so the live run's measured R0 is withheld; the pilot, in which only the seeds transmit, still measures and reports
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    high = r.json()["stats"]
+    assert high["r0_measured"] is None and isinstance(high["r0_calibration"]["measured"], float) and high["r0_calibration"]["target"] > 8
+
+
+def test_a_fitted_run_reports_the_fit_and_the_fitted_beta(client):
+    params = {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 20}},           # the default 0.05% of 2,000 seeds nobody here
+              "run": {"n_agents": 2000, "sim_dur_years": 0.5, "rand_seed": 1, "fit": {"target": "attack_rate", "value": 0.4}}}
+    r = client.post("/simulate", json={"params": params, "pop_scale": 1}, headers=AUTH)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["stats"]["fit"]["runs"] <= 8 and abs(body["stats"]["fit"]["achieved"] - 0.4) <= 0.02
+    assert body["effective_params"]["disease"]["beta"] == body["stats"]["fit"]["value"]

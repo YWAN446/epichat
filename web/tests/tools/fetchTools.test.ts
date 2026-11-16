@@ -1,0 +1,254 @@
+import { describe, expect, it } from "vitest";
+
+import { approxR0, getTreatment, getVaccine } from "@/lib/sim/params";
+import { configureSimulation } from "@/lib/tools/configureSimulation";
+import { BUNDLED_HOUSEHOLDS, BUNDLED_MATRICES, BUNDLED_PYRAMID, fetchDemographics } from "@/lib/tools/fetchDemographics";
+import { fetchHealthSystem } from "@/lib/tools/fetchHealthSystem";
+import indicators from "@/data/vaccine_indicators.json";
+import { GHO_CODES, fetchVaccinationCoverage } from "@/lib/tools/fetchVaccinationCoverage";
+import { makeDeps, rf } from "./helpers";
+
+async function configured(deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) {
+  await configureSimulation(input as never, deps);
+  return deps;
+}
+
+describe("fetch_demographics", () => {
+  const kenya = [
+    rf("age_distribution_pct", { "0-17": 38.6, "18-64": 57.6, "65+": 3.8 }, "UN WPP 2024, Kenya (KEN), 2024"),
+    rf("total_population", 213_000_000, "UN WPP 2024"),
+    rf("birth_rate", 12.3, "UN WPP 2024"),
+    rf("death_rate", 7.1, "UN WPP 2024"),
+  ];
+
+  it("applies age structure, population, and vital rates", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", n_agents: 50000 });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "ken" }, deps)).content);
+    const p = deps.scenario.params!;
+    expect(p.demographics.age_pct_under18).toBe(43.9);                  // the bundled WPP 2024 share overrides the API's broad groups
+    expect(p.network.network_type).toBe("age_structured");
+    expect(deps.scenario.totalPopulation).toBe(213_000_000);
+    expect(p.demographics.birth_rate).toBe(12.3);
+    expect(p.demographics.use_demographics).toBe(true);
+    expect(p.demographics.country).toBe("KEN");
+    expect(deps.scenario.dataSources).toHaveLength(6);                   // the API's four, the pyramid replacing its age groups, plus the household size and the matrix
+    expect(out.citations[0]).toContain("UN WPP");
+    expect(out.applied.total_population).toBe(213_000_000);
+    expect(deps.queries[0]).toEqual({ source: "un_wpp", indicators: [55, 59, 71, 49], locationId: 404 });
+  });
+
+  it("falls back to the sim service when the UN call returns nothing", async () => {
+    const deps = await configured(makeDeps({ unWpp: [], fallback: { birth_rate: 27.3, death_rate: 7.2, source: "UN WPP 2024 — KEN (2022)" } }), { disease: "dengue" });
+    const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(deps.scenario.params?.demographics.birth_rate).toBe(27.3);
+    expect(JSON.parse(out.content).citations).toEqual(["UN WPP 2024 — KEN (2022)", "UN WPP 2024 — KEN (2022)", BUNDLED_PYRAMID, BUNDLED_HOUSEHOLDS, BUNDLED_MATRICES]);
+    expect(out.payload).toMatchObject({ kind: "data", source: "sim_fallback", iso3: "KEN" });
+  });
+
+  it("falls back when the country is not in the UN table, and reports when both fail", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya, fallback: null }), { disease: "dengue" });
+    // Antarctica has no UN WPP population series, so the table has no row for it.
+    const out = await fetchDemographics({ country_iso3: "ATA" }, deps);
+    expect(deps.queries).toEqual([]);
+    expect(out.content).toBe("FETCH ERROR: No demographic data found for ATA in UN WPP, WHO Mortality Database, or World Bank Data360");
+    expect(out.isError).toBe(true);
+  });
+
+  it("requires configuration first", async () => {
+    const out = await fetchDemographics({ country_iso3: "BRA" }, makeDeps({ unWpp: kenya }));
+    expect(out.content).toBe("Call configure_simulation first to establish the simulation before fetching data.");
+    expect(out.isError).toBe(true);
+  });
+
+  it("holds the R0 across the network switch", async () => {
+    const deps = makeDeps({ unWpp: [kenya[0], kenya[2], kenya[3]] });
+    const configured0 = JSON.parse((await configureSimulation({ disease: "measles", disease_type: "seir", dur_exp_days: 11, dur_inf_days: 8, r0: 15, n_agents: 5000 } as never, deps)).content);
+    expect(configured0.approx_r0).toBe(15);
+    const betaBefore = deps.scenario.params!.disease.beta;
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    expect(deps.scenario.params!.network.network_type).toBe("age_structured");
+    expect(deps.scenario.params!.disease.beta).not.toBe(betaBefore);
+    expect(out.approx_r0).toBe(15);
+    expect(out.applied.beta_recalibrated_to_hold_r0).toBe(15);
+    expect(out.warnings).toEqual([]);
+  });
+
+  it("flags an out-of-range R0 after the fetch even without a switch", async () => {
+    const deps = await configured(makeDeps({ unWpp: [kenya[2], kenya[3]] }), { disease: "measles", r0: 15, dur_inf_days: 30 });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    expect(out.warnings.some((w: string) => w.includes("outside the literature range"))).toBe(true);
+  });
+
+  it("applies partial API fields; the bundled pyramid still switches the network and the R0 is held", async () => {
+    const deps = await configured(makeDeps({ unWpp: [kenya[2], kenya[3]] }), { disease: "dengue", r0: 3 });
+    const beta = deps.scenario.params!.disease.beta;
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    const p = deps.scenario.params!;
+    expect(p.network.network_type).toBe("age_structured");
+    expect(p.disease.beta).not.toBe(beta);
+    expect(approxR0(p)).toBeCloseTo(3, 6);
+    expect(p.demographics.use_demographics).toBe(true);
+    expect(Object.keys(out.applied).sort()).toEqual(["age_source", "age_structure_pct", "beta_recalibrated_to_hold_r0", "birth_rate", "contact_matrix", "death_rate", "household_size", "network_type"]);
+    expect(out.applied.birth_rate).toBe(12.3);
+    expect(deps.scenario.totalPopulation).toBeNull();
+  });
+
+  it("carries the parameters after the fetch for the Parameters section", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", n_agents: 50000 });
+    const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(out.payload).toMatchObject({ kind: "data", params: deps.scenario.params });
+    expect((out.payload as { params: { network: { network_type: string } } }).params.network.network_type).toBe("age_structured");
+    expect(JSON.parse(out.content).params).toBeUndefined();
+  });
+
+  it("reports an adapter failure as a FETCH ERROR", async () => {
+    const deps = await configured(makeDeps({ unWpp: new Error("UN is down"), fallback: null }), { disease: "dengue" });
+    const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(out.content).toBe("FETCH ERROR: UN is down");
+    expect(out.isError).toBe(true);
+  });
+});
+
+describe("fetch_health_system", () => {
+  const fields = [
+    { ...rf("treatment_capacity", 2.52, "WB WDI, KEN, 2021"), description: "hospital beds/1,000", alternatives: [{ ...rf("treatment_capacity", 0.2, "WB WDI, KEN, 2021"), description: "physicians/1,000" }] },
+    { ...rf("uhc_coverage", 56, "WB WDI, KEN, 2022"), description: "UHC service coverage index 0–100" },
+  ];
+
+  it("applies capacity to an existing treatment", async () => {
+    const deps = await configured(makeDeps({ wbData360: fields }), { disease: "measles", n_agents: 100000, treatment_capacity: 10 });
+    const out = JSON.parse((await fetchHealthSystem({ country_iso3: "KEN" }, deps)).content);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(252);
+    expect(out.applied).toEqual({ treatment_capacity: 2.52, uhc_coverage: 56, applied_treatment_capacity: 252 });
+    expect(out.citations).toEqual(["WB WDI, KEN, 2021", "WB WDI, KEN, 2022"]);
+    expect(deps.queries[0]).toEqual({ source: "wb_data360", indicatorCodes: ["WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS", "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD"], locationCode: "KEN" });
+  });
+
+  it("records only when there is no treatment intervention", async () => {
+    const deps = await configured(makeDeps({ wbData360: fields }), { disease: "measles" });
+    const out = await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    expect(getTreatment(deps.scenario.params!)).toBeNull();
+    expect(deps.scenario.dataSources).toHaveLength(2);
+    expect(out.payload).toMatchObject({ kind: "data", params: deps.scenario.params });
+  });
+
+  it("carries the parameters with the applied capacity", async () => {
+    const deps = await configured(makeDeps({ wbData360: fields }), { disease: "measles", n_agents: 100000, treatment_capacity: 10 });
+    const out = await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    expect(out.payload).toMatchObject({ kind: "data", params: { interventions: [{ type: "treatment", capacity: 252 }] } });
+  });
+
+  it("reports empty and failed fetches", async () => {
+    const empty = await configured(makeDeps({ wbData360: [] }), { disease: "measles" });
+    expect((await fetchHealthSystem({ country_iso3: "KEN" }, empty)).content).toBe("FETCH ERROR: no health-system data returned for KEN");
+    const down = await configured(makeDeps({ wbData360: new Error("timeout") }), { disease: "measles" });
+    expect((await fetchHealthSystem({ country_iso3: "KEN" }, down)).content).toBe("FETCH ERROR: timeout");
+    expect((await fetchHealthSystem({ country_iso3: "KEN" }, makeDeps())).content).toMatch(/^Call configure_simulation first/);
+  });
+});
+
+describe("fetch_vaccination_coverage", () => {
+  it("adds a vaccine intervention once", async () => {
+    const deps = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")] }), { disease: "measles" });
+    const first = JSON.parse((await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps)).content);
+    expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.88); // routine coverage is pre-existing immunity at the start
+    expect(getVaccine(deps.scenario.params!)).toBeNull();
+    expect(first.applied).toEqual({ mcv1_coverage: 88, applied_vaccine_coverage: 0.88 });
+    expect(deps.queries[0]).toEqual({ source: "who_gho", indicatorCodes: ["WHS8_110", "MCV2"], locationCode: "KEN" });
+    const second = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
+    expect(deps.scenario.params!.disease.initial_immune_frac).toBe(0.88);
+    expect(second.payload).toMatchObject({ kind: "data", params: { disease: { initial_immune_frac: 0.88 } } });
+  });
+
+  it("says when no indicator exists and when the adapter fails", async () => {
+    const deps = await configured(makeDeps({ whoGho: new Error("boom") }), { disease: "dengue" });
+    const none = await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "dengue fever" }, deps);
+    expect(none.content).toBe("NO VACCINE INDICATOR: no routine-immunization coverage indicator is available for dengue.");
+    expect(none.isError).toBeUndefined();
+    const failed = await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "measles" }, deps);
+    expect(failed.content).toBe("FETCH ERROR: boom");
+    const empty = await configured(makeDeps({ whoGho: [] }), { disease: "measles" });
+    expect((await fetchVaccinationCoverage({ country_iso3: "BRA", disease: "measles" }, empty)).content).toBe("FETCH ERROR: no vaccination data returned for BRA");
+  });
+});
+
+describe("fetch_demographics with the bundled tables (Part 2, 5.3, 5.4, 6.1)", () => {
+  const kenya = [
+    rf("age_distribution_pct", { "0-17": 38.6, "18-64": 57.6, "65+": 3.8 }, "UN WPP 2024, Kenya (KEN), 2024"),
+    rf("birth_rate", 12.3, "UN WPP 2024"),
+    rf("death_rate", 7.1, "UN WPP 2024"),
+  ];
+
+  it("applies the bundled pyramid shares, household size and contact matrix, holding the confirmed R0", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", r0: 2.5 });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    const p = deps.scenario.params!;
+    expect(p.demographics.age_source).toBe("un_wpp");
+    expect(p.demographics.age_pct_under18).not.toBe(38.6);                                  // the bundled WPP 2024 share, not the API's
+    expect(p.demographics.age_pct_under18! + p.demographics.age_pct_18_64! + p.demographics.age_pct_over65!).toBeCloseTo(100, 0);
+    expect(p.network.network_type).toBe("age_structured");
+    expect(p.network.household_size).toBeGreaterThan(3);
+    expect(p.network.contacts_source).toBe("prem_2021:KEN");
+    expect(p.network.contacts.adults_adults).not.toBe(9);
+    expect(out.applied.contact_matrix).toBe("prem_2021:KEN");
+    expect(out.applied.household_size).toBe(p.network.household_size);
+    expect(out.applied.age_source).toBe("un_wpp");
+    expect(out.applied.beta_recalibrated_to_hold_r0).toBe(2.5);
+    expect(approxR0(p)).toBeCloseTo(2.5, 6);
+  });
+
+  it("keeps a hybrid network and leaves the matrix alone for a country without a bundled matrix", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "dengue", network_type: "hybrid" });
+    await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(deps.scenario.params!.network.network_type).toBe("hybrid");
+    const tiny = [rf("birth_rate", 9.1, "UN WPP 2024"), rf("death_rate", 8.2, "UN WPP 2024")];
+    const other = await configured(makeDeps({ unWpp: tiny }), { disease: "dengue" });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "AIA" }, other)).content);    // Anguilla: a pyramid, no Prem matrix or household row
+    expect(other.scenario.params!.network.contacts_source).toBe("polymod_default");
+    expect(other.scenario.params!.network.network_type).toBe("age_structured");
+    expect(other.scenario.params!.demographics.birth_rate).toBe(9.1);
+    expect(out.applied.contact_matrix).toBeUndefined();
+    expect(out.applied.household_size).toBeUndefined();
+  });
+});
+
+describe("fetch_vaccination_coverage with a database efficacy (Part 2, 7.4)", () => {
+  it("writes a day-0 campaign with the database's vaccine efficacy when the database carries one", async () => {
+    const deps = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")], lookup: { measles: { vaccine_efficacy: { status: "ok", typical: 0.93, n_estimates: 2 } } } }), { disease: "measles" });
+    const out = JSON.parse((await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps)).content);
+    const p = deps.scenario.params!;
+    expect(p.disease.initial_immune_frac).toBe(0);
+    expect(p.interventions.find((i) => i.type === "vaccine")).toMatchObject({ kind: "campaign", coverage: 0.88, start_day: 0, end_day: 0, efficacy: 0.93 });
+    expect(out.applied).toMatchObject({ applied_vaccine_coverage: 0.88, applied_vaccine_efficacy: 0.93 });
+    const again = await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" }, deps);
+    expect(deps.scenario.params!.interventions.filter((i) => i.type === "vaccine")).toHaveLength(1);
+    expect(again.isError).toBeFalsy();
+  });
+});
+
+describe("the routine-immunization indicators (follow-up spec 7.2)", () => {
+  it("come from the list the service shares", () => {
+    expect(GHO_CODES).toEqual(indicators.indicators);
+    expect(Object.keys(GHO_CODES)).toContain("measles");
+  });
+});
+
+describe("the fetch tools send where each value came from (follow-up spec 8.4)", () => {
+  it("tags what a fetch wrote as fetched, on the payload that carries the parameters", async () => {
+    const deps = await configured(makeDeps({ unWpp: [rf("birth_rate", 28.1), rf("death_rate", 7.9), rf("total_population", 55_000_000)] }), { disease: "measles", dur_inf_days: 8, country_iso3: "KEN" });
+    const out = await fetchDemographics({ country_iso3: "KEN" } as never, deps);
+    const payload = out.payload as { sources?: Record<string, string>; params?: unknown };
+    expect(payload.params).toBeDefined();
+    expect(payload.sources).toMatchObject({ "demographics.birth_rate": "fetch", "demographics.death_rate": "fetch", "disease.dur_inf.mean_days": "database" });
+  });
+
+  it("does so for the vaccination and the health-system fetches too", async () => {
+    const vaccinated = await configured(makeDeps({ whoGho: [rf("mcv1_coverage", 88, "WHO GHO, KEN, 2022")] }), { disease: "measles" });
+    const coverage = (await fetchVaccinationCoverage({ country_iso3: "KEN", disease: "measles" } as never, vaccinated)).payload as { sources?: Record<string, string> };
+    expect(coverage.sources).toMatchObject({ "disease.initial_immune_frac": "fetch" });
+    const beds = [{ ...rf("treatment_capacity", 2.52, "WB WDI, KEN, 2021"), description: "hospital beds/1,000", alternatives: [] }];
+    const treated = await configured(makeDeps({ wbData360: beds }), { disease: "measles", n_agents: 5000, treatment_capacity: 10 });
+    const health = (await fetchHealthSystem({ country_iso3: "KEN" } as never, treated)).payload as { sources?: Record<string, string> };
+    expect(health.sources).toMatchObject({ "run.n_agents": "user" });
+  });
+});
