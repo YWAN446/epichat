@@ -1,4 +1,4 @@
-starsim>=4.0.0rc5
+starsim==4.0.0rc5
 anthropic>=0.76.0
 streamlit>=1.54.0
 pydantic>=2.0.0
