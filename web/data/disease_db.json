@@ -773,9 +773,9 @@
      "status": "ok",
      "n_estimates": 1,
      "unit": "percentage",
-     "min": 0.005,
-     "max": 0.005,
-     "typical": 0.005,
+     "min": 0.0005,
+     "max": 0.0005,
+     "typical": 0.0005,
      "source": "https://www.mdpi.com/2076-393X/8/4/561",
      "estimate_range": [
       0.0005,
@@ -863,13 +863,13 @@
      "range_text": "11–16"
     },
     "fatality_rate": {
-     "min": 0.005,
-     "max": 0.005,
-     "typical": 0.005,
+     "min": 0.0005,
+     "max": 0.0005,
+     "typical": 0.0005,
      "source": "https://www.mdpi.com/2076-393X/8/4/561",
      "unit": "percentage",
      "note": "Death from postnatally acquired rubella is exceptionally rare. Historical U.S. surveillance estimated approximately 1 death per 210,000 cases (~0.00048%).",
-     "range_text": "0.005–0.005"
+     "range_text": "0.0005–0.0005"
     },
     "average_contacts_daily": null,
     "immunity_duration": null,
@@ -1011,10 +1011,32 @@
      "special_value": "lifelong"
     },
     "asymptomatic_fraction": {
-     "status": "no_source",
-     "n_estimates": 0,
+     "status": "ok",
+     "n_estimates": 4,
      "unit": "fraction",
-     "notes": "No varicella-specific estimates of asymptomatic fraction have been identified."
+     "min": 0.07,
+     "max": 0.33,
+     "typical": 0.1,
+     "source": "https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox",
+     "estimate_range": [
+      0.07,
+      0.836
+     ],
+     "estimate_extremes": [
+      {
+       "value": 0.07,
+       "population": "Adults without a history of varicella, exposed to infected children in the household",
+       "source_type": "clinical_reference",
+       "title": "Chickenpox, Measles, and Mumps"
+      },
+      {
+       "value": 0.836,
+       "population": "Unvaccinated patients aged 11 and over with no known chickenpox history, hospital serology",
+       "source_type": "serological_survey",
+       "title": "Assumptions and Realities: Unraveling Varicella Zoster Virus Immunity in Unvaccinated Populations"
+      }
+     ],
+     "notes": "The spread here is almost entirely about what counts as evidence of silent infection: household-exposure designs give roughly 7%, while serology-without-reported-history designs give 11% to 33% because they conflate true subclinical infection with recall failure. Recall fails in both directions in the same cohorts, so the household figure is the better-identified quantity and anchors the typical value; SPLIT BY VACCINATION STATUS before use, since the relevant phenomenon in vaccinated populations is breakthrough varicella, which is mild and atypical rather than asymptomatic."
     }
    },
    "flat": {
@@ -1056,7 +1078,15 @@
     },
     "average_contacts_daily": null,
     "immunity_duration": null,
-    "asymptomatic_fraction": null
+    "asymptomatic_fraction": {
+     "min": 0.07,
+     "max": 0.33,
+     "typical": 0.1,
+     "source": "https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox",
+     "unit": "fraction",
+     "note": "The spread here is almost entirely about what counts as evidence of silent infection: household-exposure designs give roughly 7%, while serology-without-reported-history designs give 11% to 33% because they conflate true subclinical infection with recall failure. Recall fails in both directions in the same cohorts, so the household figure is the better-identified quantity and anchors the typical value; SPLIT BY VACCINATION STATUS before use, since the relevant phenomenon in vaccinated populations is breakthrough varicella, which is mild and atypical rather than asymptomatic.",
+     "range_text": "0.07–0.33"
+    }
    }
   },
   "pertussis": {
@@ -1605,11 +1635,11 @@
     },
     "infectious_days": {
      "status": "under_review",
-     "n_estimates": 1,
+     "n_estimates": 2,
      "unit": "days",
      "estimate_range": [
       1,
-      1
+      8
      ],
      "estimate_extremes": [
       {
@@ -1617,10 +1647,16 @@
        "population": "General, treated cases",
        "source_type": "government_report",
        "title": "Meningococcal Disease (Communicable Disease Control Manual)"
+      },
+      {
+       "value": 8,
+       "population": "Cases of invasive meningococcal disease, treated",
+       "source_type": "government_report",
+       "title": "Meningococcal Disease Quicksheet"
       }
      ],
-     "notes": "Persons are generally considered infectious from about 7 days before symptom onset until 24 hours after starting appropriate antibiotic therapy. Without treatment, meningococci can persist in nasopharyngeal secretions considerably longer, since clearance is driven by antibiotics rather than natural resolution.",
-     "review_note": "Consensus of 1/1/1 day encodes the public-health rule that a case is non-infectious ~24 h after effective antibiotics - not the untreated infectious period or the carriage duration that drives transmission. Simulating 1 day would badly understate spread. Needs a transmission-relevant value with a citation."
+     "notes": "Cases are considered infectious from 7 days before symptom onset until 24 hours after appropriate antibiotic therapy begins, with peak infectiousness shortly before onset.",
+     "review_note": "Consensus of 1 to 8 days (typical 8) is a treated case's infectious window as public-health guidance defines it: from 7 days before symptom onset to 24 h after effective antibiotics. It is not the untreated infectious period or the carriage duration that drives transmission, so simulating it would understate spread. Needs a transmission-relevant value with a citation."
     },
     "fatality_rate": {
      "status": "ok",
@@ -2019,19 +2055,23 @@
      "notes": "Typical value taken from mean of systematic review of multiple countries with over 2000 studies reviewed."
     },
     "incubation_days": {
-     "status": "estimates_only",
-     "n_estimates": 3,
+     "status": "ok",
+     "n_estimates": 5,
      "unit": "days",
+     "min": 2,
+     "max": 21,
+     "typical": 9,
+     "source": "https://www.cdc.gov/ebola/signs-symptoms/index.html",
      "estimate_range": [
-      9,
+      6.22,
       12.7
      ],
      "estimate_extremes": [
       {
-       "value": 9,
+       "value": 6.22,
        "population": "General",
-       "source_type": "government_report",
-       "title": "Ebola Disease Signs and Symptoms"
+       "source_type": "systematic_review",
+       "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review"
       },
       {
        "value": 12.7,
@@ -2039,35 +2079,36 @@
        "source_type": "modeling_study",
        "title": "Incubation period of Ebola hemorrhagic virus subtype Zaire"
       }
-     ]
+     ],
+     "notes": "Based on CDC guidelines for the general population."
     },
     "infectious_days": {
      "status": "ok",
      "n_estimates": 3,
      "unit": "days",
-     "min": 4,
-     "max": 10,
-     "typical": 7,
+     "min": 3.5,
+     "max": 10.7,
+     "typical": 5.61,
      "source": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
      "estimate_range": [
-      5.61,
-      115
+      5.0,
+      9.4
      ],
      "estimate_extremes": [
       {
-       "value": 5.61,
-       "population": "General, model parameter",
-       "source_type": "modeling_study",
-       "title": "The basic reproductive number of Ebola and the effects of public health measures: the cases of Congo and Uganda"
+       "value": 5.0,
+       "population": "Fatal cases",
+       "source_type": "government_report",
+       "title": "Ebola Virus Disease in West Africa — The First 9 Months of the Epidemic and Forward Projections"
       },
       {
-       "value": 115,
-       "population": "Male survivors, viral RNA persistence in semen",
-       "source_type": "review_article",
-       "title": "Ebola RNA Persistence in Semen of Ebola Virus Disease Survivors — Final Report"
+       "value": 9.4,
+       "population": "EVD survivors",
+       "source_type": "systematic_review",
+       "title": "Time From Infection to Disease and Infectiousness for Ebola Virus Disease, a Systematic Review"
       }
      ],
-     "notes": "Patients are not infectious during incubation — infectiousness begins with symptom onset and rises with viral load as illness progresses, so the effective infectious window runs from onset until isolation, recovery, or death. Untreated, mean time from onset to death is roughly 7-8 days and onset to recovery roughly 11-12 days, but isolation typically truncates community exposure well before either endpoint. Two features break the simple SEIR framing: corpses are highly infectious and traditional burial washing has driven a large share of transmission, effectively extending the infectious period past death; and viral RNA persists in immune-privileged sites in survivors, with semen positive for many months (documented sexual transmission more than a year after recovery) and rare relapse with CNS or ocular involvement. Models that ignore the post-death and post-recovery channels will understate tail transmission."
+     "notes": "Chowell et al. bounds community exposure and is the right quantity for transmission modeling."
     },
     "fatality_rate": {
      "status": "ok",
@@ -2078,24 +2119,24 @@
      "typical": 50,
      "source": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
      "estimate_range": [
-      33.5,
+      50,
       88
      ],
      "estimate_extremes": [
       {
-       "value": 33.5,
-       "population": "Patients receiving monoclonal antibody therapy, DRC 2018-2019",
-       "source_type": "modeling_study",
-       "title": "A Randomized, Controlled Trial of Ebola Virus Disease Therapeutics (PALM trial)"
+       "value": 50,
+       "population": "General",
+       "source_type": "government_report",
+       "title": "Ebola disease"
       },
       {
        "value": 88,
-       "population": "General, Yambuku outbreak 1976",
+       "population": "General",
        "source_type": "government_report",
-       "title": "Ebola disease distribution by species and outbreak"
+       "title": "Ebola haemorrhagic fever in Zaire, 1976"
       }
      ],
-     "notes": "Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others."
+     "notes": "WHO estimate. Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others."
     },
     "average_contacts_daily": {
      "status": "no_source",
@@ -2105,49 +2146,55 @@
     },
     "immunity_duration": {
      "status": "ok",
-     "n_estimates": 2,
+     "n_estimates": 3,
      "unit": "days",
      "min": 3650,
-     "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6009669/",
+     "source": "https://academic.oup.com/jid/article/217/2/223/4716835",
      "estimate_range": [
-      730,
-      730
+      1825,
+      3650
      ],
      "estimate_extremes": [
       {
-       "value": 730,
-       "population": "General, vaccine-induced (rVSV-ZEBOV / Ervebo)",
-       "source_type": "organization_report",
-       "title": "Ebola disease caused by Zaire ebolavirus"
+       "value": 1825,
+       "population": "Vaccinated adults, PREVAC trial (rVSV-ZEBOV and Ad26.ZEBOV/MVA-BN-Filo)",
+       "source_type": "modeling_study",
+       "title": "Long-term cellular immunity of vaccines for Zaire Ebola Virus Diseases"
+      },
+      {
+       "value": 3650,
+       "population": "Survivors of natural infection",
+       "source_type": "health_organization_summary",
+       "title": "Ebola virus disease"
       }
      ],
-     "notes": "Survivors of natural infection carry detectable IgG for decades, and no well-documented case of reinfection with the same species has been reported, so natural immunity is generally treated as long-lasting to lifelong. Antibody persistence is not the same as demonstrated protection — the decades-long evidence is serological, since challenge studies are impossible and reinfection exposure is rare. Cross-protection between species (Zaire, Sudan, Bundibugyo) is limited and should not be assumed; the licensed rVSV-ZEBOV vaccine (Ervebo) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine available.",
-     "special_value": "lifelong; natural infection: likely lifelong or multi-decade; vaccine: at least 2-4 years, durability beyond that not established"
+     "notes": "This field pools two quantities that should not be averaged: immunity after natural infection and immunity after vaccination. The estimates below are also all immunological markers, not protection — no correlate of protection has been established for EVD, challenge studies are impossible, and reinfection exposure is too rare to measure protection directly, so every value here is a floor on detectable immune memory rather than a duration of immunity. Natural infection: IgG and some neutralizing activity persisted in all 14 Yambuku survivors tested 40 years on, and no well-documented same-species reinfection has been reported, but tertiary sources split between 'lifelong' (ECDC) and '10 years or more' (Penn Medicine); the conservative reading is a 10-year floor with lifelong as an upper assumption, not two compatible claims. Vaccine: PREVAC found EBOV-specific memory T-cell responses at 60 months with no decline, but only after 8-day in-vitro expansion — ex-vivo responses were undetectable by month 12 and antibody titres had fallen to near pre-boost levels by then, so recall capacity persists while circulating effector immunity does not. No booster schedule is defined and no immunological criterion for revaccination exists. Cross-protection between species should not be assumed: Ervebo (rVSV-ZEBOV) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine. For modeling, prefer the 3650-day floor for recovered individuals, treat vaccine-derived immunity as a separate compartment with a waning rate the data cannot currently pin down, and run sensitivity analysis rather than committing to a point value.",
+     "special_value": "lifelong; natural infection: at least 10 years, plausibly lifelong; vaccine: memory demonstrated to 5 years, protection duration unknown"
     },
     "asymptomatic_fraction": {
      "status": "ok",
-     "n_estimates": 3,
+     "n_estimates": 2,
      "unit": "fraction",
      "min": 0.03,
      "max": 0.46,
      "typical": 0.15,
-     "source": "https://pubmed.ncbi.nlm.nih.gov/10881895/",
+     "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/",
      "estimate_range": [
-      0.03,
-      0.46
+      0.271,
+      0.5
      ],
      "estimate_extremes": [
       {
-       "value": 0.03,
-       "population": "Household contacts, Sierra Leone 2014-2016",
-       "source_type": "review_article",
-       "title": "Asymptomatic infection and unrecognised Ebola virus disease in Ebola-affected households in Sierra Leone: a cross-sectional study using a new non-invasive assay for antibodies to Ebola virus"
+       "value": 0.271,
+       "population": "Household contacts, pooled across outbreaks 1976-2014",
+       "source_type": "systematic_review",
+       "title": "Transmissibility and Pathogenicity of Ebola Virus: A Systematic Review and Meta-analysis of Household Secondary Attack Rate and Asymptomatic Infection"
       },
       {
-       "value": 0.46,
-       "population": "Close contacts of symptomatic cases, Gabon",
-       "source_type": "review_article",
-       "title": "Human asymptomatic Ebola infection and strong inflammatory response"
+       "value": 0.5,
+       "population": "General, modeling assumption",
+       "source_type": "modeling_study",
+       "title": "Impact of asymptomatic infection and acquired immunity on the spread and control of Ebola"
       }
      ],
      "notes": "The single most contested parameter for this pathogen, with credible published estimates spanning more than an order of magnitude. The disagreement is largely methodological: seroprevalence studies in contacts pick up antibody-positive people who never reported illness, but Ebola serological assays have known specificity problems in populations with high background reactivity, and recall of mild illness months after an epidemic is poor. Studies using stricter case definitions and better-validated assays tend to land far lower than the early Gabon work. Consequential modeling caveat: asymptomatic or minimally symptomatic individuals are not believed to transmit, since infectiousness tracks viral load and symptom severity — so unlike most respiratory pathogens, a high asymptomatic fraction here reduces the susceptible pool without adding hidden transmission chains. Setting this parameter high therefore makes outbreaks easier to control in most model structures, which is the opposite of the usual intuition and worth checking explicitly in sensitivity analysis."
@@ -2163,15 +2210,23 @@
      "note": "Typical value taken from mean of systematic review of multiple countries with over 2000 studies reviewed.",
      "range_text": "1.34–2.53"
     },
-    "incubation_days": null,
+    "incubation_days": {
+     "min": 2,
+     "max": 21,
+     "typical": 9,
+     "source": "https://www.cdc.gov/ebola/signs-symptoms/index.html",
+     "unit": "days",
+     "note": "Based on CDC guidelines for the general population.",
+     "range_text": "2–21"
+    },
     "infectious_days": {
-     "min": 4,
-     "max": 10,
-     "typical": 7,
+     "min": 3.5,
+     "max": 10.7,
+     "typical": 5.61,
      "source": "https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
      "unit": "days",
-     "note": "Patients are not infectious during incubation — infectiousness begins with symptom onset and rises with viral load as illness progresses, so the effective infectious window runs from onset until isolation, recovery, or death. Untreated, mean time from onset to death is roughly 7-8 days and onset to recovery roughly 11-12 days, but isolation typically truncates community exposure well before either endpoint. Two features break the simple SEIR framing: corpses are highly infectious and traditional burial washing has driven a large share of transmission, effectively extending the infectious period past death; and viral RNA persists in immune-privileged sites in survivors, with semen positive for many months (documented sexual transmission more than a year after recovery) and rare relapse with CNS or ocular involvement. Models that ignore the post-death and post-recovery channels will understate tail transmission.",
-     "range_text": "4–10"
+     "note": "Chowell et al. bounds community exposure and is the right quantity for transmission modeling.",
+     "range_text": "3.5–10.7"
     },
     "fatality_rate": {
      "min": 25,
@@ -2179,7 +2234,7 @@
      "typical": 50,
      "source": "https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
      "unit": "percentage",
-     "note": "Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others.",
+     "note": "WHO estimate. Among the highest CFRs of any human pathogen, but the range is enormous and driven more by care setting and species than by anything intrinsic to a given outbreak. Species ordering is consistent: Zaire ebolavirus is the most lethal (roughly 60-90% historically), Sudan ebolavirus intermediate (roughly 40-60%), Bundibugyo ebolavirus lowest (roughly 25-40%). Reston ebolavirus has caused no known human illness. Supportive care matters enormously — aggressive fluid and electrolyte management alone cut mortality substantially in the 2014-2016 epidemic, and the monoclonal antibody therapeutics (mAb114 / ansuvimab and REGN-EB3 / inmazeb) proven in the 2018-2020 DRC PALM trial reduced mortality to roughly 30% overall and into the single digits among patients treated early with low viral load. Reported outbreak CFRs are also inflated or deflated by outcome ascertainment: cases lost to follow-up are disproportionately survivors in some datasets and disproportionately deaths in others.",
      "range_text": "25–90"
     },
     "average_contacts_daily": null,
@@ -2187,16 +2242,16 @@
      "min": 3650,
      "max": null,
      "typical": null,
-     "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6009669/",
+     "source": "https://academic.oup.com/jid/article/217/2/223/4716835",
      "unit": "days",
-     "note": "Survivors of natural infection carry detectable IgG for decades, and no well-documented case of reinfection with the same species has been reported, so natural immunity is generally treated as long-lasting to lifelong. Antibody persistence is not the same as demonstrated protection — the decades-long evidence is serological, since challenge studies are impossible and reinfection exposure is rare. Cross-protection between species (Zaire, Sudan, Bundibugyo) is limited and should not be assumed; the licensed rVSV-ZEBOV vaccine (Ervebo) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine available.",
+     "note": "This field pools two quantities that should not be averaged: immunity after natural infection and immunity after vaccination. The estimates below are also all immunological markers, not protection — no correlate of protection has been established for EVD, challenge studies are impossible, and reinfection exposure is too rare to measure protection directly, so every value here is a floor on detectable immune memory rather than a duration of immunity. Natural infection: IgG and some neutralizing activity persisted in all 14 Yambuku survivors tested 40 years on, and no well-documented same-species reinfection has been reported, but tertiary sources split between 'lifelong' (ECDC) and '10 years or more' (Penn Medicine); the conservative reading is a 10-year floor with lifelong as an upper assumption, not two compatible claims. Vaccine: PREVAC found EBOV-specific memory T-cell responses at 60 months with no decline, but only after 8-day in-vitro expansion — ex-vivo responses were undetectable by month 12 and antibody titres had fallen to near pre-boost levels by then, so recall capacity persists while circulating effector immunity does not. No booster schedule is defined and no immunological criterion for revaccination exists. Cross-protection between species should not be assumed: Ervebo (rVSV-ZEBOV) targets Zaire ebolavirus only and offers no reliable protection against Sudan ebolavirus, which is why the 2022 Uganda Sudan-virus outbreak had no licensed vaccine. For modeling, prefer the 3650-day floor for recovered individuals, treat vaccine-derived immunity as a separate compartment with a waning rate the data cannot currently pin down, and run sensitivity analysis rather than committing to a point value.",
      "range_text": null
     },
     "asymptomatic_fraction": {
      "min": 0.03,
      "max": 0.46,
      "typical": 0.15,
-     "source": "https://pubmed.ncbi.nlm.nih.gov/10881895/",
+     "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/",
      "unit": "fraction",
      "note": "The single most contested parameter for this pathogen, with credible published estimates spanning more than an order of magnitude. The disagreement is largely methodological: seroprevalence studies in contacts pick up antibody-positive people who never reported illness, but Ebola serological assays have known specificity problems in populations with high background reactivity, and recall of mild illness months after an epidemic is poor. Studies using stricter case definitions and better-validated assays tend to land far lower than the early Gabon work. Consequential modeling caveat: asymptomatic or minimally symptomatic individuals are not believed to transmit, since infectiousness tracks viral load and symptom severity — so unlike most respiratory pathogens, a high asymptomatic fraction here reduces the susceptible pool without adding hidden transmission chains. Setting this parameter high therefore makes outbreaks easier to control in most model structures, which is the opposite of the usual intuition and worth checking explicitly in sensitivity analysis.",
      "range_text": "0.03–0.46"
@@ -2212,69 +2267,217 @@
    "summaries": {
     "r0": {
      "status": "ok",
-     "n_estimates": 0,
+     "n_estimates": 4,
      "unit": "dimensionless",
-     "min": 1.0,
-     "max": 103.0,
-     "typical": 4.74,
-     "source": "https://www.sciencedirect.com/science/article/pii/S0013935120300050",
-     "notes": "Vector-borne; note model limitations."
+     "min": 2.0293,
+     "max": 10.29,
+     "typical": 6.16,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/31927301/",
+     "estimate_range": [
+      2.99,
+      27.2
+     ],
+     "estimate_extremes": [
+      {
+       "value": 2.99,
+       "population": "General, 2011 epidemic, pre-control",
+       "source_type": "modeling_study",
+       "title": "Estimating the basic reproduction number for single-strain dengue fever epidemics"
+      },
+      {
+       "value": 27.2,
+       "population": "Fully susceptible island population, 2002 outbreak",
+       "source_type": "modeling_study",
+       "title": "The basic reproduction number R0 and effectiveness of reactive interventions during dengue epidemics: the 2002 dengue outbreak in Easter Island, Chile"
+      }
+     ],
+     "notes": "Band spans across all considered estimate ranges, excluding the Chile 2002 outbreak. Typical is the mean of the considered range."
     },
     "incubation_days": {
      "status": "ok",
-     "n_estimates": 0,
+     "n_estimates": 3,
      "unit": "days",
      "min": 3,
-     "max": 14,
-     "typical": 6,
-     "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+     "max": 10,
+     "typical": 5.9,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/23226436/",
+     "estimate_range": [
+      5.9,
+      6.0
+     ],
+     "estimate_extremes": [
+      {
+       "value": 5.9,
+       "population": "General, pooled human observations",
+       "source_type": "systematic_review",
+       "title": "The Incubation Periods of Dengue Viruses"
+      },
+      {
+       "value": 6.0,
+       "population": "DENV-4, experimentally infected volunteers",
+       "source_type": "review_article",
+       "title": "Natural History of Dengue Virus (DENV)-1 and DENV-4 Infections: Reanalysis of Classic Studies"
+      }
+     ],
+     "notes": "INTRINSIC incubation only. Treating the ~6-day IIP as the whole latent period runs the epidemic two to three times too fast at 25C."
     },
     "infectious_days": {
      "status": "ok",
-     "n_estimates": 0,
+     "n_estimates": 2,
      "unit": "days",
-     "min": 2,
-     "max": 5,
-     "typical": 4,
-     "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+     "min": 1,
+     "max": 7,
+     "typical": 4.5,
+     "source": "https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+     "estimate_range": [
+      2.5,
+      4.5
+     ],
+     "estimate_extremes": [
+      {
+       "value": 2.5,
+       "population": "Asymptomatic and presymptomatic DENV-infected individuals",
+       "source_type": "modeling_study",
+       "title": "Asymptomatic humans transmit dengue virus to mosquitoes"
+      },
+      {
+       "value": 4.5,
+       "population": "General, symptomatic infections",
+       "source_type": "review_article",
+       "title": "Dengue viremia kinetics in asymptomatic and symptomatic infection"
+      }
+     ],
+     "notes": "Duration over which a human can infect a feeding mosquito, running roughly 2 days before symptom onset to 5 days after, and applying to inapparent infections as well as symptomatic ones. Presymptomatic transmission is routine here, unlike the ebola entry, and PCR-positivity durations run longer than infectiousness and must not be substituted in."
     },
-    "fatality_rate": null,
-    "average_contacts_daily": null,
-    "immunity_duration": null,
-    "asymptomatic_fraction": null
+    "fatality_rate": {
+     "status": "under_review",
+     "n_estimates": 3,
+     "unit": "percentage",
+     "estimate_range": [
+      0.05,
+      25
+     ],
+     "estimate_extremes": [
+      {
+       "value": 0.05,
+       "population": "Reported dengue cases, Region of the Americas, 2023",
+       "source_type": "health_organization_summary",
+       "title": "Case fatality rate due to dengue (Impact Indicator 23), End of Biennium Report 2022-2023"
+      },
+      {
+       "value": 25,
+       "population": "Dengue patients admitted to a medical ICU",
+       "source_type": "review_article",
+       "title": "Nine fatal cases of dengue: a case series from an intensive care unit in Sri Lanka"
+      }
+     ],
+     "notes": "Typical reported pertains to global surveillance data from WHO.",
+     "review_note": "Maximum of 25% comes from a case series of patients in an ICU, not a population case fatality; the other estimates (0.05% to 0.07%) are surveillance figures. Needs the ICU estimate scoped to the population it describes, or left out of the range."
+    },
+    "average_contacts_daily": {
+     "status": "no_source",
+     "n_estimates": 0,
+     "unit": "contacts/day",
+     "notes": "STRUCTURALLY INAPPLICABLE, not merely unmeasured: dengue has no human-to-human contact route, so any value here would be actively misleading rather than uncertain, and no default should be imputed. The transmission-relevant analogues are vector-to-human ratio, per-mosquito daily biting rate and per-bite transmission probabilities, which combine into vectorial capacity and belong in their own parameter block."
+    },
+    "immunity_duration": {
+     "status": "ok",
+     "n_estimates": 2,
+     "unit": "days",
+     "min": 365,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/23825116/",
+     "estimate_range": [
+      730,
+      730
+     ],
+     "estimate_extremes": [
+      {
+       "value": 730,
+       "population": "Heterotypic cross-protection against other serotypes",
+       "source_type": "modeling_study",
+       "title": "Interactions between serotypes of dengue highlight epidemiological impact of cross-immunity"
+      }
+     ],
+     "notes": "DO NOT COLLAPSE TO A SINGLE WANING RATE: homotypic immunity is effectively lifelong while heterotypic cross-protection lasts roughly 1-3 years, and waning does not return people to baseline susceptibility but to an antibody-dependent-enhancement state with higher severe-disease risk. Vaccine-derived immunity is a further separate compartment that must be stratified by baseline serostatus and serotype, never pooled with natural infection.",
+     "special_value": "lifelong; homotypic (same serotype): lifelong; heterotypic cross-protection: roughly 1-3 years, then reversion to susceptibility WITH ENHANCED SEVERITY RISK"
+    },
+    "asymptomatic_fraction": {
+     "status": "ok",
+     "n_estimates": 3,
+     "unit": "fraction",
+     "min": 0.08,
+     "max": 0.8,
+     "typical": 0.6,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/37809992/",
+     "estimate_range": [
+      0.08,
+      0.6
+     ],
+     "estimate_extremes": [
+      {
+       "value": 0.08,
+       "population": "Clinically undetectable laboratory-confirmed dengue infections (strict definition)",
+       "source_type": "systematic_review",
+       "title": "Asymptomatic dengue infection rate: A systematic literature review"
+      },
+      {
+       "value": 0.6,
+       "population": "General, DENV infections",
+       "source_type": "government_report",
+       "title": "Dengue, CDC Yellow Book 2026: Health Information for International Travel"
+      }
+     ],
+     "notes": "Typical value takem as the midpoint of the CDC's 40-80% range, which is itself a summary of the literature. The parameter is highly contested, with credible published estimates spanning more than an order of magnitude. The disagreement is largely methodological: seroprevalence studies in contacts pick up antibody-positive people who never reported illness, but recall of mild illness months after an epidemic is poor and dengue serological assays have known specificity problems in populations with high background reactivity. Studies using stricter case definitions and better-validated assays tend to land far lower than the early Gabon work."
+    }
    },
    "flat": {
     "r0": {
-     "min": 1.0,
-     "max": 103.0,
-     "typical": 4.74,
-     "source": "https://www.sciencedirect.com/science/article/pii/S0013935120300050",
+     "min": 2.0293,
+     "max": 10.29,
+     "typical": 6.16,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/31927301/",
      "unit": "dimensionless",
-     "note": "Vector-borne; note model limitations.",
-     "range_text": "1.0–103.0"
+     "note": "Band spans across all considered estimate ranges, excluding the Chile 2002 outbreak. Typical is the mean of the considered range.",
+     "range_text": "2.0293–10.29"
     },
     "incubation_days": {
      "min": 3,
-     "max": 14,
-     "typical": 6,
-     "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
+     "max": 10,
+     "typical": 5.9,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/23226436/",
      "unit": "days",
-     "note": null,
-     "range_text": "3–14"
+     "note": "INTRINSIC incubation only. Treating the ~6-day IIP as the whole latent period runs the epidemic two to three times too fast at 25C.",
+     "range_text": "3–10"
     },
     "infectious_days": {
-     "min": 2,
-     "max": 5,
-     "typical": 4,
-     "source": "https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
+     "min": 1,
+     "max": 7,
+     "typical": 4.5,
+     "source": "https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
      "unit": "days",
-     "note": null,
-     "range_text": "2–5"
+     "note": "Duration over which a human can infect a feeding mosquito, running roughly 2 days before symptom onset to 5 days after, and applying to inapparent infections as well as symptomatic ones. Presymptomatic transmission is routine here, unlike the ebola entry, and PCR-positivity durations run longer than infectiousness and must not be substituted in.",
+     "range_text": "1–7"
     },
     "fatality_rate": null,
     "average_contacts_daily": null,
-    "immunity_duration": null,
-    "asymptomatic_fraction": null
+    "immunity_duration": {
+     "min": 365,
+     "max": null,
+     "typical": null,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/23825116/",
+     "unit": "days",
+     "note": "DO NOT COLLAPSE TO A SINGLE WANING RATE: homotypic immunity is effectively lifelong while heterotypic cross-protection lasts roughly 1-3 years, and waning does not return people to baseline susceptibility but to an antibody-dependent-enhancement state with higher severe-disease risk. Vaccine-derived immunity is a further separate compartment that must be stratified by baseline serostatus and serotype, never pooled with natural infection.",
+     "range_text": null
+    },
+    "asymptomatic_fraction": {
+     "min": 0.08,
+     "max": 0.8,
+     "typical": 0.6,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/37809992/",
+     "unit": "fraction",
+     "note": "Typical value takem as the midpoint of the CDC's 40-80% range, which is itself a summary of the literature. The parameter is highly contested, with credible published estimates spanning more than an order of magnitude. The disagreement is largely methodological: seroprevalence studies in contacts pick up antibody-positive people who never reported illness, but recall of mild illness months after an epidemic is poor and dengue serological assays have known specificity problems in populations with high background reactivity. Studies using stricter case definitions and better-validated assays tend to land far lower than the early Gabon work.",
+     "range_text": "0.08–0.8"
+    }
    }
   },
   "rsv": {
@@ -2286,69 +2489,207 @@
    "summaries": {
     "r0": {
      "status": "ok",
-     "n_estimates": 0,
+     "n_estimates": 5,
      "unit": "dimensionless",
-     "min": 1.2,
-     "max": 9.0,
+     "min": 0.92,
+     "max": 7.1,
      "typical": 3.0,
-     "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-     "notes": "Strong seasonality; high burden in infants."
+     "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+     "estimate_range": [
+      1.375,
+      6.25
+     ],
+     "estimate_extremes": [
+      {
+       "value": 1.375,
+       "population": "Closed community settings including children, by region, year and subtype",
+       "source_type": "systematic_review",
+       "title": "Respiratory Syncytial Virus Transmission in Closed Community Settings That Include Children: A Systematic Review and Meta-Analysis"
+      },
+      {
+       "value": 6.25,
+       "population": "General, model-dependent",
+       "source_type": "modeling_study",
+       "title": "Modeling epidemics caused by respiratory syncytial virus (RSV)"
+      }
+     ],
+     "notes": "MODEL STRUCTURE DOMINATES SETTING: fitted to the same series, SIRS structures give 1-2 while structures with gradual acquisition of partial immunity give 5-7, so an RSV R0 is uninterpretable without the assumed immunity structure. Because RSV is endemic and almost nobody is fully susceptible after infancy, most published values are effective rather than basic reproduction numbers, and values below unity in the estimates reflect partial population immunity rather than a non-viable pathogen."
     },
     "incubation_days": {
      "status": "ok",
-     "n_estimates": 0,
+     "n_estimates": 3,
      "unit": "days",
      "min": 2,
      "max": 8,
      "typical": 5,
-     "source": "https://cdphe.colorado.gov/child-care-school-settings/rsv"
+     "source": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
+     "estimate_range": [
+      4.4,
+      5
+     ],
+     "estimate_extremes": [
+      {
+       "value": 4.4,
+       "population": "General, pooled across studies",
+       "source_type": "systematic_review",
+       "title": "Incubation periods of acute respiratory viral infections: a systematic review"
+      },
+      {
+       "value": 5,
+       "population": "General, clinical reference",
+       "source_type": "review_article",
+       "title": "Respiratory Syncytial Virus Infections in Neonates: A Persisting Problem"
+      }
+     ],
+     "notes": "Consensus reflects generalized estimates for multiple countries."
     },
     "infectious_days": {
-     "status": "ok",
-     "n_estimates": 0,
+     "status": "under_review",
+     "n_estimates": 2,
      "unit": "days",
-     "min": 3,
-     "max": 28,
-     "typical": 6,
-     "source": "https://www.cdc.gov/rsv/causes/index.html"
+     "estimate_range": [
+      6.5,
+      6.5
+     ],
+     "estimate_extremes": [
+      {
+       "value": 6.5,
+       "population": "General, practical transmissibility window",
+       "source_type": "government_report",
+       "title": "Respiratory syncytial virus"
+      }
+     ],
+     "notes": "STRONGLY AGE-STRATIFIED, and this is the dominant source of spread rather than measurement error: shedding runs about 18 days in infants against 9 days in adults, and 13.5 days in symptomatic against 7.8 in asymptomatic episodes. Sampling intensity and detection method also drive the estimate — infrequent symptom-triggered sampling and culture give short durations, frequent PCR surveillance gives long ones — so a single scalar here will misrepresent whichever age group the model cares about.",
+     "review_note": "Typical 11.2 days has no citation and looks like a PCR shedding duration; both cited estimates give 6.5 days (range 4 to 10). Needs a transmission window with a citation, or the shedding figure scoped as shedding."
     },
-    "fatality_rate": null,
-    "average_contacts_daily": null,
-    "immunity_duration": null,
-    "asymptomatic_fraction": null
+    "fatality_rate": {
+     "status": "under_review",
+     "n_estimates": 2,
+     "unit": "percentage",
+     "estimate_range": [
+      0.31,
+      0.85
+     ],
+     "estimate_extremes": [
+      {
+       "value": 0.31,
+       "population": "Children 0-60 months, global, 2019",
+       "source_type": "systematic_review",
+       "title": "Global, regional, and national disease burden estimates of acute lower respiratory infections due to respiratory syncytial virus in children younger than 5 years in 2019: a systematic analysis"
+      },
+      {
+       "value": 0.85,
+       "population": "US infants and children under 5 with RSV",
+       "source_type": "systematic_review",
+       "title": "Mortality Among US Infants and Children Under 5 Years of Age with Respiratory Syncytial Virus and Bronchiolitis: A Systematic Literature Review"
+      }
+     ],
+     "notes": "DENOMINATOR AND AGE BOTH DECIDE THIS: deaths per LRTI episode in under-5s is about 0.31%. Mortality is concentrated at the two ends of life — infants under 6 months account for roughly 46% of paediatric RSV deaths, and 97% of those deaths occur in LMICs — so an age-flat fatality rate is the single worst simplification available for this pathogen.",
+     "review_note": "Typical 0.31% is deaths per lower-respiratory-infection episode in children under 5, and the 1.7% maximum is an inpatient case fatality; the simulation counts every infection as a case, so either would overstate deaths. Needs a fatality per infection, or the estimates scoped to the population and denominator they describe."
+    },
+    "average_contacts_daily": {
+     "status": "no_source",
+     "n_estimates": 0,
+     "unit": "contacts/day",
+     "notes": "No validateable information found for RSV daily contacts."
+    },
+    "immunity_duration": {
+     "status": "ok",
+     "n_estimates": 3,
+     "unit": "days",
+     "min": 60,
+     "max": 812,
+     "typical": 460,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/2010624/",
+     "estimate_range": [
+      90,
+      460
+     ],
+     "estimate_extremes": [
+      {
+       "value": 90,
+       "population": "Birth cohort, post-primary-infection antibody kinetics",
+       "source_type": "modeling_study",
+       "title": "Kinetics of the Neutralizing Antibody Response to Respiratory Syncytial Virus Infections in a Birth Cohort"
+      },
+      {
+       "value": 460,
+       "population": "Children with hospital-attended RSV reinfection",
+       "source_type": "modeling_study",
+       "title": "Respiratory Syncytial Virus Reinfections in Children in Western Australia"
+      }
+     ],
+     "notes": "The typical value is based on the third estimate. SHORT, PARTIAL AND NEVER STERILIZING — reinfection throughout life is the norm for RSV, including within a single season, and repeat infection does not require antigenic change. Immunity attenuates severity more than it prevents infection, so the correct model structure returns people to a reduced-severity susceptible state rather than holding them in a recovered compartment; no correlate of protection is established, so every value here is an interval between detected infections rather than a measured protection duration."
+    },
+    "asymptomatic_fraction": {
+     "status": "ok",
+     "n_estimates": 2,
+     "unit": "fraction",
+     "min": 0.26,
+     "max": 0.67,
+     "typical": 0.67,
+     "source": "https://www.nature.com/articles/s41467-023-44275-y",
+     "estimate_range": [
+      0.26,
+      0.67
+     ],
+     "estimate_extremes": [
+      {
+       "value": 0.26,
+       "population": "Healthy term infants, weekly surveillance birth cohort",
+       "source_type": "modeling_study",
+       "title": "Epidemiology of RSV infections in a birth cohort of healthy children, PREVAIL Cohort 2017-2020"
+      },
+      {
+       "value": 0.67,
+       "population": "All ages, rural and urban household cohort",
+       "source_type": "modeling_study",
+       "title": "Incidence and transmission of respiratory syncytial virus in urban and rural South Africa, 2017-2018"
+      }
+     ],
+     "notes": "The typical is based on the first estimate as it includes all ages, urban and rural household cohort. Driven by age and by surveillance intensity rather than by genuine disagreement: infants are the most symptomatic group and give the lowest fractions, while cohorts sampling on a fixed schedule regardless of symptoms find far more silent infection than clinic-based or symptom-triggered designs. Detection method compounds this, since serology-only ascertainment counts both truly silent infection and illness the surveillance missed, so the definition of asymptomatic should be recorded alongside any value used."
+    }
    },
    "flat": {
     "r0": {
-     "min": 1.2,
-     "max": 9.0,
+     "min": 0.92,
+     "max": 7.1,
      "typical": 3.0,
-     "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
+     "source": "https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
      "unit": "dimensionless",
-     "note": "Strong seasonality; high burden in infants.",
-     "range_text": "1.2–9.0"
+     "note": "MODEL STRUCTURE DOMINATES SETTING: fitted to the same series, SIRS structures give 1-2 while structures with gradual acquisition of partial immunity give 5-7, so an RSV R0 is uninterpretable without the assumed immunity structure. Because RSV is endemic and almost nobody is fully susceptible after infancy, most published values are effective rather than basic reproduction numbers, and values below unity in the estimates reflect partial population immunity rather than a non-viable pathogen.",
+     "range_text": "0.92–7.1"
     },
     "incubation_days": {
      "min": 2,
      "max": 8,
      "typical": 5,
-     "source": "https://cdphe.colorado.gov/child-care-school-settings/rsv",
+     "source": "https://pubmed.ncbi.nlm.nih.gov/19393959/",
      "unit": "days",
-     "note": null,
+     "note": "Consensus reflects generalized estimates for multiple countries.",
      "range_text": "2–8"
     },
-    "infectious_days": {
-     "min": 3,
-     "max": 28,
-     "typical": 6,
-     "source": "https://www.cdc.gov/rsv/causes/index.html",
-     "unit": "days",
-     "note": null,
-     "range_text": "3–28"
-    },
+    "infectious_days": null,
     "fatality_rate": null,
     "average_contacts_daily": null,
-    "immunity_duration": null,
-    "asymptomatic_fraction": null
+    "immunity_duration": {
+     "min": 60,
+     "max": 812,
+     "typical": 460,
+     "source": "https://pubmed.ncbi.nlm.nih.gov/2010624/",
+     "unit": "days",
+     "note": "The typical value is based on the third estimate. SHORT, PARTIAL AND NEVER STERILIZING — reinfection throughout life is the norm for RSV, including within a single season, and repeat infection does not require antigenic change. Immunity attenuates severity more than it prevents infection, so the correct model structure returns people to a reduced-severity susceptible state rather than holding them in a recovered compartment; no correlate of protection is established, so every value here is an interval between detected infections rather than a measured protection duration.",
+     "range_text": "60–812"
+    },
+    "asymptomatic_fraction": {
+     "min": 0.26,
+     "max": 0.67,
+     "typical": 0.67,
+     "source": "https://www.nature.com/articles/s41467-023-44275-y",
+     "unit": "fraction",
+     "note": "The typical is based on the first estimate as it includes all ages, urban and rural household cohort. Driven by age and by surveillance intensity rather than by genuine disagreement: infants are the most symptomatic group and give the lowest fractions, while cohorts sampling on a fixed schedule regardless of symptoms find far more silent infection than clinic-based or symptom-triggered designs. Detection method compounds this, since serology-only ascertainment counts both truly silent infection and illness the surveillance missed, so the definition of asymptomatic should be recorded alongside any value used.",
+     "range_text": "0.26–0.67"
+    }
    }
   },
   "cholera": {
