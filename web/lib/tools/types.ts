@@ -59,7 +59,8 @@ export type ConfigPayload = {
 };
 export type DataPayload = {
   kind: "data";
-  source: "un_wpp" | "wb_data360" | "who_gho" | "sim_fallback";
+  /** who_gho: payloads stored before WHO's GHO API was retired (end of 2025); new coverage comes from unicef or wb_data360. */
+  source: "un_wpp" | "wb_data360" | "unicef" | "who_gho" | "sim_fallback";
   iso3: string;
   applied: Record<string, unknown>;
   citations: string[];

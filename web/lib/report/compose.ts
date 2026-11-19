@@ -110,8 +110,9 @@ function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
 function sourceOf(citation: string): string {
   const url = citation.toLowerCase();
   if (url.includes("population.un.org") || url.includes("un wpp")) return SOURCE_LABELS.un_wpp;
+  if (url.includes("unicef")) return SOURCE_LABELS.unicef;
   if (url.includes("who.int")) return SOURCE_LABELS.who_gho;
-  if (url.includes("worldbank") || url.includes("data360")) return SOURCE_LABELS.wb_data360;
+  if (url.includes("worldbank") || url.includes("data360") || url.startsWith("wb ")) return SOURCE_LABELS.wb_data360;
   return "Source";
 }
 

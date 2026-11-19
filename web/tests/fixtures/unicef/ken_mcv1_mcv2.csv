@@ -1,0 +1,11 @@
+REF_AREA,INDICATOR,VACCINE,AGE,UNIT_MULTIPLIER,UNIT_MEASURE,SOURCE_LINK,SERIES_FOOTNOTE,TIME_PERIOD,OBS_VALUE,SOWC_FLAG_A,OBS_STATUS,OBS_CONF,DATA_SOURCE,TIME_PERIOD_METHOD,COVERAGE_TIME,FREQ_COLL,OBS_FOOTNOTE
+KEN,IM_MCV1,MCV1,M12T23,0,PCNT,,,2021,88,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV1,MCV1,M12T23,0,PCNT,,,2022,85,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV1,MCV1,M12T23,0,PCNT,,,2023,85,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV1,MCV1,M12T23,0,PCNT,,,2024,82,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV1,MCV1,M12T23,0,PCNT,,,2025,80,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV2,MCV2,Y02,0,PCNT,,,2021,71,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV2,MCV2,Y02,0,PCNT,,,2022,70,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV2,MCV2,Y02,0,PCNT,,,2023,76,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV2,MCV2,Y02,0,PCNT,,,2024,76,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,
+KEN,IM_MCV2,MCV2,Y02,0,PCNT,,,2025,81,,E,,"WHO/UNICEF estimates of national immunization coverage, 2025 revision",,,,

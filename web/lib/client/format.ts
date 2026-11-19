@@ -14,7 +14,8 @@ const NAMES = names as Record<string, string>;
 export const SOURCE_LABELS: Record<DataPayload["source"], string> = {
   un_wpp: "UN World Population Prospects",
   wb_data360: "World Bank Data360",
-  who_gho: "WHO Global Health Observatory",
+  unicef: "WHO/UNICEF immunization estimates",
+  who_gho: "WHO Global Health Observatory",                       // conversations stored before its API was retired
   sim_fallback: "Built-in fallback",
 };
 
@@ -209,6 +210,7 @@ const VACCINES: Record<string, string> = {
   hib3: "Hib3",
   mcv1: "Measles, first dose (MCV1)",
   mcv2: "Measles, second dose (MCV2)",
+  rcv1: "Rubella, first dose (RCV1)",
   pcv3: "Pneumococcal (PCV3)",
   rotac: "Rotavirus",
   hpv: "HPV",

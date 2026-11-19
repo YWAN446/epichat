@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, scenarioRows } from "@/lib/client/format";
+import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, scenarioRows } from "@/lib/client/format";
 import { defaultRows, parameterGroups } from "@/lib/client/parameters";
 import type { SimParams } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
@@ -68,6 +68,8 @@ describe("applied data fields", () => {
     expect(describeField("mcv2_coverage", 52)).toEqual({ label: "Measles, second dose (MCV2) coverage", value: "52%" });
     expect(describeField("bcg_coverage", 97)).toEqual({ label: "BCG coverage", value: "97%" });
     expect(describeField("yfv_coverage", 80)).toEqual({ label: "Yellow fever coverage", value: "80%" });
+    expect(describeField("rcv1_coverage", 80)).toEqual({ label: "Rubella, first dose (RCV1) coverage", value: "80%" });
+    expect(describeField("polio_coverage", 87)).toEqual({ label: "Polio (Pol3) coverage", value: "87%" });
     expect(describeField("applied_vaccine_coverage", 0.72)).toEqual({ label: "Vaccine coverage applied", value: "72%" });
     expect(describeField("tb_incidence", 233)).toEqual({ label: "TB incidence", value: "233 per 100,000 per year" });
     expect(describeField("malaria_incidence", 80.2)).toEqual({ label: "Malaria incidence", value: "80.2 per 1,000 at risk per year" });
@@ -254,5 +256,12 @@ describe("a chosen reference among the data sources (follow-up spec 9.4)", () =>
     expect(describeField("ref:incubation_days", 12)).toEqual({ label: "Incubation period (literature)", value: "12 days" });
     expect(describeField("ref:immunity_duration", 7300)).toEqual({ label: "Immunity duration (literature)", value: "7,300 days" });
     expect(describeField("ref:average_contacts_daily", 9)).toEqual({ label: "Contacts per day (literature)", value: "9" });
+  });
+});
+
+describe("the data sources' names", () => {
+  it("name UNICEF's WHO/UNICEF estimates and keep WHO's for conversations stored before its API was retired", () => {
+    expect(SOURCE_LABELS.unicef).toBe("WHO/UNICEF immunization estimates");
+    expect(SOURCE_LABELS.who_gho).toBe("WHO Global Health Observatory");
   });
 });
