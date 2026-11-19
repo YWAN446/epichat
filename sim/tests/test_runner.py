@@ -48,7 +48,7 @@ def test_replicates_come_back_from_the_child():
 
 
 def test_child_failure_reports_the_stderr_tail_and_cleans_up():
-    # a vaccine starting after the simulation ends makes Starsim raise inside the child
+    # a vaccine starting after the simulation ends makes the builder raise inside the child
     out = _out()
     before = _temp_params_files()
     params = _params(interventions=[{"type": "vaccine", "coverage": 0.5, "start_day": 400}])
@@ -59,8 +59,8 @@ def test_child_failure_reports_the_stderr_tail_and_cleans_up():
 
 
 def test_timeout_kills_the_child():
-    p = _params(n_agents=20000, sim_dur_years=2.0)
-    p.network.network_type = "hybrid"                      # as agents, several seconds; an ODE would finish in time
+    p = _params(n_agents=200000, sim_dur_years=2.0)
+    p.network.network_type = "hybrid"                      # as agents, a few seconds; an ODE would finish in time
     started = time.perf_counter()
     result = run_params(p, _out(), timeout=0.5)
     assert result.timed_out and not result.ok

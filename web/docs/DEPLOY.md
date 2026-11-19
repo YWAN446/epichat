@@ -461,7 +461,7 @@ Done after the sim-parameters phases 3 and 4 are pushed, with migration
 
 ## 6j. Networks, interventions and the fit verification
 
-Updated for Starsim 4: there is no R0 pilot and no measured R0; runs report `stats.solver` and `stats.r0_model` instead, and most run as ODEs.
+Updated for Starsim v4: there is no R0 pilot and no measured R0; runs report `stats.solver` and `stats.r0_model` instead, and most run as ODEs.
 
 Done after the sim-parameters Part 2 phases (2A to 2D) are pushed. No
 migration. One browser; a phone is enough.
@@ -523,7 +523,7 @@ migration. One browser; a phone is enough.
 
 ## 6k. Limits on spread, suggested interventions, the Parameters section and chosen references verification
 
-Recorded on Starsim 3.7.2; the pilot and measured R0 described below were removed in the port to Starsim 4.
+Recorded on Starsim 3.7.2; the pilot and measured R0 described below were removed in the port to Starsim v4.
 
 Done after the follow-up round (the pilot fix and its phases A to E) is
 pushed. No migration. One browser at desktop width. The percentages were
@@ -645,10 +645,10 @@ any new project that hosts this service.
 
 `sim/.venv` is a Python 3.12 virtualenv: `py -3.12 -m venv sim/.venv` then
 `sim/.venv/Scripts/python.exe -m pip install -r sim/requirements.txt pytest`.
-The root package tests (which include the Starsim 4 builder tests) use a
+The root package tests (which include the Starsim v4 builder tests) use a
 second 3.12 virtualenv: `py -3.12 -m venv .venv` then
 `.venv/Scripts/python.exe -m pip install -r requirements.txt -r evals/requirements.txt pytest`;
-CI runs them on 3.12 too. Both requirement files pin Starsim 4 (`starsim==4.0.0rc3` until 4.0.0 is out).
+CI runs them on 3.12 too. Both requirement files pin Starsim v4 (`starsim>=4.0.0rc5` until 4.0.0 is out).
 `npx vercel dev` from the root runs both with the binding injected.
 
 **Tests.** `sim/.venv/Scripts/python.exe -m pytest sim/tests -q` (about 15 s;
@@ -715,7 +715,7 @@ was not needed; the only surprise was the bundle size (see above).
 5. Record the numbers below from step 4; the Usage page's Active CPU
    reading is the owner's to note alongside them.
 
-The timings below are from Starsim 3; on Starsim 4 an ODE run of 10,000 people for a year takes about 0.02–0.07 s in process and about 0.07 s as a child process forked from the server that has imported Starsim (`sim/runner.py`; the service starts it at startup, and a fresh process took about 1.2 s, most of it the import). Re-time after the next deploy, and check there that the forkserver starts on Vercel (the runner uses a fresh process only where the platform has no forkserver).
+The timings below are from Starsim 3; on Starsim v4 an ODE run of 10,000 people for a year takes about 0.02–0.07 s in process and about 0.07 s as a child process forked from the server that has imported Starsim (`sim/runner.py`; the service starts it at startup, and a fresh process took about 1.2 s, most of it the import). Re-time after the next deploy, and check there that the forkserver starts on Vercel (the runner uses a fresh process only where the platform has no forkserver).
 
 | Measured on Vercel, 2026-10-12, Starsim 3.7.2 through the builder (iad1, Hobby, 2 GB) | Value |
 |---|---|
@@ -760,7 +760,7 @@ A fit that keeps R0 (follow-up spec 6) moves `disease.rel_sus_cv` or
 `behavior_response.scale` instead of beta, at most eight runs like a beta
 fit. On Starsim 3 (2026-10-13; hybrid, 10k agents, a year) a trial cost about
 10 s whatever the lever, so a search that needs all eight trials was at the
-120 s limit. On Starsim 4 a run as an ODE takes well under a second, and a
+120 s limit. On Starsim v4 a run as an ODE takes well under a second, and a
 hybrid run as agents about 0.2 s in process. Owner: time one year-long
 hybrid fit after the deploy; if it is cut off, raise `SIM_TIMEOUT_SECONDS`
 (the function allows 300 s) or fit over six months.

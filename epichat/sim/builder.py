@@ -122,6 +122,11 @@ def build_interventions(params: SimParamsV2, disease: ss.Disease) -> list:
     S, I = disease.S, disease.I
     A = getattr(disease, "A", None)
     out = []
+    # Starsim skips a start after the end without a word; here it is a mistake to report
+    late = [(f"the seeding (day {d.seed.day})", d.seed.day)] + [(f'"{i.type}_{k}" (day {i.start_day})', i.start_day) for k, i in enumerate(params.interventions)]
+    for what, day in late:
+        if day > run_days:
+            raise ValueError(f"the start of {what} is outside the sim (day 0 to {run_days})")
     if d.seed.day > 0:
         how = dict(capacity=int(d.seed.value)) if d.seed.mode == "count" else dict(coverage=float(d.seed.value))
         out.append(ss.Delivery(S >> I, when=ss.days(d.seed.day), name="seed", **how))
@@ -139,7 +144,7 @@ def build_interventions(params: SimParamsV2, disease: ss.Disease) -> list:
             else:                       # routine: the coverage a year; campaign: the coverage over its window (unset: the run's end)
                 end = run_days if i.end_day is None else min(i.end_day, run_days)
                 days = (end - i.start_day + 1) if i.kind == "campaign" else 365
-                out.append(ss.vaccinate(product, coverage=per_day(coverage, days), who=who, name=name, **window(i, run_days)))
+                out.append(ss.vaccinate(product, rate=per_day(coverage, days), who=who, name=name, **window(i, run_days)))
         elif i.type == "treatment":
             prob = i.coverage if i.coverage is not None else 1.0
             capacity = ss.perday(i.capacity) if i.capacity is not None else None
@@ -149,7 +154,7 @@ def build_interventions(params: SimParamsV2, disease: ss.Disease) -> list:
                                     **window(i, run_days)))
             else:
                 who = I if (i.symptomatic_only or A is None) else I | A
-                out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), who=who, coverage=per_day(prob, 1), capacity=capacity, name=name, **window(i, run_days)))
+                out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), who=who, rate=per_day(prob, 1), capacity=capacity, name=name, **window(i, run_days)))
             if i.rel_trans_treated < 1:    # while infectious during the program, as if isolated until treated
                 out.append(ss.modify(disease.rel_trans, multiply=i.rel_trans_treated, who=I, name=f"{name}_isolation", **window(i, run_days)))
         elif i.type == "seasonality":

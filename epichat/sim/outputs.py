@@ -71,7 +71,7 @@ def extract(sim: ss.Sim, params) -> dict:
     series["new_deaths"] = _floats(deaths)
     series["cum_deaths"] = _floats(np.cumsum(deaths))
     if demographics_on:
-        died = _values(sim.results.died)
+        died = _values(sim.results.death)
         series["new_deaths_all"] = _floats(died)
         series["cum_deaths_all"] = _floats(np.cumsum(died))
     stats = {
