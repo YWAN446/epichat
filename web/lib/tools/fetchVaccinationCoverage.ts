@@ -4,13 +4,23 @@ import { detectDisease, lookup } from "@/lib/disease/db";
 import { getVaccine, validateParams } from "@/lib/sim/params";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources, upsertIntervention } from "./shared";
 import { pruneReferences, scenarioReferences, scenarioSources } from "./sources";
+import type { ResolvedField } from "@/lib/data/types";
 import type { ToolDeps, ToolOutcome } from "./types";
 
 export const FetchVaccinationCoverageInput = z.strictObject({ country_iso3: z.string(), disease: z.string() });
 export type FetchVaccinationCoverageArgs = z.infer<typeof FetchVaccinationCoverageInput>;
 
-/** Follow-up spec 7.2: the diseases with a routine-immunization indicator, exported from epichat/params/indicators.py. */
-export const GHO_CODES: Record<string, string[]> = indicators.indicators;
+/** Follow-up spec 7.2: the diseases with a routine-immunization indicator, exported from epichat/params/indicators.py. The codes
+ *  are the sources' own: UNICEF's WHO/UNICEF estimates (IM_), and the World Bank's Pol3 (WB_HNP_), which UNICEF does not publish. */
+export const VACCINE_CODES: Record<string, string[]> = indicators.indicators;
+
+/** One disease's codes, fetched from the source that publishes them; WHO's GHO API, the old source, was retired at the end of 2025. */
+async function fetchCoverage(codes: string[], iso3: string, deps: ToolDeps): Promise<{ source: "unicef" | "wb_data360"; fields: ResolvedField[] }> {
+  const unicef = codes.filter((c) => c.startsWith("IM_"));
+  if (unicef.length > 0) return { source: "unicef", fields: await deps.adapters.unicef({ source: "unicef", indicatorCodes: unicef, locationCode: iso3 }) };
+  const worldBank = codes.filter((c) => c.startsWith("WB_HNP_"));
+  return { source: "wb_data360", fields: await deps.adapters.wbData360({ source: "wb_data360", indicatorCodes: worldBank, locationCode: iso3, databaseId: "WB_HNP", startYear: 2015 }) };
+}
 
 /**
  * Ported from epichat/agent.py fetch_vaccination_coverage. Routine coverage is pre-existing immunity at the start (spec 6.1):
@@ -22,9 +32,9 @@ export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageAr
   const iso3 = input.country_iso3.trim().toUpperCase();
   try {
     const canonical = detectDisease(input.disease) ?? input.disease.toLowerCase();
-    const codes = GHO_CODES[canonical];
+    const codes = VACCINE_CODES[canonical];
     if (!codes) return { content: `NO VACCINE INDICATOR: no routine-immunization coverage indicator is available for ${canonical}.` };
-    const fields = await deps.adapters.whoGho({ source: "who_gho", indicatorCodes: codes, locationCode: iso3 });
+    const { source, fields } = await fetchCoverage(codes, iso3, deps);
     if (fields.length === 0) return errorOutcome(`FETCH ERROR: no vaccination data returned for ${iso3}`);
     const applied: Record<string, unknown> = Object.fromEntries(fields.map((f) => [f.field, f.value]));
     const cov = fields.find((f) => f.field.endsWith("_coverage"));
@@ -47,7 +57,7 @@ export async function fetchVaccinationCoverage(input: FetchVaccinationCoverageAr
     }
     const citations = recordSources(scenario, fields);
     pruneReferences(scenario);                                        // a fetch can change what a chosen reference stood on (the network, say)
-    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source: "who_gho", iso3, applied, citations, params: scenario.params, sources: scenarioSources(scenario, deps.contextText), ...(scenarioReferences(scenario) ? { references: scenarioReferences(scenario) } : {}) } };
+    return { content: JSON.stringify({ applied, citations }), payload: { kind: "data", source, iso3, applied, citations, params: scenario.params, sources: scenarioSources(scenario, deps.contextText), ...(scenarioReferences(scenario) ? { references: scenarioReferences(scenario) } : {}) } };
   } catch (error) {
     return errorOutcome(`FETCH ERROR: ${errorMessage(error)}`);
   }

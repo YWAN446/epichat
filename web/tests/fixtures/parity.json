@@ -158704,7 +158704,7 @@
    "p_asymp": null,
    "warnings": [
     "Infectious period 1 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -158734,7 +158734,7 @@
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 1 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.1 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158751,7 +158751,7 @@
     "R₀ ≈ 100.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 5 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
     "Incubation period 11 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.1 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158781,7 +158781,7 @@
    "p_asymp": 0.99,
    "warnings": [
     "Infectious period 8 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
-    "Fatality rate 0.1% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 0.1% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.99 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158798,7 +158798,7 @@
     "R₀ ≈ 15.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 1 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
     "Incubation period 11 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.99 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158813,7 +158813,7 @@
    "p_asymp": null,
    "warnings": [
     "Infectious period 8 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -158842,7 +158842,7 @@
    "p_asymp": 0.1,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
-    "Fatality rate 0.1% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 0.1% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.1 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158858,7 +158858,7 @@
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Incubation period 2 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.1 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158875,7 +158875,7 @@
     "R₀ ≈ 100.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 1 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
     "Incubation period 2 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -158891,7 +158891,7 @@
     "R₀ ≈ 100.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 1 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
     "Incubation period 2 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 0.1% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 0.1% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.99 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158906,7 +158906,7 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.99 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158937,7 +158937,7 @@
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 30 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.1 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158953,7 +158953,7 @@
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Incubation period 2 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.1 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158968,7 +158968,7 @@
    "p_asymp": 0.1,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561",
     "Asymptomatic fraction 0.1 is outside the literature range for rubella (0.25–0.5 fraction). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html"
    ]
   },
@@ -158984,7 +158984,7 @@
    "warnings": [
     "Infectious period 30 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
     "Incubation period 2 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -159000,7 +159000,7 @@
     "R₀ ≈ 0.5 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 5 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
     "Incubation period 11 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -159016,7 +159016,7 @@
     "R₀ ≈ 100.0 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 1 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
     "Incubation period 2 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -159045,7 +159045,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "Incubation period 2 days is outside the literature range for rubella (12–23 days). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC5930806/",
-    "Fatality rate 5% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 5% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -159060,7 +159060,7 @@
    "warnings": [
     "R₀ ≈ 1.3 is outside the literature range for rubella (2–8). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8893344/",
     "Infectious period 8 days is outside the literature range for rubella (11–16 days). Source: https://www.cdc.gov/rubella/hcp/clinical-overview/index.html",
-    "Fatality rate 50% is outside the literature range for rubella (0.005–0.005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
+    "Fatality rate 50% is outside the literature range for rubella (0.0005–0.0005%). Source: https://www.mdpi.com/2076-393X/8/4/561"
    ]
   },
   {
@@ -159137,7 +159137,8 @@
     "R₀ ≈ 1.3 is outside the literature range for varicella (5.5–10). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
     "Infectious period 5 days is outside the literature range for varicella (6–7 days). Source: https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
     "Incubation period 11 days is outside the literature range for varicella (14–16 days). Source: https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html",
-    "Fatality rate 0.1% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html"
+    "Fatality rate 0.1% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+    "Asymptomatic fraction 0.99 is outside the literature range for varicella (0.07–0.33 fraction). Source: https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox"
    ]
   },
   {
@@ -159200,7 +159201,8 @@
     "R₀ ≈ 0.5 is outside the literature range for varicella (5.5–10). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
     "Infectious period 30 days is outside the literature range for varicella (6–7 days). Source: https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
     "Incubation period 2 days is outside the literature range for varicella (14–16 days). Source: https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html",
-    "Fatality rate 5% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html"
+    "Fatality rate 5% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+    "Asymptomatic fraction 0.99 is outside the literature range for varicella (0.07–0.33 fraction). Source: https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox"
    ]
   },
   {
@@ -159321,7 +159323,8 @@
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for varicella (5.5–10). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
     "Infectious period 12.12 days is outside the literature range for varicella (6–7 days). Source: https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
-    "Incubation period 11 days is outside the literature range for varicella (14–16 days). Source: https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html"
+    "Incubation period 11 days is outside the literature range for varicella (14–16 days). Source: https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html",
+    "Asymptomatic fraction 0.99 is outside the literature range for varicella (0.07–0.33 fraction). Source: https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox"
    ]
   },
   {
@@ -159335,7 +159338,8 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for varicella (5.5–10). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
-    "Infectious period 5 days is outside the literature range for varicella (6–7 days). Source: https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf"
+    "Infectious period 5 days is outside the literature range for varicella (6–7 days). Source: https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
+    "Asymptomatic fraction 0.99 is outside the literature range for varicella (0.07–0.33 fraction). Source: https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox"
    ]
   },
   {
@@ -159351,7 +159355,8 @@
     "R₀ ≈ 3.0 is outside the literature range for varicella (5.5–10). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
     "Infectious period 30 days is outside the literature range for varicella (6–7 days). Source: https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
     "Incubation period 2 days is outside the literature range for varicella (14–16 days). Source: https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html",
-    "Fatality rate 0.1% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html"
+    "Fatality rate 0.1% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+    "Asymptomatic fraction 0.99 is outside the literature range for varicella (0.07–0.33 fraction). Source: https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox"
    ]
   },
   {
@@ -159414,7 +159419,8 @@
     "R₀ ≈ 3.0 is outside the literature range for varicella (5.5–10). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC8954496/",
     "Infectious period 5 days is outside the literature range for varicella (6–7 days). Source: https://www.cdph.ca.gov/Programs/CID/DCDC/CDPH%20Document%20Library/Immunization/Varicella-Quicksheet.pdf",
     "Incubation period 2 days is outside the literature range for varicella (14–16 days). Source: https://www.cdc.gov/chickenpox/hcp/clinical-overview/index.html",
-    "Fatality rate 50% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html"
+    "Fatality rate 50% is outside the literature range for varicella (0.002–0.0036%). Source: https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-22-varicella.html",
+    "Asymptomatic fraction 0.99 is outside the literature range for varicella (0.07–0.33 fraction). Source: https://www.sciencedirect.com/topics/immunology-and-microbiology/chickenpox"
    ]
   },
   {
@@ -160994,7 +161000,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 1 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 1 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 0.1% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease"
    ]
   },
@@ -161009,7 +161015,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 3.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 1 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 1 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 5% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease"
    ]
   },
@@ -161024,7 +161030,7 @@
    "p_asymp": 0.1,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 1 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
+    "Infectious period 1 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
    ]
   },
   {
@@ -161038,7 +161044,7 @@
    "p_asymp": null,
    "warnings": [
     "R₀ ≈ 100.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 30 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 30 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 5% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease"
    ]
   },
@@ -161053,7 +161059,7 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/10881895/"
+    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/"
    ]
   },
   {
@@ -161067,7 +161073,7 @@
    "p_asymp": null,
    "warnings": [
     "R₀ ≈ 3.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 1 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
+    "Infectious period 1 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
    ]
   },
   {
@@ -161081,7 +161087,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 100.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 12.12 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
+    "Infectious period 12.12 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
    ]
   },
   {
@@ -161095,7 +161101,7 @@
    "p_asymp": null,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 1 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 1 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 0.1% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease"
    ]
   },
@@ -161123,9 +161129,9 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 12.12 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 12.12 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 0.1% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
-    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/10881895/"
+    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/"
    ]
   },
   {
@@ -161166,7 +161172,7 @@
    "warnings": [
     "R₀ ≈ 100.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
     "Fatality rate 0.1% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
-    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/10881895/"
+    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/"
    ]
   },
   {
@@ -161193,7 +161199,7 @@
    "p_asymp": 0.1,
    "warnings": [
     "R₀ ≈ 1.3 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 30 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 30 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 5% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease"
    ]
   },
@@ -161221,7 +161227,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 12.12 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 12.12 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 0.1% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease"
    ]
   },
@@ -161236,8 +161242,8 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 100.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 1 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
-    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/10881895/"
+    "Infectious period 1 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/"
    ]
   },
   {
@@ -161251,7 +161257,7 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 100.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/10881895/"
+    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/"
    ]
   },
   {
@@ -161265,7 +161271,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 1 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
+    "Infectious period 1 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
    ]
   },
   {
@@ -161292,7 +161298,7 @@
    "p_asymp": 0.3,
    "warnings": [
     "R₀ ≈ 0.5 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 12.12 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
+    "Infectious period 12.12 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
    ]
   },
   {
@@ -161306,9 +161312,9 @@
    "p_asymp": 0.99,
    "warnings": [
     "R₀ ≈ 15.0 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 30 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
+    "Infectious period 30 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100",
     "Fatality rate 0.1% is outside the literature range for ebola (25–90%). Source: https://www.who.int/news-room/fact-sheets/detail/ebola-virus-disease",
-    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/10881895/"
+    "Asymptomatic fraction 0.99 is outside the literature range for ebola (0.03–0.46 fraction). Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC4829342/"
    ]
   },
   {
@@ -161335,7 +161341,7 @@
    "p_asymp": 0.1,
    "warnings": [
     "R₀ ≈ 1.3 is outside the literature range for ebola (1.34–2.53). Source: https://pubmed.ncbi.nlm.nih.gov/15178190/",
-    "Infectious period 12.12 days is outside the literature range for ebola (4–10 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
+    "Infectious period 12.12 days is outside the literature range for ebola (3.5–10.7 days). Source: https://www.nejm.org/doi/full/10.1056/NEJMoa1411100"
    ]
   },
   {
@@ -161348,7 +161354,9 @@
    "dur_immune": 10.0,
    "p_asymp": 0.3,
    "warnings": [
-    "Infectious period 30 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 100.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 30 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161361,9 +161369,8 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.1,
    "warnings": [
-    "R₀ ≈ 0.5 is outside the literature range for dengue (1.0–103.0). Source: https://www.sciencedirect.com/science/article/pii/S0013935120300050",
-    "Infectious period 1 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 20 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 0.5 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Incubation period 20 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161376,8 +161383,9 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.99,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 1.3 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/",
+    "Asymptomatic fraction 0.99 is outside the literature range for dengue (0.08–0.8 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/37809992/"
    ]
   },
   {
@@ -161390,8 +161398,7 @@
    "dur_immune": 36525.0,
    "p_asymp": null,
    "warnings": [
-    "R₀ ≈ 0.5 is outside the literature range for dengue (1.0–103.0). Source: https://www.sciencedirect.com/science/article/pii/S0013935120300050",
-    "Infectious period 1 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 0.5 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/"
    ]
   },
   {
@@ -161404,8 +161411,9 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.3,
    "warnings": [
-    "Infectious period 30 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 20 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 15.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 30 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 20 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161418,8 +161426,9 @@
    "dur_immune": 400.0,
    "p_asymp": 0.1,
    "warnings": [
-    "Infectious period 30 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 15.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 30 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161432,7 +161441,8 @@
    "dur_immune": 400.0,
    "p_asymp": 0.3,
    "warnings": [
-    "R₀ ≈ 0.5 is outside the literature range for dengue (1.0–103.0). Source: https://www.sciencedirect.com/science/article/pii/S0013935120300050"
+    "R₀ ≈ 0.5 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161445,7 +161455,9 @@
    "dur_immune": null,
    "p_asymp": 0.3,
    "warnings": [
-    "Infectious period 30 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 15.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 30 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161458,7 +161470,8 @@
    "dur_immune": 400.0,
    "p_asymp": null,
    "warnings": [
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 1.3 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161471,7 +161484,9 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.99,
    "warnings": [
-    "Infectious period 8 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "Infectious period 8 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/",
+    "Asymptomatic fraction 0.99 is outside the literature range for dengue (0.08–0.8 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/37809992/"
    ]
   },
   {
@@ -161484,7 +161499,8 @@
    "dur_immune": null,
    "p_asymp": null,
    "warnings": [
-    "Infectious period 12.12 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 15.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 12.12 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext"
    ]
   },
   {
@@ -161497,7 +161513,9 @@
    "dur_immune": null,
    "p_asymp": 0.3,
    "warnings": [
-    "Infectious period 12.12 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 1.3 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 12.12 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161509,7 +161527,9 @@
    "n_contacts": null,
    "dur_immune": 400.0,
    "p_asymp": 0.3,
-   "warnings": []
+   "warnings": [
+    "R₀ ≈ 15.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/"
+   ]
   },
   {
    "disease": "dengue",
@@ -161521,9 +161541,10 @@
    "dur_immune": 10.0,
    "p_asymp": 0.99,
    "warnings": [
-    "R₀ ≈ 0.5 is outside the literature range for dengue (1.0–103.0). Source: https://www.sciencedirect.com/science/article/pii/S0013935120300050",
-    "Infectious period 8 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 20 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 0.5 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 8 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 20 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/",
+    "Asymptomatic fraction 0.99 is outside the literature range for dengue (0.08–0.8 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/37809992/"
    ]
   },
   {
@@ -161535,7 +161556,10 @@
    "n_contacts": 40,
    "dur_immune": 36525.0,
    "p_asymp": 0.3,
-   "warnings": []
+   "warnings": [
+    "R₀ ≈ 15.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
+   ]
   },
   {
    "disease": "dengue",
@@ -161547,8 +161571,9 @@
    "dur_immune": 10.0,
    "p_asymp": null,
    "warnings": [
-    "Infectious period 12.12 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 20 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 100.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 12.12 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 20 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161560,7 +161585,9 @@
    "n_contacts": null,
    "dur_immune": 400.0,
    "p_asymp": 0.3,
-   "warnings": []
+   "warnings": [
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
+   ]
   },
   {
    "disease": "dengue",
@@ -161572,7 +161599,8 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.99,
    "warnings": [
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/",
+    "Asymptomatic fraction 0.99 is outside the literature range for dengue (0.08–0.8 fraction). Source: https://pubmed.ncbi.nlm.nih.gov/37809992/"
    ]
   },
   {
@@ -161585,8 +161613,8 @@
    "dur_immune": 400.0,
    "p_asymp": 0.1,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 1.3 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161599,8 +161627,9 @@
    "dur_immune": 10.0,
    "p_asymp": 0.1,
    "warnings": [
-    "Infectious period 8 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 100.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 8 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161613,8 +161642,9 @@
    "dur_immune": null,
    "p_asymp": 0.1,
    "warnings": [
-    "Infectious period 30 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 1.3 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 30 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161627,8 +161657,9 @@
    "dur_immune": null,
    "p_asymp": 0.1,
    "warnings": [
-    "Infectious period 12.12 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 100.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 12.12 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161641,9 +161672,9 @@
    "dur_immune": null,
    "p_asymp": 0.1,
    "warnings": [
-    "R₀ ≈ 0.5 is outside the literature range for dengue (1.0–103.0). Source: https://www.sciencedirect.com/science/article/pii/S0013935120300050",
-    "Infectious period 8 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/",
-    "Incubation period 2 days is outside the literature range for dengue (3–14 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 0.5 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 8 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 2 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161656,7 +161687,8 @@
    "dur_immune": 10.0,
    "p_asymp": null,
    "warnings": [
-    "Infectious period 12.12 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 1.3 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 12.12 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext"
    ]
   },
   {
@@ -161669,7 +161701,9 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.3,
    "warnings": [
-    "Infectious period 8 days is outside the literature range for dengue (2–5 days). Source: https://www.cda.gov.sg/professionals/diseases/dengue-fever/"
+    "R₀ ≈ 15.0 is outside the literature range for dengue (2.0293–10.29). Source: https://pubmed.ncbi.nlm.nih.gov/31927301/",
+    "Infectious period 8 days is outside the literature range for dengue (1–7 days). Source: https://www.ijidonline.com/article/S1201-9712(20)32162-7/fulltext",
+    "Incubation period 11 days is outside the literature range for dengue (3–10 days). Source: https://pubmed.ncbi.nlm.nih.gov/23226436/"
    ]
   },
   {
@@ -161681,7 +161715,9 @@
    "n_contacts": 4,
    "dur_immune": null,
    "p_asymp": 0.1,
-   "warnings": []
+   "warnings": [
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
+   ]
   },
   {
    "disease": "rsv",
@@ -161693,8 +161729,9 @@
    "dur_immune": 36525.0,
    "p_asymp": null,
    "warnings": [
-    "R₀ ≈ 0.5 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 0.5 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161707,8 +161744,7 @@
    "dur_immune": null,
    "p_asymp": 0.3,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133"
    ]
   },
   {
@@ -161721,8 +161757,9 @@
    "dur_immune": null,
    "p_asymp": 0.1,
    "warnings": [
-    "R₀ ≈ 100.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 100.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -161735,9 +161772,9 @@
    "dur_immune": 400.0,
    "p_asymp": 0.99,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Infectious period 30 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Asymptomatic fraction 0.99 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -161750,8 +161787,8 @@
    "dur_immune": 10.0,
    "p_asymp": 0.3,
    "warnings": [
-    "R₀ ≈ 0.5 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html"
+    "R₀ ≈ 0.5 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161764,9 +161801,9 @@
    "dur_immune": 10.0,
    "p_asymp": 0.3,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html",
-    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161779,7 +161816,9 @@
    "dur_immune": 10.0,
    "p_asymp": 0.1,
    "warnings": [
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -161792,8 +161831,8 @@
    "dur_immune": 400.0,
    "p_asymp": 0.1,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -161806,9 +161845,8 @@
    "dur_immune": 400.0,
    "p_asymp": null,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Infectious period 30 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html",
-    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/"
    ]
   },
   {
@@ -161821,7 +161859,8 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.3,
    "warnings": [
-    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161834,9 +161873,10 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.1,
    "warnings": [
-    "R₀ ≈ 100.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Infectious period 1 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 100.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -161849,7 +161889,9 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.99,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
+    "Asymptomatic fraction 0.99 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -161862,7 +161904,8 @@
    "dur_immune": 36525.0,
    "p_asymp": null,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161875,8 +161918,9 @@
    "dur_immune": 36525.0,
    "p_asymp": null,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161889,8 +161933,9 @@
    "dur_immune": null,
    "p_asymp": 0.1,
    "warnings": [
-    "R₀ ≈ 100.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 100.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -161903,7 +161948,7 @@
    "dur_immune": null,
    "p_asymp": 0.3,
    "warnings": [
-    "R₀ ≈ 100.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133"
+    "R₀ ≈ 100.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133"
    ]
   },
   {
@@ -161938,7 +161983,7 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.3,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html"
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161950,7 +161995,9 @@
    "n_contacts": 4,
    "dur_immune": 400.0,
    "p_asymp": 0.1,
-   "warnings": []
+   "warnings": [
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
+   ]
   },
   {
    "disease": "rsv",
@@ -161962,8 +162009,9 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.3,
    "warnings": [
-    "R₀ ≈ 100.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 100.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161976,7 +162024,8 @@
    "dur_immune": 10.0,
    "p_asymp": 0.3,
    "warnings": [
-    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 10 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/"
    ]
   },
   {
@@ -161989,8 +162038,9 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.99,
    "warnings": [
-    "Infectious period 1 days is outside the literature range for rsv (3–28 days). Source: https://www.cdc.gov/rsv/causes/index.html",
-    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "Incubation period 20 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
+    "Asymptomatic fraction 0.99 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {
@@ -162003,8 +162053,10 @@
    "dur_immune": 36525.0,
    "p_asymp": 0.1,
    "warnings": [
-    "R₀ ≈ 15.0 is outside the literature range for rsv (1.2–9.0). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005133",
-    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://cdphe.colorado.gov/child-care-school-settings/rsv"
+    "R₀ ≈ 15.0 is outside the literature range for rsv (0.92–7.1). Source: https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1005133",
+    "Incubation period 11 days is outside the literature range for rsv (2–8 days). Source: https://pubmed.ncbi.nlm.nih.gov/19393959/",
+    "Immunity duration 3.652e+04 days is outside the literature range for rsv (60–812 days). Source: https://pubmed.ncbi.nlm.nih.gov/2010624/",
+    "Asymptomatic fraction 0.1 is outside the literature range for rsv (0.26–0.67 fraction). Source: https://www.nature.com/articles/s41467-023-44275-y"
    ]
   },
   {

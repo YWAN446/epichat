@@ -32,7 +32,7 @@ describe("summarizeActivity", () => {
     expect(summarizeActivity([{ kind: "web_search", query: "a" }, { kind: "web_search", query: "b" }, { kind: "web_fetch", url: "https://x", title: "X" }])).toBe("Searched the web (2) · Read 1 page");
     expect(summarizeActivity([tool("configure_simulation", { kind: "config", applied: {}, approx_r0: 2, warnings: [], new_scenario: false, config: { disease: null, disease_type: "sir", country: null, n_agents: 1, sim_dur_years: 1, dur_inf: 8, dur_exp: null, interventions: [] } }), tool("fetch_demographics", { kind: "data", source: "un_wpp", iso3: "KEN", applied: {}, citations: [] })])).toBe("Configured the simulation · Fetched 1 data source");
     expect(summarizeActivity([run(0, false)])).toBe("⚠ Simulation failed");
-    expect(summarizeActivity([tool("fetch_vaccination_coverage", { kind: "tool_error", message: "x" }, false)])).toBe("⚠ WHO vaccination coverage failed");
+    expect(summarizeActivity([tool("fetch_vaccination_coverage", { kind: "tool_error", message: "x" }, false)])).toBe("⚠ WHO/UNICEF vaccination coverage failed");
     expect(summarizeActivity([{ kind: "text", text: "hi" }])).toBe("");
   });
 

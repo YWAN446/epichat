@@ -17,8 +17,9 @@ describe("lookup_disease", () => {
 
   it("resolves an alias and omits parameters a disease lacks", async () => {
     expect(JSON.parse((await lookupDisease({ disease_name: "german measles" }, makeDeps())).content).canonical_name).toBe("rubella");
-    const dengue = JSON.parse((await lookupDisease({ disease_name: "Dengue fever" }, makeDeps())).content);
-    expect(Object.keys(dengue.parameters)).toEqual(["r0", "incubation_days", "infectious_days"]);
+    const polio = JSON.parse((await lookupDisease({ disease_name: "poliomyelitis" }, makeDeps())).content);   // dengue is complete since Annie's October port
+    expect(polio.canonical_name).toBe("polio");
+    expect(Object.keys(polio.parameters)).toEqual(["r0", "incubation_days", "infectious_days"]);
   });
 
   it("lists the known diseases for an unknown name", async () => {

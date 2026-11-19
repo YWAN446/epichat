@@ -56,6 +56,14 @@ describe("composeReport", () => {
     expect(sources.rows[0]).toEqual(["UN World Population Prospects", "Birth rate", "28.3 per 1,000 per year", "https://population.un.org/"]);
   });
 
+  it("names the source of the vaccination and World Bank citations", () => {
+    const field = (name: string, value: number, citation: string) => ({ field: name, value, citation, description: "", alternatives: [] });
+    const dataSources = [field("mcv1_coverage", 80, "WHO/UNICEF estimates, KEN, 2025"), field("polio_coverage", 87, "WB HNP, KEN, 2022"), field("treatment_capacity", 2.5, "WB WDI, KEN, 2021")];
+    const table = composeReport({ ...FIXTURE, scenario: { ...FIXTURE.scenario, dataSources } }, NOW).sections.find((s) => s.id === "modelled")!.blocks[1];
+    if (table.kind !== "table") throw new Error("table");
+    expect(table.rows.map((r) => r[0])).toEqual(["WHO/UNICEF immunization estimates", "World Bank Data360", "World Bank Data360"]);
+  });
+
   it("lists the decisions, the appendix tables, and the software", () => {
     expect(section("decisions").blocks).toEqual([{ kind: "bullets", items: ["Measles in Kenya, SIR model, one year", "UN demographics applied"] }]);
     const appendix = section("appendix");

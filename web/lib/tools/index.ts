@@ -119,7 +119,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "fetch_vaccination_coverage",
     description:
-      "Fetch reported vaccination coverage (WHO GHO) for a disease/country.\n\nIf no vaccine intervention is configured yet, one is added\ndeterministically at the reported coverage. Only some diseases have\nroutine-immunization indicators; the result says when none exists.",
+      "Fetch reported vaccination coverage (the WHO/UNICEF estimates; polio's Pol3 from the World Bank) for a disease/country.\n\nIf no vaccine intervention is configured yet, one is added\ndeterministically at the reported coverage. Only some diseases have\nroutine-immunization indicators; the result says when none exists.",
     eager_input_streaming: true,
     input_schema: {
       type: "object",

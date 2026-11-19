@@ -194,7 +194,7 @@
 <pre><code>Browser ──SSE──▶ web app (Next.js on Vercel)
                    │  agent loop: Claude (Opus 5.5 by default) · nine tools · web search and fetch
                    │  Supabase: sign-in · consent · conversations · runs · events · feedback
-                   │  public data: UN Population Data Portal · WHO GHO · World Bank Data360
+                   │  public data: UN Population Data Portal · UNICEF (WHO/UNICEF estimates) · World Bank Data360
                    ▼
             sim service (FastAPI · Python 3.12 · private, reached only by the web app)
                    │  validate (schema v2) → build the Starsim 4 model → run in a child process
@@ -234,7 +234,7 @@
     <tr><td><span class="k">configure_simulation</span></td><td>Creates or edits the configuration, passing only what changed: the model, the R₀ (β is calibrated to it), durations, fatality, seeding, interventions, a fit, a chosen reference, and any other parameter by its registry path. Everything is validated at once; an error names the parameter.</td></tr>
     <tr><td><span class="k">describe_parameters</span></td><td>Lists every parameter of the current model and network with its value, bounds, unit, source and literature range.</td></tr>
     <tr><td><span class="k">fetch_demographics</span></td><td>UN World Population Prospects for a country: the age pyramid (switching to the age-structured network), birth and death rates, the population for scaling, the contact matrix and the household size. The R₀ is held where it was when the new network can carry it.</td></tr>
-    <tr><td><span class="k">fetch_vaccination_coverage</span></td><td>WHO routine coverage for a disease and country, applied as immunity at the start, or as a day-0 campaign when the database has the vaccine's efficacy.</td></tr>
+    <tr><td><span class="k">fetch_vaccination_coverage</span></td><td>The WHO/UNICEF estimate of routine coverage for a disease and country (polio's Pol3 from the World Bank), applied as immunity at the start, or as a day-0 campaign when the database has the vaccine's efficacy.</td></tr>
     <tr><td><span class="k">fetch_health_system</span></td><td>World Bank hospital beds, physicians, nurses and UHC coverage; sets a treatment's daily capacity from the beds.</td></tr>
     <tr><td><span class="k">run_simulation</span></td><td>Runs the configuration and returns the series, the statistics (scaled to the real population when demographics were fetched) and the diagnostics.</td></tr>
     <tr><td><span class="k">write_report</span></td><td>Writes the report's summary, meaning, limitations and next steps; its tables and figures come from the stored results.</td></tr>
@@ -282,8 +282,8 @@
   <tbody>
     <tr><td>Cholera</td><td>2.1 <span class="rng">0.8–7.3</span></td><td>2 <span class="rng">0.5–5</span></td><td>5 <span class="rng">1–10</span></td><td>—</td></tr>
     <tr><td>COVID-19</td><td>9.5 <span class="rng">5.5–24</span></td><td>5.8 <span class="rng">5–6.7</span></td><td>8 <span class="rng">6–10</span></td><td>0.9% <span class="rng">0.7–1.16%</span></td></tr>
-    <tr><td>Dengue</td><td>4.74 <span class="rng">1–103</span></td><td>6 <span class="rng">3–14</span></td><td>4 <span class="rng">2–5</span></td><td>—</td></tr>
-    <tr><td>Ebola</td><td>1.95 <span class="rng">1.34–2.53</span></td><td>estimates only</td><td>7 <span class="rng">4–10</span></td><td>50% <span class="rng">25–90%</span></td></tr>
+    <tr><td>Dengue</td><td>6.16 <span class="rng">2.0293–10.29</span></td><td>5.9 <span class="rng">3–10</span></td><td>4.5 <span class="rng">1–7</span></td><td>under review</td></tr>
+    <tr><td>Ebola</td><td>1.95 <span class="rng">1.34–2.53</span></td><td>9 <span class="rng">2–21</span></td><td>5.61 <span class="rng">3.5–10.7</span></td><td>50% <span class="rng">25–90%</span></td></tr>
     <tr><td>Hepatitis A</td><td>2.5 <span class="rng">1.71–5.6</span></td><td>28 <span class="rng">14–50</span></td><td>21 <span class="rng">7–28</span></td><td>0.4% <span class="rng">0.3–0.5%</span></td></tr>
     <tr><td>Influenza</td><td>1.28 <span class="rng">1.19–1.37</span></td><td>2 <span class="rng">1–4</span></td><td>7 <span class="rng">6–8</span></td><td>under review</td></tr>
     <tr><td>Measles</td><td>15 <span class="rng">12–18</span></td><td>12 <span class="rng">7–21</span></td><td>8</td><td>1.5% <span class="rng">0.5–6%</span></td></tr>
@@ -292,8 +292,8 @@
     <tr><td>Mumps</td><td>10 <span class="rng">4–19.3</span></td><td>17 <span class="rng">12–25</span></td><td>7</td><td>0.027% <span class="rng">0.016–0.038%</span></td></tr>
     <tr><td>Pertussis</td><td>14.5 <span class="rng">5.3–17</span></td><td>8.5 <span class="rng">4–21</span></td><td>21 <span class="rng">21–35</span></td><td>0.8% <span class="rng">0.67–0.8%</span></td></tr>
     <tr><td>Polio</td><td>6 <span class="rng">5–7</span></td><td>8 <span class="rng">4–35</span></td><td>6 <span class="rng">2–10</span></td><td>—</td></tr>
-    <tr><td>RSV</td><td>3 <span class="rng">1.2–9</span></td><td>5 <span class="rng">2–8</span></td><td>6 <span class="rng">3–28</span></td><td>—</td></tr>
-    <tr><td>Rubella</td><td>5.5 <span class="rng">2–8</span></td><td>17 <span class="rng">12–23</span></td><td>14 <span class="rng">11–16</span></td><td>0.005%</td></tr>
+    <tr><td>RSV</td><td>3 <span class="rng">0.92–7.1</span></td><td>5 <span class="rng">2–8</span></td><td>under review</td><td>under review</td></tr>
+    <tr><td>Rubella</td><td>5.5 <span class="rng">2–8</span></td><td>17 <span class="rng">12–23</span></td><td>14 <span class="rng">11–16</span></td><td>0.0005%</td></tr>
     <tr><td>Tuberculosis</td><td>2.1 <span class="rng">0.24–4.3</span></td><td>180 <span class="rng">14–730</span></td><td>14 <span class="rng">14–365</span></td><td>—</td></tr>
     <tr><td>Varicella</td><td>8 <span class="rng">5.5–10</span></td><td>15 <span class="rng">14–16</span></td><td>6.5 <span class="rng">6–7</span></td><td>0.0028% <span class="rng">0.002–0.0036%</span></td></tr>
   </tbody>
@@ -458,8 +458,8 @@
   <thead><tr><th>Source</th><th>Fetched or bundled</th><th>Provides</th></tr></thead>
   <tbody>
     <tr><td>UN World Population Prospects 2024</td><td>Fetched (UN Population Data Portal)</td><td>Birth and death rates, total population, age shares</td></tr>
-    <tr><td>WHO Global Health Observatory</td><td>Fetched</td><td>Routine vaccination coverage</td></tr>
-    <tr><td>World Bank Data360</td><td>Fetched</td><td>Hospital beds, physicians, nurses, UHC coverage index</td></tr>
+    <tr><td>WHO/UNICEF estimates of national immunization coverage</td><td>Fetched (UNICEF's data service; WHO's GHO API was retired at the end of 2025)</td><td>Routine vaccination coverage: measles, rubella, pertussis, tuberculosis, meningococcal A</td></tr>
+    <tr><td>World Bank Data360</td><td>Fetched</td><td>Hospital beds, physicians, nurses, UHC coverage index; polio vaccination (Pol3)</td></tr>
     <tr><td>Disease parameter database</td><td>Bundled</td><td>Cited parameters for 16 diseases</td></tr>
     <tr><td>UN WPP 2024 population by single year of age</td><td>Bundled</td><td>The agents' ages: 237 countries and areas, 2024 and 2030</td></tr>
     <tr><td>UN WPP 2024 projected birth rates</td><td>Bundled</td><td>Birth rates after a multi-year run's first year, 2020–2050</td></tr>

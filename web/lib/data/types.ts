@@ -8,7 +8,7 @@ export type ResolvedField = {
 };
 
 export type DataQuery = {
-  source: "un_wpp" | "who_gho" | "wb_data360";
+  source: "un_wpp" | "unicef" | "wb_data360";
   indicators?: number[];
   locationId?: number;
   startYear?: number;
@@ -28,10 +28,10 @@ export function resolved(field: string, value: unknown, citation: string, descri
   return { field, value, citation, description, alternatives };
 }
 
-/** The three adapters as the tools consume them, bound to one fetch and key. */
+/** The adapters as the tools consume them, bound to one fetch and key. */
 export type Adapters = {
   unWpp: (query: DataQuery) => Promise<ResolvedField[]>;
-  whoGho: (query: DataQuery) => Promise<ResolvedField[]>;
+  unicef: (query: DataQuery) => Promise<ResolvedField[]>;
   wbData360: (query: DataQuery) => Promise<ResolvedField[]>;
 };
 

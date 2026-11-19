@@ -19,7 +19,7 @@ describe("disease database", () => {
     expect(measles.summaries.r0?.source).toContain("http");
     expect(measles.flat.r0?.range_text).toBe("12–18");
     expect(measles.summaries.immunity_duration?.status).toBe("estimates_only");
-    expect(lookup("dengue")!.summaries.fatality_rate).toBeNull();
+    expect(lookup("polio")!.summaries.fatality_rate).toBeNull();                         // dengue gained one in Annie's October port
   });
 
   it("detects hyphenated aliases and respects word boundaries", () => {

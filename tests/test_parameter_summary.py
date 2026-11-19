@@ -1,6 +1,8 @@
 """parameter_summary: the uncertainty-aware view the agent's lookup returns."""
 from __future__ import annotations
 
+import copy
+
 import pytest
 
 from epichat.disease_db import lookup, parameter_summary
@@ -32,11 +34,15 @@ def test_a_parameter_block_with_nothing_in_it_reports_no_source():
 
 
 def test_cited_estimates_without_a_consensus_report_estimates_only():
-    """Review Important 1: three citations must not be reported as 'nothing published'."""
-    summary = parameter_summary(lookup("ebola"), "incubation_days")
+    """Review Important 1: cited estimates must not be reported as 'nothing published'. Ebola's incubation period was the
+    real case until Annie's October port gave it a consensus; the case is kept on a copy with that consensus removed."""
+    entry = copy.deepcopy(lookup("ebola"))
+    entry["parameters"]["incubation_days"]["consensus"] = {"min": None, "typical": None, "max": None}
+    entry.pop("incubation_days", None)                                             # and its flattened copy
+    summary = parameter_summary(entry, "incubation_days")
     assert summary["status"] == "estimates_only"
-    assert summary["n_estimates"] == 3
-    assert summary["estimate_range"] == [9, 12.7]
+    assert summary["n_estimates"] == 5
+    assert summary["estimate_range"] == [6.22, 12.7]
     assert "typical" not in summary, "there is no consensus value to offer"
 
 

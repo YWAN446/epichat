@@ -1,16 +1,24 @@
-"""One-off port of Annie's Sep-2026 parameter work into main's schema.
+"""Port of Annie's parameter work into main's schema, one round at a time.
 
-Reads epichat/data/disease_parameters.json as it stands on
-origin/feature/pipelines, repairs the five mechanical JSON defects that have
-kept it unparseable, cleans the blocks listed in PORT_DISEASES /
-PORT_PARAMS, and writes them into main's file. Main's file is the schema of
-record: nothing else in it is touched.
+Reads epichat/data/disease_parameters.json as it stands at SOURCE_REF on her
+branch, repairs the mechanical JSON defects that keep it unparseable, cleans
+the blocks listed in PORT_DISEASES / PORT_PARAMS, and writes them into main's
+file. Main's file is the schema of record: nothing else in it is touched.
 
-Three values are deliberately imported without numbers, marked
-status="under_review" with a note, because they would mislead a student if
-simulated. See docs/annie-param-review-2026-09.md.
+Round 1 (2026-09, her 8b2a4ab; commits e6de048, e66a380): influenza,
+meningococcal, hepatitis A and Ebola whole, four pertussis parameters. See
+docs/annie-param-review-2026-09.md.
 
-Run once:  py -3.12 scripts/port_annie_parameters.py
+Round 2 (2026-11, her f295ccc; plan
+docs/superpowers/plans/2026-11-03-annie-params-oct.md): the 24 parameters she
+changed since round 1 or since the merge-base, chosen by a three-way
+comparison so that nothing main corrected is lost. See
+docs/annie-param-review-2026-11.md.
+
+Values that would mislead a student if simulated are imported without
+numbers, marked status="under_review" with a note.
+
+Run once per round:  py -3.12 scripts/port_annie_parameters.py
 """
 from __future__ import annotations
 
@@ -25,27 +33,52 @@ from _param_normalize import is_num, normalize_param  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "epichat" / "data" / "disease_parameters.json"
-SOURCE_REF = "origin/feature/pipelines"
+SOURCE_REF = "f295ccc"            # round 2; round 1 read origin/feature/pipelines at 8b2a4ab
 SOURCE_PATH = "epichat/data/disease_parameters.json"
 
-PORT_DISEASES = ("influenza", "meningococcal", "hepatitis_a", "ebola")
-PORT_PARAMS = {
-    "pertussis": ("fatality_rate", "average_contacts_daily",
-                  "immunity_duration", "asymptomatic_fraction"),
+PORT_DISEASES: tuple[str, ...] = ()   # round 1: influenza, meningococcal, hepatitis_a, ebola
+PORT_PARAMS = {                        # round 1: pertussis' fatality, contacts, immunity and asymptomatic fraction
+    "dengue": ("asymptomatic_fraction", "average_contacts_daily", "fatality_rate", "immunity_duration",
+               "incubation_days", "infectious_days", "r0"),
+    # Not Ebola's average_contacts_daily: her two estimates there are contacts traced per case, not per day.
+    "ebola": ("asymptomatic_fraction", "fatality_rate", "immunity_duration", "incubation_days", "infectious_days"),
+    "measles": ("fatality_rate",),
+    "meningococcal": ("infectious_days",),
+    "rsv": ("asymptomatic_fraction", "average_contacts_daily", "fatality_rate", "immunity_duration",
+            "incubation_days", "infectious_days", "r0"),
+    "rubella": ("fatality_rate",),
+    "varicella": ("asymptomatic_fraction", "r0"),
 }
 
 UNDER_REVIEW = {
     ("meningococcal", "infectious_days"):
-        "Consensus of 1/1/1 day encodes the public-health rule that a case is "
-        "non-infectious ~24 h after effective antibiotics - not the untreated "
-        "infectious period or the carriage duration that drives transmission. "
-        "Simulating 1 day would badly understate spread. Needs a "
+        "Consensus of 1 to 8 days (typical 8) is a treated case's infectious "
+        "window as public-health guidance defines it: from 7 days before "
+        "symptom onset to 24 h after effective antibiotics. It is not the "
+        "untreated infectious period or the carriage duration that drives "
+        "transmission, so simulating it would understate spread. Needs a "
         "transmission-relevant value with a citation.",
     ("influenza", "fatality_rate"):
         "Maximum of 13.5% is far above any population-level influenza CFR and "
         "looks like a hospitalized-cohort or pandemic-subtype figure. Needs "
         "the population denominator confirmed, or the estimate scoped to the "
         "population it describes.",
+    ("dengue", "fatality_rate"):
+        "Maximum of 25% comes from a case series of patients in an ICU, not a "
+        "population case fatality; the other estimates (0.05% to 0.07%) are "
+        "surveillance figures. Needs the ICU estimate scoped to the population "
+        "it describes, or left out of the range.",
+    ("rsv", "fatality_rate"):
+        "Typical 0.31% is deaths per lower-respiratory-infection episode in "
+        "children under 5, and the 1.7% maximum is an inpatient case fatality; "
+        "the simulation counts every infection as a case, so either would "
+        "overstate deaths. Needs a fatality per infection, or the estimates "
+        "scoped to the population and denominator they describe.",
+    ("rsv", "infectious_days"):
+        "Typical 11.2 days has no citation and looks like a PCR shedding "
+        "duration; both cited estimates give 6.5 days (range 4 to 10). Needs a "
+        "transmission window with a citation, or the shedding figure scoped as "
+        "shedding.",
     ("hepatitis_a", "immunity_duration"):
         "Consensus mixes a numeric string ('7300') with qualitative text "
         "('lifelong', and a sentence contrasting natural with vaccine-induced "
@@ -91,13 +124,30 @@ def _clean(block: dict, disease: str, param: str) -> dict:
     if isinstance(cons, dict) and isinstance(cons.get("estimates"), list):
         block.setdefault("estimates", []).extend(cons.pop("estimates"))
 
+    # Round 2: a field main's schema does not have. A PMID joins the notes (the
+    # estimate keeps its URL) or becomes the URL. An estimate in another unit
+    # is a different quantity: stop rather than file it under this parameter.
+    for est in block.get("estimates") or []:
+        pmid = est.pop("pmid", None)
+        if pmid and est.get("url"):
+            est["notes"] = f"{est['notes'].rstrip()} PMID {pmid}." if est.get("notes") else f"PMID {pmid}."
+        elif pmid:
+            est["url"] = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+        if est.get("unit_override"):
+            raise SystemExit(f"{disease}.{param}: an estimate in {est['unit_override']!r} is not this parameter's unit")
+
     # Drop in-progress placeholders only. An estimate with a citation and a
     # qualitative value ("lifelong") is real data - the schema supports it via
-    # special_value, and a later task quotes these back to the student.
-    block["estimates"] = [
-        est for est in (block.get("estimates") or [])
-        if est.get("title") and (is_num(est.get("value")) or est.get("special_value"))
-    ]
+    # special_value, and a later task quotes these back to the student. A cited
+    # estimate whose number is text ("0.85") is read as the number; one whose
+    # value cannot be read at all stops the port rather than vanish.
+    for est in block.get("estimates") or []:
+        value = est.get("value")
+        if isinstance(value, str) and re.fullmatch(r"\s*-?\d+(\.\d+)?\s*", value):
+            est["value"] = float(value) if "." in value else int(value)
+        if est.get("title") and not (is_num(est.get("value")) or est.get("special_value")):
+            raise SystemExit(f"{disease}.{param}: cited estimate {est['title']!r} has no readable value ({value!r})")
+    block["estimates"] = [est for est in (block.get("estimates") or []) if est.get("title")]
     if not block["estimates"]:
         block.pop("estimates")
 
@@ -114,7 +164,9 @@ def _clean(block: dict, disease: str, param: str) -> dict:
 
 
 def main() -> None:
-    source = json.loads(repair(_read_source()))["diseases"]
+    # Her file now closes its diseases block itself, so the repair's closing
+    # braces can be extra data: read the first JSON value only.
+    source = json.JSONDecoder().raw_decode(repair(_read_source()).lstrip())[0]["diseases"]
     target = json.loads(DB.read_text(encoding="utf-8"))
     diseases = target["diseases"]
     summary: list[str] = []
