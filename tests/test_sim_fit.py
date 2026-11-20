@@ -33,6 +33,15 @@ def test_the_attack_rate_is_fitted_within_two_points_in_at_most_eight_runs():
     assert abs(info["achieved"] - 0.3) <= 0.02 and fitted.disease.beta == info["value"] and fitted.disease.beta != p.disease.beta
 
 
+def test_an_attack_rate_is_fitted_with_a_reduction_from_day_zero():
+    # A 70% reduction over days 0 to 30 does not stop an R0 2.5 epidemic (about 89% are infected); a lower beta reaches 85%
+    body = scenario("attack_rate", 0.85).model_dump()
+    body["interventions"] = [{"type": "contact_reduction", "scale": 0.7, "start_day": 0, "end_day": 30}]
+    p = with_r0(SimParamsV2.model_validate(body), 2.5)
+    fitted, info = fit.fit_lever(p, 1)
+    assert abs(info["achieved"] - 0.85) <= 0.02 and fitted.disease.beta < p.disease.beta
+
+
 def test_the_peak_day_is_fitted_within_three_days():
     fitted, info = fit.fit_lever(scenario("peak_day", 45), 1)
     assert abs(info["achieved"] - 45) <= 3 and info["runs"] <= fit.MAX_RUNS and fitted.disease.beta == info["value"]

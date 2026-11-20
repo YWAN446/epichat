@@ -66,6 +66,16 @@ def test_a_delayed_seeding_is_in_the_seeds_but_not_in_the_day_zero_seeds():
     assert out["series"]["cum_infections"][3] == 0 and out["series"]["cum_infections"][-1] >= 30
 
 
+QUIET = {"beta": 0.001, "p_death": 0.0}       # R0 about 1e-4: the seeds are, in effect, the only infections
+
+
+def test_delayed_seeds_are_infections_on_their_day():
+    out, _ = run(days=10, seed={"mode": "count", "value": 30, "day": 4}, **QUIET)
+    s = out["series"]
+    assert s["new_infections"][4] == pytest.approx(30, abs=0.5) and s["cum_infections"][-1] == pytest.approx(30, abs=0.5)
+    assert out["stats"]["total_infected"] == 30
+
+
 def test_deaths_are_the_diseases_and_all_causes_come_only_with_demographics():
     out, _ = run(p_death=0.0, demographics={"use_demographics": True, "birth_rate": 20.0, "death_rate": 500.0})
     assert out["stats"]["total_deaths"] == 0 and out["series"]["cum_deaths_all"][-1] > 0
@@ -78,6 +88,19 @@ def test_an_agent_run_has_whole_counts_and_r0_is_none_where_starsim_cannot_give_
     assert sim.solver.name == "abm" and out["stats"]["solver"] == "abm"
     assert all(float(v).is_integer() for v in out["series"]["n_infectious"])
     assert out["stats"]["r0_model"] is None or out["stats"]["r0_model"] > 0
+
+
+def test_the_model_r0_is_the_basic_one_whatever_reduction_runs_from_day_zero():
+    # beta 22.8125 per year, 4 contacts a day and a 10-day constant infectious period: R0 = 4 × 22.8125 / 365 × 10 = 2.5
+    out, _ = run(model="sis", days=40, beta=22.8125, dur_inf={"mean_days": 10.0},
+                 interventions=[{"type": "contact_reduction", "scale": 0.7, "start_day": 0, "end_day": 30}])
+    assert out["stats"]["r0_model"] == pytest.approx(2.5, rel=1e-6)
+
+
+def test_lasting_contacts_report_no_model_r0():
+    # Starsim's R0 lays the sim out as well-mixed contact, which lasting contacts are not: the true R0 is lower and has no closed form
+    out, sim = run(model="sis", network={"contact_duration_days": 7.0})
+    assert sim.solver.name == "abm" and out["stats"]["r0_model"] is None
 
 
 def test_the_behaviour_response_reports_its_lowest_factor():

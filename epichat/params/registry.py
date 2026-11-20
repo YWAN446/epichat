@@ -144,8 +144,8 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "sis_waning.", "number", "fraction", 0.0, (0.0, 0.99), None, (), "advanced", None, "ss.Disease(init=dict(R=...))", ("final_size",)),
     ParamSpec("network.network_type", "network", "Contact network", "random: everyone has n_contacts fresh random contacts a day; "
               "age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's Prem 2021 matrix after "
-              "fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, the structure layer interventions "
-              "act on. At the same R0 the final size is close on every network.", "enum", None, "random", None,
+              "fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, with schools and workplaces as "
+              "fixed groups whose members all meet, the structure layer interventions act on. At the same R0 the final size is close on every network.", "enum", None, "random", None,
               ("random", "age_structured", "hybrid"), (), "core", None,
               "well-mixed contact or ss.RandomNet, ss.contacts(ages=..., matrix=...), or starsim.library.HybridNet", ("peak", "final_size")),
     ParamSpec("network.n_contacts", "network", "Contacts per day", "Mean number of contacts per person per day on the random network; "
@@ -267,10 +267,10 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("interventions[].protection_days", "interventions", "Protection duration", "Days the vaccine's protection lasts; unset means "
               "permanent.", "integer", "days", None, (1, 36500), None, (), "advanced", None, "ss.Vaccine(waning=ss.boxcar(plateau=...))", ("final_size",)),
     ParamSpec("interventions[].delay_days", "interventions", "Treatment delay", "Days after becoming infectious before treatment can "
-              "start; above 0 the run is agents.", "integer", "days", 0, (0, 365), None, (), "advanced", None, "ss.treat(on=onset, delay=ss.days(...))", ("peak", "final_size")),
+              "start; above 0 the run is agents.", "integer", "days", 0, (0, 365), None, (), "advanced", None, "ss.treat(who=I & (I.time_in >= ss.days(...)), rate=...)", ("peak", "final_size")),
     ParamSpec("interventions[].rel_trans_treated", "interventions", "Transmissibility while waiting", "Relative transmissibility of an "
-              "infectious person while the treatment runs, as if isolated until treated (0.5 halves it).", "number", "multiplier", 1.0, (0.0, 1.0), None, (), "advanced", None,
-              "ss.modify(rel_trans, multiply=..., where=I)", ("peak", "final_size")),
+              "infectious person from when treatment is offered (after any delay) until treated, as if isolated (0.5 halves it).", "number", "multiplier", 1.0, (0.0, 1.0), None, (), "advanced", None,
+              "ss.modify(rel_trans, multiply=..., who=...)", ("peak", "final_size")),
     ParamSpec("interventions[].symptomatic_only", "interventions", "Treat symptomatic only", "seiar: leave asymptomatic people untreated.",
               "bool", None, False, None, None, ("seiar",), "advanced", None, "ss.treat(who=I)", ("final_size",)),
     ParamSpec("interventions[].half_prevalence", "interventions", "Half-point of the response", "behavior_response: the share of people "

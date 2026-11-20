@@ -461,7 +461,8 @@ above.
   contacts per day and
   transmissibility (schema v2: `household_size`, `school_contacts`,
   `work_contacts`, `community_contacts`, `layer_beta.household` and so on, the
-  school and working age ranges). The structure a school closure or
+  school and working age ranges). Schools and workplaces are fixed groups
+  whose members all meet; the community is random. The structure a school closure or
   distancing acts on. Schema v2 also adds `contacts_dist` (constant or
   Poisson) and `contact_duration_days` for the random network, and the nine
   `contacts.<group>_<group>` cells and `contacts_source` for the

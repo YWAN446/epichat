@@ -740,7 +740,7 @@
    "path": "network.network_type",
    "module": "network",
    "label": "Contact network",
-   "description": "random: everyone has n_contacts fresh random contacts a day; age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's Prem 2021 matrix after fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, the structure layer interventions act on. At the same R0 the final size is close on every network.",
+   "description": "random: everyone has n_contacts fresh random contacts a day; age_structured: three age groups mixing by a contact matrix (POLYMOD-like by default, the country's Prem 2021 matrix after fetch_demographics); hybrid: households, schools, workplaces and community as in Covasim, with schools and workplaces as fixed groups whose members all meet, the structure layer interventions act on. At the same R0 the final size is close on every network.",
    "kind": "enum",
    "unit": null,
    "default": "random",
@@ -1993,7 +1993,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.treat(on=onset, delay=ss.days(...))",
+   "starsim_target": "ss.treat(who=I & (I.time_in >= ss.days(...)), rate=...)",
    "affects": [
     "peak",
     "final_size"
@@ -2005,7 +2005,7 @@
    "path": "interventions[].rel_trans_treated",
    "module": "interventions",
    "label": "Transmissibility while waiting",
-   "description": "Relative transmissibility of an infectious person while the treatment runs, as if isolated until treated (0.5 halves it).",
+   "description": "Relative transmissibility of an infectious person from when treatment is offered (after any delay) until treated, as if isolated (0.5 halves it).",
    "kind": "number",
    "unit": "multiplier",
    "default": 1.0,
@@ -2017,7 +2017,7 @@
    "models": [],
    "tier": "advanced",
    "db_field": null,
-   "starsim_target": "ss.modify(rel_trans, multiply=..., where=I)",
+   "starsim_target": "ss.modify(rel_trans, multiply=..., who=...)",
    "affects": [
     "peak",
     "final_size"

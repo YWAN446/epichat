@@ -121,6 +121,43 @@ def test_an_agent_run_with_shares_draws_ages_in_those_shares():
     assert abs((age < 18).mean() - 0.5) < 0.02 and abs((age >= 65).mean() - 0.3) < 0.02
 
 
+def test_an_agent_run_draws_ages_in_the_shares_when_nothing_in_the_disease_depends_on_age():
+    # the hybrid network puts people in schools and workplaces by age, so the shares shape it even when the disease ignores age
+    p = scenario(n=10000, network={"network_type": "hybrid"},
+                 demographics={"age_source": "shares", "age_pct_under18": 50.0, "age_pct_18_64": 20.0, "age_pct_over65": 30.0})
+    sim = build_sim(p)
+    sim.init()
+    age = np.asarray(sim.people.age)
+    assert abs((age < 18).mean() - 0.5) < 0.02 and abs((age >= 65).mean() - 0.3) < 0.02
+
+
+def contacts_and_clustering(net, sample: int = 300) -> tuple[np.ndarray, float]:
+    """Each member's number of contacts on a layer, and the share of pairs of a member's contacts who are contacts of each other."""
+    contacts: dict[int, set] = {}
+    for a, b in zip(np.asarray(net.edges.p1), np.asarray(net.edges.p2)):
+        contacts.setdefault(int(a), set()).add(int(b))
+        contacts.setdefault(int(b), set()).add(int(a))
+    linked = pairs = 0
+    for person in np.random.default_rng(0).choice(list(contacts), size=min(sample, len(contacts)), replace=False):
+        theirs = sorted(contacts[person])
+        for i, x in enumerate(theirs):
+            pairs += len(theirs) - i - 1
+            linked += sum(y in contacts[x] for y in theirs[i + 1:])
+    return np.array([len(v) for v in contacts.values()]), linked / max(pairs, 1)
+
+
+@pytest.mark.parametrize("layer, mean, clustered", [("s", 20, True), ("w", 16, True), ("c", 20, False)])
+def test_schools_and_workplaces_are_groups_of_poisson_size_and_the_community_is_random(layer, mean, clustered):
+    # Starsim v4's hybrid population: a pupil's or worker's contacts also know each other, the community is random; on every layer
+    # the configured number is the mean, and the counts vary between people as a Poisson's (variance about the mean), not fixed
+    p = scenario(n=10000, network={"network_type": "hybrid", "school_contacts": 20, "work_contacts": 16, "community_contacts": 20})
+    sim = build_sim(p)
+    sim.init()
+    degree, clustering = contacts_and_clustering(sim.networks[layer])
+    assert degree.mean() == pytest.approx(mean, rel=0.05) and degree.var() > 0.5 * degree.mean()
+    assert clustering > 0.9 if clustered else clustering < 0.1
+
+
 def test_v1_parameters_are_migrated_and_run():
     p = coerce_params({"disease_type": "seir", "beta": 22.8125, "dur_exp": 3.0, "n_agents": 1000, "sim_dur_years": 30 / 365, "rand_seed": 1})
     sim, out = run(p)

@@ -5,7 +5,9 @@ hybrid network, a random network with lasting contacts or Poisson contact counts
 a Starsim delivery or modifier, so it works under either solver."""
 from __future__ import annotations
 
+import functools
 import math
+import operator
 
 import numpy as np
 import pandas as pd
@@ -14,6 +16,7 @@ import starsim.library as ssl
 
 from epichat.params import tables
 from epichat.params.migrate import coerce_params
+from epichat.params.r0 import AGE_BANDS, age_shares
 from epichat.params.schema_v2 import SimParamsV2, sim_days
 
 from .model import AGE_EDGES, age_edges, make_disease
@@ -41,8 +44,11 @@ def build_network(params: SimParamsV2):
         # EpiChat's rows are sources and columns targets; Starsim's matrix[i, j] is the contacts a person in i has with people in j
         return ss.contacts(ages=list(AGE_EDGES), matrix=np.array(n.contacts.as_rows()).T, name="contacts")
     if n.network_type == "hybrid":
-        return ssl.HybridNet(household_size=ss.poisson(mean=n.household_size),
-                             n_contacts=dict(s=n.school_contacts, w=n.work_contacts, c=n.community_contacts),
+        # Starsim v4's hybrid population: schools and workplaces are fixed groups whose members all meet, of Poisson size, so the
+        # configured contacts are the mean (a plain number would give everyone the same); the community is random
+        contacts = dict(s=n.school_contacts, w=n.work_contacts, c=n.community_contacts)
+        return ssl.HybridNet(household_size=ss.poisson(mean=n.household_size), clustered=True,
+                             n_contacts={k: ss.poisson(mean=v) for k, v in contacts.items()},
                              school_ages=[n.school_age_min, n.school_age_max], work_ages=[n.work_age_min, n.work_age_max])
     if well_mixed(params):
         return None
@@ -56,12 +62,20 @@ def needs_agents(params: SimParamsV2) -> bool:
 
 
 def build_people(params: SimParamsV2, n: int):
-    """For a run as agents with a known country, people drawn from its UN pyramid; otherwise Starsim's (or the strata's) ages."""
+    """For a run as agents: people drawn from the country's UN pyramid, or in the configured shares of the three age bands (uniform
+    within each); otherwise Starsim's (or the strata's) ages."""
     g = params.demographics
     if g.age_source == "un_wpp" and g.country:
         hist = tables.age_histogram(g.country, g.demographics_year)
         if hist is not None:
             return ss.People(n, age_data=pd.DataFrame({"age": list(range(tables.MAX_AGE + 1)), "value": list(hist)}))
+    if g.age_source == "shares":
+        ages, weights = [], []
+        for share, (lo, hi) in zip(age_shares(params), AGE_BANDS):
+            years = list(range(int(lo), int(hi)))
+            ages += years
+            weights += [share / len(years)] * len(years)
+        return ss.People(n, age_data=pd.DataFrame({"age": ages, "value": weights}))
     return None
 
 
@@ -148,15 +162,14 @@ def build_interventions(params: SimParamsV2, disease: ss.Disease) -> list:
         elif i.type == "treatment":
             prob = i.coverage if i.coverage is not None else 1.0
             capacity = ss.perday(i.capacity) if i.capacity is not None else None
-            if i.delay_days > 0:           # a delay from becoming infectious: Starsim runs this as agents
-                trigger = disease.onset if hasattr(disease, "onset") else disease.infection
-                out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), when=ss.on(trigger, delay=ss.days(i.delay_days)), coverage=prob, capacity=capacity, name=name,
-                                    **window(i, run_days)))
-            else:
-                who = I if (i.symptomatic_only or A is None) else I | A
-                out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), who=who, rate=per_day(prob, 1), capacity=capacity, name=name, **window(i, run_days)))
-            if i.rel_trans_treated < 1:    # while infectious during the program, as if isolated until treated
-                out.append(ss.modify(disease.rel_trans, multiply=i.rel_trans_treated, who=I, name=f"{name}_isolation", **window(i, run_days)))
+            states = [I] if (i.symptomatic_only or A is None) else [I, A]   # still infectious, and symptomatic if asked
+            if i.delay_days > 0:           # from delay_days after becoming infectious (time_in: Starsim runs this as agents)
+                states = [s & (s.time_in >= ss.days(i.delay_days)) for s in states]
+            eligible = functools.reduce(operator.or_, states)   # offered each day at the same rate, with a delay or without
+            out.append(ss.treat(ss.Treatment(cure=i.efficacy, name=f"{name}_product"), who=eligible, rate=per_day(prob, 1), capacity=capacity,
+                                name=name, **window(i, run_days)))
+            if i.rel_trans_treated < 1:    # as if isolated from when treatment is offered (after any delay) until treated or recovered
+                out.append(ss.modify(disease.rel_trans, multiply=i.rel_trans_treated, who=eligible, name=f"{name}_isolation", **window(i, run_days)))
         elif i.type == "seasonality":
             out.append(ss.modify(disease.pars.beta, multiply=ss.seasonal(amplitude=i.scale, peak=i.shift), name=name))
         elif i.type == "transmission_reduction":

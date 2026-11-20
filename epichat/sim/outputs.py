@@ -6,6 +6,10 @@ from __future__ import annotations
 import numpy as np
 import starsim as ss
 
+from epichat.params.r0 import r0_is_approximate
+
+from .builder import build_sim
+
 SERIES_KEYS = ("n_susceptible", "n_exposed", "n_infectious", "n_infected", "n_asymptomatic", "n_recovered",
                "new_infections", "cum_infections", "new_deaths", "cum_deaths", "new_deaths_all", "cum_deaths_all")
 
@@ -18,17 +22,27 @@ def _floats(x) -> list[float]:
     return [float(v) for v in x]
 
 
+def delayed_seeds(sim: ss.Sim) -> np.ndarray:
+    """The people a delayed seeding infected, by day (zeros without one)."""
+    npts = len(sim.results[sim.diseases[0].name].S)
+    return _values(sim.results.seed.delivered) if "seed" in sim.results else np.zeros(npts)
+
+
 def seeds(sim: ss.Sim) -> tuple[float, float]:
-    """The day-0 seeds (the infectious at the start) and every seed, adding those a delayed seeding infected."""
+    """The day-0 seeds (the infectious at the start) and every seed, adding the delayed ones."""
     res = sim.results[sim.diseases[0].name]
     day0 = float(res.I.values[0])
-    delayed = float(np.sum(sim.results.seed.delivered.values)) if "seed" in sim.results else 0.0
-    return day0, day0 + delayed
+    return day0, day0 + float(delayed_seeds(sim).sum())
 
 
-def model_r0(sim: ss.Sim) -> float | None:
-    """Starsim's R0 for the declared disease, when it can give one for this sim."""
+def model_r0(params) -> float | None:
+    """Starsim's R0 for the scenario before any intervention (its R0() takes a sim's modifiers at the start, so a reduction from
+    day 0 would lower it). None on the hybrid network or with lasting contacts: Starsim lays those out as well-mixed contact,
+    whose R0 is not theirs."""
+    if r0_is_approximate(params):
+        return None
     try:
+        sim = build_sim(params.model_copy(update={"interventions": []})).init()
         return float(sim.diseases[0].R0())
     except Exception:
         return None
@@ -63,7 +77,7 @@ def extract(sim: ss.Sim, params) -> dict:
     if "R" in res:
         series["n_recovered"] = _floats(_values(res.R))
     day0, all_seeds = seeds(sim)
-    new_infections = _values(res.infection).copy()
+    new_infections = _values(res.infection) + delayed_seeds(sim)     # a delivery is not the infection flow, so add its seeds
     new_infections[0] += day0                  # the seeds are infectious at the start, not infected during day 0
     series["new_infections"] = _floats(new_infections)
     series["cum_infections"] = _floats(np.cumsum(new_infections))
@@ -84,7 +98,7 @@ def extract(sim: ss.Sim, params) -> dict:
         "seeds_day0": int(round(day0)),
         "seeds": int(round(all_seeds)),
         "solver": sim.solver.name,
-        "r0_model": model_r0(sim),
+        "r0_model": model_r0(params),
     }
     response = next((i for i in params.interventions if i.type == "behavior_response"), None)
     if response is not None:
