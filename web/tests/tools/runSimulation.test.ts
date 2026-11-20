@@ -16,6 +16,23 @@ function success(over: Partial<SimSuccess> = {}): SimSuccess {
 }
 
 describe("run_simulation", () => {
+  it("records the mode of the first run when none was chosen", async () => {
+    const deps = makeDeps({ simulate: success() });
+    await configureSimulation({ n_agents: 50000 } as never, deps);
+    expect(deps.scenario.params?.run.solver).toBeNull();
+    await runSimulation({}, deps);
+    expect(deps.sent[0].run.solver).toBe("abm");
+    expect(deps.scenario.params?.run.solver).toBe("abm");
+  });
+
+  it("keeps a mode the user chose", async () => {
+    const deps = makeDeps({ simulate: success() });
+    await configureSimulation({ n_agents: 50000, solver: "ode" } as never, deps);
+    await runSimulation({}, deps);
+    expect(deps.sent[0].run.solver).toBe("ode");
+    expect(deps.scenario.params?.run.solver).toBe("ode");
+  });
+
   it("runs with the population scale, records the run, and returns stats without the series", async () => {
     const deps = makeDeps({ simulate: success(), runId: "run-9" });
     await configureSimulation({ disease: "dengue", n_agents: 50000 } as never, deps);

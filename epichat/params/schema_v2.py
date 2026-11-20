@@ -237,6 +237,7 @@ class RunParams(BaseModel):
     rand_seed: Optional[int] = None
     n_replicates: int = _field("run.n_replicates")
     fit: Optional[Fit] = None
+    solver: Optional[Literal["abm", "ode"]] = None    # agents or a compartmental model; unset: not chosen yet (see params/solver.py)
 
 
 class SimParamsV2(BaseModel):

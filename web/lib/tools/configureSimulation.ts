@@ -5,6 +5,7 @@ import { detectDisease } from "@/lib/disease/db";
 import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccine, recalibrateBeta, validateParams, withR0, type Duration, type Intervention, type SimParams } from "@/lib/sim/params";
 import { changedPaths, setPath, type PathChange } from "@/lib/sim/paths";
 import { fmtValue, pyRound } from "@/lib/sim/pyformat";
+import { AGENT_CODES, recommendSolver } from "@/lib/sim/solver";
 import { referenceHref } from "@/lib/client/references";
 import { applyAdvanced } from "./advanced";
 import { REFERENCE_TARGETS, chosenReference, type ChosenReference } from "./chosenReference";
@@ -44,6 +45,7 @@ export const ConfigureSimulationInput = z.strictObject({
   use_reference: opt(z.strictObject({ parameter: z.string(), index: z.number(), disease: opt(z.string()), value: opt(z.number()) })),
   advanced: opt(z.record(z.string(), z.unknown())),
   start_new_scenario: opt(z.boolean()),
+  solver: opt(z.enum(["abm", "ode"])),
 });
 export type ConfigureSimulationArgs = z.infer<typeof ConfigureSimulationInput>;
 
@@ -137,6 +139,10 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   if (given(input.sim_dur_years)) {
     run.sim_dur_years = input.sim_dur_years;
     applied.sim_dur_years = input.sim_dur_years;
+  }
+  if (given(input.solver)) {
+    run.solver = input.solver;
+    applied.solver = input.solver;
   }
   for (const [name, field] of DURATION_FIELDS) {
     const value = input[field];
@@ -384,8 +390,14 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
     for (const match of matchedLevers(previous, changed, params)) deps.onOptionChosen(previous!.id, match.diagnosticId, match.patch, match.interventions);
   }
   const config = configView(params, scenario.disease);
+  // The run mode (spec 2026-11-20): what the rule recommends and why, and which reasons for agents this change added, so EpiChat
+  // knows whether to ask, and whether to ask again after a compartmental choice
+  const advice = recommendSolver(params);
+  const agentCodes = (a: typeof advice) => a.reasons.map((r) => r.code).filter((c) => (AGENT_CODES as readonly string[]).includes(c));
+  const earlier = before ? agentCodes(recommendSolver(before)) : null;
+  const solver = { chosen: params.run.solver, ...advice, new_reasons: earlier ? agentCodes(advice).filter((c) => !earlier.includes(c)) : [] };
   return {
-    content: JSON.stringify({ applied, changed, approx_r0, config, warnings }),
+    content: JSON.stringify({ applied, changed, approx_r0, config, warnings, solver }),
     payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario, params, sources: scenarioSources(scenario, deps.contextText), ...noted(scenarioReferences(scenario)) },
   };
 }

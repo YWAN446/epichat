@@ -25,6 +25,7 @@ from epichat.disease_db import check_params, load_db  # noqa: E402
 from epichat.params import r0  # noqa: E402
 from epichat.params.migrate import coerce_params  # noqa: E402
 from epichat.params.schema_v2 import SimParamsV2  # noqa: E402
+from epichat.params.solver import recommend_solver  # noqa: E402
 from epichat.resolver import DataQuery, ResolvedField  # noqa: E402
 from epichat.sim.diagnostics import as_dicts, diagnose  # noqa: E402
 
@@ -233,8 +234,55 @@ def params_cases(rng: random.Random) -> list[dict]:
             "n_interventions": len(p.interventions),
             "calibrate": [{"target_r0": t, "beta": _calibrate(p, t)} for t in (1.5, 3.0, 15.0, 5000.0)],
             "recalibrate": recalibrate,
+            "solver": recommend_solver(p),
         })
     return cases
+
+
+def _solver_input(r0_target=None, interventions=None, **paths) -> SimParamsV2:
+    d = SimParamsV2().model_dump()
+    for key, value in paths.items():
+        *parents, leaf = key.split("__")
+        node = d
+        for part in parents:
+            node = node[part]
+        node[leaf] = value
+    if interventions is not None:
+        d["interventions"] = interventions
+    p = SimParamsV2.model_validate(d)
+    return r0.with_r0(p, r0_target) if r0_target is not None else p
+
+
+def solver_cases() -> list[dict]:
+    """recommend_solver on one scenario per reason the rule can give, and on combinations (docs/superpowers/specs/2026-11-20-run-mode-choice-design.md)."""
+    sirs = dict(disease__model="sirs", disease__dur_immune={"mean_days": 180.0}, run__sim_dur_years=3.0)
+    births = dict(demographics__use_demographics=True, demographics__birth_rate=30.0)
+    reduction = [{"type": "transmission_reduction", "scale": 0.7, "start_day": 0, "end_day": 30}]
+    inputs = [
+        _solver_input(network__network_type="hybrid"),
+        _solver_input(network__contact_duration_days=7.0),
+        _solver_input(network__contacts_dist="poisson"),
+        _solver_input(interventions=[{"type": "treatment", "coverage": 0.3, "delay_days": 2}]),
+        _solver_input(**sirs),
+        _solver_input(r0_target=15.0, run__sim_dur_years=10.0, **births),
+        _solver_input(r0_target=15.0, run__sim_dur_years=5.0, **births),
+        _solver_input(interventions=reduction),
+        _solver_input(r0_target=1.2, disease__seed={"mode": "count", "value": 2}),
+        _solver_input(r0_target=1.2, disease__seed={"mode": "fraction", "value": 0.0002}),
+        _solver_input(r0_target=1.05, disease__seed={"mode": "count", "value": 7}),
+        _solver_input(run__n_replicates=3),
+        _solver_input(),
+        _solver_input(run__n_replicates=3, **sirs),
+        _solver_input(network__network_type="hybrid", run__n_replicates=3),
+        _solver_input(r0_target=0.9, **sirs),
+        _solver_input(disease__model="sirs", disease__dur_immune={"mean_days": 180.0}, run__sim_dur_years=360 / 365),
+        _solver_input(r0_target=0.9, interventions=[{"type": "transmission_reduction", "scale": 0.3, "start_day": 0, "end_day": 30}]),
+        _solver_input(r0_target=15.0, disease__initial_immune_frac=0.92),
+        _solver_input(disease__initial_immune_frac=0.5, interventions=[{"type": "transmission_reduction", "scale": 0.3, "start_day": 0, "end_day": 30}]),
+        _solver_input(r0_target=1.5),
+        _solver_input(r0_target=1.5, disease__seed={"mode": "count", "value": 5}),
+    ]
+    return [{"input": p.model_dump(mode="json"), "advice": recommend_solver(p)} for p in inputs]
 
 
 MIGRATION_INPUTS: list[dict] = [
@@ -350,7 +398,8 @@ def main(web_dir: Path = ROOT / "web") -> None:
     (fixtures / "adapters").mkdir(parents=True, exist_ok=True)
     for name, text in ADAPTER_FILES.items():
         (fixtures / "adapters" / name).write_text(text, encoding="utf-8", newline="")
-    payload = {"version": 6, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases()}
+    payload = {"version": 7, "params": params_cases(rng), "migration": migration_cases(), "warnings": warning_cases(rng), "adapters": adapter_cases(),
+               "solver": solver_cases()}
     (fixtures / "parity.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     (fixtures / "what_if_levers.json").write_text(json.dumps({"cases": what_if_cases()}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 

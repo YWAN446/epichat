@@ -74,7 +74,7 @@ def test_demographics_add_the_all_causes_deaths_and_keep_disease_deaths_apart(cl
 
 
 def test_an_ode_run_runs_once_and_reports_starsims_r0(client):
-    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 3}}, "pop_scale": 10}, headers=AUTH).json()
+    body = client.post("/simulate", json={"params": {"schema_version": 2, "disease": {"seed": {"mode": "count", "value": 20}}, "run": {"n_agents": 1000, "sim_dur_years": THIRTY_DAYS, "rand_seed": 1, "n_replicates": 3, "solver": "ode"}}, "pop_scale": 10}, headers=AUTH).json()
     assert body["replicates"] is None and body["stats"]["solver"] == "ode"
     assert body["stats"]["r0_model"] == body["stats_agents"]["r0_model"] == pytest.approx(2.5)          # a ratio: never scaled
 

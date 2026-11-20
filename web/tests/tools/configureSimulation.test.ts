@@ -9,6 +9,26 @@ import { makeDeps, params } from "./helpers";
 const run = (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) => configureSimulation(input as never, deps);
 
 describe("configure_simulation", () => {
+  it("reports the run mode advice and sets the chosen mode", async () => {
+    const deps = makeDeps();
+    const codes = (out: { solver: { reasons: { code: string }[] } }) => out.solver.reasons.map((r) => r.code);
+    const first = JSON.parse((await run(deps, { n_agents: 10000 })).content);
+    expect(first.solver).toMatchObject({ chosen: null, recommended: "abm", required: false, new_reasons: [] });
+    expect(codes(first)).toEqual(["same_answer"]);
+    const chosen = JSON.parse((await run(deps, { solver: "ode" })).content);
+    expect(chosen.solver.chosen).toBe("ode");
+    expect(chosen.applied.solver).toBe("ode");
+    expect(deps.scenario.params?.run.solver).toBe("ode");
+    const waning = JSON.parse((await run(deps, { disease_type: "sirs", dur_immune_days: 180, sim_dur_years: 3 })).content);
+    expect(waning.solver.new_reasons).toEqual(["waning"]);
+    expect(codes(waning)).toEqual(["waning"]);
+    const unrelated = JSON.parse((await run(deps, { n_agents: 20000 })).content);
+    expect(unrelated.solver.new_reasons).toEqual([]);
+    const hybrid = JSON.parse((await run(deps, { network_type: "hybrid" })).content);
+    expect(hybrid.solver).toMatchObject({ chosen: "ode", required: true });
+    expect(codes(hybrid)).toEqual(["hybrid_network"]);
+  });
+
   it("creates params from scratch", async () => {
     const deps = makeDeps();
     const out = JSON.parse((await run(deps, { disease: "dengue", country_iso3: "BRA", disease_type: "sir", n_agents: 50000 })).content);

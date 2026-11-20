@@ -51,7 +51,7 @@ def test_a_late_peak_day_is_fitted_through_the_threshold():
     """With the default seeding (5 of 10,000) a peak on day 150 needs R0 near 1.1. Below 1 an ODE infects several times its seeds
     and its highest point is the seeds' bump on day 9; just above 1 it is too slow to outgrow that bump within the year. Neither
     reads as a peak too early."""
-    p = SimParamsV2.model_validate({"run": {"fit": {"lever": "disease.beta", "target": "peak_day", "value": 150}}})
+    p = SimParamsV2.model_validate({"run": {"solver": "ode", "fit": {"lever": "disease.beta", "target": "peak_day", "value": 150}}})
     _, info = fit.fit_lever(p, 1)
     assert fit.within("peak_day", info["achieved"], 150) and info["runs"] <= fit.MAX_RUNS, info
 
@@ -79,7 +79,7 @@ def test_an_unreachable_fit_stops_at_the_levers_bound():
 
 
 def test_the_replicates_run_with_the_fitted_lever():
-    p = scenario("attack_rate", 0.5, n_agents=5000, n_replicates=2)
+    p = scenario("attack_rate", 0.5, n_agents=5000, n_replicates=2, solver="ode")
     payload = run_replicates(p)
     assert set(payload["stats"]["fit"]) == {"target", "wanted", "achieved", "lever", "value", "runs"}
     assert payload["effective_params"]["disease"]["beta"] == payload["stats"]["fit"]["value"]
@@ -166,3 +166,9 @@ def test_a_flattened_epidemic_is_not_a_fade_out():
     assert abs(info["achieved"] - 0.05) <= 0.02 and fitted.disease.beta < p.disease.beta, info
 
 
+
+
+@pytest.mark.parametrize("solver", ["ode", "abm"])
+def test_a_fit_runs_in_the_chosen_mode(solver):
+    payload = run_replicates(scenario("attack_rate", 0.3, solver=solver))
+    assert payload["stats"]["solver"] == solver

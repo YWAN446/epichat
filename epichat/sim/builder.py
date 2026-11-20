@@ -18,6 +18,7 @@ from epichat.params import tables
 from epichat.params.migrate import coerce_params
 from epichat.params.r0 import AGE_BANDS, age_shares
 from epichat.params.schema_v2 import SimParamsV2, sim_days
+from epichat.params.solver import needs_agents, runs_as_agents, well_mixed
 
 from .model import AGE_EDGES, age_edges, make_disease
 
@@ -29,12 +30,6 @@ def resolve_seed(params: SimParamsV2, seed: int | None) -> int:
     if seed is not None:
         return int(seed)
     return int(params.run.rand_seed) if params.run.rand_seed is not None else 1
-
-
-def well_mixed(params: SimParamsV2) -> bool:
-    """The random network with fresh, fixed contacts each day is well-mixed contact at n_contacts a day: no network needed."""
-    n = params.network
-    return n.network_type == "random" and n.contact_duration_days == 0 and n.contacts_dist == "constant"
 
 
 def build_network(params: SimParamsV2):
@@ -54,11 +49,6 @@ def build_network(params: SimParamsV2):
         return None
     contacts = ss.poisson(mean=n.n_contacts) if n.contacts_dist == "poisson" else ss.constant(n.n_contacts)
     return ss.RandomNet(n_contacts=contacts, dur=ss.days(n.contact_duration_days), name="random")
-
-
-def needs_agents(params: SimParamsV2) -> bool:
-    return (params.network.network_type == "hybrid" or (params.network.network_type == "random" and not well_mixed(params))
-            or any(i.type == "treatment" and i.delay_days > 0 for i in params.interventions))
 
 
 def build_people(params: SimParamsV2, n: int):
@@ -189,8 +179,8 @@ def build_sim(params, seed: int | None = None) -> ss.Sim:
     n = params.run.n_agents
     network = build_network(params)
     disease = make_disease(params, contacts_per_day=params.network.n_contacts if network is None and params.network.network_type == "random" else 1.0)
-    agents = needs_agents(params)
-    kw = dict(n_agents=n, people=build_people(params, n)) if agents else dict(total_pop=n)
+    agents = runs_as_agents(params)       # Starsim's own solver='auto' would pick the ODE whenever the model has a compartmental form
+    kw = dict(solver="abm", n_agents=n, people=build_people(params, n)) if agents else dict(solver="ode", total_pop=n)
     return ss.Sim(disease, networks=network, demographics=build_demographics(params), interventions=build_interventions(params, disease) or None,
                   start=ss.days(0), stop=ss.days(sim_days(params.run.sim_dur_years)), dt=ss.days(1), aging=params.demographics.use_demographics,
                   rand_seed=resolve_seed(params, seed), verbose=0, **kw)

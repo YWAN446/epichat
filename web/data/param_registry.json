@@ -2139,7 +2139,7 @@
    "models": [],
    "tier": "core",
    "db_field": null,
-   "starsim_target": "ss.Sim(total_pop=...) as an ODE, ss.Sim(n_agents=...) as agents",
+   "starsim_target": "ss.Sim(solver='abm', n_agents=...) or ss.Sim(solver='ode', total_pop=...)",
    "affects": [
     "stochasticity"
    ],
@@ -2173,7 +2173,7 @@
    "path": "run.n_replicates",
    "module": "run",
    "label": "Replicates",
-   "description": "How many seeds to run as agents; the result shows the median run with 10 to 90% bands. An ODE run is deterministic and runs once.",
+   "description": "How many seeds to run as agents; the result shows the median run with 10 to 90% bands. An compartmental run is deterministic and runs once.",
    "kind": "integer",
    "unit": null,
    "default": 1,
@@ -2186,6 +2186,29 @@
    "tier": "advanced",
    "db_field": null,
    "starsim_target": "run_replicates",
+   "affects": [
+    "stochasticity"
+   ],
+   "requires": [],
+   "networks": []
+  },
+  {
+   "path": "run.solver",
+   "module": "run",
+   "label": "Run as",
+   "description": "abm: simulated individual people (agents); ode: a compartmental model, one deterministic average curve. Unset: not chosen yet, runs as agents. A scenario that needs agents runs as agents whatever is set.",
+   "kind": "enum",
+   "unit": null,
+   "default": null,
+   "bounds": null,
+   "choices": [
+    "abm",
+    "ode"
+   ],
+   "models": [],
+   "tier": "advanced",
+   "db_field": null,
+   "starsim_target": "ss.Sim(solver='abm' or 'ode')",
    "affects": [
     "stochasticity"
    ],

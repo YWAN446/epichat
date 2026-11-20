@@ -174,7 +174,7 @@ describe("a covered parameter is a displayed parameter (review of phase C)", () 
     "disease.model": null,                                                                   // changes which rows exist; its own row is checked below
     "disease.dur_exp.dist": "lognormal", "disease.dur_inf.dist": "lognormal",
     "disease.seed.mode": null,                                                               // a count of 20 is no fraction: the two move together, below
-    "network.network_type": null, "network.contacts_dist": "poisson", "network.contacts_source": "user",
+    "network.network_type": null, "network.contacts_dist": "poisson", "network.contacts_source": "user", "run.solver": "ode",
     "demographics.country": "BRA", "demographics.demographics_source": "another source", "demographics.age_source": "shares",
     "demographics.age_pct_under18": null, "demographics.age_pct_18_64": null, "demographics.age_pct_over65": null,   // the three move together, below
     "run.fit.target": "peak_infections", "run.fit.lever": "network.network_beta", "run.fit.value": 0.4, "run.n_agents": 20000,

@@ -10,7 +10,7 @@ import { AGE_GROUPS, approxR0, deathProbabilities, type SimParams } from "@/lib/
 import { flattenParams, getPath } from "@/lib/sim/paths";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
 import { appliesOn, appliesTo, specFor } from "@/lib/sim/registry";
-import { AGE_SOURCE_LABELS, LEVER_LABELS, ageStructure, contactsSourceLabel, countryName, durationText, fitText, formatQuantity, interventionLines, networkLabel, seedText } from "./format";
+import { AGE_SOURCE_LABELS, LEVER_LABELS, SOLVER_LABELS, ageStructure, contactsSourceLabel, countryName, durationText, fitText, formatQuantity, interventionLines, networkLabel, seedText } from "./format";
 
 /**
  * Where a value came from, in plain words (spec 8.4). "set in chat" is every value set in the conversation that is not
@@ -143,6 +143,7 @@ const RUN: RowSpec[] = [
   { label: "Agents", paths: ["run.n_agents"], text: (p) => commaInt(p.run.n_agents) },
   { label: "Duration", paths: ["run.sim_dur_years"], text: (p) => formatQuantity(p.run.sim_dur_years, "years") },
   { label: "Replicates", paths: ["run.n_replicates"], text: (p) => fmtValue(p.run.n_replicates) },
+  { label: "Run as", paths: ["run.solver"], text: (p) => (p.run.solver === null ? "not chosen yet (agents)" : SOLVER_LABELS[p.run.solver]) },
   // the service runs an unset seed as seed 1 (and 1, 2, 3… for replicates), so an unchanged scenario reruns identically
   { label: "Random seed", paths: ["run.rand_seed"], text: (p) => (p.run.rand_seed === null ? "1 (not set)" : fmtValue(p.run.rand_seed)) },
   {

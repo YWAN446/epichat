@@ -18,7 +18,7 @@ STATES = {"sir": "SIR", "seir": "SEIR", "sis": "SI", "sirs": "SIR", "seirs": "SE
 
 def scenario(model: str = "sir", n: int = 10000, days: int = 120, network: dict | None = None, demographics: dict | None = None, **disease) -> SimParamsV2:
     body = {"disease": {"model": model, "seed": {"mode": "count", "value": 20}, **EXTRA.get(model, {}), **disease},
-            "network": network or {}, "demographics": demographics or {}, "run": {"n_agents": n, "sim_dur_years": days / 365, "rand_seed": 1}}
+            "network": network or {}, "demographics": demographics or {}, "run": {"n_agents": n, "sim_dur_years": days / 365, "rand_seed": 1, "solver": "ode"}}   # a compartmental model unless the scenario needs agents
     return SimParamsV2.model_validate(body)
 
 

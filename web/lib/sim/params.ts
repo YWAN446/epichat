@@ -276,6 +276,7 @@ export const RunSchema = z.object({
   rand_seed: nullable(z.number().int()),
   fit: nullable(FitSchema),
   n_replicates: withDefault("run.n_replicates", true),
+  solver: nullable(z.enum(["abm", "ode"])),          // agents or a compartmental model; null: not chosen yet (lib/sim/solver.ts)
 });
 
 const isDayZeroVaccine = (i: Intervention) => isDay0Immunity(i);

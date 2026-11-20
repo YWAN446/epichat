@@ -5,7 +5,8 @@ from epichat.sim.replicates import run_replicates
 
 def scenario(n_replicates: int = 1, rand_seed: int | None = 5, network: dict | None = None) -> SimParamsV2:
     return SimParamsV2.model_validate({"disease": {"seed": {"mode": "count", "value": 10}}, "network": network or {},
-                                       "run": {"n_agents": 1000, "sim_dur_years": 40 / 365, "rand_seed": rand_seed, "n_replicates": n_replicates}})
+                                       "run": {"n_agents": 1000, "sim_dur_years": 40 / 365, "rand_seed": rand_seed, "n_replicates": n_replicates,
+                                               "solver": "ode"}})   # a compartmental model unless the network needs agents
 
 
 HYBRID = {"network_type": "hybrid"}

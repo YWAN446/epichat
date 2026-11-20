@@ -108,8 +108,8 @@ export function contactsSourceLabel(source: string): string {
   return source === "user" ? "user-set" : source;
 }
 
-/** How Starsim ran a scenario (stats.solver): as compartments, deterministic and run once, or as agents on a network. */
-export const SOLVER_LABELS: Record<"ode" | "abm", string> = { ode: "a compartmental model (ODE)", abm: "agents on a network" };
+/** How Starsim ran a scenario (stats.solver), in plain words for every reader: a compartmental model (deterministic, run once) or agents. */
+export const SOLVER_LABELS: Record<"ode" | "abm", string> = { ode: "a compartmental model", abm: "agents (simulated people)" };
 
 const FIT_TARGET_LABELS: Record<string, string> = { attack_rate: "attack rate", peak_day: "peak day", peak_infections: "peak infections" };
 export const LEVER_LABELS: Record<string, string> = {

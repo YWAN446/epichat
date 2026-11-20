@@ -4,6 +4,7 @@ import { detectDisease } from "@/lib/disease/db";
 import type { SimSuccess } from "@/lib/sim/client";
 import { changedPaths } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
+import { recommendSolver } from "@/lib/sim/solver";
 import { errorOutcome, paramWarnings, runNotes } from "./shared";
 import { scenarioReferences, scenarioSources } from "./sources";
 import type { RunCompare, RunPayload, ToolDeps, ToolOutcome } from "./types";
@@ -35,6 +36,9 @@ export function compareRuns(previous: PreviousRun, result: SimSuccess, popScale:
 export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): Promise<ToolOutcome> {
   const scenario = deps.scenario;
   if (!scenario.params) return errorOutcome("Call configure_simulation first to establish the simulation before running.");
+  // The first run records its mode (spec 2026-11-20): running with the recommendation on screen accepts it, so a later change never
+  // switches the mode silently
+  if (scenario.params.run.solver === null) scenario.params = { ...scenario.params, run: { ...scenario.params.run, solver: recommendSolver(scenario.params).recommended } };
   const params = scenario.params;
   const popScale = scenario.totalPopulation && params.run.n_agents > 0 ? scenario.totalPopulation / params.run.n_agents : 1.0;
   const disease = (scenario.disease ?? detectDisease(deps.contextText || ""))?.slice(0, DISEASE_NAME_MAX) ?? null;

@@ -7,9 +7,9 @@ from epichat.sim.builder import build_sim
 from epichat.sim.outputs import extract
 
 
-def run(interventions=(), network: dict | None = None, days: int = 180, **disease) -> dict:
+def run(interventions=(), network: dict | None = None, days: int = 180, solver: str | None = None, **disease) -> dict:
     body = {"disease": {"seed": {"mode": "count", "value": 20}, **disease}, "network": network or {}, "interventions": list(interventions),
-            "run": {"n_agents": 5000, "sim_dur_years": days / 365, "rand_seed": 1}}
+            "run": {"n_agents": 5000, "sim_dur_years": days / 365, "rand_seed": 1, "solver": solver}}
     p = SimParamsV2.model_validate(body)
     sim = build_sim(p)
     sim.run()
@@ -58,10 +58,11 @@ def test_waning_vaccine_protection_lets_more_people_be_infected():
     assert total(waning) > total(lasting)
 
 
-def test_treatment_cuts_transmission_and_a_capacity_limits_it(base):
-    treated = run([{"type": "treatment", "coverage": 0.2}])
-    capped = run([{"type": "treatment", "coverage": 0.2, "capacity": 2}])
-    assert total(treated) < total(capped) < total(base)
+def test_treatment_cuts_transmission_and_a_capacity_limits_it():
+    # compartmental, so the small effect of 2 treatments a day is not lost in the noise of agents
+    treated = run([{"type": "treatment", "coverage": 0.2}], solver="ode")
+    capped = run([{"type": "treatment", "coverage": 0.2, "capacity": 2}], solver="ode")
+    assert total(treated) < total(capped) < total(run(solver="ode"))
 
 
 def test_a_delayed_treatment_runs_as_agents_and_still_helps(base):

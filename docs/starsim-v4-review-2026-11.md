@@ -23,8 +23,9 @@ Each fix has a test that failed before it and passes after.
 | 4 | v4's `HybridNet` turns a plain number of contacts into the same number for everyone, and the port passed plain numbers: every pupil was in a school group of exactly 21 and every worker in a workplace of 17 (the variance of their contacts 0.32 and 0.02, against about 20 and 16 for Covasim's Poisson counts). | `ss.poisson(...)` counts, v4's own default: groups vary in size and the configured contacts are the mean. Schools and workplaces stay v4's clusters (see below). |
 | 5 | With a treatment delay, `symptomatic_only` was ignored, because a treatment goes by default to everyone infected, the asymptomatic included: an all-asymptomatic SEIAR epidemic was treated away (33 infected against 1,503 untreated). With 30% asymptomatic, treating the symptomatic only gave the same as treating everyone (61% infected, where the fix gives 69%). The isolation (`rel_trans_treated`) reached only the symptomatic, even for a treatment of everyone infectious: with 30% asymptomatic and 0.5, 56% infected either way, 37% with the asymptomatic isolated too. | The delayed treatment takes the same `who=` as the immediate one: still infectious, and symptomatic if asked. The isolation takes it too. |
 | 6 | A treatment with a delay was a different delivery from one without. It was offered once, exactly `delay` days after onset, with probability equal to the coverage, and never to the seeds, who start infectious without an onset. SIR at R0 2.5 as agents, coverage 0.3: no delay infected 0.1%, a 2-day delay 74% (main: 0.4% and 22%). | By the owner's decision (2026-11-20), one delivery for both: offered each day at the coverage to the infectious, from `delay_days` after they became infectious (`I.time_in`, which Starsim runs as agents). A 2-day delay now gives 0.7%, a 4-day one 56% (main: 67%; there the cure took effect a day later). The isolation acts on the same people from the same day, until they are treated or recover (see below). |
+| 7 | Every scenario that can run as an ODE always did (`needs_agents`), so the default scenario and the age-structured network could never run as agents: no fade-out by chance (SIRS over 3 years: 2.68 infections per person as an ODE against 0.89 as agents) and no replicates. | The user chooses (`run.solver`, owner decision 1). EpiChat recommends agents and gives reasons from a rule in `epichat/params/solver.py`, mirrored in `web/lib/sim/solver.ts` and pinned by the parity fixture. Each reason for agents has a test showing that the two modes differ there. A scenario that needs agents runs as agents whatever is chosen, and the first run records its mode. Design: `docs/superpowers/specs/2026-11-20-run-mode-choice-design.md`. |
 
-Tests: pytest 681 passed and 42 skipped (live API); sim 71 passed; web 745/745.
+Tests: pytest 710 passed and 42 skipped (live API); sim 71 passed; web 751/751.
 
 **Kept as in the port, by the owner's decision (2026-11-19).** Seeds start infectious (I) in every model, on day 0 and when
 seeding is delayed, as Starsim does. In SEIR, SEIRS and SEIAR they therefore skip the latent period. Main started them
@@ -48,7 +49,7 @@ for a limited capacity, so without a capacity limit it did nothing.
    the infected fall to 4e-5 people on day 210, then come back in two more waves. This hits the waning models, runs with births,
    and anything that suppresses an epidemic for a while.
    - Does v4 have an extinction threshold for compartmental runs, such as a minimum count below which a compartment is emptied?
-   - If not, would you run these scenarios as agents?
+   - If not, would you run these scenarios as agents, or with the `binomial` solver (question 12)?
 2. **R0 is not held on the hybrid network or with lasting contacts.** On main, a short pilot measured R0 and corrected beta
    (`calibrate.py`); the port removes it. With Poisson contact counts (fix 4), the attack rate still differs. The network shape is
    not the cause: random layers and clusters give the same within a point.
@@ -123,12 +124,32 @@ for a limited capacity, so without a capacity limit it did nothing.
 11. **Forkserver on Vercel.** The runner preloads `__main__` into the forkserver. It works under uvicorn on Linux (71 sim tests,
     and a real server answered a run in 74 ms after warm-up), but Vercel's Python runtime is untested. Do you know of anything
     in its entry point that preloading `__main__` would run? We will check on a preview deployment.
+12. **Compartmental or agents by default.** v4's `solver='auto'` runs a declared model as an ODE unless something needs agents
+    ("every part of the model has a compartmental form"), and the port followed it through `needs_agents`. We plan to let the
+    user choose before the first run, with EpiChat recommending agents and saying how much the choice matters for the scenario
+    (`docs/superpowers/specs/2026-11-20-run-mode-choice-design.md`, the owner's decision above).
+    - What would you recommend as EpiChat's default, and why?
+    - v4 also has stochastic compartmental solvers. On two of EpiChat's scenarios (10,000 people, infections per person over
+      the run, five seeds where it is stochastic), `binomial` fades out as agents do:
+
+      | Scenario | ODE | `binomial` | Agents |
+      |---|---|---|---|
+      | SIRS over 3 years, immunity 180 days | 2.68 | 0.89 to 0.90 | 0.88 to 0.90 |
+      | A 70% reduction for the first 30 days | 0.89 | 0.88 to 0.90 in 3 seeds, 0 in 2 | 0 in all 5 |
+      | Time for the five seeds | 0.01 s (one run) | 0.04 to 0.06 s | 0.26 to 0.77 s |
+
+      Would you recommend `binomial` as the compartmental option, or as the default, in place of the ODE? Is it as complete as
+      the ODE for what EpiChat uses (the interventions, the age strata, the age-structured contacts)? It would also answer
+      question 1.
 
 ## Decisions for the owner
 
 1. **ODE by default.** The default scenario and the age-structured network become deterministic compartmental models, with no
    replicates or bands, no fade-out by chance, and fractional people. The website and the agent's prompt no longer say
    "agent-based". Keep that framing, or keep agents as the default with the ODE as a fast option?
+   **Decided (2026-11-20):** both modes stay available, and the user chooses before the first run. EpiChat recommends agents
+   for every scenario and says how much the choice matters for this one; a scenario that needs agents runs as agents
+   (`docs/superpowers/specs/2026-11-20-run-mode-choice-design.md`). Cliff's view is asked in question 12.
 2. **Saved scenarios.** Beta is now a rate per contact (`beta / 365` a day) rather than a probability (`1 − e^(−beta / 365)`),
    and the R0 formula uses mean days. Re-running a scenario saved before the port gives about 15% more R0 at the default and
    25% more for a measles-like one. Should we migrate them (a schema bump that recomputes beta from the R0 they were set to),

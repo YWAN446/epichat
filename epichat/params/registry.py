@@ -283,12 +283,16 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "community, or all; the random and age-structured networks take all only.", "enum", None, "all", None,
               ("all", "household", "school", "work", "community"), (), "core", None, "ss.modify(beta, network=...)", ("peak", "final_size")),
     ParamSpec("run.n_agents", "run", "Agents", "Number of simulated people; results scale to the real population.", "integer", None, 10000,
-              (10, 1_000_000), None, (), "core", None, "ss.Sim(total_pop=...) as an ODE, ss.Sim(n_agents=...) as agents", ("stochasticity",)),
+              (10, 1_000_000), None, (), "core", None, "ss.Sim(solver='abm', n_agents=...) or ss.Sim(solver='ode', total_pop=...)", ("stochasticity",)),
     ParamSpec("run.sim_dur_years", "run", "Duration", "Length of the run in years.", "number", "years", 1.0, (0.01, 20.0), None, (), "core",
               None, "ss.Sim(stop=ss.days(round(365 * years)))", ("duration",)),
     ParamSpec("run.n_replicates", "run", "Replicates", "How many seeds to run as agents; the result shows the median run with 10 to 90% bands. An "
-              "ODE run is deterministic and runs once.",
+              "compartmental run is deterministic and runs once.",
               "integer", None, 1, (1, 5), None, (), "advanced", None, "run_replicates", ("stochasticity",)),
+    ParamSpec("run.solver", "run", "Run as", "abm: simulated individual people (agents); ode: a compartmental model, one "
+              "deterministic average curve. Unset: not chosen yet, runs as agents. A scenario that needs agents runs as agents "
+              "whatever is set.", "enum", None, None, None, ("abm", "ode"), (), "advanced", None, "ss.Sim(solver='abm' or 'ode')",
+              ("stochasticity",)),
     ParamSpec("run.rand_seed", "run", "Random seed", "Seed of the first replicate; unset means 1.", "integer", None, None, None, None, (),
               "expert", None, "ss.Sim(rand_seed=...)", ("stochasticity",)),
     ParamSpec("run.fit.target", "run", "Fit target", "The outcome the run is fitted to: attack_rate (share infected), peak_day or "

@@ -24,7 +24,7 @@ def run(model: str = "sir", days: int = 20, network: dict | None = None, interve
     deaths = {} if model == "sis" else {"p_death": 0.3}
     body = {"disease": {"model": model, "seed": {"mode": "count", "value": 25}, **deaths, **EXTRA.get(model, {}), **disease},
             "network": network or {}, "demographics": demographics or {}, "interventions": list(interventions),
-            "run": {"n_agents": 500, "sim_dur_years": days / 365, "rand_seed": 1}}
+            "run": {"n_agents": 500, "sim_dur_years": days / 365, "rand_seed": 1, "solver": "ode"}}   # a compartmental model unless the scenario needs agents
     p = SimParamsV2.model_validate(body)
     sim = build_sim(p)
     sim.run()

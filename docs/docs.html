@@ -219,7 +219,7 @@
     <tr><td>Understand</td><td>The disease, the place and the question; the database's cited parameters; a question back when something is missing</td><td><span class="k">lookup_disease</span> · web search and fetch</td></tr>
     <tr><td>Configure</td><td>A validated configuration; β calibrated to the R₀</td><td><span class="k">configure_simulation</span> · <span class="k">describe_parameters</span></td></tr>
     <tr><td>Ground in data</td><td>The country's ages, births and deaths, contact matrix, household size, vaccination coverage and hospital capacity</td><td><span class="k">fetch_demographics</span> · <span class="k">fetch_vaccination_coverage</span> · <span class="k">fetch_health_system</span></td></tr>
-    <tr><td>Run</td><td>Starsim on the private service: one ODE run, or one to five replicates as agents</td><td><span class="k">run_simulation</span></td></tr>
+    <tr><td>Run</td><td>Starsim on the private service: one to five replicates as agents, or one compartmental run, as the user chooses</td><td><span class="k">run_simulation</span></td></tr>
     <tr><td>Interpret</td><td>The run's diagnostics; fixes and interventions as suggested replies; what changed since the previous run</td><td>diagnostics</td></tr>
     <tr><td>Report</td><td>A report built from the stored runs; a link to share</td><td><span class="k">write_report</span></td></tr>
   </tbody>
@@ -354,15 +354,17 @@
 <p>
   Fresh contacts every day, a constant number or Poisson-distributed,
   optionally lasting several days. With a constant number of fresh contacts,
-  people mix evenly, the model runs as an ODE and the R₀ formula is exact; with
-  Poisson counts or lasting contacts it runs as agents on a contact network.
+  people mix evenly and the scenario can run as agents or as a compartmental model
+  (an ODE, whose R₀ formula is exact); with Poisson counts or lasting contacts it
+  runs as agents on a contact network.
 </p>
 <h3>Age-structured</h3>
 <p>
   Three age groups (under 18, 18 to 64, 65 and over) mixing by a 3×3
   contact matrix: POLYMOD's European defaults, or the country's Prem et
-  al. 2021 matrix once its demographics are fetched (177 countries). The
-  model runs as an ODE stratified by age, and the R₀ formula is exact.
+  al. 2021 matrix once its demographics are fetched (177 countries). It runs
+  as agents or as a compartmental model stratified by age (whose R₀ formula is
+  exact).
 </p>
 <h3>Hybrid: households, schools, workplaces and community</h3>
 <p>

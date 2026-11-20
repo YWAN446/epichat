@@ -80,6 +80,8 @@ export function runLabels(runs: ReportRun[]): string[] {
     const r0 = pyRound(approxR0(run.effectiveParams), 1);
     if (r0 !== pyRound(approxR0(prev.effectiveParams), 1)) changes.push(`R₀ ${r0}`);
     if (run.effectiveParams.run.n_agents !== prev.effectiveParams.run.n_agents) changes.push(`${commaInt(run.effectiveParams.run.n_agents)} agents`);
+    const mode = run.stats.solver;                                    // "Rerun as agents" changes nothing else (spec 2026-11-20)
+    if (mode && prev.stats.solver && mode !== prev.stats.solver) changes.push(mode === "abm" ? "as agents" : "as a compartmental model");
     return changes.length > 0 ? `${base}, ${changes.join(", ")}` : base;
   });
 }

@@ -44,6 +44,14 @@ describe("system prompt", () => {
     }
   });
 
+  it("asks which mode to run, recommending agents, with the rule's reasons", () => {
+    for (const phrase of ["Run as agents (recommended)", "Run as a compartmental model", "new_reasons", "Rerun as agents", "required", "stats.solver", "never say \"ODE\""]) {
+      expect(SYSTEM_PROMPT).toContain(phrase);
+    }
+    expect(SYSTEM_PROMPT).not.toContain("agent-based");
+    expect(SYSTEM_PROMPT).not.toContain("unless something in it needs agents");
+  });
+
   it("keeps the phrases the Python tests pin", () => {
     for (const phrase of ["under_review", "no_source", "estimates_only", "estimate_range", "estimate_extremes", "illustrative assumption", "not a forecast", "web_search", "web_fetch", "medical advice"]) {
       expect(SYSTEM_PROMPT).toContain(phrase);

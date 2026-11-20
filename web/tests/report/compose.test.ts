@@ -91,6 +91,9 @@ describe("composeReport", () => {
     expect(runLabels(FIXTURE.runs)).toEqual(["Run 1", "Run 2, vaccine coverage 90%", "Run 3, no vaccine"]);
     expect(runLabels([FIXTURE.runs[0]])).toEqual(["Run 1"]);
     expect(runLabels([FIXTURE.runs[0], FIXTURE.runs[0]])).toEqual(["Run 1", "Run 2"]);
+    const as = (solver: "abm" | "ode") => ({ ...FIXTURE.runs[0], stats: { ...FIXTURE.runs[0].stats, solver } });
+    expect(runLabels([as("ode"), as("abm"), as("abm"), as("ode")])).toEqual(["Run 1", "Run 2, as agents", "Run 3", "Run 4, as a compartmental model"]);
+    expect(runLabels([FIXTURE.runs[0], as("abm")])).toEqual(["Run 1", "Run 2"]);       // a run stored without its mode names no change
   });
 });
 
@@ -103,10 +106,10 @@ describe("the solver in the report", () => {
     };
     const last = FIXTURE.runs.length - 1;
     const ode = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "ode" as const } } : { ...r, stats: { ...r.stats, solver: "abm" as const } }));
-    expect(modelled(ode)).toContainEqual(["Ran as", "a compartmental model (ODE)"]);
-    expect(modelled(ode)).not.toContainEqual(["Ran as", "agents on a network"]);       // the latest run's, never an earlier one's
+    expect(modelled(ode)).toContainEqual(["Ran as", "a compartmental model"]);
+    expect(modelled(ode)).not.toContainEqual(["Ran as", "agents (simulated people)"]);       // the latest run's, never an earlier one's
     const abm = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "abm" as const } } : r));
-    expect(modelled(abm)).toContainEqual(["Ran as", "agents on a network"]);
+    expect(modelled(abm)).toContainEqual(["Ran as", "agents (simulated people)"]);
     expect(modelled(FIXTURE.runs).map(([label]) => label)).not.toContain("Ran as");
   });
 });

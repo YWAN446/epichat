@@ -28,7 +28,7 @@ Layer 1b: Fact-Checker         (disease_parameters.json — no LLM)
      │  Emits ⚠️ warnings shown in chat summary and CLI output
      ▼
 Layer 2: Simulation            (epichat/sim → a declared Starsim 4 model)
-     │  Runs as an ODE unless the network needs agents; a forked child process, 90s timeout
+     │  Runs as agents or as an ODE, as the user chooses; a forked child process, 90s timeout
      │  Stats + series JSON → epidemic curve
      ▼
 Layer 4: Results Narrator      (Claude API + narration prompt)
@@ -134,7 +134,7 @@ registry, schema v2, the exact R0, diagnostics and options) and
   `diagnostic_shown` and `option_chosen` say which fired and which were taken,
   so the thresholds (named constants at the top of the diagnostics module)
   can be tuned from the pilot.
-- **The model.** Every scenario is one declared Starsim 4 disease (`epichat/sim/model.py`): states S, E (latent models), I, A (SEIAR) and R, and transitions between them. Starsim runs it as an ODE unless something needs individuals (the hybrid network, a random network with lasting contacts or Poisson contact counts, or a treatment with a delay), in which case the same disease runs as agents, with replicates and bands. Susceptibility by age (`rel_sus_age`), fatality by age (`p_death_age`) and variation in susceptibility (`rel_sus_cv`, as five equal-probability susceptibility classes) are stratifications of the disease, presymptomatic transmission (`rel_trans_exposed`) is a term of the force of infection, and the interventions are Starsim's own deliveries (`ss.vaccinate`, `ss.treat`) and modifiers (`ss.modify` for seasonality, reductions and the behaviour response). A run reports which solver ran (`stats.solver`) and Starsim's own R0 (`stats.r0_model`).
+- **The model.** Every scenario is one declared Starsim 4 disease (`epichat/sim/model.py`): states S, E (latent models), I, A (SEIAR) and R, and transitions between them. The same disease runs as agents (with replicates and bands) or as an ODE, as the user chooses (`run.solver`): EpiChat recommends agents and says, from a rule in `epichat/params/solver.py` mirrored in `web/lib/sim/solver.ts`, how much the choice matters for the scenario (waning immunity, births, a temporary measure, a chance of early die-out, replicates). A scenario that needs individuals (the hybrid network, a random network with lasting contacts or Poisson contact counts, or a treatment with a delay) runs as agents whatever is chosen. Susceptibility by age (`rel_sus_age`), fatality by age (`p_death_age`) and variation in susceptibility (`rel_sus_cv`, as five equal-probability susceptibility classes) are stratifications of the disease, presymptomatic transmission (`rel_trans_exposed`) is a term of the force of infection, and the interventions are Starsim's own deliveries (`ss.vaccinate`, `ss.treat`) and modifiers (`ss.modify` for seasonality, reductions and the behaviour response). A run reports which solver ran (`stats.solver`) and Starsim's own R0 (`stats.r0_model`).
 - **Networks.** `network_type` is `random` (fresh contacts daily, constant or
   Poisson, optionally lasting `contact_duration_days`), `age_structured`
   (three age groups mixing by a 3×3 contact matrix: POLYMOD's European

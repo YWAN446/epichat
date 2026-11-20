@@ -35,8 +35,8 @@ def run(p: SimParamsV2):
     ({}, [{"type": "treatment", "coverage": 0.5}], False),
     ({}, [{"type": "treatment", "coverage": 0.5, "delay_days": 2}], True),
 ])
-def test_the_solver_is_an_ode_unless_something_needs_agents(network, interventions, agents):
-    p = scenario(network=network, interventions=interventions)
+def test_a_compartmental_choice_runs_as_an_ode_unless_something_needs_agents(network, interventions, agents):
+    p = scenario(network=network, interventions=interventions, run={"solver": "ode"})
     assert needs_agents(p) is agents
     sim, _ = run(p)
     assert sim.solver.name == ("abm" if agents else "ode")
@@ -161,10 +161,20 @@ def test_schools_and_workplaces_are_groups_of_poisson_size_and_the_community_is_
 def test_v1_parameters_are_migrated_and_run():
     p = coerce_params({"disease_type": "seir", "beta": 22.8125, "dur_exp": 3.0, "n_agents": 1000, "sim_dur_years": 30 / 365, "rand_seed": 1})
     sim, out = run(p)
-    assert sim.solver.name == "ode" and len(out["series"]["day"]) == 31 and "n_exposed" in out["series"]
+    assert sim.solver.name == "abm" and len(out["series"]["day"]) == 31 and "n_exposed" in out["series"]   # nothing chosen: agents
 
 
 def test_the_run_has_one_point_a_day_from_day_zero():
     sim = build_sim(scenario(days=45))
     sim.run()
     assert len(sim.results.timevec) == 46
+
+
+@pytest.mark.parametrize("network, solver, expected", [
+    ("random", None, "abm"), ("random", "ode", "ode"), ("random", "abm", "abm"),
+    ("age_structured", "abm", "abm"), ("hybrid", "ode", "abm"),
+])
+def test_the_mode_follows_run_solver(network, solver, expected):
+    # Unset runs as the rule recommends (agents); a scenario that needs agents runs as agents whatever is set
+    p = scenario(network={"network_type": network}, run={"n_agents": 2000, "sim_dur_years": 60 / 365, "rand_seed": 1, "solver": solver})
+    assert build_sim(p).init().solver.name == expected

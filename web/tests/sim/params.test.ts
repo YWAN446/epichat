@@ -29,7 +29,7 @@ describe("SimParams v2 validation", () => {
         country: null, auto_demographics: true, demographics_year: 2022, demographics_source: null, age_source: "default",
       },
       interventions: [],
-      run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1, fit: null },
+      run: { n_agents: 10000, sim_dur_years: 1, rand_seed: null, n_replicates: 1, fit: null, solver: null },
     });
     const v2 = must({ schema_version: 2 });   // a v1 row with nothing in it migrates to the same defaults but the seed, which keeps v1's 1%
     expect(must({})).toEqual({ ...v2, disease: { ...v2.disease, seed: { mode: "fraction", value: 0.01, day: 0 } } });
@@ -78,7 +78,7 @@ describe("migration from v1", () => {
   it("migrates a flat row to constant durations and a fraction seed", () => {
     const p = must({ disease_type: "seirs", beta: 12.5, dur_inf: 7, dur_exp: 4, dur_immune: 90, init_prev: 0.02, n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, p_death: 0.1 });
     expect(p.disease).toMatchObject({ model: "seirs", beta: 12.5, dur_inf: { mean_days: 7, dist: "constant", sd_days: null }, p_death: 0.1, seed: { mode: "fraction", value: 0.02, day: 0 } });
-    expect(p.run).toEqual({ n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, n_replicates: 1, fit: null });
+    expect(p.run).toEqual({ n_agents: 2000, sim_dur_years: 0.5, rand_seed: 9, n_replicates: 1, fit: null, solver: null });
   });
 
   it("folds a day-0 vaccine into initial immunity and keeps later campaigns", () => {
