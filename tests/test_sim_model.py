@@ -105,3 +105,15 @@ def test_variation_in_susceptibility_keeps_r0_and_shrinks_the_epidemic_close_to_
         _, out = run(p)
         assert out["stats"]["r0_model"] == pytest.approx(2.5, rel=1e-6)
         assert out["stats"]["total_infected"] / 100000 == pytest.approx(final_size(2.5, cv), abs=0.03)
+
+
+def test_a_wide_gamma_infectious_period_runs_as_starsims_gamma_for_agents():
+    # SD 15 on a mean of 10 is a gamma of shape 0.44: many recover within days, a few stay infectious for weeks, so infections
+    # spread out in time and the epidemic peaks later and lower; rounded to a whole-number Erlang shape it was an exponential
+    # (shape 1), which peaked at day 50 rather than 73
+    def peak_day(sd):
+        p = SimParamsV2.model_validate({"disease": {"dur_inf": {"mean_days": 10.0, "dist": "gamma", "sd_days": sd}, "seed": {"mode": "count", "value": 20}},
+                                        "run": {"n_agents": 10000, "sim_dur_years": 1.0, "rand_seed": 1, "solver": "abm"}})
+        sim, out = run(p)
+        return out["stats"]["peak_day"]
+    assert peak_day(15.0) > peak_day(7.0) + 20

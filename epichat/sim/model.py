@@ -20,13 +20,15 @@ SUS_LEVELS = 5              # equal-probability classes that stand for a gamma-d
 
 
 def to_dist(d: Duration):
-    """A duration in days as a Starsim distribution (as compartments, Starsim lays non-exponential ones out as Erlang stages)."""
+    """A duration in days as Starsim's own distribution: agents draw it exactly; a compartmental run lays a non-exponential one out
+    as Erlang stages, k = round((mean/sd)²) from 1 to 50, and Starsim notes the approximation (so above a CV of about 0.82 it runs
+    as an exponential there)."""
     mean = ss.days(d.mean_days)
     if d.dist == "constant":
         return ss.constant(mean)
     if d.dist == "lognormal":
         return ss.lognormal(mean=mean, std=ss.days(d.sd_days))
-    return ss.erlang(k=max(1, round((d.mean_days / d.sd_days) ** 2)), mean=mean)
+    return ss.gamma(mean=mean, std=ss.days(d.sd_days))
 
 
 def age_edges(p: SimParamsV2) -> list[int]:

@@ -24,8 +24,9 @@ Each fix has a test that failed before it and passes after.
 | 5 | With a treatment delay, `symptomatic_only` was ignored, because a treatment goes by default to everyone infected, the asymptomatic included: an all-asymptomatic SEIAR epidemic was treated away (33 infected against 1,503 untreated). With 30% asymptomatic, treating the symptomatic only gave the same as treating everyone (61% infected, where the fix gives 69%). The isolation (`rel_trans_treated`) reached only the symptomatic, even for a treatment of everyone infectious: with 30% asymptomatic and 0.5, 56% infected either way, 37% with the asymptomatic isolated too. | The delayed treatment takes the same `who=` as the immediate one: still infectious, and symptomatic if asked. The isolation takes it too. |
 | 6 | A treatment with a delay was a different delivery from one without. It was offered once, exactly `delay` days after onset, with probability equal to the coverage, and never to the seeds, who start infectious without an onset. SIR at R0 2.5 as agents, coverage 0.3: no delay infected 0.1%, a 2-day delay 74% (main: 0.4% and 22%). | By the owner's decision (2026-11-20), one delivery for both: offered each day at the coverage to the infectious, from `delay_days` after they became infectious (`I.time_in`, which Starsim runs as agents). A 2-day delay now gives 0.7%, a 4-day one 56% (main: 67%; there the cure took effect a day later). The isolation acts on the same people from the same day, until they are treated or recover (see below). |
 | 7 | Every scenario that can run as an ODE always did (`needs_agents`), so the default scenario and the age-structured network could never run as agents: no fade-out by chance (SIRS over 3 years: 2.68 infections per person as an ODE against 0.89 as agents) and no replicates. | The user chooses (`run.solver`, owner decision 1). EpiChat recommends agents and gives reasons from a rule in `epichat/params/solver.py`, mirrored in `web/lib/sim/solver.ts` and pinned by the parity fixture. Each reason for agents has a test showing that the two modes differ there. A scenario that needs agents runs as agents whatever is chosen, and the first run records its mode. Design: `docs/superpowers/specs/2026-11-20-run-mode-choice-design.md`. |
+| 8 | A gamma duration was rounded to a whole-number Erlang shape, `ss.erlang(k=round(CV⁻²))`, for agents too. Above a CV of about 0.82 it ran as an exponential. With an infectious period of mean 10 and SD 15, agents peaked at day 50 with 2,385 infectious, instead of day 73 with 1,465. | Starsim's own `ss.gamma(mean, std)`, as main had it (owner decision, 2026-11-20, aligning with v4). Agents draw it exactly. A compartmental run lays it out as Erlang stages, as before, and Starsim notes that approximation. |
 
-Tests: pytest 710 passed and 42 skipped (live API); sim 71 passed; web 751/751.
+Tests: pytest 711 passed and 42 skipped (live API); sim 71 passed; web 751/751.
 
 **Kept as in the port, by the owner's decision (2026-11-19).** Seeds start infectious (I) in every model, on day 0 and when
 seeding is delayed, as Starsim does. In SEIR, SEIRS and SEIAR they therefore skip the latent period. Main started them
@@ -81,7 +82,10 @@ for a limited capacity, so without a capacity limit it did nothing.
 
      The rest of the gap to main is that main's cure took effect the next day, so the treated transmitted one more day. Is
      `time_in` the way you would write "each day, from `delay` days after becoming infectious"? Is there a compartmental
-     form, so that a delay need not mean agents?
+     form, so that a delay need not mean agents? Asked for a compartmental run, v4 refuses, even with exact dwells (`ss.solvers.ode(dwells="exact")`):
+     `CapabilityError: cannot run with solver="ode": I.time_in is a clock, which only agents keep.` By the owner's decision
+     a delayed treatment runs as agents, and a treatment without a delay runs in the mode the user chooses; a compartmental
+     form for the delay would only be worth having if v4 offers one.
    - (c) `rel_trans_treated` now isolates the people treatment is offered to, from the delay on, until they are treated or
      recover (the owner's decision above). The port applied it to everyone in I while the programme ran; main applied it only
      to people waiting for a limited capacity, so without one it did nothing. Isolation at 0.5:
@@ -100,6 +104,10 @@ for a limited capacity, so without a capacity limit it did nothing.
    SD 15, the peak moves from day 89 to day 53 and grows from 1,610 to 2,336.
    - Should agent runs use a true gamma, and the ODE something else (a mixture of Erlangs?)?
    - Or should we cap the SD at the mean?
+   **Decided (2026-11-20): fix 8.** Agents use Starsim's own `ss.gamma`. A compartmental run uses Starsim's stages, with its
+   note, and the SD is not capped. The exact-dwell ODE (`ss.solvers.ode(dwells="exact")`) would keep the true gamma, but its
+   final size drifts once the shape falls below 1 (89.3% should hold at R0 2.5; it gives 90.1% at SD 10, 92.6% at SD 15 and
+   95.1% at SD 20), so we don't use it. See the Starsim notes, item 6.
 5. **The SIS immunity boost changed meaning.** On main, each infection added leaky immunity that accumulated (`sis_imm_boost`).
    On the branch, that share of recoveries becomes fully immune in R. With a boost of 0.5 and waning of 2 a year, the mean
    number infectious over the third year is 643 on main and 593 on the branch. Is the change intended, and is it Starsim's
@@ -152,11 +160,38 @@ for a limited capacity, so without a capacity limit it did nothing.
    (`docs/superpowers/specs/2026-11-20-run-mode-choice-design.md`). Cliff's view is asked in question 12.
 2. **Saved scenarios.** Beta is now a rate per contact (`beta / 365` a day) rather than a probability (`1 − e^(−beta / 365)`),
    and the R0 formula uses mean days. Re-running a scenario saved before the port gives about 15% more R0 at the default and
-   25% more for a measles-like one. Should we migrate them (a schema bump that recomputes beta from the R0 they were set to),
+   35% more for a measles-like one. Should we migrate them (a schema bump that recomputes beta from the R0 they were set to),
    or accept it?
+   **Decided (2026-11-20): accept.** Every earlier conversation was testing, so saved scenarios are not migrated. New scenarios
+   are unaffected, because EpiChat sets beta from the R0 the user asks for with the new formula. Measured, the R0 a
+   scenario set on main runs at: default SIR 2.5 → 2.88 (+15%); SIR with a gamma infectious period 2.5 → 2.72 (+9%);
+   age-structured 2.5 → 2.81 (+13%); flu-like SEIR 1.5 → 1.56 (+4%); measles-like SEIR 15 → 20.2 (+35%).
 3. **Default ages.** Without fetched demographics, ages are now Starsim's world population (29% under 18, 61% 18 to 64, 10% 65 and
    over) instead of uniform from 0 to 60, so the elderly exist by default. Elderly fatality now counts, and deaths rise
    accordingly. Accept?
+   **Decided (2026-11-20): accept,** under the owner's rule to align EpiChat with Starsim v4 wherever possible. Fetched UN
+   ages and configured shares are unaffected. No disease in the database carries fatality or susceptibility by age yet, so
+   deaths change only when someone sets those by hand, or once Annie's measles fatality by age is ported. With an elderly
+   fatality of 5%, adults 0.5% and children 0.1%, deaths per infection go from 0.38% (no elderly) to 0.83%.
 4. **Timing.** Peaks move by a few days, and the differences above change results. Merge between rounds of the usability study,
    not during one.
+   **Decided (2026-11-20): merge now.** Round 1 of the usability study is done, and round 2 starts in one or two months.
 5. **Treatment.** If question 3 cannot be done in a compartmental run, should treatment always run as agents?
+   **Decided (2026-11-20): treatment follows the chosen mode.** In both modes it is the same delivery: offered each day to the
+   infectious at the coverage rate, a failed cure offered again, the capacity per day, isolation until treated. The
+   compartmental run gives the average of the agent runs. SIR at R0 2.5, 10,000 people, infections per person (agents: mean of
+   4 seeds):
+
+   | Treatment | Compartmental | Agents |
+   |---|---|---|
+   | none | 0.893 | 0.893 (0.891 to 0.898) |
+   | 30% a day, cure 100% | 0.006 | 0.005 (0.003 to 0.009) |
+   | 50% a day, cure 50% | 0.010 | 0.007 (0.003 to 0.009) |
+   | 20% a day, capacity 2 a day | 0.890 | 0.889 (0.886 to 0.891) |
+   | 50% a day, capacity 20 a day | 0.003 | 0.003 (0.002 to 0.003) |
+   | 10% a day, isolation 0.5 | 0.008 | 0.008 (0.005 to 0.012) |
+   | SEIAR, symptomatic only, 30% a day | 0.014 | 0.027 (0.008 to 0.054) |
+
+   A delayed treatment needs agents and says so (the `treatment_delay` reason). **The owner's rule:** if an intervention ever
+   behaves differently by mode, EpiChat declares it in the conversation and in the Parameters panel. For example, Cliff's
+   answer to question 3a might give "each person at most once" for agents only.
