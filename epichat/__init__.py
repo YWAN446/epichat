@@ -1,7 +1,7 @@
 """EpiChat package.
 
 The orchestrator (EpiChat, EpiChatResult) is exported lazily so that leaf
-modules such as epichat.generator and epichat.schema can be imported without
+modules such as epichat.schema and epichat.params can be imported without
 loading the Anthropic SDK, the data adapters, and the narrator.
 """
 from __future__ import annotations

@@ -21,7 +21,7 @@ export type WrittenReport = { version: number; title: string; language: string; 
 export type Remembered = { kind: string; text: string; replaces?: string };
 export type FakeDeps = ToolDeps & {
   runs: RunRecord[]; starts: number; queries: unknown[]; reportsWritten: WrittenReport[]; remembered: Remembered[];
-  simulated: { popScale: number; contextText: string; disease: string | null }[]; options: { runId: string; diagnosticId: string; patch: Record<string, unknown>; interventions?: Record<string, unknown>[] }[]; previousReads: number;
+  simulated: { popScale: number; contextText: string; disease: string | null }[]; sent: SimParams[]; options: { runId: string; diagnosticId: string; patch: Record<string, unknown>; interventions?: Record<string, unknown>[] }[]; previousReads: number;
 };
 
 export function makeDeps(over: Partial<{
@@ -33,8 +33,9 @@ export function makeDeps(over: Partial<{
 }> = {}): FakeDeps {
   const answer = (v: ResolvedField[] | Error | undefined) => async (q: unknown) => { deps.queries.push(q); if (v instanceof Error) throw v; return v ?? []; };
   const sim: SimClient = {
-    async simulate(_params, popScale, contextText, disease) {
+    async simulate(sent, popScale, contextText, disease) {
       deps.simulated.push({ popScale, contextText, disease: disease ?? null });
+      deps.sent.push(sent);
       if (over.simulate instanceof Error) throw over.simulate;
       if (!over.simulate) throw new Error("no simulate result configured");
       return over.simulate;
@@ -53,7 +54,7 @@ export function makeDeps(over: Partial<{
     queries: [],
     reportsWritten: [],
     remembered: [],
-    simulated: [],
+    simulated: [], sent: [],
     options: [],
     previousReads: 0,
     async onRun(run) { deps.runs.push(run); return over.runId === undefined ? "run-1" : over.runId; },

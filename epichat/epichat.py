@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import datetime
 import os
+import tempfile
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -10,14 +12,47 @@ from pydantic import ValidationError
 from .adapters.un_wpp import UNWPPAdapter
 from .adapters.who_gho import WHOGHOAdapter
 from .adapters.wb_data360 import WorldBankData360Adapter
-from .executor import SimExecutor
-from .generator import CodeGenerator
 from .narrator import narrate
 from .parser import configure_resolver, fix_params, get_last_resolved, parse_query
 from .resolver import ResolvedField
 from .schema import SimParams
 
 _MAX_RETRIES = 3
+_TIMEOUT_SECONDS = 90
+
+# Compartment curves in plotting order; each keeps its color whichever model ran.
+_COMPARTMENTS = (
+    ("n_susceptible", "Susceptible", "#2a78d6"),
+    ("n_exposed", "Exposed", "#eda100"),
+    ("n_infectious", "Infectious", "#e34948"),
+    ("n_asymptomatic", "Asymptomatic", "#eb6834"),
+    ("n_recovered", "Recovered", "#008300"),
+)
+
+
+def plot_series(series: dict, path: str | Path, title: str) -> str:
+    """Draw the epidemic curves from a run's daily series and save them as a PNG."""
+    from matplotlib.figure import Figure  # no pyplot: no global state, safe in Streamlit's threads
+
+    fig = Figure(figsize=(9, 7), layout="constrained")
+    top, bottom = fig.subplots(2, 1, sharex=True)
+    day = series["day"]
+    for key, label, color in _COMPARTMENTS:
+        if key in series:
+            top.plot(day, series[key], color=color, linewidth=2, label=label)
+    top.set_title("People in each compartment")
+    top.legend(frameon=False)
+    bottom.plot(day, series["new_infections"], color="#2a78d6", linewidth=2)
+    bottom.set_title("New infections per day")
+    bottom.set_xlabel("Day")
+    for ax in (top, bottom):
+        ax.grid(alpha=0.3)
+        ax.spines[["top", "right"]].set_visible(False)
+    fig.suptitle(title)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=150)
+    return str(path)
 
 
 @dataclass
@@ -143,8 +178,6 @@ class EpiChatResult:
 class EpiChat:
     def __init__(self, output_dir: str | Path = "results") -> None:
         self.output_dir = Path(output_dir)
-        self.generator = CodeGenerator()
-        self.executor = SimExecutor()
         configure_resolver(UNWPPAdapter(api_key=os.environ.get("UN_API_KEY")))
         configure_resolver(WHOGHOAdapter())
         configure_resolver(WorldBankData360Adapter())
@@ -184,11 +217,7 @@ class EpiChat:
 
         print(f"[EpiChat] Running Starsim simulation ({params.disease_type.upper()}, n={params.n_agents:,}, beta={params.beta:.4f})...")
 
-        resolved = get_last_resolved()
-        pop_field = next((rf for rf in resolved if rf.field == "total_population"), None)
-        pop_scale = pop_field.value / params.n_agents if pop_field is not None and params.n_agents > 0 else 1.0
-
-        exec_result = self._execute_with_retry(user_input, params, plot_path, pop_scale=pop_scale)
+        exec_result = self._execute_with_retry(user_input, params, plot_path)
 
         if exec_result["error"]:
             return EpiChatResult(
@@ -214,15 +243,39 @@ class EpiChat:
             param_warnings=_param_warnings,
         )
 
+    def simulate(self, params: SimParams, plot_path: str) -> dict:
+        """Run one simulation through epichat.sim in a child process (with a
+        timeout) and plot its curves. Returns {"stats", "series", "plot_path",
+        "error"}; error is None on success."""
+        from epichat.params.migrate import coerce_params
+        from epichat.params.resolve import resolve_demographics
+        from sim.runner import run_params  # the simulation service's child-process runner
+
+        failed = {"stats": {}, "series": {}, "plot_path": None}
+        try:
+            v2 = resolve_demographics(coerce_params(params.model_dump()))
+        except (ValueError, ValidationError) as e:
+            return {**failed, "error": f"Invalid parameters: {e}"}
+        output_path = Path(tempfile.gettempdir()) / f"epichat-{uuid.uuid4().hex}.json"
+        result = run_params(v2, output_path, _TIMEOUT_SECONDS)
+        if not result.ok:
+            return {**failed, "error": result.error}
+        title = f"{params.disease_type.upper()} simulation"
+        return {"stats": result.stats, "series": result.series,
+                "plot_path": plot_series(result.series, plot_path, title), "error": None}
+
     def _execute_with_retry(
         self, user_input: str, params: SimParams, plot_path: str, pop_scale: float = 1.0
     ) -> dict:
+        """simulate(), asking the model to fix the parameters after a failure.
+
+        pop_scale is accepted because the agent (epichat/agent.py) passes it;
+        the results stay per agent, as they always have on this path."""
         current_params = params
         last_error = None
 
         for attempt in range(_MAX_RETRIES):
-            code = self.generator.generate(current_params, plot_path, pop_scale=pop_scale)
-            result = self.executor.run(code, self.output_dir)
+            result = self.simulate(current_params, plot_path)
 
             if result["error"] is None:
                 return result
@@ -238,4 +291,4 @@ class EpiChat:
                     last_error = f"Parameter fix failed: {e}"
                     break
 
-        return {"plot_path": None, "stats": {}, "error": last_error}
+        return {"stats": {}, "series": {}, "plot_path": None, "error": last_error}

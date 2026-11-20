@@ -108,6 +108,9 @@ export function contactsSourceLabel(source: string): string {
   return source === "user" ? "user-set" : source;
 }
 
+/** How Starsim ran a scenario (stats.solver), in plain words for every reader: a compartmental model (deterministic, run once) or agents. */
+export const SOLVER_LABELS: Record<"ode" | "abm", string> = { ode: "a compartmental model", abm: "agents (simulated people)" };
+
 const FIT_TARGET_LABELS: Record<string, string> = { attack_rate: "attack rate", peak_day: "peak day", peak_infections: "peak infections" };
 export const LEVER_LABELS: Record<string, string> = {
   "disease.beta": "the transmission rate",
@@ -230,7 +233,6 @@ const FIELDS: Record<string, FieldSpec> = {
   household_size: { label: "Household size", unit: "people" },
   contact_matrix: { label: "Contact matrix", kind: "contacts" },
   age_source: { label: "Age source", kind: "age_source" },
-  beta_calibrated_by_measurement: { label: "Transmission rate calibrated to the measured R₀" },
   treatment_capacity: { label: "Treatment capacity", unit: "per 1,000 people" },
   applied_treatment_capacity: { label: "Treatment capacity applied", unit: "agents" },
   uhc_coverage: { label: "UHC service coverage index", unit: "of 100" },

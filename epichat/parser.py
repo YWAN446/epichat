@@ -345,7 +345,7 @@ def recalibrate_beta(
 
 def _apply_country(params: SimParams, queries: list[DataQuery]) -> SimParams:
     """Derive the ISO3 country from resolver queries so country-driven
-    demographics (generator.resolve_demographics) can auto-fill vital rates."""
+    demographics (epichat.params.resolve.resolve_demographics) can auto-fill vital rates."""
     if params.country:
         return params
     code = next((q.location_code for q in queries if q.location_code), None)

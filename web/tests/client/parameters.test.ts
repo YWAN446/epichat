@@ -73,7 +73,7 @@ describe("the Parameters section's rows come from the registry (follow-up spec 8
     const fitted = params({ schema_version: 2, run: { fit: { target: "attack_rate", value: 0.3 } } });
     expect(defaultRows(fitted)).toContainEqual(["Fitted to", "attack rate 30% by moving the transmission rate"]);
     const plain = Object.fromEntries(parameterGroups(params({})).flatMap((g) => g.rows).map((r) => [r.label, r.value]));
-    expect(plain).toMatchObject({ "Variation in susceptibility": "none", "Fatality by age": "same for every age", "Random seed": "1 (not set)", "Calibrate beta by measurement": "yes", "Age structure": "Starsim's default ages", "Contact duration": "a fresh contact every day", "Network transmission multiplier": "×1" });
+    expect(plain).toMatchObject({ "Variation in susceptibility": "none", "Fatality by age": "same for every age", "Random seed": "1 (not set)", "Age structure": "Starsim's default ages", "Contact duration": "a fresh contact every day", "Network transmission multiplier": "×1" });
   });
 
   it("shows the contact matrix as a grid on the age-structured network and the layers as a table on the hybrid one", () => {
@@ -174,7 +174,7 @@ describe("a covered parameter is a displayed parameter (review of phase C)", () 
     "disease.model": null,                                                                   // changes which rows exist; its own row is checked below
     "disease.dur_exp.dist": "lognormal", "disease.dur_inf.dist": "lognormal",
     "disease.seed.mode": null,                                                               // a count of 20 is no fraction: the two move together, below
-    "network.network_type": null, "network.contacts_dist": "poisson", "network.contacts_source": "user",
+    "network.network_type": null, "network.contacts_dist": "poisson", "network.contacts_source": "user", "run.solver": "ode",
     "demographics.country": "BRA", "demographics.demographics_source": "another source", "demographics.age_source": "shares",
     "demographics.age_pct_under18": null, "demographics.age_pct_18_64": null, "demographics.age_pct_over65": null,   // the three move together, below
     "run.fit.target": "peak_infections", "run.fit.lever": "network.network_beta", "run.fit.value": 0.4, "run.n_agents": 20000,

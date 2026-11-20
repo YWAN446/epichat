@@ -114,7 +114,7 @@ def group_fractions(pop: np.ndarray) -> np.ndarray:
 
 def aggregate_contacts(m16: np.ndarray, pop: np.ndarray) -> np.ndarray:
     """Prem's 16-band matrix M[a][b] (daily contacts of a participant in band a with people in band b) to the three groups, rows source S
-    and columns target T, as ss.MixingPools reads them (Part 2, 5.3): C[S][T] = sum_a sum_b w_T(a) M[a][b] f_S(b), with w_T(a) the share
+    and columns target T, the transpose of what ss.contacts(matrix=...) takes (Part 2, 5.3): C[S][T] = sum_a sum_b w_T(a) M[a][b] f_S(b), with w_T(a) the share
     of T's population that sits in band a and f_S(b) the share of band b's population that belongs to S."""
     m16 = np.asarray(m16, dtype=float)
     f = group_fractions(pop)                                                            # f[b, S]

@@ -1,4 +1,4 @@
-"""The v2 port of generator.resolve_demographics: fill country data into
+"""The v2 resolve_demographics: fill country data into
 defaults and re-solve beta for the held R0 with the exact formula."""
 from unittest.mock import patch
 
