@@ -115,6 +115,17 @@ describe("finish_turn", () => {
     expect((await one<{ title: string }>("select title from conversations where id = $1", [conversation])).title).toBe("Measles in Kenya");
   });
 
+  it("keeps the scenario's area on insert and update (round-1 spec 1)", async () => {
+    const area = { name: "Example County", population: 2000000, countryIso3: "KEN", source: { kind: "user" } };
+    const scenarioId = await finish(payload({ scenario: { ...payload().scenario, area } }));
+    expect((await one<{ area: unknown }>("select area from scenarios where id = $1", [scenarioId])).area).toEqual(area);
+    await finish(payload({
+      turn: { ...payload().turn, id: TURN_2 }, events: [], messages: [], step_events: [],
+      scenario: { ...payload().scenario, id: scenarioId, area: null },
+    }));
+    expect((await one<{ area: unknown }>("select area from scenarios where id = $1", [scenarioId])).area).toBeNull();
+  });
+
   it("appends no messages for a dropped turn but keeps the turn, its events, and the scenario", async () => {
     await finish(payload({ turn: { ...payload().turn, stop: "refusal", refusal_category: "bio" }, messages: null }));
     expect(await count("turns")).toBe(1);

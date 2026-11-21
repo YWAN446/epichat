@@ -43,7 +43,7 @@ describe("scenario store", () => {
       dataSources: [rf("birth_rate", 0.028)], webSources: [{ title: "WHO", url: "https://www.who.int" }], stage: "ground", stageReached: "ground", hasRun: false, hasReport: false, reportCurrent: false,
     });
     expect(callOn(recorded, "scenarios", "eq")).toEqual(["id", "s1"]);
-    expect(scenarioToJson(scenario!)).toEqual(row);
+    expect(scenarioToJson(scenario!)).toEqual({ ...row, area: null });
     expect(scenarioToJson(emptyScenario())).toMatchObject({ id: null, seq: 1, params: null, stage: "understand", stage_reached: "understand", has_run: false });
   });
 
@@ -57,6 +57,19 @@ describe("scenario store", () => {
     logged.mockRestore();
     expect(scenarioFromRow({ ...row, stage: "later", data_sources: null }).stage).toBe("understand");
     expect(scenarioFromRow({ ...row, data_sources: null }).dataSources).toEqual([]);
+  });
+
+  it("area round-trips, an old row reads null, and a malformed area reads null (round-1 spec 1)", () => {
+    const area = { name: "Example County", population: 2000000, countryIso3: "KEN", source: { kind: "user" as const } };
+    const scenario = scenarioFromRow({ ...row, area });
+    expect(scenario.area).toEqual(area);
+    expect(scenarioToJson(scenario).area).toEqual(area);
+    expect(scenarioFromRow(row).area).toBeNull();                       // a row stored before the column
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(scenarioFromRow({ ...row, area: { name: "", population: 2000000 } as never }).area).toBeNull();
+    expect(scenarioFromRow({ ...row, area: { name: "X", population: -3 } as never }).area).toBeNull();
+    expect(logged).toHaveBeenCalledTimes(2);
+    logged.mockRestore();
   });
 
   it("returns null for a missing row", async () => {
