@@ -43,6 +43,14 @@ export function emptyScenario(seq = 1): Scenario {
   return { id: null, seq, params: null, disease: null, countryIso3: null, totalPopulation: null, area: null, dataSources: [], webSources: [], stage: "understand", stageReached: "understand", hasRun: false, hasReport: false, reportCurrent: false };
 }
 
+/** A change of area after a run (round-1 spec 1): the next scenario, carrying over everything but the runs and the report. */
+export function carryOverScenario(scenario: Scenario): void {
+  Object.assign(scenario, { id: null, seq: scenario.seq + 1, hasRun: false, hasReport: false, reportCurrent: false });
+}
+
+/** The population a scenario's counts are scaled to, as the panel and the report show it (round-1 spec 1). */
+export type PopulationView = { value: number; place: string; origin: string; url: string | null; national: boolean };
+
 /** start_new_scenario: the same object becomes the next, empty scenario. */
 export function resetScenario(scenario: Scenario): void {
   Object.assign(scenario, emptyScenario(scenario.seq + 1));
@@ -58,6 +66,10 @@ export type ConfigPayload = {
   config: { disease: string | null; disease_type: string; country: string | null; n_agents: number; sim_dur_years: number; dur_inf: number; dur_exp: number | null; interventions: string[] };
   warnings: string[];
   new_scenario: boolean;
+  /** Round-1 spec 1: the new scenario kept the settings (a change of area); the panel keeps its data. */
+  carried_over?: boolean;
+  /** Round-1 spec 1: the population counts are scaled to; absent on payloads stored before it existed. */
+  population?: PopulationView | null;
   /** The scenario's full parameters after this step, for the panel's Parameters section; absent on payloads stored before it existed. */
   params?: SimParams;
   /** Follow-up spec 8.4: where each of those values came from, by registry path; absent on payloads stored before it existed. */
@@ -78,6 +90,8 @@ export type DataPayload = {
   params?: SimParams;
   /** Where each of those values came from (see ConfigPayload.sources). */
   sources?: Record<string, ParamSource>;
+  /** Round-1 spec 1: the population counts are scaled to, after this step (see ConfigPayload.population). */
+  population?: PopulationView | null;
   /** The chosen references behind the reference tags (see ConfigPayload.references). */
   references?: Record<string, string>;
 };

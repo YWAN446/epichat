@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fitText } from "@/lib/client/format";
+import { countryName, fitText } from "@/lib/client/format";
 import type { PreviousRun } from "@/lib/db/runs";
 import { detectDisease } from "@/lib/disease/db";
 import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccine, recalibrateBeta, validateParams, withR0, type Duration, type Intervention, type SimParams } from "@/lib/sim/params";
@@ -15,7 +15,8 @@ import { durationFor, type DurationName } from "./durations";
 import { matchedLevers } from "./options";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
 import { near, pruneReferences, referenceNotes, scenarioReferences, scenarioSources } from "./sources";
-import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
+import { populationView } from "./population";
+import { carryOverScenario, resetScenario, type Area, type ToolDeps, type ToolOutcome } from "./types";
 
 const opt = <T extends z.ZodTypeAny>(t: T) => t.nullish();
 
@@ -47,6 +48,8 @@ export const ConfigureSimulationInput = z.strictObject({
   advanced: opt(z.record(z.string(), z.unknown())),
   start_new_scenario: opt(z.boolean()),
   solver: opt(z.enum(["abm", "ode"])),
+  area: opt(z.strictObject({ name: z.string(), population: opt(z.number()), source_title: opt(z.string()), source_url: opt(z.string()) })),
+  clear_area: opt(z.boolean()),
 });
 export type ConfigureSimulationArgs = z.infer<typeof ConfigureSimulationInput>;
 
@@ -123,6 +126,31 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const demographics = block(base, "demographics");
   const network = block(base, "network");
   const applied: Obj = {};
+
+  // Round-1 spec 1: an area within the country, checked here and written only when the call succeeds
+  let nextArea: Area | null = scenario.area;
+  if (given(input.country_iso3) && nextArea?.countryIso3 && !given(input.area) && input.country_iso3.trim().toUpperCase() !== nextArea.countryIso3.toUpperCase()) {
+    nextArea = null;
+    applied.area_cleared = true;
+  }
+  if (input.clear_area === true && nextArea) {
+    nextArea = null;
+    applied.area_cleared = true;
+  }
+  if (given(input.area)) {
+    const name = input.area.name.trim();
+    const population = given(input.area.population) ? Math.round(input.area.population) : null;
+    if (!name || population === null || population < 1) return errorOutcome("CONFIG ERROR: an area needs its population. Ask the user, or find it with web_search and pass it with source_title and source_url.");
+    if (scenario.totalPopulation && population > scenario.totalPopulation) {
+      const country = scenario.countryIso3 ? countryName(scenario.countryIso3) : "the country";
+      return errorOutcome(`CONFIG ERROR: ${name}'s population (${commaInt(population)}) is larger than ${country}'s (${commaInt(scenario.totalPopulation)}).`);
+    }
+    const url = given(input.area.source_url) ? input.area.source_url.trim() : "";
+    const iso3 = (given(input.country_iso3) ? input.country_iso3 : scenario.countryIso3)?.trim().toUpperCase() ?? null;
+    nextArea = { name, population, countryIso3: iso3, source: url ? { kind: "web", title: input.area.source_title?.trim() || name, url } : { kind: "user" } };
+    applied.area = { name, population, ...(nextArea.source.kind === "web" ? { source: nextArea.source.title } : {}) };
+  }
+  const areaChanged = (nextArea?.name ?? null) !== (scenario.area?.name ?? null) || (nextArea?.population ?? null) !== (scenario.area?.population ?? null);
 
   if (given(input.disease)) {
     scenario.disease = detectDisease(input.disease) ?? input.disease.toLowerCase();
@@ -307,9 +335,17 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const validated = validateParams(base);
   if (!validated.ok) return errorOutcome(`CONFIG ERROR: ${validated.error}`);
   let params: SimParams = validated.params;
+  // Round-1 spec 1: an agent never stands for less than one person, so a small area lowers the run size
+  const population = scalingPopulation({ area: nextArea, totalPopulation: scenario.totalPopulation });
+  if (population !== null && params.run.n_agents > population) {
+    const lowered = validateParams({ ...params, run: { ...params.run, n_agents: population } });
+    if (!lowered.ok) return errorOutcome(`CONFIG ERROR: ${lowered.error}`);
+    params = lowered.params;
+    applied.n_agents_lowered_to_population = population;
+  }
   // Round-1 spec 3: initial cases are people, so they are checked against the population (the agents, without one)
   if (params.disease.seed.mode === "count") {
-    const limit = scalingPopulation(scenario) ?? params.run.n_agents;
+    const limit = population ?? params.run.n_agents;
     if (params.disease.seed.value > limit) return errorOutcome(`CONFIG ERROR: ${commaInt(params.disease.seed.value)} initial cases is more than the population (${commaInt(limit)}).`);
   }
   // Round-1 spec 7: the service refuses a run above its cap, so refuse the configuration and name the largest run that fits
@@ -363,6 +399,16 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
     }
   }
 
+  // Round-1 spec 1: after a run, a change of area starts the next scenario with the same settings
+  let carried = false;
+  if (areaChanged) {
+    if (scenario.hasRun && !newScenario) {
+      carryOverScenario(scenario);
+      deps.onScenarioStart();
+      carried = true;
+    }
+    scenario.area = nextArea;
+  }
   scenario.params = params;
   scenario.countryIso3 = params.demographics.country;
   const warnings = paramWarnings(scenario, params, deps.contextText);
@@ -403,8 +449,10 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const agentCodes = (a: typeof advice) => a.reasons.map((r) => r.code).filter((c) => (AGENT_CODES as readonly string[]).includes(c));
   const earlier = before ? agentCodes(recommendSolver(inAgents(before))) : null;
   const solver = { chosen: params.run.solver, ...advice, new_reasons: earlier ? agentCodes(advice).filter((c) => !earlier.includes(c)) : [] };
+  const place = nextArea ? nextArea.name : `${scenario.countryIso3 ? countryName(scenario.countryIso3) : "the country"} as a whole`;
+  const started = carried ? { new_scenario: `A new scenario started for ${place} with the same settings; earlier runs stay under the previous scenario.` } : {};
   return {
-    content: JSON.stringify({ applied, changed, approx_r0, config, warnings, solver }),
-    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario, params, sources: scenarioSources(scenario, deps.contextText), ...noted(scenarioReferences(scenario)) },
+    content: JSON.stringify({ applied, changed, approx_r0, config, warnings, solver, ...started }),
+    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario || carried, ...(carried ? { carried_over: true } : {}), population: populationView(scenario), params, sources: scenarioSources(scenario, deps.contextText), ...noted(scenarioReferences(scenario)) },
   };
 }

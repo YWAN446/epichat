@@ -3,7 +3,7 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { SOLVER_LABELS, SOURCE_LABELS, configurationRows, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { SOLVER_LABELS, configurationRows, sourceOfCitation, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import { parameterTable } from "@/lib/client/parameters";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
@@ -108,16 +108,6 @@ function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
   return blocks;
 }
 
-/** Which data source a citation came from, by its address. */
-function sourceOf(citation: string): string {
-  const url = citation.toLowerCase();
-  if (url.includes("population.un.org") || url.includes("un wpp")) return SOURCE_LABELS.un_wpp;
-  if (url.includes("unicef")) return SOURCE_LABELS.unicef;
-  if (url.includes("who.int")) return SOURCE_LABELS.who_gho;
-  if (url.includes("worldbank") || url.includes("data360") || url.startsWith("wb ")) return SOURCE_LABELS.wb_data360;
-  return "Source";
-}
-
 function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBlock[] {
   const blocks: ReportBlock[] = [];
   if (scenario.params) {
@@ -141,7 +131,7 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
       columns: ["Source", "Field", "Value", "Citation"],
       rows: scenario.dataSources.map((f) => {
         const d = describeField(f.field, f.value);
-        return [f.field.startsWith("ref:") ? "Literature" : sourceOf(f.citation), d.label, d.value, f.citation];
+        return [f.field.startsWith("ref:") ? "Literature" : sourceOfCitation(f.citation), d.label, d.value, f.citation];
       }),
     });
   }

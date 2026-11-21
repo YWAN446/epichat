@@ -666,3 +666,87 @@ describe("configure_simulation sends where each value came from (follow-up spec 
     expect((none.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBeUndefined();
   });
 });
+
+describe("the area (round-1 spec 1)", () => {
+  const COUNTY = { name: "Example County", population: 2_000_000 };
+  async function kenya(ran: boolean) {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", country_iso3: "KEN", n_agents: 10000, treatment_capacity: 300 });
+    deps.scenario.totalPopulation = 55_000_000;
+    deps.scenario.dataSources = [{ field: "total_population", value: 55_000_000, citation: "UN WPP 2024", description: "", alternatives: [] }];
+    deps.scenario.hasRun = ran;
+    return deps;
+  }
+
+  it("area with a number after a run starts a carried-over scenario", async () => {
+    const deps = await kenya(true);
+    const before = deps.scenario.params;
+    const out = await run(deps, { area: COUNTY });
+    expect(out.isError).toBeFalsy();
+    const s = deps.scenario;
+    expect([s.seq, s.id, s.hasRun]).toEqual([2, null, false]);
+    expect(s.params).toEqual(before);
+    expect(s.disease).toBe("measles");
+    expect(s.dataSources).toHaveLength(1);
+    expect(s.area).toEqual({ name: "Example County", population: 2_000_000, countryIso3: "KEN", source: { kind: "user" } });
+    expect(deps.starts).toBe(1);
+    expect(out.payload).toMatchObject({ kind: "config", new_scenario: true, carried_over: true, population: { value: 2_000_000, national: false } });
+    expect(out.content).toContain("A new scenario started for Example County with the same settings; earlier runs stay under the previous scenario.");
+  });
+
+  it("area before any run stays in the scenario", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: COUNTY });
+    expect(deps.scenario.seq).toBe(1);
+    expect(deps.starts).toBe(0);
+    expect(deps.scenario.area?.population).toBe(2_000_000);
+  });
+
+  it("area from the web keeps its source", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: { ...COUNTY, source_title: "Census 2019", source_url: "https://example.org/census" } });
+    expect(deps.scenario.area?.source).toEqual({ kind: "web", title: "Census 2019", url: "https://example.org/census" });
+  });
+
+  it("area without a number is refused", async () => {
+    const deps = await kenya(true);
+    const out = await run(deps, { area: { name: "Example County" } });
+    expect(out.isError).toBe(true);
+    expect(out.content).toContain("needs its population");
+    expect(deps.scenario.area).toBeNull();
+    expect(deps.scenario.seq).toBe(1);
+  });
+
+  it("area larger than the country is refused", async () => {
+    const deps = await kenya(true);
+    const out = await run(deps, { area: { name: "Example County", population: 60_000_000 } });
+    expect(out.content).toBe("CONFIG ERROR: Example County's population (60,000,000) is larger than Kenya's (55,000,000).");
+  });
+
+  it("n_agents never exceeds the area", async () => {
+    const deps = await kenya(false);
+    const out = JSON.parse((await run(deps, { area: { name: "Small Town", population: 3000 } })).content);
+    expect(deps.scenario.params!.run.n_agents).toBe(3000);
+    expect(out.applied.n_agents_lowered_to_population).toBe(3000);
+    await run(deps, { n_agents: 20000 });
+    expect(deps.scenario.params!.run.n_agents).toBe(3000);
+  });
+
+  it("clear_area after a run starts a carried-over scenario", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: COUNTY });
+    deps.scenario.hasRun = true;
+    const out = await run(deps, { clear_area: true });
+    expect(deps.scenario.area).toBeNull();
+    expect(deps.scenario.seq).toBe(2);
+    expect(out.payload).toMatchObject({ carried_over: true, population: { value: 55_000_000, national: true } });
+  });
+
+  it("a change of country clears the area", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: COUNTY });
+    const out = JSON.parse((await run(deps, { country_iso3: "UGA" })).content);
+    expect(deps.scenario.area).toBeNull();
+    expect(out.applied.area_cleared).toBe(true);
+  });
+});

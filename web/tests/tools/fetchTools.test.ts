@@ -279,3 +279,25 @@ describe("the fetch tools send where each value came from (follow-up spec 8.4)",
     expect(health.sources).toMatchObject({ "run.n_agents": "user" });
   });
 });
+
+describe("fetch_demographics keeps what was set in chat (round-1 spec 1)", () => {
+  const kenya = [rf("total_population", 55_000_000, "UN WPP 2024"), rf("birth_rate", 12.3, "UN WPP 2024"), rf("death_rate", 7.1, "UN WPP 2024")];
+
+  it("fetch keeps an area", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 2_000_000 } });
+    const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(deps.scenario.area?.population).toBe(2_000_000);
+    expect(deps.scenario.params!.run.n_agents).toBe(10000);
+    expect(deps.scenario.totalPopulation).toBe(55_000_000);
+    expect(out.content).toContain("Area population kept: 2,000,000 (Example County)");
+    expect(out.payload).toMatchObject({ kind: "data", population: { value: 2_000_000, national: false } });
+  });
+
+  it("fetch keeps a user-set household size", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", household_size: 6 });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    expect(deps.scenario.params!.network.household_size).toBe(6);
+    expect(out.applied.household_size_kept).toBe(6);
+    expect(out.applied.household_size).toBeUndefined();
+  });
+});

@@ -20,6 +20,16 @@ export const SOURCE_LABELS: Record<DataPayload["source"], string> = {
 };
 
 /** The UN's English name for an ISO3 code; the code itself when it is not a UN location. */
+/** Which data source a citation came from, by its address. */
+export function sourceOfCitation(citation: string): string {
+  const url = citation.toLowerCase();
+  if (url.includes("population.un.org") || url.includes("un wpp")) return SOURCE_LABELS.un_wpp;
+  if (url.includes("unicef")) return SOURCE_LABELS.unicef;
+  if (url.includes("who.int")) return SOURCE_LABELS.who_gho;
+  if (url.includes("worldbank") || url.includes("data360") || url.startsWith("wb ")) return SOURCE_LABELS.wb_data360;
+  return "Source";
+}
+
 export function countryName(iso3: string): string {
   return NAMES[iso3.trim().toUpperCase()] ?? iso3;
 }
