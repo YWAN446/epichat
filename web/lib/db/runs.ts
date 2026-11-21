@@ -77,7 +77,7 @@ export function runRow(run: RunInsert): Record<string, unknown> {
     return {
       ...common,
       effective_params: result.effective_params,
-      stats: result.stats,
+      stats: { ...result.stats, starsim_version: result.starsim_version },   // the report names the version that ran each run
       stats_agents: result.stats_agents,
       series: result.series,
       duration_ms: result.duration_ms,

@@ -8,14 +8,14 @@ const DAYS = Array.from({ length: 366 }, (_, i) => i);
 /** A bump peaking on `peakDay` at `peak`. */
 const curve = (peak: number, peakDay: number) => DAYS.map((d) => Math.round(peak * Math.exp(-((d - peakDay) ** 2) / (2 * 20 ** 2))));
 
-const stats = (peak: number, peakDay: number, total: number, deaths: number) => ({ peak_infections: peak, peak_day: peakDay, total_infected: total, total_deaths: deaths, n_agents: 10000, sim_days: 366 });
+const stats = (peak: number, peakDay: number, total: number, deaths: number) => ({ peak_infections: peak, peak_day: peakDay, total_infected: total, total_deaths: deaths, n_agents: 10000, sim_days: 366, starsim_version: "3.3.2" });
 
 function run(id: string, createdAt: string, over: Partial<ReportRun> = {}): ReportRun {
   return {
     id,
     createdAt,
     index: Number(id.split("-").at(-1)) || 1,
-    effectiveParams: params({ n_agents: 10000, sim_dur_years: 1 }),
+    effectiveParams: params({ n_agents: 10000, sim_dur_years: 1, country: "KEN" }),
     stats: stats(900, 40, 4000, 12),
     statsAgents: stats(900, 40, 4000, 12),
     popScale: 1,
@@ -47,7 +47,7 @@ export const FIXTURE: ComposeInput = {
   runs: [
     run("run-1", "2026-10-09T10:00:00Z"),
     run("run-2", "2026-10-09T10:05:00Z", {
-      effectiveParams: params({ n_agents: 10000, sim_dur_years: 1, interventions: [{ type: "vaccine", coverage: 0.9, start_day: 0 }] }),
+      effectiveParams: params({ n_agents: 10000, sim_dur_years: 1, country: "KEN", interventions: [{ type: "vaccine", coverage: 0.9, start_day: 0 }] }),
       stats: stats(300, 55, 1250, 3),
       statsAgents: stats(300, 55, 1250, 3),
       series: { day: DAYS, n_infected: curve(300, 55) },
@@ -64,5 +64,4 @@ export const FIXTURE: ComposeInput = {
   },
   version: 2,
   conversationTitle: "Measles in Kenya",
-  starsimVersion: "3.3.2",
 };

@@ -1,5 +1,5 @@
 /** A figure as a standalone SVG: axes, ticks, one path per line, a legend. Pure, so the server draws it for the HTML report. */
-import { compact, linePath, niceTicks } from "@/lib/client/chart";
+import { bandPath, compact, linePath, niceTicks } from "@/lib/client/chart";
 import type { ReportBlock } from "./document";
 import { escapeHtml } from "./escape";
 
@@ -17,7 +17,7 @@ export function figureSvg(figure: Figure, width = 720, height = 320): string {
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
   const xMax = Math.max(0, ...figure.lines.flatMap((line) => line.x));
-  const yMax = Math.max(0, ...figure.lines.flatMap((line) => line.y));
+  const yMax = Math.max(0, ...figure.lines.flatMap((line) => [...line.y, ...(line.band?.upper ?? [])]));
   const yTicks = niceTicks(yMax, 4);
   const yTop = yTicks.at(-1) ?? 1;
   const xTicks = niceTicks(xMax, 6).filter((tick) => xMax === 0 || tick <= xMax);
@@ -38,6 +38,11 @@ export function figureSvg(figure: Figure, width = 720, height = 320): string {
   }
   parts.push(`<line x1="0" x2="${plotW}" y1="${plotH}" y2="${plotH}" stroke="${FAINT}"/>`);
   parts.push(`<line x1="0" x2="0" y1="0" y2="${plotH}" stroke="${FAINT}"/>`);
+  // replicate bands first, so every line stays on top of every band (live test 2026-11-21)
+  figure.lines.forEach((line, i) => {
+    if (!line.band || line.x.length === 0) return;
+    parts.push(`<path d="${bandPath(line.x, line.band.lower, line.band.upper, plotW, plotH, xMax, yTop)}" fill="${color(i)}" fill-opacity="0.18" stroke="none"/>`);
+  });
   figure.lines.forEach((line, i) => {
     const points = line.x.map((x, j) => ({ x, y: line.y[j] ?? 0 }));
     if (points.length === 0) return;

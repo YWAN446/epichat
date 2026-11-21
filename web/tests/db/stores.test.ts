@@ -143,6 +143,11 @@ describe("run store", () => {
     });
   });
 
+  it("keeps the Starsim version that ran it with the run's stats, for the report (live test 2026-11-21)", () => {
+    expect(runRow(insert).stats).toEqual({ ...STATS, starsim_version: "3.3.2" });
+    expect(runRow(insert).stats_agents).toEqual(STATS);
+  });
+
   it("surfaces an insert failure as an error for onRun to swallow", async () => {
     const { client } = fakeAdmin({ runs: [{ data: null, error: { message: "down" } }] });
     await expect(supabaseRunStore(client).insert(insert)).rejects.toThrow(/down/);

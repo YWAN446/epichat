@@ -34,3 +34,16 @@ describe("figureSvg", () => {
     expect(svg).toContain("&lt;Empty&gt;");
   });
 });
+
+describe("figureSvg band (live test 2026-11-21)", () => {
+  it("shades a line's band under the line, in the line's colour, and scales the axis to the band's top", () => {
+    const banded = { ...FIGURE, lines: [FIGURE.lines[0], { ...FIGURE.lines[1], band: { lower: [0, 2, 1], upper: [0, 30, 8] } }] };
+    const svg = figureSvg(banded);
+    const band = svg.match(/<path [^>]*fill-opacity[^>]*>/g);
+    expect(band).toHaveLength(1);
+    expect(band![0]).toContain('fill="#2b5f8a"');
+    expect(svg.indexOf("fill-opacity")).toBeLessThan(svg.indexOf('stroke="#2b5f8a"'));   // under its line
+    expect(svg).toContain(">30<");
+    expect(figureSvg(FIGURE)).not.toContain("fill-opacity");
+  });
+});

@@ -47,7 +47,7 @@ export async function writeReport(input: WriteReportArgs, deps: ToolDeps): Promi
   const runs = input.runs ? all.filter((r) => input.runs!.includes(r.index)) : all;
   const [recap, version] = await Promise.all([deps.reports.recap(), deps.reports.nextVersion()]);
   const document = composeReport(
-    { scenario, runs, recap, literature: literatureFor(scenario.disease), narrative: input, version, conversationTitle: deps.reports.conversationTitle, starsimVersion: null },
+    { scenario, runs, recap, literature: literatureFor(scenario.disease), narrative: input, version, conversationTitle: deps.reports.conversationTitle },
     new Date(),
   );
   const id = await deps.reports.insert({ version, title: document.title, language: document.language, narrative: input, document });
