@@ -46,11 +46,15 @@ def repair_params(user_input: str, params: SimParamsV2, error_message: str, mode
     )
     message = client.messages.create(
         model=model,
-        max_tokens=1024,
+        max_tokens=16000,                    # Opus 5.5 always thinks, and the thinking counts toward this
         system="You are an epidemiological parameter assistant. Return only valid JSON matching the parameter schema you were given.",
         messages=[{"role": "user", "content": prompt}],
     )
-    data = json.loads(_strip_fence(message.content[0].text))
+    # the answer is the first text block: Opus 5.5 puts a thinking block before it (hotfix 2026-11-21)
+    text = next((b.text for b in message.content if getattr(b, "type", "text") == "text"), None)
+    if text is None:
+        raise ValueError("the repair model returned no text")
+    data = json.loads(_strip_fence(text))
     usage = getattr(message, "usage", None)
     return RepairResult(params=coerce_params(data), model=model,
                         input_tokens=_token_count(usage, "input_tokens"), output_tokens=_token_count(usage, "output_tokens"))

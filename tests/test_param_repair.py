@@ -53,3 +53,20 @@ def test_an_invalid_answer_raises_validation_error(monkeypatch):
     client = _client(json.dumps({"schema_version": 2, "run": {"n_agents": 1}}))
     with patch("epichat.params.repair.anthropic.Anthropic", return_value=client), pytest.raises(ValidationError):
         repair_params("x", SimParamsV2(), "err", "m")
+
+
+def test_a_thinking_block_before_the_answer_is_skipped(monkeypatch):
+    """Hotfix 2026-11-21: Opus 5.5 always thinks, so the answer is the first text block, not content[0]."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    answer = json.dumps(SimParamsV2().model_dump(mode="json"))
+    message = SimpleNamespace(content=[SimpleNamespace(type="thinking", thinking="..."), SimpleNamespace(type="text", text=answer)],
+                              usage=SimpleNamespace(input_tokens=1, output_tokens=1))
+
+    class Messages:
+        def create(self, **kw):
+            assert kw["max_tokens"] >= 8000                                   # room for the thinking before the answer
+            return message
+
+    with patch("epichat.params.repair.anthropic.Anthropic", return_value=SimpleNamespace(messages=Messages())):
+        result = repair_params("measles", SimParamsV2(), "boom", "claude-opus-5-5")
+    assert isinstance(result, RepairResult)

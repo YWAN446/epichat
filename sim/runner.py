@@ -17,6 +17,7 @@ import sys
 import tempfile
 import threading
 import time
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,7 +38,16 @@ class RunResult:
     effective_params: dict | None = None      # the child's parameters as run (a fitted lever)
 
 
-FORKS = "forkserver" in mp.get_all_start_methods()
+def forkserver_allowed(env=os.environ) -> bool:
+    """Forkserver where the platform has it, except on Vercel, whose Python runtime the forked children fail under (production,
+    2026-11-21: every run exited with code 1 before reporting): there each run is a subprocess, as it was before Starsim v4.
+    SIM_RUNNER=subprocess forces the same anywhere."""
+    if env.get("VERCEL") or env.get("SIM_RUNNER") == "subprocess":
+        return False
+    return "forkserver" in mp.get_all_start_methods()
+
+
+FORKS = forkserver_allowed()
 _lock = threading.Lock()
 _context = None
 
@@ -79,7 +89,11 @@ def warm() -> None:
 
 
 def _child(params: dict, output_path: str, conn) -> None:
-    from epichat.sim.run_params import child     # already imported in the forkserver, so this costs nothing
+    try:
+        from epichat.sim.run_params import child     # already imported in the forkserver, so this costs nothing
+    except BaseException:
+        conn.send(traceback.format_exc()[-STDERR_TAIL:])   # a child that cannot start says why instead of a bare exit code 1
+        raise
     child(params, output_path, conn)
 
 
