@@ -26,6 +26,11 @@ export function capacityAgents(peoplePerDay: number, popScale: number): number {
   return Math.max(1, Math.round(peoplePerDay / popScale));
 }
 
+/** The agent-years a run costs the simulation service (sim/service.py agent_years). */
+export function agentYears(p: SimParams): number {
+  return p.run.n_agents * p.run.sim_dur_years * p.run.n_replicates;
+}
+
 function revalidated(body: SimParams): SimParams {
   const r = validateParams(body);
   if (!r.ok) throw new Error(`unit conversion produced invalid params: ${r.error}`);

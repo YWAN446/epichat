@@ -160,6 +160,8 @@ export type ToolDeps = {
   /** The disease database as the tools read it; tests substitute entries (Part 2, 7.4: the vaccine efficacy path). */
   lookupDisease?: (name: string) => DiseaseEntry | null;
   reports: ReportDeps;
+  /** The sim service's limits, so a configuration it would refuse is refused here first (round-1 spec 7). */
+  limits: { maxAgentYears: number };
   /** The participant's memory (profile spec, section 9); `added` counts this turn's remember calls. */
   memory: {
     enabled: boolean;

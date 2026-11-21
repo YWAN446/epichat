@@ -24,7 +24,13 @@ describe("loadSettings", () => {
       unApiKey: "",
       evalBearerToken: "",
       cronSecret: "",
+      simMaxAgentYears: 500000,
     });
+  });
+
+  it("reads SIM_MAX_AGENT_YEARS, the sim service's cap", () => {
+    expect(loadSettings({ SIM_MAX_AGENT_YEARS: "200000" }).simMaxAgentYears).toBe(200000);
+    expect(loadSettings({}).simMaxAgentYears).toBe(500000);
   });
 
   it("reads overrides and normalizes the lists", () => {

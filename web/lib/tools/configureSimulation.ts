@@ -4,8 +4,9 @@ import type { PreviousRun } from "@/lib/db/runs";
 import { detectDisease } from "@/lib/disease/db";
 import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccine, recalibrateBeta, validateParams, withR0, type Duration, type Intervention, type SimParams } from "@/lib/sim/params";
 import { changedPaths, setPath, type PathChange } from "@/lib/sim/paths";
-import { fmtValue, pyRound } from "@/lib/sim/pyformat";
+import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { AGENT_CODES, recommendSolver } from "@/lib/sim/solver";
+import { agentYears } from "@/lib/sim/units";
 import { referenceHref } from "@/lib/client/references";
 import { applyAdvanced } from "./advanced";
 import { REFERENCE_TARGETS, chosenReference, type ChosenReference } from "./chosenReference";
@@ -314,6 +315,13 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const validated = validateParams(base);
   if (!validated.ok) return errorOutcome(`CONFIG ERROR: ${validated.error}`);
   let params: SimParams = validated.params;
+  // Round-1 spec 7: the service refuses a run above its cap, so refuse the configuration and name the largest run that fits
+  const cost = agentYears(params);
+  if (cost > deps.limits.maxAgentYears) {
+    const { n_agents, sim_dur_years, n_replicates } = params.run;
+    const largest = Math.floor(deps.limits.maxAgentYears / (sim_dur_years * n_replicates));
+    return errorOutcome(`CONFIG ERROR: ${commaInt(n_agents)} agents × ${fmtValue(sim_dur_years)} years × ${n_replicates} replicates = ${commaInt(Math.round(cost))} agent-years, above the simulation service's cap of ${commaInt(deps.limits.maxAgentYears)} agent-years. The largest run that fits is ${commaInt(largest)} agents. Offer that or a shorter run.`);
+  }
   if (before && r0Target === undefined) {
     // Part 2, 5.9: a change of the network's structure (its type, its matrix, the age shares) alters what R0 a beta implies; hold the R0
     // the user confirmed when the new network can carry it. A change of contact counts or multipliers keeps beta, as in Part 1.

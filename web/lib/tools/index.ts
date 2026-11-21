@@ -35,7 +35,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
         country_iso3: str('ISO3 country code (e.g. "BRA").'),
         model: str("Model type: sir, seir, sis, sirs, seirs, or seiar."),
         disease_type: str("Alias of model."),
-        n_agents: int("Number of simulated agents."),
+        n_agents: int("Number of simulated agents. n_agents × sim_dur_years × n_replicates must stay within the service's cap of 500,000 agent-years."),
         sim_dur_years: num("Simulation duration in years."),
         r0: num("Target basic reproduction number; beta is calibrated to it."),
         dur_inf_days: num("Infectious period in days (the mean; a new scenario gets a gamma spread around it)."),

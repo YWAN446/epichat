@@ -9,6 +9,17 @@ import { makeDeps, params } from "./helpers";
 const run = (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) => configureSimulation(input as never, deps);
 
 describe("configure_simulation", () => {
+  it("refuses a run above the compute cap and names the largest that fits", async () => {
+    const deps = makeDeps();
+    await run(deps, { n_agents: 10000 });
+    const before = deps.scenario.params;
+    const out = await run(deps, { n_agents: 1_000_000, sim_dur_years: 2 });
+    expect(out.isError).toBe(true);
+    expect(out.content).toContain("500,000 agent-years");
+    expect(out.content).toContain("250,000 agents");
+    expect(deps.scenario.params).toEqual(before);
+  });
+
   it("reports the run mode advice and sets the chosen mode", async () => {
     const deps = makeDeps();
     const codes = (out: { solver: { reasons: { code: string }[] } }) => out.solver.reasons.map((r) => r.code);

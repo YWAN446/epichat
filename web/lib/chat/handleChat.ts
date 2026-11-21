@@ -204,6 +204,7 @@ export async function handleChat(
       if (shown.length > 0) step("diagnostic_shown", { tool: "run_simulation", meta: { run_id: id, ids: shown.join(",") } });
       return id;
     },
+    limits: { maxAgentYears: deps.settings.simMaxAgentYears },
     onScenarioStart() {
       step("new_scenario");
     },
