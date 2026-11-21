@@ -39,7 +39,7 @@ describe("scenario store", () => {
     const { client, recorded } = fakeAdmin({ scenarios: [{ data: row }] });
     const scenario = await supabaseScenarioStore(client).get("s1");
     expect(scenario).toEqual({
-      id: "s1", seq: 2, params: params({ n_agents: 500 }), disease: "measles", countryIso3: "KEN", totalPopulation: 54027487,
+      id: "s1", seq: 2, params: params({ n_agents: 500 }), disease: "measles", countryIso3: "KEN", totalPopulation: 54027487, area: null,
       dataSources: [rf("birth_rate", 0.028)], webSources: [{ title: "WHO", url: "https://www.who.int" }], stage: "ground", stageReached: "ground", hasRun: false, hasReport: false, reportCurrent: false,
     });
     expect(callOn(recorded, "scenarios", "eq")).toEqual(["id", "s1"]);
