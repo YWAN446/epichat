@@ -135,7 +135,7 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "value people start infected.", "enum", None, "fraction", None, ("fraction", "count"), (), "advanced", None,
               "ss.Disease(init=dict(I=...)) or ss.Disease(init_n=dict(I=...))", ("stochasticity",)),
     ParamSpec("disease.seed.value", "disease", "Seed size", "A fraction between 0 and 1 of the agents (mode fraction), or a whole number "
-              "of people (mode count) that the web app converts to agents at the run's scale.", "number", None, 0.0005, (0.0, 1_000_000.0), None, (), "core", None,
+              "of people (mode count) that the web app converts to agents at the run's scale.", "number", None, 0.0005, (0.0, 10_000_000_000.0), None, (), "core", None,
               "the disease's init or init_n, or ss.Delivery(move=S >> I) when day > 0", ("timing", "stochasticity")),
     ParamSpec("disease.seed.day", "disease", "Seeding day", "Day the seed infections happen; 0 means at the start.", "integer", "days", 0,
               (0, 7300), None, (), "advanced", None, "ss.Delivery(move=S >> I, at=ss.days(day))", ("timing",)),

@@ -30,6 +30,14 @@ describe("configure_simulation", () => {
     expect((await run(deps, { n_agents: 10000, seed_count: 50_000 })).isError).toBeFalsy();
   });
 
+  it("a seed in people may exceed a million at a large country's scale (final review, re-graded)", async () => {
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 1_400_000_000;                       // about 140,000 people per agent: the fade-out lever's 10 agents
+    const out = await run(deps, { n_agents: 10000, advanced: { "disease.seed.mode": "count", "disease.seed.value": 1_400_000 } });
+    expect(out.isError).toBeFalsy();
+    expect(deps.scenario.params!.disease.seed.value).toBe(1_400_000);
+  });
+
   it("solver advice counts seed agents, not people", async () => {
     const deps = makeDeps();
     deps.scenario.totalPopulation = 50_000_000; // 5,000 people per agent: 20 cases are 1 agent, which often dies out
