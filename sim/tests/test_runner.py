@@ -1,8 +1,12 @@
+import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
+
+import pytest
 
 from epichat.params.migrate import coerce_params
 from epichat.params.schema_v2 import SimParamsV2
@@ -89,12 +93,45 @@ def test_runs_fork_from_a_server_that_has_imported_starsim(monkeypatch):
     assert spawned.ok and spawned.series == forked.series and spawned.stats == forked.stats
 
 
-def test_vercel_runs_each_simulation_as_a_subprocess():
-    """Hotfix 2026-11-21: forked children fail under Vercel's Python runtime; there each run is a subprocess, as before Starsim v4."""
+def test_sim_runner_subprocess_forces_a_subprocess_anywhere():
+    """SIM_RUNNER=subprocess is the switch back to one process per run; Vercel forks like everywhere else."""
     import multiprocessing as mp
-    assert runner.forkserver_allowed({"VERCEL": "1"}) is False
+    available = "forkserver" in mp.get_all_start_methods()
     assert runner.forkserver_allowed({"SIM_RUNNER": "subprocess"}) is False
-    assert runner.forkserver_allowed({}) is ("forkserver" in mp.get_all_start_methods())
+    assert runner.forkserver_allowed({"SIM_RUNNER": "subprocess", "VERCEL": "1"}) is False
+    assert runner.forkserver_allowed({"VERCEL": "1"}) is available
+    assert runner.forkserver_allowed({}) is available
+
+
+# Vercel's launcher (vc__handler__python, then vercel_runtime.vc_init) is the process's __main__, has no `if __name__ ==
+# "__main__"` guard, and starts the whole service when it runs: its lifespan warms the forkserver. Multiprocessing re-runs
+# __main__ in each child, so on Vercel (2026-11-21) every child booted a second service and exited with code 1.
+_LAUNCHER = '''
+import json, sys
+from pathlib import Path
+import runner
+from epichat.params.migrate import coerce_params
+runner.warm()
+params = coerce_params(dict(disease_type="sir", beta=22.8125, n_agents=200, sim_dur_years=5 / 365, rand_seed=1))
+result = runner.run_params(params, Path(sys.argv[1]), timeout=120)
+print("RESULT " + json.dumps({"ok": result.ok, "error": result.error}))
+'''
+
+
+@pytest.mark.parametrize("as_module", [True, False], ids=["python -m launcher", "python launcher.py"])
+def test_a_launcher_that_starts_the_service_on_import_is_not_rerun_in_the_child(tmp_path, as_module):
+    if not runner.FORKS:
+        pytest.skip("forkserver is not available on this platform")
+    (tmp_path / "vercel_like_launcher.py").write_text(_LAUNCHER, encoding="utf-8")
+    env = child_environment()
+    env["PYTHONPATH"] = os.pathsep.join([str(tmp_path), env["PYTHONPATH"]])
+    env.pop("SIM_RUNNER", None)
+    target = ["-m", "vercel_like_launcher"] if as_module else [str(tmp_path / "vercel_like_launcher.py")]
+    done = subprocess.run([sys.executable, *target, str(_out())], capture_output=True, text=True, env=env, timeout=300,
+                          cwd=tmp_path)
+    lines = [line for line in done.stdout.splitlines() if line.startswith("RESULT ")]
+    assert lines, f"exit {done.returncode}\n{done.stderr[-3000:]}"
+    assert json.loads(lines[-1][len("RESULT "):]) == {"ok": True, "error": None}
 
 
 def test_a_child_that_fails_before_running_reports_why(monkeypatch):

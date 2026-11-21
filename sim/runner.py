@@ -3,7 +3,9 @@
 Where the platform has forkserver (Linux, macOS), the first run starts a server that imports Starsim once, and every run is a
 child forked from it: separate from the service and from other runs, and killed at the timeout, without paying Starsim's import
 (about a second) each time. warm() starts the server ahead of the first request. The server inherits sys.path and the cache
-directories below; the child writes the result file and sends its traceback, if any, back on a pipe.
+directories below; the child writes the result file and sends its traceback, if any, back on a pipe. Neither the server nor
+a child is told about the service's __main__ (_plain_main), so neither runs it: on Vercel that module is the launcher, which
+starts a whole second service when it runs. SIM_RUNNER=subprocess switches to the command-line child below anywhere.
 
 Elsewhere (Windows) the child is `python -m epichat.sim.run_params <params.json> <out.json>`, given the parent's import path, the
 cache directories and the same timeout; stdout is ignored and stderr's tail is the error."""
@@ -18,6 +20,8 @@ import tempfile
 import threading
 import time
 import traceback
+import types
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,17 +43,37 @@ class RunResult:
 
 
 def forkserver_allowed(env=os.environ) -> bool:
-    """Forkserver where the platform has it, except on Vercel, whose Python runtime the forked children fail under (production,
-    2026-11-21: every run exited with code 1 before reporting): there each run is a subprocess, as it was before Starsim v4.
-    SIM_RUNNER=subprocess forces the same anywhere."""
-    if env.get("VERCEL") or env.get("SIM_RUNNER") == "subprocess":
+    """Forkserver where the platform has it; SIM_RUNNER=subprocess runs each simulation as its own process anywhere."""
+    if env.get("SIM_RUNNER") == "subprocess":
         return False
     return "forkserver" in mp.get_all_start_methods()
 
 
 FORKS = forkserver_allowed()
 _lock = threading.Lock()
+_main_lock = threading.Lock()
 _context = None
+
+
+@contextmanager
+def _plain_main():
+    """While the forkserver or a child starts, __main__ is an empty module.
+
+    Multiprocessing re-runs the parent's __main__ in every server and child it starts, so that functions defined there exist
+    in the child. On Vercel __main__ is the launcher (vc__handler__python, which imports vercel_runtime.vc_init), and running
+    it starts the whole service: every child booted a second service, whose startup failed, and exited with code 1 before
+    the simulation ran (production, 2026-11-21). Nothing a run needs lives in __main__ (the target is runner._child), so
+    neither the server nor a child is given one to run. Starts take the lock, since sys.modules is shared by all threads."""
+    with _main_lock:
+        main = sys.modules.get("__main__")
+        sys.modules["__main__"] = types.ModuleType("__main__")
+        try:
+            yield
+        finally:
+            if main is None:
+                del sys.modules["__main__"]
+            else:
+                sys.modules["__main__"] = main
 
 
 def cache_dirs() -> dict[str, str]:
@@ -74,8 +98,7 @@ def _forkserver():
             for key, value in cache_dirs().items():      # read by the server when it starts, so set before it does
                 os.environ.setdefault(key, value)
             context = mp.get_context("forkserver")
-            # with __main__ preloaded once in the server, its children skip running the main script again
-            context.set_forkserver_preload(["__main__", "epichat.sim.run_params"])
+            context.set_forkserver_preload(["epichat.sim.run_params"])
             _context = context
     return _context
 
@@ -85,7 +108,8 @@ def warm() -> None:
     if FORKS:
         from multiprocessing import forkserver
         _forkserver()
-        forkserver.ensure_running()
+        with _plain_main():
+            forkserver.ensure_running()
 
 
 def _child(params: dict, output_path: str, conn) -> None:
@@ -123,7 +147,8 @@ def _run_forked(params: SimParamsV2, output_path: Path, timeout: float, elapsed)
     context = _forkserver()
     receive, send = context.Pipe(duplex=False)
     proc = context.Process(target=_child, args=(params.model_dump(mode="json"), str(output_path), send), daemon=True)
-    proc.start()
+    with _plain_main():
+        proc.start()
     send.close()
     try:
         proc.join(timeout)

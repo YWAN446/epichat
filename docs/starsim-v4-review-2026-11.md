@@ -132,6 +132,8 @@ for a limited capacity, so without a capacity limit it did nothing.
 11. **Forkserver on Vercel.** The runner preloads `__main__` into the forkserver. It works under uvicorn on Linux (71 sim tests,
     and a real server answered a run in 74 ms after warm-up), but Vercel's Python runtime is untested. Do you know of anything
     in its entry point that preloading `__main__` would run? We will check on a preview deployment.
+    *Resolved 2026-11-21:* it does. Vercel's launcher is `__main__` and starts the service when run, so every forked child
+    booted a second service and exited with code 1 in production. The runner now hides `__main__` while a child starts.
 12. **Compartmental or agents by default.** v4's `solver='auto'` runs a declared model as an ODE unless something needs agents
     ("every part of the model has a compartmental form"), and the port followed it through `needs_agents`. We plan to let the
     user choose before the first run, with EpiChat recommending agents and saying how much the choice matters for the scenario

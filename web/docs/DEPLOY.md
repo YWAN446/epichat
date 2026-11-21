@@ -715,7 +715,7 @@ was not needed; the only surprise was the bundle size (see above).
 5. Record the numbers below from step 4; the Usage page's Active CPU
    reading is the owner's to note alongside them.
 
-The timings below are from Starsim 3; on Starsim v4 an ODE run of 10,000 people for a year takes about 0.02–0.07 s in process and about 0.07 s as a child process forked from the server that has imported Starsim (`sim/runner.py`; the service starts it at startup, and a fresh process took about 1.2 s, most of it the import). Re-time after the next deploy, and check there that the forkserver starts on Vercel (the runner uses a fresh process only where the platform has no forkserver).
+The timings below are from Starsim 3; on Starsim v4 an ODE run of 10,000 people for a year takes about 0.02–0.07 s in process and about 0.07 s as a child process forked from the server that has imported Starsim (`sim/runner.py`; the service starts it at startup, and a fresh process took about 1.2 s, most of it the import). Re-time after the next deploy. The runner uses a fresh process only where the platform has no forkserver, or where `SIM_RUNNER=subprocess` is set (the switch back if forked runs fail). On Vercel the process's `__main__` is the runtime's launcher, which starts the whole service when it runs; multiprocessing re-runs `__main__` in every child it starts, so the runner hides it while a child starts (`_plain_main` in `sim/runner.py`). Without that, every run on Vercel exited with code 1 before simulating (production, 2026-11-21, fixed by running a fresh process there until the runner hid `__main__`).
 
 | Measured on Vercel, 2026-10-12, Starsim 3.7.2 through the builder (iad1, Hobby, 2 GB) | Value |
 |---|---|
