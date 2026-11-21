@@ -292,7 +292,7 @@ export const SimParamsSchema = z
   })
   .superRefine((p, ctx) => {
     const seed = p.disease.seed;
-    if (seed.mode === "count" && seed.value > p.run.n_agents) issue(ctx, `disease.seed.value (${seed.value}) must not exceed run.n_agents (${p.run.n_agents})`);
+    // round-1 spec 3: a count is people here; configure checks it against the population and sim/units.ts caps the agents
     const days = simDays(p.run.sim_dur_years);
     if (seed.day > days) issue(ctx, `disease.seed.day (${seed.day}) must be within the simulation (${days} days)`);
     const day0 = p.interventions.filter(isDayZeroVaccine);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SimSuccess } from "@/lib/sim/client";
+import { validateParams } from "@/lib/sim/params";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
 import { compareRuns, runSimulation } from "@/lib/tools/runSimulation";
 import { makeDeps, params, rf } from "./helpers";
@@ -237,5 +238,71 @@ describe("run_simulation sends where each value came from (follow-up spec 8.4)",
     expect(payload.sources).toMatchObject({ "disease.beta": "run", "demographics.use_demographics": "run", "demographics.birth_rate": "run", "demographics.death_rate": "run", "run.n_agents": "user" });
     expect(payload.sources!["disease.dur_inf.mean_days"]).toBe("user");
     expect(payload.sources!["run.sim_dur_years"]).toBeUndefined();                            // unchanged and a default
+  });
+});
+
+describe("run_simulation: counts in people (round-1 spec 3)", () => {
+  const seeded = (value: number) => {
+    const r = validateParams({ schema_version: 2, disease: { model: "sir", seed: { mode: "count", value, day: 0 } }, run: { n_agents: 10000 } });
+    if (!r.ok) throw new Error(r.error);
+    return r.params;
+  };
+  async function setUp(population: number, input: Record<string, unknown>, over: Partial<SimSuccess> = {}) {
+    const deps = makeDeps({ simulate: success({ stats_agents: { ...STATS, n_agents: 10000 }, population, ...over }) });
+    deps.scenario.totalPopulation = population;
+    const configured = await configureSimulation({ n_agents: 10000, ...input } as never, deps);
+    expect(configured.isError).toBeFalsy();
+    return deps;
+  }
+
+  it("seeds are people", async () => {
+    const deps = await setUp(2_000_000, { seed_count: 1000 });
+    expect(deps.scenario.params!.disease.seed.value).toBe(1000);
+    await runSimulation({}, deps);
+    expect((deps.sent[0] as { disease: { seed: { value: number } } }).disease.seed.value).toBe(5);
+  });
+
+  it("smallest seed note, and effective params back in people", async () => {
+    const deps = await setUp(50_000_000, { seed_count: 20 }, { effective_params: seeded(1) });
+    const out = await runSimulation({}, deps);
+    expect((deps.sent[0] as { disease: { seed: { value: number } } }).disease.seed.value).toBe(1);
+    expect(JSON.parse(out.content).count_notes).toContain("20 initial cases is less than one agent at this run size; the run seeds 1 agent, about 5,000 people. More agents give a smaller seed.");
+    expect((out.payload as { effective_params: { disease: { seed: { value: number } } } }).effective_params.disease.seed.value).toBe(5000);
+  });
+
+  it("capacity is people a day", async () => {
+    const deps = await setUp(2_000_000, { treatment_capacity: 300 });
+    const out = await runSimulation({}, deps);
+    expect((deps.sent[0] as { interventions: { type: string; capacity: number }[] }).interventions.find((i) => i.type === "treatment")!.capacity).toBe(2);
+    expect(JSON.parse(out.content).count_notes).toContain("Treatment capacity 300 people a day runs as 2 agents a day, about 400 people a day.");
+  });
+
+  it("capacity below one agent", async () => {
+    const deps = await setUp(50_000_000, { treatment_capacity: 300 });
+    const out = await runSimulation({}, deps);
+    expect(JSON.parse(out.content).count_notes).toContain("Treatment capacity 300 people a day is below one agent a day at this run size; it runs as 1 agent a day, about 5,000 people a day.");
+  });
+
+  it("peak fit stored in people", async () => {
+    const deps = await setUp(2_000_000, { fit: { target: "peak_infections", value: 20000 } });
+    expect(deps.scenario.params!.run.fit?.value).toBe(20000);
+    await runSimulation({}, deps);
+    expect((deps.sent[0] as { run: { fit: { value: number } } }).run.fit.value).toBe(100);
+  });
+
+  it("run_size", async () => {
+    const deps = await setUp(2_000_000, {});
+    const body = JSON.parse((await runSimulation({}, deps)).content);
+    expect(body.run_size).toEqual({ agents: 10000, people_per_agent: 200, population: 2_000_000 });
+    expect(body.count_notes).toEqual([]);
+  });
+
+  it("diagnostic levers come back in people", async () => {
+    const diagnostics = [{ id: "early_dieout", severity: "warning" as const, title: "t", evidence: {},
+      levers: [{ patch: { "disease.seed.mode": "count", "disease.seed.value": 5 }, current: { "disease.seed.mode": "count", "disease.seed.value": 1 }, direction: "increase" as const, rationale: "r", basis: "rule" as const }] }];
+    const deps = await setUp(2_000_000, {}, { diagnostics });
+    const body = JSON.parse((await runSimulation({}, deps)).content);
+    expect(body.diagnostics[0].levers[0].patch).toEqual({ "disease.seed.mode": "count", "disease.seed.value": 1000 });
+    expect(body.diagnostics[0].levers[0].current).toEqual({ "disease.seed.mode": "count", "disease.seed.value": 200 });
   });
 });

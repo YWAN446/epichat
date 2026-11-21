@@ -124,6 +124,13 @@ describe("fetch_health_system", () => {
     expect(deps.queries[0]).toEqual({ source: "wb_data360", indicatorCodes: ["WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS", "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD"], locationCode: "KEN" });
   });
 
+  it("health-system capacity uses the population (round-1 spec 3: people a day)", async () => {
+    const deps = await configured(makeDeps({ wbData360: [rf("treatment_capacity", 2.0, "WB WDI, KEN, 2021")] }), { disease: "measles", n_agents: 10000, treatment_capacity: 10 });
+    deps.scenario.totalPopulation = 2_000_000;
+    await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(4000);
+  });
+
   it("records only when there is no treatment intervention", async () => {
     const deps = await configured(makeDeps({ wbData360: fields }), { disease: "measles" });
     const out = await fetchHealthSystem({ country_iso3: "KEN" }, deps);

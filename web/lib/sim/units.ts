@@ -57,9 +57,14 @@ export function toPeopleUnits(p: SimParams, popScale: number): SimParams {
   return revalidated(body);
 }
 
-const isCountPath = (path: string) => path.endsWith("seed.value") || path.endsWith(".capacity") || path === "run.fit.value";
-
-/** A diagnostic lever's patch with its seed, capacity and peak-fit values in people. */
-export function leverToPeople(patch: Record<string, unknown>, popScale: number): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(patch).map(([path, value]) => [path, isCountPath(path) && typeof value === "number" ? Math.round(value * popScale) : value]));
+/**
+ * A diagnostic lever's patch with its seed count, capacities and peak-fit value in people. A seed value is a count only when the
+ * patch's own seed mode, or the run's (`seedMode`) when the patch has none, is "count"; a share stays a share.
+ */
+export function leverToPeople(patch: Record<string, unknown>, popScale: number, seedMode: "fraction" | "count" = "count"): Record<string, unknown> {
+  const isCount = (path: string): boolean => {
+    if (path.endsWith("seed.value")) return (patch[path.replace(/value$/, "mode")] ?? seedMode) === "count";
+    return path.endsWith(".capacity") || path === "run.fit.value";
+  };
+  return Object.fromEntries(Object.entries(patch).map(([path, value]) => [path, isCount(path) && typeof value === "number" ? Math.round(value * popScale) : value]));
 }

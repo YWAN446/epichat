@@ -20,6 +20,23 @@ describe("configure_simulation", () => {
     expect(deps.scenario.params).toEqual(before);
   });
 
+  it("refuses more initial cases than the population (round-1 spec 3)", async () => {
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 2_000_000;
+    const out = await run(deps, { n_agents: 10000, seed_count: 3_000_000 });
+    expect(out.isError).toBe(true);
+    expect(out.content).toBe("CONFIG ERROR: 3,000,000 initial cases is more than the population (2,000,000).");
+    // in people, a seed above n_agents is fine when the population holds it
+    expect((await run(deps, { n_agents: 10000, seed_count: 50_000 })).isError).toBeFalsy();
+  });
+
+  it("solver advice counts seed agents, not people", async () => {
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 50_000_000; // 5,000 people per agent: 20 cases are 1 agent, which often dies out
+    const out = JSON.parse((await run(deps, { n_agents: 10000, r0: 1.5, seed_count: 20 })).content);
+    expect(out.solver.reasons.map((r: { code: string }) => r.code)).toContain("early_dieout");
+  });
+
   it("reports the run mode advice and sets the chosen mode", async () => {
     const deps = makeDeps();
     const codes = (out: { solver: { reasons: { code: string }[] } }) => out.solver.reasons.map((r) => r.code);
@@ -226,12 +243,14 @@ describe("configure_simulation: the spec's field names, advanced and changed", (
       [{ "demographics.use_demographics": "yes" }, "CONFIG ERROR: demographics.use_demographics must be true or false"],
       [{ "interventions[].coverage": 0.5 }, "CONFIG ERROR: interventions[].coverage is set through configure_simulation's interventions field, not through advanced"],
       [{ "disease.dur_inf.mean_days": null }, "CONFIG ERROR: disease.dur_inf.mean_days cannot be unset"],
-      [{ "run.n_agents": 20000, "disease.seed.mode": "count", "disease.seed.value": 50000 }, "schema"],
+      // round-1 spec 3: a count seed is people, checked against the population (the agents, without one)
+      [{ "run.n_agents": 20000, "disease.seed.mode": "count", "disease.seed.value": 50000 }, "CONFIG ERROR: 50,000 initial cases is more than the population (20,000)."],
+      [{ "run.sim_dur_years": 0.5, "disease.seed.day": 400 }, "schema"],
     ];
     for (const [advanced, message] of cases) {
       const out = await run(deps, { advanced });
       expect(out.isError).toBe(true);
-      if (message === "schema") expect(out.content).toMatch(/^CONFIG ERROR: 1 validation error for SimParams\n[\s\S]*must not exceed run\.n_agents \(20000\)/);
+      if (message === "schema") expect(out.content).toMatch(/^CONFIG ERROR: 1 validation error for SimParams\n[\s\S]*disease\.seed\.day \(400\) must be within the simulation \(182 days\)/);
       else expect(out.content).toBe(message);
     }
     expect(deps.scenario.params).toBe(before);
@@ -398,14 +417,14 @@ describe("configure_simulation interventions and fit (Part 2, 7.4, 7.7)", () => 
     expect(refused.content).toContain("layer school needs the hybrid network");
   });
 
-  it("sets and clears the fit, converting a peak size in people to agents when a population is known", async () => {
+  it("sets and clears the fit, keeping a peak size in people (round-1 spec 3: converted when a run starts)", async () => {
     const deps = makeDeps();
     await run(deps, { disease: "measles", n_agents: 10000, fit: { target: "attack_rate", value: 0.3 } });
     expect(deps.scenario.params!.run.fit).toEqual({ target: "attack_rate", value: 0.3, lever: "disease.beta" });
     deps.scenario.totalPopulation = 1_000_000;
     const out = JSON.parse((await run(deps, { fit: { target: "peak_infections", value: 50000 } })).content);
-    expect(deps.scenario.params!.run.fit).toEqual({ target: "peak_infections", value: 500, lever: "disease.beta" });
-    expect(out.applied.fit).toEqual({ target: "peak_infections", value: 50000, value_in_agents: 500 });
+    expect(deps.scenario.params!.run.fit).toEqual({ target: "peak_infections", value: 50000, lever: "disease.beta" });
+    expect(out.applied.fit).toEqual({ target: "peak_infections", value: 50000 });
     await run(deps, { fit: null });
     expect(deps.scenario.params!.run.fit).toBeNull();
     const bad = await run(deps, { fit: { target: "attack_rate", value: 3 } });

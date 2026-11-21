@@ -64,7 +64,7 @@ describe("the Parameters section's rows come from the registry (follow-up spec 8
     const rows = parameterGroups(v2).flatMap((g) => g.rows);
     const row = (label: string) => rows.find((r) => r.label === label)!;
     expect(row("Infectious period")).toMatchObject({ value: "8 days, gamma (sd 2.4)", paths: ["disease.dur_inf.mean_days", "disease.dur_inf.dist", "disease.dur_inf.sd_days"], shown: true });
-    expect(row("Initial infections")).toMatchObject({ value: "20 agents on day 5", paths: ["disease.seed.value", "disease.seed.mode", "disease.seed.day"] });
+    expect(row("Initial infections")).toMatchObject({ value: "20 people on day 5", paths: ["disease.seed.value", "disease.seed.mode", "disease.seed.day"] });
     expect(row("Initially immune")).toMatchObject({ value: "40%", shown: true });
     expect(row("Variation in susceptibility")).toMatchObject({ value: "CV 1", shown: true });
     expect(row("Replicates")).toMatchObject({ value: "3", shown: true });
@@ -225,7 +225,7 @@ describe("a covered parameter is a displayed parameter (review of phase C)", () 
     const share = structuredClone(base("random"));
     share.disease.seed = { mode: "fraction", value: 0.05, day: 3 };
     expect(rows(share)["Initial infections"]).toBe("5% on day 3");
-    expect(rows(base("random"))["Initial infections"]).toBe("20 agents on day 3");
+    expect(rows(base("random"))["Initial infections"]).toBe("20 people on day 3");
   });
 });
 

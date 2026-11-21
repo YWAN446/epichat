@@ -50,7 +50,7 @@ describe("SimParams v2 validation", () => {
     expect(validateParams({ schema_version: 2, disease: { dur_inf: { mean_days: 10, dist: "gamma", sd_days: 25 } } }).ok).toBe(false);
     expect(validateParams({ schema_version: 2, disease: { seed: { value: 1 } } })).toEqual({ ok: false, error: expect.stringContaining("between 0 and 1") });
     expect(validateParams({ schema_version: 2, disease: { seed: { mode: "count", value: 2.5 } } })).toEqual({ ok: false, error: expect.stringContaining("integer count") });
-    expect(validateParams({ schema_version: 2, disease: { seed: { mode: "count", value: 500 } }, run: { n_agents: 100 } })).toEqual({ ok: false, error: expect.stringContaining("disease.seed.value (500) must not exceed run.n_agents (100)") });
+    expect(validateParams({ schema_version: 2, disease: { seed: { mode: "count", value: 500 } }, run: { n_agents: 100 } }).ok).toBe(true); // people (round-1 spec 3)
     expect(validateParams({ schema_version: 2, disease: { seed: { value: 0.01, day: 400 } }, run: { sim_dur_years: 0.5 } })).toEqual({ ok: false, error: expect.stringContaining("disease.seed.day (400) must be within the simulation (182 days)") });
     expect(validateParams({ schema_version: 2, disease: { model: "seir" } })).toEqual({ ok: false, error: expect.stringContaining("disease.dur_exp is required when disease.model is 'seir', 'seirs', or 'seiar'") });
     expect(validateParams({ schema_version: 2, disease: { model: "sirs" } })).toEqual({ ok: false, error: expect.stringContaining("disease.dur_immune is required") });

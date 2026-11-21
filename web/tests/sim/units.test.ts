@@ -66,4 +66,11 @@ describe("leverToPeople", () => {
   it("scales seed, capacity and peak-fit values only", () => {
     expect(leverToPeople({ "disease.seed.value": 5, "run.sim_dur_years": 2 }, 200)).toEqual({ "disease.seed.value": 1000, "run.sim_dur_years": 2 });
   });
+
+  it("leaves a seed given as a share alone", () => {
+    const share = { "disease.seed.mode": "fraction", "disease.seed.value": 0.0005 };
+    expect(leverToPeople(share, 200)).toEqual(share);
+    expect(leverToPeople({ "disease.seed.value": 0.0005 }, 200, "fraction")).toEqual({ "disease.seed.value": 0.0005 });
+    expect(leverToPeople({ "disease.seed.mode": "count", "disease.seed.value": 25 }, 200, "fraction")).toEqual({ "disease.seed.mode": "count", "disease.seed.value": 5000 });
+  });
 });

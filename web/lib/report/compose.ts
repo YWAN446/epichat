@@ -67,7 +67,7 @@ export function runLabels(runs: ReportRun[]): string[] {
     else if (cov === undefined && typeof prevCov === "number") changes.push("no vaccine");
     const cap = intervention(run, "treatment")?.capacity;
     const prevCap = intervention(prev, "treatment")?.capacity;
-    if (typeof cap === "number" && cap !== prevCap) changes.push(`treatment capacity ${commaInt(cap)}`);
+    if (typeof cap === "number" && cap !== prevCap) changes.push(`treatment capacity ${commaInt(cap)} people a day`);
     else if (cap === undefined && typeof prevCap === "number") changes.push("no treatment");
     // follow-up spec 4 and 5: the variation between people and the behaviour response, the two limits on spread
     const cv = run.effectiveParams.disease?.rel_sus_cv ?? 0;

@@ -88,9 +88,9 @@ export function durationText(d: Duration): string {
   return d.dist === "constant" ? mean : `${mean}, ${d.dist} (sd ${fmtValue(d.sd_days ?? 0)})`;
 }
 
-/** "1%", "20 agents", "20 agents on day 5". */
+/** "1%", "20 people", "20 people on day 5" (round-1 spec 3: a count is people). */
 export function seedText(s: Seed): string {
-  const size = s.mode === "count" ? `${commaInt(s.value)} agents` : formatQuantity(s.value, "fraction");
+  const size = s.mode === "count" ? `${commaInt(s.value)} people` : formatQuantity(s.value, "fraction");
   return s.day > 0 ? `${size} on day ${fmtValue(s.day)}` : size;
 }
 
@@ -151,7 +151,7 @@ function spanText(start: number, end: number | null): string {
 
 /**
  * One line per intervention (Part 2, 7.1): "Vaccination campaign: 70% coverage, days 10–40, efficacy 80%, ages 5–17, protection 180 days",
- * "Treatment: 100% coverage, capacity 20 agents, after 3 days, efficacy 70%, half transmissibility while waiting, symptomatic only",
+ * "Treatment: 100% coverage, capacity 20 people a day, after 3 days, efficacy 70%, half transmissibility while waiting, symptomatic only",
  * "School contacts reduced by 100% from day 30 to day 72", "Transmission reduced by 30% from day 0 to day 90", "Seasonality: amplitude 0.3, shift 0".
  */
 export function interventionLines(p: SimParams): string[] {
@@ -173,7 +173,7 @@ export function interventionLines(p: SimParams): string[] {
       const waiting = i.rel_trans_treated < 1 ? [`${i.rel_trans_treated === 0.5 ? "half" : `×${fmtValue(i.rel_trans_treated)}`} transmissibility while waiting`] : [];
       const parts = [
         `Treatment: ${coverage}`,
-        i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} agents`,
+        i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} people a day`,
         ...(i.delay_days > 0 ? [`after ${formatQuantity(i.delay_days, "days")}`] : []),
         ...efficacy,
         ...waiting,
@@ -234,7 +234,7 @@ const FIELDS: Record<string, FieldSpec> = {
   contact_matrix: { label: "Contact matrix", kind: "contacts" },
   age_source: { label: "Age source", kind: "age_source" },
   treatment_capacity: { label: "Treatment capacity", unit: "per 1,000 people" },
-  applied_treatment_capacity: { label: "Treatment capacity applied", unit: "agents" },
+  applied_treatment_capacity: { label: "Treatment capacity applied", unit: "people a day" },
   uhc_coverage: { label: "UHC service coverage index", unit: "of 100" },
   applied_vaccine_coverage: { label: "Vaccine coverage applied", kind: "percent_of_one" },
   applied_vaccine_efficacy: { label: "Vaccine efficacy applied", kind: "percent_of_one" },

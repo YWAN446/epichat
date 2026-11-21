@@ -6,7 +6,7 @@ import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccin
 import { changedPaths, setPath, type PathChange } from "@/lib/sim/paths";
 import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { AGENT_CODES, recommendSolver } from "@/lib/sim/solver";
-import { agentYears } from "@/lib/sim/units";
+import { agentYears, popScaleFor, scalingPopulation, toAgentUnits } from "@/lib/sim/units";
 import { referenceHref } from "@/lib/client/references";
 import { applyAdvanced } from "./advanced";
 import { REFERENCE_TARGETS, chosenReference, type ChosenReference } from "./chosenReference";
@@ -280,23 +280,15 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   }
   base.interventions = interventions;
   if (input.fit !== undefined) {
-    // Part 2, 7.7: one outcome the user knows; a peak size in people becomes agents when the population is known
+    // Part 2, 7.7: one outcome the user knows; a peak size stays in people and becomes agents when a run starts (round-1 spec 3)
     if (input.fit === null) {
       run.fit = null;
       applied.fit = null;
     } else {
       const parsed = FitSchema.safeParse(input.fit);
       if (!parsed.success) return errorOutcome(`CONFIG ERROR: fit: ${parsed.error.issues.map((i) => i.message).join("; ")}`);
-      const fit = parsed.data;
-      const nAgents = Number(run.n_agents ?? before?.run.n_agents ?? 10000);
-      if (fit.target === "peak_infections" && scenario.totalPopulation) {
-        const agents = Math.max(1, Math.round(fit.value / (scenario.totalPopulation / nAgents)));
-        run.fit = { ...fit, value: agents };
-        applied.fit = { ...input.fit, value_in_agents: agents };
-      } else {
-        run.fit = fit;
-        applied.fit = input.fit;
-      }
+      run.fit = parsed.data;
+      applied.fit = input.fit;
     }
   }
 
@@ -315,6 +307,11 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const validated = validateParams(base);
   if (!validated.ok) return errorOutcome(`CONFIG ERROR: ${validated.error}`);
   let params: SimParams = validated.params;
+  // Round-1 spec 3: initial cases are people, so they are checked against the population (the agents, without one)
+  if (params.disease.seed.mode === "count") {
+    const limit = scalingPopulation(scenario) ?? params.run.n_agents;
+    if (params.disease.seed.value > limit) return errorOutcome(`CONFIG ERROR: ${commaInt(params.disease.seed.value)} initial cases is more than the population (${commaInt(limit)}).`);
+  }
   // Round-1 spec 7: the service refuses a run above its cap, so refuse the configuration and name the largest run that fits
   const cost = agentYears(params);
   if (cost > deps.limits.maxAgentYears) {
@@ -400,9 +397,11 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const config = configView(params, scenario.disease);
   // The run mode (spec 2026-11-20): what the rule recommends and why, and which reasons for agents this change added, so EpiChat
   // knows whether to ask, and whether to ask again after a compartmental choice
-  const advice = recommendSolver(params);
+  // round-1 spec 3: the rule counts seed agents, so it reads the scenario at the run's scale
+  const inAgents = (p: SimParams) => toAgentUnits(p, popScaleFor(scalingPopulation(scenario), p.run.n_agents));
+  const advice = recommendSolver(inAgents(params));
   const agentCodes = (a: typeof advice) => a.reasons.map((r) => r.code).filter((c) => (AGENT_CODES as readonly string[]).includes(c));
-  const earlier = before ? agentCodes(recommendSolver(before)) : null;
+  const earlier = before ? agentCodes(recommendSolver(inAgents(before))) : null;
   const solver = { chosen: params.run.solver, ...advice, new_reasons: earlier ? agentCodes(advice).filter((c) => !earlier.includes(c)) : [] };
   return {
     content: JSON.stringify({ applied, changed, approx_r0, config, warnings, solver }),

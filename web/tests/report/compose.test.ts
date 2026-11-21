@@ -87,6 +87,12 @@ describe("composeReport", () => {
     expect(appendix.blocks.at(-1)).toMatchObject({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", "unknown"], ["Report format", "1"]] });
   });
 
+  it("report label says people a day (round-1 spec 3)", () => {
+    const base = FIXTURE.runs[0];
+    const treated = { ...base, effectiveParams: { ...base.effectiveParams, interventions: [...base.effectiveParams.interventions, { type: "treatment", capacity: 300 } as never] } };
+    expect(runLabels([base, treated])[1]).toBe("Run 2, treatment capacity 300 people a day");
+  });
+
   it("labels runs by what changed from the previous one", () => {
     expect(runLabels(FIXTURE.runs)).toEqual(["Run 1", "Run 2, vaccine coverage 90%", "Run 3, no vaccine"]);
     expect(runLabels([FIXTURE.runs[0]])).toEqual(["Run 1"]);

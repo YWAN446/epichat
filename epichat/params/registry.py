@@ -134,8 +134,8 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("disease.seed.mode", "disease", "Seeding mode", "fraction: a share value of the people start infected; count: exactly "
               "value people start infected.", "enum", None, "fraction", None, ("fraction", "count"), (), "advanced", None,
               "ss.Disease(init=dict(I=...)) or ss.Disease(init_n=dict(I=...))", ("stochasticity",)),
-    ParamSpec("disease.seed.value", "disease", "Seed size", "A fraction between 0 and 1 (mode fraction) or a whole number of agents from 1 "
-              "to n_agents (mode count).", "number", None, 0.0005, (0.0, 1_000_000.0), None, (), "core", None,
+    ParamSpec("disease.seed.value", "disease", "Seed size", "A fraction between 0 and 1 of the agents (mode fraction), or a whole number "
+              "of people (mode count) that the web app converts to agents at the run's scale.", "number", None, 0.0005, (0.0, 1_000_000.0), None, (), "core", None,
               "the disease's init or init_n, or ss.Delivery(move=S >> I) when day > 0", ("timing", "stochasticity")),
     ParamSpec("disease.seed.day", "disease", "Seeding day", "Day the seed infections happen; 0 means at the start.", "integer", "days", 0,
               (0, 7300), None, (), "advanced", None, "ss.Delivery(move=S >> I, at=ss.days(day))", ("timing",)),
@@ -241,7 +241,8 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("interventions[].start_day", "interventions", "Start day", "Day the intervention begins. A vaccine starting on day 0 is "
               "stored as disease.initial_immune_frac instead.", "integer", "days", 0, (0, 7300), None, (), "core", None,
               "the delivery's or modifier's start=ss.days(start_day)", ("timing",)),
-    ParamSpec("interventions[].capacity", "interventions", "Treatment capacity", "Most people treated per day.", "integer", "agents per day",
+    ParamSpec("interventions[].capacity", "interventions", "Treatment capacity", "Most people treated per day; the web app converts it to agents at the run's "
+              "scale.", "integer", "people per day",
               None, (1, 1_000_000), None, (), "core", None, "ss.treat(capacity=ss.perday(...))", ("peak", "final_size")),
     ParamSpec("interventions[].scale", "interventions", "Scale", "Seasonality: size of the yearly cycle (0.2 means transmission moves "
               "between 80% and 120% of beta); contact_reduction and transmission_reduction: the fraction removed over the window (0.3 "

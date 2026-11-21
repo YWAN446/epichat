@@ -1,10 +1,13 @@
 import { z } from "zod";
 import type { PreviousRun } from "@/lib/db/runs";
 import { detectDisease } from "@/lib/disease/db";
-import type { SimSuccess } from "@/lib/sim/client";
+import type { SimResult, SimSuccess } from "@/lib/sim/client";
+import type { SimParams } from "@/lib/sim/params";
 import { changedPaths } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
 import { recommendSolver } from "@/lib/sim/solver";
+import { capacityAgents, leverToPeople, popScaleFor, scalingPopulation, toAgentUnits, toPeopleUnits } from "@/lib/sim/units";
+import { commaInt } from "@/lib/sim/pyformat";
 import { errorOutcome, paramWarnings, runNotes } from "./shared";
 import { scenarioReferences, scenarioSources } from "./sources";
 import type { RunCompare, RunPayload, ToolDeps, ToolOutcome } from "./types";
@@ -34,19 +37,51 @@ export function compareRuns(previous: PreviousRun, result: SimSuccess, popScale:
   };
 }
 
+/** Round-1 spec 3: the service answers in agents; its effective parameters and its levers' seeds, capacities and peak fits come back in people. */
+function inPeople(result: SimResult, popScale: number): SimResult {
+  if (!result.ok) return result;
+  let effective = result.effective_params;
+  try {
+    effective = toPeopleUnits(result.effective_params, popScale);
+  } catch (error) {
+    console.error("effective params kept in agents", error);
+  }
+  const mode = result.effective_params.disease.seed.mode;
+  const diagnostics = result.diagnostics?.map((d) => ({ ...d, levers: d.levers.map((l) => ({ ...l, patch: leverToPeople(l.patch, popScale, mode), current: leverToPeople(l.current, popScale, mode) })) }));
+  return { ...result, effective_params: effective, ...(diagnostics ? { diagnostics } : {}) };
+}
+
+/** What a count in people became at this run's scale, when that is not what was asked (round-1 spec 3). */
+export function countNotes(params: SimParams, popScale: number): string[] {
+  const notes: string[] = [];
+  const seed = params.disease.seed;
+  if (seed.mode === "count" && seed.value < popScale) {
+    notes.push(`${commaInt(seed.value)} initial cases is less than one agent at this run size; the run seeds 1 agent, about ${commaInt(Math.round(popScale))} people. More agents give a smaller seed.`);
+  }
+  for (const i of params.interventions) {
+    if (i.type !== "treatment" || i.capacity === null) continue;
+    const agents = capacityAgents(i.capacity, popScale);
+    const people = commaInt(Math.round(agents * popScale));
+    if (i.capacity < popScale) notes.push(`Treatment capacity ${commaInt(i.capacity)} people a day is below one agent a day at this run size; it runs as 1 agent a day, about ${people} people a day.`);
+    else if (Math.round(agents * popScale) !== i.capacity) notes.push(`Treatment capacity ${commaInt(i.capacity)} people a day runs as ${commaInt(agents)} agents a day, about ${people} people a day.`);
+  }
+  return notes;
+}
+
 /** Ported from epichat/agent.py run_simulation; the executor is the simulation service, which also answers the diagnostics of spec 10. */
 export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): Promise<ToolOutcome> {
   const scenario = deps.scenario;
   if (!scenario.params) return errorOutcome("Call configure_simulation first to establish the simulation before running.");
   // The first run records its mode (spec 2026-11-20): running with the recommendation on screen accepts it, so a later change never
   // switches the mode silently
-  if (scenario.params.run.solver === null) scenario.params = { ...scenario.params, run: { ...scenario.params.run, solver: recommendSolver(scenario.params).recommended } };
+  // round-1 spec 3: the people the scenario holds are agents for the service and the solver rule
+  const popScale = popScaleFor(scalingPopulation(scenario), scenario.params.run.n_agents);
+  if (scenario.params.run.solver === null) scenario.params = { ...scenario.params, run: { ...scenario.params.run, solver: recommendSolver(toAgentUnits(scenario.params, popScale)).recommended } };
   const params = scenario.params;
-  const popScale = scenario.totalPopulation && params.run.n_agents > 0 ? scenario.totalPopulation / params.run.n_agents : 1.0;
   const disease = (scenario.disease ?? detectDisease(deps.contextText || ""))?.slice(0, DISEASE_NAME_MAX) ?? null;
   // Read before this run is inserted, so it is never its own previous run; the first run has none to read.
   const previous = scenario.hasRun ? await deps.previousRun() : null;
-  const result = await deps.sim.simulate(params, popScale, deps.contextText, disease);
+  const result = inPeople(await deps.sim.simulate(toAgentUnits(params, popScale), popScale, deps.contextText, disease), popScale);
   const warnings = [...paramWarnings(scenario, params, deps.contextText), ...runNotes(params)];
   const dataSources = [...scenario.dataSources];
   const runId = await deps.onRun({ params, popScale, result, warnings, dataSources });
@@ -74,6 +109,8 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   // Agent counts: the scaled total over the real population is the same ratio.
   const attack_rate_pct = pyRound((agents.total_infected / n) * 100, 1);
   const pop_scale = pyRound(popScale, 2);
+  const run_size = { agents: n, people_per_agent: pop_scale, population: result.population };
+  const count_notes = countNotes(params, popScale);
   const sources = dataSources.map((f) => ({ field: f.field, value: f.value, citation: f.citation }));
   // The per-replicate stats travel; the per-day bands wait for the workspace follow-up that draws them. An ODE run has none.
   const replicates = result.replicates ? { n: result.replicates.n, seeds: result.replicates.seeds, representative: result.replicates.representative, stats: result.replicates.stats } : undefined;
@@ -113,7 +150,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   };
   return {
     content: JSON.stringify({
-      stats: result.stats, attack_rate_pct, pop_scale, effective_params: result.effective_params,
+      stats: result.stats, attack_rate_pct, pop_scale, run_size, count_notes, effective_params: result.effective_params,
       warnings, repairs: result.repairs, data_sources: sources, diagnostics, compare, ...(applied ? { applied } : {}), ...(replicates ? { replicates } : {}),
     }),
     payload,
