@@ -12,6 +12,11 @@ import type { ParamSource } from "./sources";
 
 export type WebSource = { title: string; url: string };
 
+/** Where an area's population came from: the user, or a source the assistant found and cited (round-1 spec 1). */
+export type AreaSource = { kind: "user" } | { kind: "web"; title: string; url: string };
+/** An area smaller than the country, with its own population; ages, contacts and coverage stay the country's. */
+export type Area = { name: string; population: number; countryIso3: string | null; source: AreaSource };
+
 /** The deterministic simulation state (parent spec 9.4); replaces the Python AgentState. */
 export type Scenario = {
   id: string | null;
@@ -19,7 +24,10 @@ export type Scenario = {
   params: SimParams | null;
   disease: string | null;
   countryIso3: string | null;
+  /** The country's total population from fetch_demographics. */
   totalPopulation: number | null;
+  /** An area within the country; when set, counts are scaled to its population (see sim/units.ts). */
+  area: Area | null;
   dataSources: ResolvedField[];
   webSources: WebSource[];
   stage: Stage;
@@ -32,7 +40,7 @@ export type Scenario = {
 };
 
 export function emptyScenario(seq = 1): Scenario {
-  return { id: null, seq, params: null, disease: null, countryIso3: null, totalPopulation: null, dataSources: [], webSources: [], stage: "understand", stageReached: "understand", hasRun: false, hasReport: false, reportCurrent: false };
+  return { id: null, seq, params: null, disease: null, countryIso3: null, totalPopulation: null, area: null, dataSources: [], webSources: [], stage: "understand", stageReached: "understand", hasRun: false, hasReport: false, reportCurrent: false };
 }
 
 /** start_new_scenario: the same object becomes the next, empty scenario. */

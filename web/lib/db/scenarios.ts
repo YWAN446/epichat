@@ -47,6 +47,7 @@ export function scenarioFromRow(row: ScenarioJson): Scenario {
     disease: row.disease ?? null,
     countryIso3: row.country_iso3 ?? null,
     totalPopulation: row.total_population === null || row.total_population === undefined ? null : Number(row.total_population),
+    area: null,
     dataSources: Array.isArray(row.data_sources) ? (row.data_sources as ResolvedField[]) : [],
     webSources: Array.isArray(row.web_sources) ? (row.web_sources as WebSource[]) : [],
     stage,
