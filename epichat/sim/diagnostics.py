@@ -35,6 +35,7 @@ INSTANT_PEAK_SEED_SHARE = 0.02       # forty times the 0.05% default; above the 
 INSTANT_PEAK_SEEDS = 10
 UNFINISHED_TAIL_SHARE = 0.05         # n_infectious[-1] >= 0.05 × peak
 UNFINISHED_WINDOW_SHARE = 0.1        # the last ceil(0.1 T) days against the ceil(0.1 T) before them
+UNFINISHED_MIN_AGENTS = 10           # round-1 spec 10: fewer infectious, or new infections in the last window, than this is not still going
 FINAL_SIZE_GAP = 0.15
 SHARP_CURVE_WIDTH_MULTIPLE = 2       # days at or above half the peak below 2 × dur_inf.mean_days
 ILLUSTRATIVE_SD_SHARE = 0.3          # spec 7.3: 0.3 × mean without a database range
@@ -233,12 +234,12 @@ def _instant_peak(run: _Run) -> Diagnostic | None:
 def _unfinished(run: _Run) -> Diagnostic | None:
     p = run.params
     tail = bool(run.days and run.peak > 0 and p.disease.model in SIMPLE_MODELS and not p.demographics.use_demographics
-                and run.infectious[-1] >= UNFINISHED_TAIL_SHARE * run.peak)
+                and run.infectious[-1] >= UNFINISHED_TAIL_SHARE * run.peak and run.infectious[-1] >= UNFINISHED_MIN_AGENTS)
     new = [float(v) for v in run.series.get("new_infections", [])]
     window = math.ceil(UNFINISHED_WINDOW_SHARE * run.days)
     rising = False
     if window and len(new) >= 2 * window:
-        rising = sum(new[-window:]) / window > sum(new[-2 * window:-window]) / window
+        rising = sum(new[-window:]) / window > sum(new[-2 * window:-window]) / window and sum(new[-window:]) >= UNFINISHED_MIN_AGENTS
     if not (tail or rising):
         return None
     years = p.run.sim_dur_years
