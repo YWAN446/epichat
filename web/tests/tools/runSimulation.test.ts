@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { SimSuccess } from "@/lib/sim/client";
 import { configureSimulation } from "@/lib/tools/configureSimulation";
-import { runSimulation } from "@/lib/tools/runSimulation";
+import { compareRuns, runSimulation } from "@/lib/tools/runSimulation";
 import { makeDeps, params, rf } from "./helpers";
 
 const STATS = { peak_infections: 900, peak_day: 40, total_infected: 6000, total_deaths: 12, n_agents: 50000, sim_days: 366 };
@@ -165,6 +165,15 @@ describe("run_simulation: diagnostics and the comparison", () => {
     const body = JSON.parse((await runSimulation({}, deps)).content);
     expect(body.compare.pop_scale).toEqual({ from: 1, to: 4260 });
     expect(body.compare.stats_delta).toEqual({ peak_infections: 100 * 4260, peak_day: 5, total_infected: 1000 * 4260, total_deaths: 2 * 4260 });
+  });
+
+  it("compare holds when n_agents changes", () => {
+    // round-1 spec 2: 10,000 agents at 5,000 people each, then 50,000 agents at 1,000 each, for the same 50 million people
+    const before = { ...STATS, n_agents: 10_000, total_infected: 8_000 };
+    const previous = { id: "run-1", effectiveParams: params({ n_agents: 10_000 }), stats: before, statsAgents: before, popScale: 5_000, diagnostics: [] };
+    const now = { ...STATS, n_agents: 50_000, total_infected: 40_500 };
+    const result = success({ effective_params: params({ n_agents: 50_000 }), stats_agents: now, stats: { ...now, total_infected: 40_500_000 }, pop_scale: 1_000 });
+    expect(compareRuns(previous, result, 1_000).stats_delta.total_infected).toBe(500_000);
   });
 });
 

@@ -17,12 +17,14 @@ type Obj = Record<string, unknown>;
 const DISEASE_NAME_MAX = 80;
 
 /**
- * Spec 11: what changed since the previous run, by path, and the difference in the headline numbers in today's
- * population scale: the previous run's agent counts are rescaled to this run's scale, so a population fetched
- * between the runs does not show up as millions of extra infections.
+ * Spec 11: what changed since the previous run, by path, and the difference in the headline numbers at today's population.
+ * Round-1 spec 2: the previous run's counts are taken as shares of its own agents and multiplied by today's population, so
+ * neither a change of n_agents nor a population fetched between the runs shows up as millions of extra infections.
  */
 export function compareRuns(previous: PreviousRun, result: SimSuccess, popScale: number): RunCompare {
-  const before = (key: keyof RunCompare["stats_delta"]) => (key === "peak_day" ? previous.statsAgents.peak_day : Math.round(previous.statsAgents[key] * popScale));
+  const prevN = previous.statsAgents.n_agents || previous.effectiveParams.run.n_agents;
+  const curN = result.stats_agents.n_agents || result.effective_params.run.n_agents;
+  const before = (key: keyof RunCompare["stats_delta"]) => (key === "peak_day" ? previous.statsAgents.peak_day : Math.round((previous.statsAgents[key] * popScale * curN) / prevN));
   const delta = (key: keyof RunCompare["stats_delta"]) => result.stats[key] - before(key);
   return {
     previous_run_id: previous.id,
