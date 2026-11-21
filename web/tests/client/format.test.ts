@@ -54,7 +54,7 @@ describe("applied data fields", () => {
   it("names the demographic fields with their units", () => {
     expect(describeField("birth_rate", 28.3)).toEqual({ label: "Birth rate", value: "28.3 per 1,000 per year" });
     expect(describeField("death_rate", 7.9)).toEqual({ label: "Death rate", value: "7.9 per 1,000 per year" });
-    expect(describeField("total_population", 55100586)).toEqual({ label: "Population", value: "55,100,586" });
+    expect(describeField("total_population", 55100586)).toEqual({ label: "Country population", value: "55,100,586" });   // final review 7
     expect(describeField("age_structure_pct", { "0-17": 42.13, "18-64": 53.4, "65+": 4.47 })).toEqual({ label: "Age structure", value: "0–17: 42%, 18–64: 53%, 65+: 4%" });
     expect(describeField("network_type", "age_structured")).toEqual({ label: "Contact network", value: "age-structured" });
     expect(describeField("beta_recalibrated_to_hold_r0", 14.9)).toEqual({ label: "Transmission rate recalibrated to hold R₀", value: "14.9" });

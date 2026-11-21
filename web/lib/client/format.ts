@@ -246,7 +246,7 @@ const VACCINES: Record<string, string> = {
 const FIELDS: Record<string, FieldSpec> = {
   birth_rate: { label: "Birth rate", unit: "per 1,000 per year" },
   death_rate: { label: "Death rate", unit: "per 1,000 per year" },
-  total_population: { label: "Population" },
+  total_population: { label: "Country population" },
   age_structure_pct: { label: "Age structure", kind: "age" },
   network_type: { label: "Contact network", kind: "network" },
   beta_recalibrated_to_hold_r0: { label: "Transmission rate recalibrated to hold R₀" },

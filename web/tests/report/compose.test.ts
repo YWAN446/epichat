@@ -99,6 +99,9 @@ describe("composeReport", () => {
     expect(rows.items).toContainEqual(["Population", "2,000,000, Example County (you set it)"]);
     const limitations = doc.sections.find((s) => s.id === "limitations")!.blocks;
     expect(limitations.at(-1)).toEqual({ kind: "paragraph", text: "Ages, contact patterns and vaccination coverage are Kenya's national figures." });
+    const sources = doc.sections.find((s) => s.id === "modelled")!.blocks.find((b) => b.kind === "table" && b.caption === "Data sources");
+    if (sources?.kind !== "table") throw new Error("sources");
+    expect(sources.rows.map((r) => r[1])).toContain("Country population");   // final review 7: never a bare "Population" beside the area's
     const national = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "limitations")!.blocks;
     expect(national.some((b) => b.kind === "paragraph" && b.text.includes("national figures"))).toBe(false);
   });
