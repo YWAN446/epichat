@@ -213,6 +213,18 @@ describe("listForReport numbers runs as the panel does (round-1 spec 8)", () => 
   });
 });
 
+describe("unlinked runs belong to their scenario's seq (final review 5)", () => {
+  const row = (id: string, scenario_seq: number | null) => ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id: null, scenario_seq, turn_id: "t9", effective_params: {}, stats: {}, stats_agents: {}, pop_scale: 1, series: null, repairs: [], warnings: [], data_sources: [], diagnostics: [] });
+  it("listForReport and latest take only this scenario's unlinked runs", async () => {
+    const data = [row("run-1", 1), row("run-2", 2), row("run-3", null)];
+    expect((await supabaseRunStore(fakeAdmin({ runs: [{ data }] }).client).listForReport("c1", null, "t9", 2)).map((r) => r.id)).toEqual(["run-2", "run-3"]);
+    expect((await supabaseRunStore(fakeAdmin({ runs: [{ data: [row("run-2", 2), row("run-1", 1)] }] }).client).latest("c1", null, "t9", 1))?.id).toBe("run-1");   // newest first
+  });
+  it("runRow stores the scenario's seq", () => {
+    expect(runRow({ conversationId: "c1", userId: "u1", turnId: "t9", scenarioId: null, scenarioSeq: 2, record: { params: params({}), popScale: 1, result: { ok: false, kind: "timeout", detail: "x", status: 504, attempts: 1, repairs: [] }, warnings: [], dataSources: [] } } as never).scenario_seq).toBe(2);
+  });
+});
+
 describe("listForReport for a scenario that is not stored yet", () => {
   it("takes only this turn's unlinked runs, never an earlier turn's", async () => {
     const row = (id: string, scenario_id: string | null, turn_id: string) => ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id, effective_params: {}, stats: {}, stats_agents: {}, pop_scale: 1, series: null, repairs: [], warnings: [], data_sources: [] });
@@ -334,7 +346,7 @@ describe("the previous run", () => {
     const admin = fakeAdmin({ runs: [{ data: [row("run-3", null, "t9", { diagnostics }), row("run-2", "s0", "t0"), row("run-1", "s1", "t1")] }] });
     const previous = await supabaseRunStore(admin.client).latest("c1", "s1", "t9");
     expect(previous).toMatchObject({ id: "run-3", diagnostics, stats: STATS, statsAgents: STATS, popScale: 2 });
-    expect(callOn(admin.recorded, "runs", "select")).toEqual(["id, created_at, scenario_id, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics"]);
+    expect(callOn(admin.recorded, "runs", "select")).toEqual(["id, created_at, scenario_id, scenario_seq, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics"]);
     expect(previous?.effectiveParams.run.n_agents).toBe(10000);
     expect(callOn(admin.recorded, "runs", "order")).toEqual(["created_at", { ascending: false }]);
     expect(callOn(admin.recorded, "runs", "is")).toEqual(["error", null]);

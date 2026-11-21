@@ -196,7 +196,7 @@ export async function handleChat(
       }
       let id: string | null = null;
       try {
-        id = await deps.runs.insert({ conversationId, userId: user.id, turnId, scenarioId: scenario.id, record });
+        id = await deps.runs.insert({ conversationId, userId: user.id, turnId, scenarioId: scenario.id, scenarioSeq: scenario.seq, record });
       } catch (error) {
         console.error("runs insert failed", failureText(error));
       }
@@ -210,7 +210,7 @@ export async function handleChat(
     },
     async previousRun() {
       try {
-        return await deps.runs.latest(conversationId, scenario.id, turnId);
+        return await deps.runs.latest(conversationId, scenario.id, turnId, scenario.seq);
       } catch (error) {
         console.error("runs read failed", failureText(error));
         return null;
@@ -221,7 +221,7 @@ export async function handleChat(
       step("option_chosen", { tool: "configure_simulation", meta: { run_id: runId, diagnostic_id: diagnosticId, patch: JSON.stringify(patch), ...(interventions ? { interventions: JSON.stringify(interventions) } : {}) } });
     },
     reports: {
-      runs: () => deps.runs.listForReport(conversationId, scenario.id, turnId),
+      runs: () => deps.runs.listForReport(conversationId, scenario.id, turnId, scenario.seq),
       recap: () => deps.turns.lastRecap(conversationId),
       nextVersion: async () => (await deps.reports.count(conversationId)) + 1,
       async insert(report) {

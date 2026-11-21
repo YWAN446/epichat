@@ -141,6 +141,14 @@ describe("finish_turn", () => {
     expect((await one<{ scenario_id: string }>("select scenario_id from runs where turn_id = $1", [TURN_1])).scenario_id).toBe(scenarioId);
   });
 
+  it("claims only the runs of the scenario it saves (final review 5)", async () => {
+    // a scenario run and replaced by a carried-over one in the same turn: its run must not become the new scenario's
+    for (const seq of [1, 2, null]) await db.query("insert into runs (conversation_id, user_id, turn_id, params, scenario_seq) values ($1, $2, $3, '{}'::jsonb, $4)", [conversation, ALICE, TURN_1, seq]);
+    const scenarioId = await finish(payload({ scenario: { ...payload().scenario, seq: 2 } }));
+    const { rows } = await db.query<{ scenario_seq: number | null; scenario_id: string | null }>("select scenario_seq, scenario_id from runs where turn_id = $1 order by scenario_seq nulls last", [TURN_1]);
+    expect(rows.map((r) => [r.scenario_seq, r.scenario_id])).toEqual([[1, null], [2, scenarioId], [null, scenarioId]]);
+  });
+
   it("refuses a scenario id from another conversation", async () => {
     const { rows } = await db.query<{ id: string }>("insert into conversations (user_id) values ($1) returning id", [ALICE]);
     const { rows: other } = await db.query<{ id: string }>("insert into scenarios (conversation_id, seq) values ($1, 1) returning id", [rows[0].id]);

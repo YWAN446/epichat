@@ -5,6 +5,10 @@
 
 alter table scenarios add column if not exists area jsonb;
 
+-- A change of area after a run starts the next scenario within the turn; each run keeps the seq of the scenario it was
+-- made for, so finish_turn claims only the saved scenario's runs (final review 5).
+alter table runs add column if not exists scenario_seq int;
+
 -- finish_turn as in 0004_reports.sql, with the area written on update and insert.
 create or replace function finish_turn(p jsonb) returns uuid
 language plpgsql security definer set search_path = public as $$
@@ -68,7 +72,8 @@ begin
         coalesce((s->>'has_report')::boolean, false), coalesce((s->>'report_current')::boolean, false))
       returning id into v_scenario;
     end if;
-    update runs set scenario_id = v_scenario where turn_id = v_turn and scenario_id is null;
+    update runs set scenario_id = v_scenario where turn_id = v_turn and scenario_id is null
+      and (scenario_seq is null or scenario_seq = (select seq from scenarios where id = v_scenario));
     update reports set scenario_id = v_scenario where turn_id = v_turn and scenario_id is null;
     update conversations set active_scenario_id = v_scenario, updated_at = now(),
       title = case when title = '' then coalesce(p->>'title', '') else title end
