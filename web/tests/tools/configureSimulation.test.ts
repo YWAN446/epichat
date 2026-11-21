@@ -667,6 +667,29 @@ describe("configure_simulation sends where each value came from (follow-up spec 
   });
 });
 
+describe("a peak fit after a run (final review 2)", () => {
+  it("ends when the interventions change, at a scale that is not a whole multiple", async () => {
+    const { runSimulation } = await import("@/lib/tools/runSimulation");
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 55_000_000;                          // 5,500 people per agent
+    await run(deps, { disease: "measles", n_agents: 10000, fit: { target: "peak_infections", value: 20000 } });
+    const fitted = { target: "peak_infections", wanted: 4, achieved: 4, lever: "disease.beta", value: 9.5, runs: 4 };
+    const sent = deps.scenario.params!;
+    const effective = { ...sent, run: { ...sent.run, fit: { ...sent.run.fit!, value: 4 } } };   // what the service echoes, in agents
+    const ok = { ok: true as const, effective_params: effective, population: 55_000_000, stats: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366, fit: fitted },
+      stats_agents: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366, fit: fitted }, series: { day: [0] }, pop_scale: 5500, repairs: [], attempts: 1, duration_ms: 1, cold_start: false, starsim_version: "4" };
+    deps.sim.simulate = async () => ok;
+    await runSimulation({}, deps);
+    const stored = deps.runs[0].result;
+    if (!stored.ok) throw new Error("run");
+    const previous = { id: "run-1", effectiveParams: stored.effective_params, stats: stored.stats, statsAgents: stored.stats_agents, popScale: 5500, diagnostics: [] };
+    deps.previousRun = async () => previous;
+    const out = JSON.parse((await run(deps, { interventions: [{ type: "contact_reduction", scale: 0.3, start_day: 10 }] })).content);
+    expect(deps.scenario.params!.run.fit).toBeNull();
+    expect(out.warnings.join(" ")).toContain("ended the fit");
+  });
+});
+
 describe("the area (round-1 spec 1)", () => {
   const COUNTY = { name: "Example County", population: 2_000_000 };
   async function kenya(ran: boolean) {

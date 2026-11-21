@@ -21,9 +21,9 @@ export function seedAgents(people: number, popScale: number, nAgents: number): n
   return Math.min(nAgents, Math.max(1, Math.round(people / popScale)));
 }
 
-/** People treated a day as agents a day: rounded, at least one (the schema's capacity is a whole number of at least 1). */
+/** People treated a day as agents a day: floored so the run treats at most the people asked, and at least one (the schema's capacity is a whole number of at least 1). */
 export function capacityAgents(peoplePerDay: number, popScale: number): number {
-  return Math.max(1, Math.round(peoplePerDay / popScale));
+  return Math.max(1, Math.floor(peoplePerDay / popScale));
 }
 
 /** The agent-years a run costs the simulation service (sim/service.py agent_years). */
@@ -47,13 +47,32 @@ export function toAgentUnits(p: SimParams, popScale: number): SimParams {
   return revalidated(body);
 }
 
-/** The service's effective parameters with the three counts back in people. */
-export function toPeopleUnits(p: SimParams, popScale: number): SimParams {
+/**
+ * The service's effective parameters with the three counts back in people. With the configured parameters, a count that converts
+ * to the same agents the run used keeps the people the user gave (final review 2-3), so a run does not restate "20 cases" as the
+ * thousands one agent stands for, and a later comparison or fit sees the value it was given; a count the service changed comes
+ * back as its agents' people.
+ */
+export function toPeopleUnits(p: SimParams, popScale: number, configured?: SimParams): SimParams {
   const people = (agents: number) => Math.max(1, Math.round(agents * popScale));
+  const n = p.run.n_agents;
   const body = structuredClone(p);
-  if (body.disease.seed.mode === "count") body.disease.seed.value = people(body.disease.seed.value);
-  body.interventions = body.interventions.map((i) => (i.type === "treatment" && i.capacity !== null ? { ...i, capacity: people(i.capacity) } : i));
-  if (body.run.fit && body.run.fit.target === "peak_infections") body.run.fit = { ...body.run.fit, value: people(body.run.fit.value) };
+  const seed = configured?.disease.seed;
+  if (body.disease.seed.mode === "count") {
+    const agents = body.disease.seed.value;
+    body.disease.seed.value = seed?.mode === "count" && seedAgents(seed.value, popScale, n) === agents ? seed.value : people(agents);
+  }
+  body.interventions = body.interventions.map((i, k) => {
+    if (i.type !== "treatment" || i.capacity === null) return i;
+    const given = configured?.interventions[k];
+    const kept = given?.type === "treatment" && given.capacity !== null && capacityAgents(given.capacity, popScale) === i.capacity ? given.capacity : null;
+    return { ...i, capacity: kept ?? people(i.capacity) };
+  });
+  const fit = configured?.run.fit;
+  if (body.run.fit && body.run.fit.target === "peak_infections") {
+    const agents = body.run.fit.value;
+    body.run.fit = { ...body.run.fit, value: fit?.target === "peak_infections" && seedAgents(fit.value, popScale, n) === agents ? fit.value : people(agents) };
+  }
   return revalidated(body);
 }
 

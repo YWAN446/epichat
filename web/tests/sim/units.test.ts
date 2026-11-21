@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validateParams, type SimParams } from "@/lib/sim/params";
-import { leverToPeople, popScaleFor, scalingPopulation, seedAgents, toAgentUnits, toPeopleUnits } from "@/lib/sim/units";
+import { capacityAgents, leverToPeople, popScaleFor, scalingPopulation, seedAgents, toAgentUnits, toPeopleUnits } from "@/lib/sim/units";
 import type { Area } from "@/lib/tools/types";
 
 function v2(body: Record<string, unknown>): SimParams {
@@ -43,7 +43,7 @@ describe("toAgentUnits", () => {
     });
     const a = toAgentUnits(p, 200);
     expect(a.disease.seed.value).toBe(5);
-    expect(a.interventions[0].capacity).toBe(2);
+    expect(a.interventions[0].capacity).toBe(1);                       // floored: the run treats at most what was asked
     expect(a.run.fit?.value).toBe(100);
     expect(a.run.n_agents).toBe(10_000);
     expect(p.disease.seed.value).toBe(1000); // a new object; the input is untouched
@@ -59,6 +59,27 @@ describe("toPeopleUnits", () => {
   it("inverts toAgentUnits for exact multiples", () => {
     const agents = v2({ disease: { model: "sir", seed: { mode: "count", value: 5, day: 0 } }, run: { n_agents: 10_000 } });
     expect(toPeopleUnits(agents, 200).disease.seed.value).toBe(1000);
+  });
+});
+
+describe("capacityAgents (final review 3)", () => {
+  it("floors, so the run treats at most the people asked, and never drops below one agent", () => {
+    expect(capacityAgents(300, 200)).toBe(1);
+    expect(capacityAgents(450, 200)).toBe(2);
+    expect(capacityAgents(300, 5000)).toBe(1);
+  });
+});
+
+describe("toPeopleUnits keeps the configured people (final review 2-3)", () => {
+  it("returns the configured count when it maps to the same agents, the agents' people otherwise", () => {
+    const configured = v2({ disease: { model: "sir", seed: { mode: "count", value: 20_000, day: 0 } }, interventions: [{ type: "treatment", capacity: 300 }], run: { n_agents: 10_000, fit: { target: "peak_infections", value: 20_000 } } });
+    const ran = toAgentUnits(configured, 5_500);                          // a scale that is not a whole multiple
+    expect([ran.disease.seed.value, ran.interventions[0].capacity, ran.run.fit?.value]).toEqual([4, 1, 4]);
+    const back = toPeopleUnits(ran, 5_500, configured);
+    expect([back.disease.seed.value, back.interventions[0].capacity, back.run.fit?.value]).toEqual([20_000, 300, 20_000]);
+    expect(toPeopleUnits(ran, 5_500).disease.seed.value).toBe(22_000);
+    const repaired = { ...ran, disease: { ...ran.disease, seed: { ...ran.disease.seed, value: 9 } } };   // the service changed it
+    expect(toPeopleUnits(repaired, 5_500, configured).disease.seed.value).toBe(49_500);
   });
 });
 

@@ -145,7 +145,7 @@ const LAYER_WORDS: Record<string, string> = { all: "All", household: "Household"
 export function fitValueText(target: string, value: number): string {
   if (target === "attack_rate") return formatQuantity(value, "fraction");
   if (target === "peak_day") return fmtValue(value);
-  return `${commaInt(value)} agents`;
+  return `${commaInt(value)} people`;                                 // round-1 spec 3: a peak-size target is people
 }
 
 /** "attack rate 30%", "peak day 60", "peak infections 500 agents". */

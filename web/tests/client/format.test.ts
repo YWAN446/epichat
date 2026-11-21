@@ -211,7 +211,7 @@ describe("intervention lines, the fit row and the applied-field labels (Part 2, 
     const rows = parameterRows(fitted);
     expect(rows).toContainEqual(["Fitted to", "attack rate 30% by moving the transmission rate"]);
     expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_day", value: 60, lever: "network.network_beta" } } }))).toContainEqual(["Fitted to", "peak day 60 by moving the network multiplier"]);
-    expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_infections", value: 500 } } }))).toContainEqual(["Fitted to", "peak infections 500 agents by moving the transmission rate"]);
+    expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_infections", value: 500 } } }))).toContainEqual(["Fitted to", "peak infections 500 people by moving the transmission rate"]);
     expect(defaultRows(params({})).map(([label]) => label)).not.toContain("Fitted to");
     expect(describeField("applied_vaccine_efficacy", 0.93)).toEqual({ label: "Vaccine efficacy applied", value: "93%" });
     expect(describeField("fit", { target: "attack_rate", value: 0.3 })).toEqual({ label: "Fit", value: "attack rate 30%" });

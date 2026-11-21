@@ -39,11 +39,11 @@ export function compareRuns(previous: PreviousRun, result: SimSuccess, popScale:
 }
 
 /** Round-1 spec 3: the service answers in agents; its effective parameters and its levers' seeds, capacities and peak fits come back in people. */
-function inPeople(result: SimResult, popScale: number): SimResult {
+function inPeople(result: SimResult, popScale: number, configured: SimParams): SimResult {
   if (!result.ok) return result;
   let effective = result.effective_params;
   try {
-    effective = toPeopleUnits(result.effective_params, popScale);
+    effective = toPeopleUnits(result.effective_params, popScale, configured);
   } catch (error) {
     console.error("effective params kept in agents", error);
   }
@@ -51,7 +51,12 @@ function inPeople(result: SimResult, popScale: number): SimResult {
   const diagnostics = result.diagnostics?.map((d) => ({ ...d, levers: d.levers.map((l) => ({ ...l, patch: leverToPeople(l.patch, popScale, mode), current: leverToPeople(l.current, popScale, mode) })) }));
   // round-1 spec 5: the replicate bands are stored with the series the chart reads
   const series = mergeBands(result.series, result.replicates?.bands);
-  return { ...result, series, effective_params: effective, ...(diagnostics ? { diagnostics } : {}) };
+  // final review 1: a peak-size fit reports the people asked for and the people reached, not agents
+  const fit = result.stats.fit;
+  const stats = fit && fit.target === "peak_infections"
+    ? { ...result.stats, fit: { ...fit, wanted: configured.run.fit?.value ?? Math.round(fit.wanted * popScale), achieved: Math.round(fit.achieved * popScale) } }
+    : result.stats;
+  return { ...result, stats, series, effective_params: effective, ...(diagnostics ? { diagnostics } : {}) };
 }
 
 /** What a count in people became at this run's scale, when that is not what was asked (round-1 spec 3). */
@@ -66,7 +71,7 @@ export function countNotes(params: SimParams, popScale: number): string[] {
     const agents = capacityAgents(i.capacity, popScale);
     const people = commaInt(Math.round(agents * popScale));
     if (i.capacity < popScale) notes.push(`Treatment capacity ${commaInt(i.capacity)} people a day is below one agent a day at this run size; it runs as 1 agent a day, about ${people} people a day.`);
-    else if (Math.round(agents * popScale) !== i.capacity) notes.push(`Treatment capacity ${commaInt(i.capacity)} people a day runs as ${commaInt(agents)} agents a day, about ${people} people a day.`);
+    else if (Math.round(agents * popScale) !== i.capacity) notes.push(`Treatment capacity ${commaInt(i.capacity)} people a day runs as ${commaInt(agents)} ${agents === 1 ? "agent" : "agents"} a day, about ${people} people a day.`);
   }
   return notes;
 }
@@ -84,7 +89,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   const disease = (scenario.disease ?? detectDisease(deps.contextText || ""))?.slice(0, DISEASE_NAME_MAX) ?? null;
   // Read before this run is inserted, so it is never its own previous run; the first run has none to read.
   const previous = scenario.hasRun ? await deps.previousRun() : null;
-  const result = inPeople(await deps.sim.simulate(toAgentUnits(params, popScale), popScale, deps.contextText, disease), popScale);
+  const result = inPeople(await deps.sim.simulate(toAgentUnits(params, popScale), popScale, deps.contextText, disease), popScale, params);
   const warnings = [...paramWarnings(scenario, params, deps.contextText), ...runNotes(params)];
   const dataSources = [...scenario.dataSources];
   const runId = await deps.onRun({ params, popScale, result, warnings, dataSources });

@@ -267,14 +267,14 @@ describe("run_simulation: counts in people (round-1 spec 3)", () => {
     const out = await runSimulation({}, deps);
     expect((deps.sent[0] as { disease: { seed: { value: number } } }).disease.seed.value).toBe(1);
     expect(JSON.parse(out.content).count_notes).toContain("20 initial cases is less than one agent at this run size; the run seeds 1 agent, about 5,000 people. More agents give a smaller seed.");
-    expect((out.payload as { effective_params: { disease: { seed: { value: number } } } }).effective_params.disease.seed.value).toBe(5000);
+    expect((out.payload as { effective_params: { disease: { seed: { value: number } } } }).effective_params.disease.seed.value).toBe(20);   // the configured count is kept (final review 3)
   });
 
   it("capacity is people a day", async () => {
     const deps = await setUp(2_000_000, { treatment_capacity: 300 });
     const out = await runSimulation({}, deps);
-    expect((deps.sent[0] as { interventions: { type: string; capacity: number }[] }).interventions.find((i) => i.type === "treatment")!.capacity).toBe(2);
-    expect(JSON.parse(out.content).count_notes).toContain("Treatment capacity 300 people a day runs as 2 agents a day, about 400 people a day.");
+    expect((deps.sent[0] as { interventions: { type: string; capacity: number }[] }).interventions.find((i) => i.type === "treatment")!.capacity).toBe(1);
+    expect(JSON.parse(out.content).count_notes).toContain("Treatment capacity 300 people a day runs as 1 agent a day, about 200 people a day.");
   });
 
   it("capacity below one agent", async () => {
@@ -288,6 +288,13 @@ describe("run_simulation: counts in people (round-1 spec 3)", () => {
     expect(deps.scenario.params!.run.fit?.value).toBe(20000);
     await runSimulation({}, deps);
     expect((deps.sent[0] as { run: { fit: { value: number } } }).run.fit.value).toBe(100);
+  });
+
+  it("a peak fit's wanted and achieved come back in people (final review 1)", async () => {
+    const fit = { target: "peak_infections", wanted: 4, achieved: 5, lever: "disease.beta", value: 9.5, runs: 4 };
+    const deps = await setUp(55_000_000, { fit: { target: "peak_infections", value: 20000 } }, { stats: { ...STATS, fit }, stats_agents: { ...STATS, n_agents: 10000, fit } });
+    const body = JSON.parse((await runSimulation({}, deps)).content);
+    expect(body.stats.fit).toMatchObject({ wanted: 20000, achieved: 27500 });
   });
 
   it("run_size", async () => {
