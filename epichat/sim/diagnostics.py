@@ -462,7 +462,7 @@ def _what_if(run: _Run, faded: bool) -> Diagnostic | None:
         w = window(CAMPAIGN_DAYS)
         offer({"type": "vaccine", "kind": "campaign", "coverage": CAMPAIGN_COVERAGE, "efficacy": efficacy, **w},
               f"Vaccinate {CAMPAIGN_COVERAGE:.0%} in a campaign from day {w['start_day']} to day {w['end_day']} and rerun",
-              f"A campaign reaching {CAMPAIGN_COVERAGE:.0%} of the susceptible from the day 1% had been infected; "
+              f"A campaign reaching {CAMPAIGN_COVERAGE:.0%} of everyone eligible, vaccinated or not, from the day 1% had been infected; "
               + ("the efficacy is the database's, the coverage is illustrative." if basis == "disease_db"
                  else f"the coverage and the efficacy ({efficacy:g}) are illustrative."), basis)
     if hybrid and age_shares(p)[0] > 0 and ("contact_reduction", "school") not in has:

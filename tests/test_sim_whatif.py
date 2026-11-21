@@ -130,3 +130,9 @@ def test_every_entry_is_one_the_schema_accepts(network, disease):
         body = p.model_dump()
         body["interventions"] = lever.interventions
         SimParamsV2.model_validate(body)                                                    # the validator the tool applies
+
+
+def test_campaign_lever_says_everyone_eligible():
+    """Round-1 spec 4: a campaign reaches everyone in the eligible ages, vaccinated or not."""
+    d, _ = what_if(params(**{"network.network_type": "hybrid"}), disease="measles")
+    assert "of everyone eligible, vaccinated or not" in d.levers[0].rationale and "of the susceptible" not in d.levers[0].rationale

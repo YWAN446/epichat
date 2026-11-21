@@ -48,6 +48,8 @@ def scale_stats(stats: dict, pop_scale: float) -> dict:
     for key in COUNT_STATS:
         if key in stats:
             scaled[key] = int(round(stats[key] * pop_scale))
+    if "delivered" in stats:                                   # doses and treatments given, by intervention (round-1 spec 4)
+        scaled["delivered"] = {name: int(round(n * pop_scale)) for name, n in stats["delivered"].items()}
     return scaled
 
 

@@ -1702,7 +1702,7 @@
    "path": "interventions[].coverage",
    "module": "interventions",
    "label": "Coverage",
-   "description": "Vaccine: yearly probability each susceptible person is vaccinated; treatment: share of infectious people treated each day.",
+   "description": "Vaccine, routine: the share of everyone in the eligible ages vaccinated each year; vaccine, campaign: the share of everyone in the eligible ages reached over the campaign, including people already immune. Treatment: share of infectious people treated each day.",
    "kind": "number",
    "unit": "fraction",
    "default": null,

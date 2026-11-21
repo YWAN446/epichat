@@ -100,6 +100,14 @@ def extract(sim: ss.Sim, params) -> dict:
         "solver": sim.solver.name,
         "r0_model": model_r0(params),
     }
+    # round-1 spec 4: doses and treatments given, from each delivery's own result (named as builder.py names them)
+    delivered = {}
+    for k, i in enumerate(params.interventions):
+        name = f"{i.type}_{k}"
+        if i.type in ("vaccine", "treatment") and name in sim.results and "delivered" in sim.results[name]:
+            delivered[name] = int(round(float(_values(sim.results[name].delivered).sum())))
+    if delivered:
+        stats["delivered"] = delivered
     response = next((i for i in params.interventions if i.type == "behavior_response"), None)
     if response is not None:
         factors = behavior_factors(infectious, _values(sim.results.alive), response)

@@ -94,13 +94,21 @@ const attackRate = (run: ReportRun): string => `${pyRound((run.statsAgents.total
 const curve = (run: ReportRun): number[] | undefined => run.series?.n_infectious ?? run.series?.n_infected;
 const hasCurve = (run: ReportRun): boolean => Array.isArray(run.series?.day) && Array.isArray(curve(run));
 
+/** Round-1 spec 4: a run's doses (or treatments) given, summed over its vaccine (or treatment) interventions; null when it has none. */
+function delivered(run: ReportRun, type: "vaccine" | "treatment"): number | null {
+  const entries = Object.entries(run.stats.delivered ?? {}).filter(([name]) => name.startsWith(`${type}_`));
+  return entries.length > 0 ? entries.reduce((sum, [, n]) => sum + n, 0) : null;
+}
+
 function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
+  const extra = ([["vaccine", "Doses"], ["treatment", "Treatments given"]] as const).filter(([type]) => runs.some((run) => delivered(run, type) !== null));
   const blocks: ReportBlock[] = [
     {
       kind: "table",
       caption: "Results by run",
-      columns: ["Run", "Peak day", "Peak infections", "Attack rate", "Disease deaths"],
-      rows: runs.map((run, i) => [labels[i], `Day ${run.stats.peak_day}`, commaInt(run.stats.peak_infections), attackRate(run), commaInt(run.stats.total_deaths ?? 0)]),
+      columns: ["Run", "Peak day", "Peak infections", "Attack rate", "Disease deaths", ...extra.map(([, column]) => column)],
+      rows: runs.map((run, i) => [labels[i], `Day ${run.stats.peak_day}`, commaInt(run.stats.peak_infections), attackRate(run), commaInt(run.stats.total_deaths ?? 0),
+        ...extra.map(([type]) => { const n = delivered(run, type); return n === null ? "—" : commaInt(n); })]),
     },
   ];
   const lines = runs.flatMap((run, i) => (hasCurve(run) ? [figureLine(labels[i], run.series!.day, curve(run)!)] : []));

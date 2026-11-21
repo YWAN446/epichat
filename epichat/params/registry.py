@@ -235,8 +235,9 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "rises and recovers as it falls: people being careful, not a measure).", "enum", None, None, None,
               ("vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"), (), "core", None,
               "ss.vaccinate, ss.treat, ss.Delivery and ss.modify", ("peak", "final_size", "timing")),
-    ParamSpec("interventions[].coverage", "interventions", "Coverage", "Vaccine: yearly probability each susceptible person is vaccinated; "
-              "treatment: share of infectious people treated each day.", "number", "fraction", None, (0.0, 1.0), None, (), "core", None,
+    ParamSpec("interventions[].coverage", "interventions", "Coverage", "Vaccine, routine: the share of everyone in the eligible ages "
+              "vaccinated each year; vaccine, campaign: the share of everyone in the eligible ages reached over the campaign, including "
+              "people already immune. Treatment: share of infectious people treated each day.", "number", "fraction", None, (0.0, 1.0), None, (), "core", None,
               "ss.vaccinate(coverage=...) or ss.treat(coverage=...)", ("peak", "final_size")),
     ParamSpec("interventions[].start_day", "interventions", "Start day", "Day the intervention begins. A vaccine starting on day 0 is "
               "stored as disease.initial_immune_frac instead.", "integer", "days", 0, (0, 7300), None, (), "core", None,

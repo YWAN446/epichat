@@ -100,6 +100,20 @@ describe("composeReport", () => {
     expect(national.some((b) => b.kind === "paragraph" && b.text.includes("national figures"))).toBe(false);
   });
 
+  it("report shows doses and treatments given (round-1 spec 4)", () => {
+    const base = FIXTURE.runs[0];
+    const dosed = { ...base, stats: { ...base.stats, delivered: { vaccine_0: 2_500_000, treatment_1: 1_200 } } };
+    const doc = composeReport({ ...FIXTURE, runs: [base, dosed] }, NOW);
+    const table = doc.sections.find((s) => s.id === "results")!.blocks[0];
+    if (table.kind !== "table") throw new Error("table");
+    expect(table.columns).toEqual(["Run", "Peak day", "Peak infections", "Attack rate", "Disease deaths", "Doses", "Treatments given"]);
+    expect(table.rows[1].slice(-2)).toEqual(["2,500,000", "1,200"]);
+    expect(table.rows[0].slice(-2)).toEqual(["—", "—"]);
+    const plain = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "results")!.blocks[0];
+    if (plain.kind !== "table") throw new Error("table");
+    expect(plain.columns).not.toContain("Doses");
+  });
+
   it("report label says people a day (round-1 spec 3)", () => {
     const base = FIXTURE.runs[0];
     const treated = { ...base, effectiveParams: { ...base.effectiveParams, interventions: [...base.effectiveParams.interventions, { type: "treatment", capacity: 300 } as never] } };
