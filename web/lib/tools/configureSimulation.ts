@@ -343,6 +343,19 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
     params = lowered.params;
     applied.n_agents_lowered_to_population = population;
   }
+  // Final review 4: a capacity the health-system data gave (per 1,000 people) follows a change of area; one the user typed stays
+  const rate = scenario.dataSources.find((f) => f.field === "treatment_capacity");
+  if (areaChanged && rate && Number.isFinite(Number(rate.value))) {
+    const fromData = (pop: number) => Math.max(1, pyRound((Number(rate.value) * pop) / 1000, 0));
+    const was = fromData(scalingPopulation(scenario) ?? params.run.n_agents);
+    const now = fromData(population ?? params.run.n_agents);
+    if (params.interventions.some((i) => i.type === "treatment" && i.capacity === was) && now !== was) {
+      const rescaled = validateParams({ ...params, interventions: params.interventions.map((i) => (i.type === "treatment" && i.capacity === was ? { ...i, capacity: now } : i)) });
+      if (!rescaled.ok) return errorOutcome(`CONFIG ERROR: ${rescaled.error}`);
+      params = rescaled.params;
+      applied.treatment_capacity_rescaled_to_area = now;
+    }
+  }
   // Round-1 spec 3: initial cases are people, so they are checked against the population (the agents, without one)
   if (params.disease.seed.mode === "count") {
     const limit = population ?? params.run.n_agents;

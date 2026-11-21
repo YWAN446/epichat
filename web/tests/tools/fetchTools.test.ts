@@ -109,6 +109,21 @@ describe("fetch_demographics", () => {
   });
 });
 
+describe("an area and the health-system data (final review 4)", () => {
+  it("an area change rescales a capacity from the health-system data, not one the user typed", async () => {
+    const deps = await configured(makeDeps({ wbData360: [rf("treatment_capacity", 2.0, "WB WDI, KEN, 2021")] }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, treatment_capacity: 10 });
+    deps.scenario.totalPopulation = 55_000_000;
+    await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(110_000);
+    const out = JSON.parse((await configureSimulation({ area: { name: "Example County", population: 2_000_000 } } as never, deps)).content);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(4_000);
+    expect(out.applied.treatment_capacity_rescaled_to_area).toBe(4_000);
+    await configureSimulation({ treatment_capacity: 300 } as never, deps);
+    await configureSimulation({ area: { name: "Other County", population: 1_000_000 } } as never, deps);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(300);
+  });
+});
+
 describe("fetch_health_system", () => {
   const fields = [
     { ...rf("treatment_capacity", 2.52, "WB WDI, KEN, 2021"), description: "hospital beds/1,000", alternatives: [{ ...rf("treatment_capacity", 0.2, "WB WDI, KEN, 2021"), description: "physicians/1,000" }] },
