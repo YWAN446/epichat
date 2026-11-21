@@ -3,6 +3,7 @@ needs. Starsim runs in the child; the Anthropic SDK is used only when a run
 fails. Both cost over a second each on a cold start, and the daily health
 check runs against a cold instance."""
 import subprocess
+from importlib.metadata import version
 import sys
 from pathlib import Path
 
@@ -15,4 +16,4 @@ def test_importing_the_app_loads_neither_starsim_nor_anthropic():
         "print('starsim' in sys.modules, 'anthropic' in sys.modules, main.STARSIM_VERSION)" % SIM
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True, cwd=SIM)
-    assert out.stdout.strip() == "False False 3.7.2"
+    assert out.stdout.strip() == f"False False {version('starsim')}"

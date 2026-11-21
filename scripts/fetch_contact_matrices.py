@@ -5,8 +5,8 @@
 
 Downloads contact_all.rdata (all locations combined; 177 countries, sixteen five-year bands) from the authors' repository, aggregates each
 country's matrix with epichat.params.tables.aggregate_contacts and the country's 2024 pyramid (so run scripts/fetch_un_wpp_tables.py
-first), and writes epichat/data/contact_matrices.csv - iso3, source, target, contacts (rows source, columns target, as ss.MixingPools
-reads them). --sample writes the named countries' raw 16x16 matrices to tests/fixtures/prem_2021_sample.csv for the aggregation test.
+first), and writes epichat/data/contact_matrices.csv - iso3, source, target, contacts (rows source, columns target; ss.contacts(matrix=...) takes the
+transpose). --sample writes the named countries' raw 16x16 matrices to tests/fixtures/prem_2021_sample.csv for the aggregation test.
 Countries without a bundled pyramid are skipped and listed."""
 from __future__ import annotations
 

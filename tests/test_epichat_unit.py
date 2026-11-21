@@ -191,3 +191,51 @@ def test_format_cli_no_description_no_parentheses():
     result = _base_result(data_sources=[primary])
     cli = result.format_cli()
     assert "()" not in cli
+
+
+# ── simulation through epichat.sim ────────────────────────────────────────────
+
+def _chat(tmp_path):
+    from epichat.epichat import EpiChat
+    with patch("epichat.adapters.un_wpp._fetch_text", return_value="sep =|\nid|name|iso3|iso2|longitude|latitude\n"):
+        return EpiChat(output_dir=tmp_path)
+
+
+def test_simulate_runs_epichat_sim_in_a_child_and_plots_the_series(tmp_path):
+    params = SimParams(disease_type="seir", beta=22.8125, dur_exp=4.0, n_agents=2000, sim_dur_years=0.25, rand_seed=1)
+    plot_path = tmp_path / "plot.png"
+    result = _chat(tmp_path).simulate(params, str(plot_path))
+    assert result["error"] is None
+    stats, series = result["stats"], result["series"]
+    for key in ("peak_infections", "peak_day", "total_infected", "total_deaths", "n_agents", "sim_days"):
+        assert key in stats
+    assert stats["n_agents"] == 2000 and stats["total_infected"] > 0
+    assert "n_exposed" in series and len(series["day"]) == stats["sim_days"]
+    assert result["plot_path"] == str(plot_path) and plot_path.read_bytes()[:4] == b"\x89PNG"
+
+
+def test_simulate_reports_the_child_error(tmp_path):
+    from sim.runner import RunResult
+    with patch("sim.runner.run_params", return_value=RunResult(False, {}, {}, "Traceback: boom", False, 1)):
+        result = _chat(tmp_path).simulate(SimParams(beta=22.8125), str(tmp_path / "p.png"))
+    assert result == {"stats": {}, "series": {}, "plot_path": None, "error": "Traceback: boom"}
+    assert not (tmp_path / "p.png").exists()
+
+
+def test_execute_with_retry_asks_for_fixed_params_after_a_failure(tmp_path):
+    chat = _chat(tmp_path)
+    fixed = SimParams(beta=10.0)
+    ok = {"stats": {"n_agents": 1}, "series": {}, "plot_path": "p.png", "error": None}
+    with patch.object(chat, "simulate", side_effect=[{"stats": {}, "series": {}, "plot_path": None, "error": "bad"}, ok]) as simulate, \
+         patch("epichat.epichat.fix_params", return_value=fixed) as fix:
+        result = chat._execute_with_retry("q", SimParams(beta=22.8125), "p.png", pop_scale=3.0)
+    assert result is ok
+    assert fix.call_args.args[2] == "bad" and simulate.call_args.args[0] is fixed
+
+
+def test_plot_series_draws_every_compartment_present(tmp_path):
+    from epichat.epichat import plot_series
+    series = {"day": [0, 1, 2], "n_susceptible": [9, 8, 7], "n_infectious": [1, 2, 2],
+              "n_recovered": [0, 0, 1], "new_infections": [0, 1, 1]}
+    out = plot_series(series, tmp_path / "sub" / "c.png", "SIR simulation")
+    assert (tmp_path / "sub" / "c.png").stat().st_size > 0 and out.endswith("c.png")

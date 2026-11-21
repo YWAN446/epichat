@@ -61,10 +61,11 @@ def test_export_parity_fixtures_is_deterministic_and_fresh(tmp_path):
     parity = json.loads((fixtures / "parity.json").read_text(encoding="utf-8"))
     assert len(parity["params"]) >= 200
     assert len(parity["warnings"]) >= 300
-    assert all(len(case["calibrate"]) == 3 for case in parity["params"])
+    assert all(len(case["calibrate"]) == 4 for case in parity["params"])
     assert any(case["warnings"] for case in parity["warnings"])
     assert parity["adapters"]["un_wpp"] and parity["adapters"]["who_gho"] and parity["adapters"]["wb_data360"]
-    assert parity["version"] == 6
+    assert parity["version"] == 7
+    assert all("solver" in case for case in parity["params"]) and len(parity["solver"]) >= 10
     assert all("weighted_cfr" in case for case in parity["params"])
     assert all("schema_version" in case["input"] and "max_r0" in case for case in parity["params"])
     assert any(k["beta"] is None for case in parity["params"] for k in case["calibrate"])

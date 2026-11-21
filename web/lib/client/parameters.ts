@@ -10,13 +10,13 @@ import { AGE_GROUPS, approxR0, deathProbabilities, type SimParams } from "@/lib/
 import { flattenParams, getPath } from "@/lib/sim/paths";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
 import { appliesOn, appliesTo, specFor } from "@/lib/sim/registry";
-import { AGE_SOURCE_LABELS, LEVER_LABELS, ageStructure, contactsSourceLabel, countryName, durationText, fitText, formatQuantity, interventionLines, networkLabel, seedText } from "./format";
+import { AGE_SOURCE_LABELS, LEVER_LABELS, SOLVER_LABELS, ageStructure, contactsSourceLabel, countryName, durationText, fitText, formatQuantity, interventionLines, networkLabel, seedText } from "./format";
 
 /**
  * Where a value came from, in plain words (spec 8.4). "set in chat" is every value set in the conversation that is not
  * the database's, a fetch's, a default or an assumption: the user's own, the agent's choice, or what a tool computed to
  * hold an R0 or keep a fitted value; the page cannot tell these apart, so it does not say "you". "set by the run" is a
- * value the run itself changed (a calibrated beta, a fitted lever, demographics the service filled). reference arrives
+ * value the run itself changed (a fitted lever, demographics the service filled). reference arrives
  * with the chosen references of section 9.
  */
 export type SourceTag = "database" | "fetched" | "default" | "assumption" | "set in chat" | "set by the run" | "reference";
@@ -50,7 +50,7 @@ type RowSpec = {
   show?: (p: SimParams) => boolean;
   /** In the default view whatever its values: the row is the only description of something the scenario has. */
   always?: boolean;
-  /** Only in the section: the formula's R0 of a run's own, possibly calibrated, beta is not the R0 a list of that run should state. */
+  /** Only in the section: the formula's R0 of a run's own, possibly fitted, beta is not the R0 a list of that run should state. */
   sectionOnly?: boolean;
 };
 
@@ -143,9 +143,9 @@ const RUN: RowSpec[] = [
   { label: "Agents", paths: ["run.n_agents"], text: (p) => commaInt(p.run.n_agents) },
   { label: "Duration", paths: ["run.sim_dur_years"], text: (p) => formatQuantity(p.run.sim_dur_years, "years") },
   { label: "Replicates", paths: ["run.n_replicates"], text: (p) => fmtValue(p.run.n_replicates) },
+  { label: "Run as", paths: ["run.solver"], text: (p) => (p.run.solver === null ? "not chosen yet (agents)" : SOLVER_LABELS[p.run.solver]) },
   // the service runs an unset seed as seed 1 (and 1, 2, 3… for replicates), so an unchanged scenario reruns identically
   { label: "Random seed", paths: ["run.rand_seed"], text: (p) => (p.run.rand_seed === null ? "1 (not set)" : fmtValue(p.run.rand_seed)) },
-  { label: "Calibrate beta by measurement", paths: ["run.calibrate_r0"], text: (p) => yesNo(p.run.calibrate_r0) },
   {
     label: "Fitted to", paths: ["run.fit.target", "run.fit.value", "run.fit.lever"],
     text: (p) => (p.run.fit ? `${fitText(p.run.fit.target, p.run.fit.value)} by moving ${LEVER_LABELS[p.run.fit.lever] ?? p.run.fit.lever}` : "not fitted"),

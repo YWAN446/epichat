@@ -1,19 +1,13 @@
-"""R0 and beta on schema v2 (spec 7.4, revised by section 18).
+"""R0 and beta on schema v2.
 
-Starsim transmits per contact per day with probability
-p = network_beta × (1 − exp(−beta / 365)); an agent transmits on D_eff days
-(7.4), with D_eff the infectious days scaled by the asymptomatic factor plus the
-exposed days at rel_trans_exposed (Part 2, 4.4). On the random network
-R0 = n_contacts × p × D_eff; on the age-structured MixingPools network the
-next-generation matrix is similar to the contact matrix, so R0 = rho(C) × p × D_eff
-whatever the age shares (section 18). On the hybrid network no closed form holds
-(Part 2, 5.5): the formula sums the layers' agent-weighted contacts weighted by
-their transmissibility, is flagged approximate, and the measured R0 (5.6) is the
-one to quote; the same flag applies to a random network with lasting contacts. The v1 functions in epichat/schema.py and parser.py
-keep the linear approximation for the frozen Python agent."""
+beta is a rate per contact per year, scaled by network_beta, so each contact transmits at
+network_beta × beta / 365 per day. An infection transmits for D_eff days: the mean infectious period scaled
+by the asymptomatic factor, plus the mean latent period at rel_trans_exposed. With well-mixed contacts
+R0 = n_contacts × rate × D_eff; with the age-structured contact matrix R0 = rho(C · diag(rel_sus)) × rate × D_eff.
+Both are exact for the compartmental run Starsim chooses for these networks (its own R0() agrees). On the
+hybrid network, or with lasting contacts, the run is agents on a network and the formula is an approximation."""
 from __future__ import annotations
 
-import math
 
 import numpy as np
 
@@ -26,7 +20,7 @@ RANDOM_LEVERS = ("network.n_contacts", "disease.dur_inf.mean_days")
 AGE_LEVERS = ("network.network_beta", "disease.dur_inf.mean_days")
 HYBRID_LEVERS = ("network.household_size", "network.community_contacts", "disease.dur_inf.mean_days")
 AGE_BANDS = ((0.0, 18.0), (18.0, 65.0), (65.0, 95.0))    # the shares path draws ages uniformly within these bands (builder)
-DEFAULT_AGE_SHARES = (0.3, 0.7, 0.0)      # Starsim's default ages are uniform on 0 to 60: no elderly
+DEFAULT_AGE_SHARES = (0.29, 0.61, 0.10)   # Starsim's default ages: the world's population
 
 
 def age_shares(p: SimParamsV2) -> tuple[float, float, float]:
@@ -38,12 +32,10 @@ def age_shares(p: SimParamsV2) -> tuple[float, float, float]:
 
 
 def exposed_days(d: DiseaseParams) -> float:
-    """Days an exposed agent can transmit on a daily step, by the same offsets as the infectious period (0 outside the latent models)."""
+    """The mean latent period (0 outside the latent models)."""
     if d.model not in LATENT_MODELS or d.dur_exp is None:
         return 0.0
-    exp = d.dur_exp
-    days = math.ceil(exp.mean_days) - 1 if exp.dist == "constant" else exp.mean_days - 0.5
-    return max(0.0, float(days))
+    return float(d.dur_exp.mean_days)
 
 
 class R0Unreachable(ValueError):
@@ -53,8 +45,9 @@ class R0Unreachable(ValueError):
                          f"{maximum:.2f}; raise {' or '.join(levers)}")
 
 
-def per_contact_prob(beta: float) -> float:
-    return 1.0 - math.exp(-beta / 365.0)
+def per_contact_rate(beta: float) -> float:
+    """Transmissions per contact per day at network_beta 1."""
+    return beta / 365.0
 
 
 def asymp_factor(d: DiseaseParams) -> float:
@@ -62,21 +55,8 @@ def asymp_factor(d: DiseaseParams) -> float:
 
 
 def infectious_days(d: DiseaseParams) -> float:
-    """Days an infectious agent transmits on a daily step (Part 1, 7.4)."""
-    inf = d.dur_inf
-    if d.model in LATENT_MODELS:
-        exp = d.dur_exp
-        if exp.dist == "constant" and inf.dist == "constant":
-            days = math.ceil(exp.mean_days + inf.mean_days) - math.ceil(exp.mean_days)
-        elif exp.dist == "constant":
-            days = inf.mean_days + 0.5
-        else:
-            days = inf.mean_days
-    elif inf.dist == "constant":
-        days = math.ceil(inf.mean_days) - 1
-    else:
-        days = inf.mean_days - 0.5
-    return max(0.0, float(days))
+    """The mean infectious period."""
+    return float(d.dur_inf.mean_days)
 
 
 def effective_days(d: DiseaseParams) -> float:
@@ -110,7 +90,7 @@ def hybrid_contacts(p: SimParamsV2) -> float:
 
 
 def r0_is_approximate(p: SimParamsV2) -> bool:
-    """Part 2, 5.2 and 5.5: no closed form holds with lasting contacts or on the hybrid network; the measured R0 is the one to quote."""
+    """No closed form holds with lasting contacts or on the hybrid network: those run as agents on a network."""
     return p.network.network_type == "hybrid" or p.network.contact_duration_days > 0
 
 
@@ -134,24 +114,27 @@ def weighted_cfr(p: SimParamsV2) -> float:
     return float(sum(s * q for s, q in zip(age_shares(p), p.disease.death_probabilities())))
 
 
+BETA_MAX = 1000.0      # the registry's upper bound on disease.beta
+
+
 def approx_r0(p: SimParamsV2) -> float:
-    return contact_scale(p) * per_contact_prob(p.disease.beta)
+    return contact_scale(p) * per_contact_rate(p.disease.beta)
 
 
 def max_r0(p: SimParamsV2) -> float:
-    return contact_scale(p)
+    return contact_scale(p) * per_contact_rate(BETA_MAX)
 
 
 def calibrate_beta(p: SimParamsV2, target_r0: float) -> float:
     scale = contact_scale(p)
-    if scale <= 0 or target_r0 >= scale:
+    if scale <= 0 or target_r0 > max_r0(p):
         levers = {"hybrid": HYBRID_LEVERS, "age_structured": AGE_LEVERS}.get(p.network.network_type, RANDOM_LEVERS)
-        raise R0Unreachable(target_r0, scale, levers)
-    return -365.0 * math.log(1.0 - target_r0 / scale)
+        raise R0Unreachable(target_r0, max_r0(p), levers)
+    return 365.0 * target_r0 / scale
 
 
 def clamp_beta(beta: float) -> float:
-    return round(min(1000.0, max(0.001, beta)), 6)
+    return round(min(BETA_MAX, max(0.001, beta)), 6)
 
 
 def with_r0(p: SimParamsV2, target_r0: float) -> SimParamsV2:

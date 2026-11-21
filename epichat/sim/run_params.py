@@ -2,7 +2,8 @@
 
     python -m epichat.sim.run_params <params.json> <out.json>
 
-The parent writes the parameters (v1 or v2) as JSON; this process imports
+The service forks child() from a server that has already imported Starsim, where it can (sim/runner.py), and runs this
+command only where it cannot. The parent writes the parameters (v1 or v2) as JSON; this process imports
 Starsim (the expensive part), validates and migrates them, runs every
 replicate, and writes {"stats", "series"[, "replicates"]} to the output
 path. Any failure is a traceback on stderr and a non-zero exit; the parent
@@ -11,6 +12,7 @@ from __future__ import annotations
 
 import json
 import sys
+import traceback
 
 from epichat.params.migrate import coerce_params
 
@@ -19,6 +21,20 @@ from .replicates import run_replicates
 
 def run(params) -> dict:
     return run_replicates(coerce_params(params))
+
+
+def child(params: dict, output_path: str, conn) -> None:
+    """The forked child (sim/runner.py): run, write the result file, and send None, or the traceback on a failure."""
+    try:
+        payload = run(params)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+        conn.send(None)
+    except BaseException:
+        conn.send(traceback.format_exc()[-4000:])      # well under a pipe buffer, so the send never blocks the exit
+        raise SystemExit(1)
+    finally:
+        conn.close()
 
 
 def main(argv: list[str] | None = None) -> int:

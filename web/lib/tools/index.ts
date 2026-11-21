@@ -75,6 +75,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
           additionalProperties: true,
         },
         start_new_scenario: { type: ["boolean", "null"], description: "True to begin a new scenario from scratch (a different disease or country) instead of editing the current one. Earlier scenarios are kept for comparison." },
+        solver: { type: ["string", "null"], enum: ["abm", "ode", null], description: "How the scenario runs: abm (agents, simulated individual people) or ode (a compartmental model). Set it when the user picks a mode; a scenario that needs agents runs as agents whatever is set. The result's solver block says what is recommended and why." },
       },
       required: [],
       additionalProperties: false,

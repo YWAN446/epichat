@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { checkParams } from "@/lib/disease/checkParams";
 import { approxR0, calibrateBeta, clampBeta, maxR0, r0IsApproximate, R0UnreachableError, recalibrateBeta, validateParams, weightedCfr } from "@/lib/sim/params";
+import { recommendSolver } from "@/lib/sim/solver";
 import parity from "../fixtures/parity.json";
 
 function must(input: unknown) {
@@ -21,7 +22,7 @@ function calibrateOrNull(p: ReturnType<typeof must>, target: number): number | n
 
 describe("parity with the Python package", () => {
   it("has enough cases", () => {
-    expect(parity.version).toBe(6);
+    expect(parity.version).toBe(7);
     expect(parity.params.length).toBeGreaterThanOrEqual(200);
     expect(parity.migration.length).toBeGreaterThanOrEqual(12);
     expect(parity.warnings.length).toBeGreaterThanOrEqual(300);
@@ -42,6 +43,18 @@ describe("parity with the Python package", () => {
       }
       for (const r of c.recalibrate) expect(recalibrateBeta(must(r.after_input), r.r0_before, must(r.before)).disease.beta).toBeCloseTo(r.beta, 6);
     }
+  });
+
+  it("recommend_solver agrees, codes and texts", () => {
+    for (const c of parity.params) expect(recommendSolver(must(c.input)), JSON.stringify(c.input)).toEqual((c as { solver: unknown }).solver);
+    for (const c of parity.solver) expect(recommendSolver(must(c.input)), JSON.stringify(c.input)).toEqual(c.advice);
+    expect(new Set(parity.solver.flatMap((c) => c.advice.reasons.map((r) => r.code))).size).toBe(10);
+  });
+
+  it("reads a saved scenario without run.solver as not chosen", () => {
+    const saved = structuredClone(parity.solver[0].input) as { run: Record<string, unknown> };
+    delete saved.run.solver;
+    expect(must(saved).run.solver).toBeNull();
   });
 
   it("migrates every v1 fixture to the same v2 document", () => {

@@ -16,6 +16,23 @@ function success(over: Partial<SimSuccess> = {}): SimSuccess {
 }
 
 describe("run_simulation", () => {
+  it("records the mode of the first run when none was chosen", async () => {
+    const deps = makeDeps({ simulate: success() });
+    await configureSimulation({ n_agents: 50000 } as never, deps);
+    expect(deps.scenario.params?.run.solver).toBeNull();
+    await runSimulation({}, deps);
+    expect(deps.sent[0].run.solver).toBe("abm");
+    expect(deps.scenario.params?.run.solver).toBe("abm");
+  });
+
+  it("keeps a mode the user chose", async () => {
+    const deps = makeDeps({ simulate: success() });
+    await configureSimulation({ n_agents: 50000, solver: "ode" } as never, deps);
+    await runSimulation({}, deps);
+    expect(deps.sent[0].run.solver).toBe("ode");
+    expect(deps.scenario.params?.run.solver).toBe("ode");
+  });
+
   it("runs with the population scale, records the run, and returns stats without the series", async () => {
     const deps = makeDeps({ simulate: success(), runId: "run-9" });
     await configureSimulation({ disease: "dengue", n_agents: 50000 } as never, deps);
@@ -151,20 +168,20 @@ describe("run_simulation: diagnostics and the comparison", () => {
   });
 });
 
-describe("run_simulation and the measured-R0 calibration (Part 2, 5.7)", () => {
-  it("notes the beta the service calibrated to the measured R0", async () => {
+describe("run_simulation and an ODE run", () => {
+  it("passes the solver and Starsim's R0 through, and has no replicates or notes for a run that ran once", async () => {
     const result = success();
-    result.stats = { ...result.stats, r0_measured: 2.4, r0_calibration: { target: 2.5, measured: 2.4, corrections: 2 } };
-    result.effective_params = { ...result.effective_params, disease: { ...result.effective_params.disease, beta: 31.25 } };
+    result.stats = { ...result.stats, solver: "ode", r0_model: 2.5 };
+    expect(result).not.toHaveProperty("replicates");
     const deps = makeDeps({ simulate: result, runId: "run-1" });
     deps.scenario.params = params({ disease_type: "sir" });
     const out = await runSimulation({}, deps);
-    expect((out.payload as { applied?: Record<string, unknown> }).applied).toEqual({ beta_calibrated_by_measurement: 31.25 });
-    expect(JSON.parse(out.content).applied).toEqual({ beta_calibrated_by_measurement: 31.25 });
-    const other = makeDeps({ simulate: success(), runId: "run-2" });
-    other.scenario.params = params({ disease_type: "sir" });
-    const plain = await runSimulation({}, other);
-    expect((plain.payload as { applied?: unknown }).applied).toBeUndefined();
+    const body = JSON.parse(out.content);
+    expect(body.stats).toMatchObject({ solver: "ode", r0_model: 2.5 });
+    expect(body).not.toHaveProperty("replicates");
+    expect(body).not.toHaveProperty("applied");
+    expect(out.payload).toMatchObject({ kind: "run", stats: { solver: "ode" } });
+    expect(out.payload).not.toHaveProperty("replicates");
   });
 });
 

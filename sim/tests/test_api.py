@@ -1,4 +1,5 @@
 import importlib
+from importlib.metadata import version
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,7 +10,7 @@ from service import Outcome
 
 GOOD_SERIES = {"day": list(range(5)), "n_infectious": [1.0, 4.0, 3.0, 2.0, 1.0], "n_infected": [1.0, 4.0, 3.0, 2.0, 1.0],
                "cum_infections": [1.0, 5.0, 8.0, 10.0, 11.0], "cum_deaths": [0.0, 0.0, 0.0, 1.0, 1.0]}
-GOOD_STATS = {"peak_infections": 4, "peak_day": 1, "total_infected": 11, "total_deaths": 1, "n_agents": 1000, "sim_days": 5, "seeds_day0": 1}
+GOOD_STATS = {"peak_infections": 4, "peak_day": 1, "total_infected": 11, "total_deaths": 1, "n_agents": 1000, "sim_days": 5, "seeds_day0": 1, "seeds": 1}
 PARAMS = {"disease_type": "sir", "beta": 0.05, "n_agents": 1000, "sim_dur_years": 0.1, "rand_seed": 1}
 V2 = {"schema_version": 2, "disease": {"beta": 0.05}, "run": {"n_agents": 1000, "sim_dur_years": 0.1, "rand_seed": 1}}
 AUTH = {"Authorization": "Bearer test"}
@@ -47,7 +48,7 @@ def test_health_needs_no_bearer_and_reports_versions(client):
     r = client.get("/health")
     assert r.status_code == 200
     body = r.json()
-    assert body["ok"] is True and body["starsim_version"] == "3.7.2"
+    assert body["ok"] is True and body["starsim_version"] == version("starsim")
     assert body["python_version"].startswith("3.") and body["cold_start"] is True
 
 
@@ -106,7 +107,7 @@ def test_success_scales_thins_and_flips_cold_start(client, main, monkeypatch):
     assert body["stats"]["peak_day"] == 1 and body["stats"]["sim_days"] == 5
     assert body["series"]["day"] == [0, 2, 4] and body["series"]["cum_infections"] == [100, 800, 1100]
     assert body["effective_params"]["run"]["n_agents"] == 1000 and body["repairs"] == [] and body["replicates"] is None
-    assert body["starsim_version"] == "3.7.2" and body["duration_ms"] >= 0
+    assert body["starsim_version"] == version("starsim") and body["duration_ms"] >= 0
     assert fake.calls[0][1] == "hi"
     assert client.get("/health").json()["cold_start"] is False
     r2 = client.post("/simulate", json={"params": PARAMS}, headers=AUTH)

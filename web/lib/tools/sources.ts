@@ -13,7 +13,7 @@ import { REFERENCE_TARGETS } from "./chosenReference";
 import { illustrativeSd } from "./durations";
 import type { Scenario } from "./types";
 
-/** run: a value the run itself changed from what was configured (a calibrated beta, a fitted lever, demographics the service filled); only a run's payload carries it. */
+/** run: a value the run itself changed from what was configured (a fitted lever, demographics the service filled); only a run's payload carries it. */
 export type ParamSource = "user" | "database" | "fetch" | "default" | "illustrative" | "run" | "reference";
 export type DbRange = { min: number | null; max: number | null; typical: number | null; unit: string | null; source: string };
 

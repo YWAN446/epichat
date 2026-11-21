@@ -7,7 +7,7 @@ import pytest
 from epichat.params.r0 import approx_r0, calibrate_beta, clamp_beta
 from epichat.params.schema_v2 import SimParamsV2
 from epichat.sim import diagnostics as dx
-from epichat.sim.diagnostics import bounded, db_range, diagnose, final_size, illustrative_sd, realized_seeds
+from epichat.sim.diagnostics import bounded, db_range, diagnose, final_size, illustrative_sd
 
 N = 10000
 DAYS = 366
@@ -15,7 +15,7 @@ GAMMA_10 = {"mean_days": 10, "dist": "gamma", "sd_days": 3}
 
 
 def params(**over) -> SimParamsV2:
-    """Default sir on 10k agents for a year with a gamma 10-day infectious period (R0 about 2.3), plus dotted-path overrides."""
+    """Default sir on 10k agents for a year with a gamma 10-day infectious period (R0 2.5), plus dotted-path overrides."""
     body = {"disease": {"dur_inf": dict(GAMMA_10)}, "run": {"n_agents": N, "sim_dur_years": 1.0, "rand_seed": 1}}
     for path, value in over.items():
         node = body
@@ -44,7 +44,7 @@ def run(p: SimParamsV2, infectious: list[float], total: float, seeds: int, new: 
     series = {"day": list(range(len(infectious))), "n_infectious": infectious, "new_infections": new or [0.0] * len(infectious)}
     stats = {"total_infected": total, "n_agents": p.run.n_agents, "seeds": seeds, "seeds_day0": seeds if p.disease.seed.day == 0 else 0,
              **(stats_extra or {})}
-    return diagnose(p, series, stats, replicates, seeds, disease)
+    return diagnose(p, series, stats, replicates, disease)
 
 
 def ids(found):
@@ -56,7 +56,7 @@ def one(found, wanted):
 
 
 FADED = [10.0, 4.0, 1.0] + [0.0] * (DAYS - 3)
-NORMAL = curve(800, 60, 200)           # ends at 0; 8600 of 10000 infected matches the final size of R0 2.3
+NORMAL = curve(800, 60, 200)           # ends at 0; 8600 of 10000 infected is close to the final size of R0 2.5
 
 
 def test_early_fadeout_suggests_more_seeds_replicates_and_the_database_r0():
@@ -109,7 +109,7 @@ def test_early_fadeout_also_fires_when_a_few_seeds_die_out_before_one_percent_we
 
 
 def test_an_outbreak_held_down_from_day_zero_is_not_a_fade_out():
-    """Review of the seed default: R0 2.3 with a 70% contact cut from day 0 has R about 0.7; five seeds infect some twenty and the run
+    """Review of the seed default: R0 2.5 with a 70% contact cut from day 0 has R about 0.75; five seeds infect some twenty and the run
     ends, which the 1% rule alone would call a broken baseline. Only the old rule, twice the seeds, applies while something cuts what
     the seeds pass on from the start: a reduction, a treatment, a response, or a vaccine entry (a campaign is not initial immunity)."""
     gone = [5.0, 12.0, 20.0, 15.0, 6.0, 2.0] + [0.0] * (DAYS - 6)
@@ -267,15 +267,6 @@ def test_database_ranges_come_back_in_simulation_units():
     assert illustrative_sd("incubation_days", 1, "measles") == (1.0, "disease_db")      # (21 − 7) / 4 capped at the mean
 
 
-def test_realized_seeds_prefers_the_stat_and_falls_back_sensibly():
-    p = params()
-    assert realized_seeds({"seeds": 7, "seeds_day0": 3}, p) == 7
-    assert realized_seeds({"seeds_day0": 3}, p) == 3
-    assert realized_seeds({}, p) == 5                       # the default fraction 0.0005 of 10,000 agents
-    delayed = params(**{"disease.seed": {"mode": "count", "value": 30, "day": 4}})
-    assert realized_seeds({"seeds_day0": 0}, delayed) == 30
-
-
 def test_the_thresholds_are_named_constants():
     for name in ("FADEOUT_SEED_MULTIPLE", "INSTANT_PEAK_DAY", "INSTANT_PEAK_SEED_SHARE", "UNFINISHED_TAIL_SHARE", "UNFINISHED_WINDOW_SHARE",
                  "FINAL_SIZE_GAP", "SHARP_CURVE_WIDTH_MULTIPLE", "FATALITY_ASYMP_SHARE", "HIGH_VARIANCE_SPREAD", "R0_RECHECK_TOLERANCE"):
@@ -287,10 +278,10 @@ def test_a_normal_run_raises_well_mixed_and_the_interventions_to_try():
     seeded = {"mode": "count", "value": 20}            # the default 0.05% of 2,000 agents is one expected seed: a coin flip, not a normal run
     p = params(**{"run.n_agents": 2000, "disease.seed": seeded})
     out = run_replicates(p)
-    assert ids(diagnose(p, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["well_mixed", "what_if"]   # nearly everyone was infected, and interventions to try (follow-up spec 7.2)
+    assert ids(diagnose(p, out["series"], out["stats"], None)) == ["well_mixed", "what_if"]   # nearly everyone was infected, and interventions to try (follow-up spec 7.2)
     immune = params(**{"run.n_agents": 2000, "disease.seed": seeded, "disease.beta": clamp_beta(calibrate_beta(params(), 15)), "disease.initial_immune_frac": 0.8})
     out = run_replicates(immune)
-    assert ids(diagnose(immune, out["series"], out["stats"], None, out["stats"]["seeds"], None)) == ["what_if"]   # the fifth still susceptible had their epidemic
+    assert ids(diagnose(immune, out["series"], out["stats"], None)) == ["what_if"]   # the fifth still susceptible had their epidemic
 
 
 def test_cfr_out_of_range_reads_the_population_weighted_fatality():
@@ -301,13 +292,13 @@ def test_cfr_out_of_range_reads_the_population_weighted_fatality():
     scalar = params(**{"disease.p_death": 0.001})
     d = one(run(scalar, NORMAL, total=8600, seeds=100, disease="measles"), "cfr_out_of_range")
     assert d.evidence["p_death"] == pytest.approx(0.001)
-    no_elderly = params(**{"disease.p_death": 0.001, "disease.p_death_age": {"elderly": 0.5}})   # default ages: no elderly
-    assert one(run(no_elderly, NORMAL, total=8600, seeds=100, disease="measles"), "cfr_out_of_range").evidence["p_death"] == pytest.approx(0.001)
+    default_ages = params(**{"disease.p_death": 0.001, "disease.p_death_age": {"elderly": 0.5}})   # the world's ages: 10% elderly
+    assert "cfr_out_of_range" not in ids(run(default_ages, NORMAL, total=8600, seeds=100, disease="measles"))
 
 
 def test_well_mixed_fires_on_every_network_and_offers_the_two_limits_on_spread():
     # follow-up spec 7.6: every network infects nearly everyone at the same R0, so the diagnostic no longer blames the random one
-    d = one(run(params(), NORMAL, total=8600, seeds=100), "well_mixed")             # R0 2.3, attack rate 0.86
+    d = one(run(params(), NORMAL, total=8600, seeds=100), "well_mixed")             # R0 2.5, attack rate 0.86
     assert d.severity == "info" and d.evidence == {"attack_rate": 0.86, "r_eff": pytest.approx(dx.approx_r0(params()), abs=0.01)}
     assert d.title == "Nearly everyone was infected: only the depletion of susceptibles limits this epidemic"
     variation, response, hybrid = d.levers
@@ -315,7 +306,7 @@ def test_well_mixed_fires_on_every_network_and_offers_the_two_limits_on_spread()
     assert variation.label == "Add variation between people (CV 1) and rerun" and "illustrative" in variation.rationale and variation.interventions == []
     assert response.patch == {} and response.interventions == [{"type": "behavior_response", "scale": 0.5}]
     assert response.label == "Let people become careful as cases rise and rerun" and "illustrative" in response.rationale
-    assert hybrid.patch == {"network.network_type": "hybrid"} and hybrid.basis == "rule" and "same measured R0" in hybrid.rationale
+    assert hybrid.patch == {"network.network_type": "hybrid"} and hybrid.basis == "rule" and "same R0" in hybrid.rationale and "measured" not in hybrid.rationale
     assert hybrid.label == "Switch to the hybrid network and rerun" and "final size is lower" not in hybrid.rationale
     for lever in d.levers:
         assert len(lever.label) <= dx.LABEL_MAX
@@ -328,42 +319,9 @@ def test_well_mixed_fires_on_every_network_and_offers_the_two_limits_on_spread()
     assert "well_mixed" not in ids(run(params(interventions=[{"type": "behavior_response", "scale": 0.2}]), NORMAL, total=8600, seeds=100))
 
 
-def test_r0_gap_fires_on_a_mismatch_beyond_the_noise_and_stands_down_when_calibrated():
-    approx = dx.approx_r0(params())                                                                     # about 2.3
-    gap = one(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.2}, disease="measles"), "r0_gap")
-    assert gap.severity == "info" and gap.evidence["r0_measured"] == 1.2 and gap.evidence["approx_r0"] == pytest.approx(approx, abs=0.01)
-    assert gap.levers and gap.levers[0].patch.keys() == {"disease.beta"}                               # the Part 1 recheck on an exact network
-    assert "r0_gap" not in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.9}))
-    assert "r0_gap" not in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": None}))
-    assert dx.r0_gap_threshold(2.3, 500) == 0.25 and dx.r0_gap_threshold(2.3, 20) == pytest.approx(3 * (2.3 / 20) ** 0.5 / 2.3)
-    assert "r0_gap" not in ids(run(params(), NORMAL, total=8600, seeds=20, stats_extra={"r0_measured": 1.6}))       # 30% gap, 20 seeds: noise
-    assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.6}))
-    # with initial immunity the seeds meet fewer susceptibles: the measured value is compared with R_eff, not R0
-    assert "r0_gap" not in ids(run(params(**{"disease.initial_immune_frac": 0.5}), NORMAL, total=4300, seeds=500, stats_extra={"r0_measured": approx * 0.5}))
-    calibrated = run(params(**{"network.network_type": "hybrid"}), NORMAL, total=8600, seeds=500,
-                     stats_extra={"r0_measured": 1.2, "r0_calibration": {"target": approx, "measured": 1.2, "corrections": 3}})
-    assert one(calibrated, "r0_gap").levers == [] and one(calibrated, "r0_gap").evidence["calibrated"] is True
-    off = run(params(**{"network.network_type": "hybrid", "run.calibrate_r0": False}), NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.2})
-    assert one(off, "r0_gap").levers == []
-
-
-def test_r0_gap_accounts_for_the_day_zero_seasonal_factor_the_calibration_target_and_a_day_zero_treatment():
-    approx = dx.approx_r0(params())
-    seasonal = params(**{"interventions": [{"type": "seasonality", "scale": 0.3}]})               # day 0 sits at the peak: transmission × 1.3
-    assert "r0_gap" not in ids(run(seasonal, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 1.3}))
-    assert "r0_gap" in ids(run(seasonal, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.6}))
-    assert one(run(seasonal, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.6}), "r0_gap").evidence["reference"] == pytest.approx(approx * 1.3, abs=0.01)
-    hybrid = params(**{"network.network_type": "hybrid"})
-    calibrated = run(hybrid, NORMAL, total=8600, seeds=500,
-                     stats_extra={"r0_measured": 2.45, "r0_calibration": {"target": 2.5, "measured": 2.45, "corrections": 1}})
-    assert "r0_gap" not in ids(calibrated)                                                           # the reference is the target the user set, not the formula at the corrected beta
-    treated = params(**{"interventions": [{"type": "treatment", "coverage": 1.0, "start_day": 0}]})
-    assert "r0_gap" not in ids(run(treated, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": approx * 0.5}))   # treatment cuts the seeds' transmission
-
-
-def test_fitted_runs_stand_down_the_final_size_and_r0_gaps_and_a_contact_reduction_stands_down_well_mixed():
-    fitted = run(params(), NORMAL, total=3000, seeds=100, stats_extra={"fit": {"target": "attack_rate", "wanted": 0.3, "achieved": 0.3, "lever": "disease.beta", "value": 9.0, "runs": 4}, "r0_measured": 1.1})
-    assert "final_size_gap" not in ids(fitted) and "r0_gap" not in ids(fitted)
+def test_fitted_runs_stand_down_the_final_size_gap_and_a_contact_reduction_stands_down_well_mixed():
+    fitted = run(params(), NORMAL, total=3000, seeds=100, stats_extra={"fit": {"target": "attack_rate", "wanted": 0.3, "achieved": 0.3, "lever": "disease.beta", "value": 9.0, "runs": 4}})
+    assert "final_size_gap" not in ids(fitted)
     assert "final_size_gap" in ids(run(params(), NORMAL, total=3000, seeds=100))
     closed = run(params(interventions=[{"type": "contact_reduction", "layer": "all", "scale": 0.5, "start_day": 10, "end_day": 40}]), NORMAL, total=8600, seeds=100)
     assert "well_mixed" not in ids(closed)
@@ -381,53 +339,6 @@ def test_final_size_gap_expects_the_size_the_variation_gives():
     assert high.evidence["expected_attack_rate"] == pytest.approx(expected, abs=1e-3)
 
 
-def test_a_calibrated_runs_r0_is_its_target():
-    # its beta was corrected, so the formula on the effective parameters is no longer the R0 the run was set to
-    p = params(**{"network.network_type": "hybrid"})
-    found = run(p, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": 1.0, "r0_calibration": {"target": 3.3, "measured": 3.2, "se": 0.1, "corrections": 1, "reached": True}})
-    assert one(found, "r0_gap").evidence["approx_r0"] == 3.3
-
-
-def test_r0_gap_stands_down_while_a_behaviour_response_is_engaged_from_the_start():
-    # follow-up spec 5.4: with 500 seeds (5%) the response is already lowering transmission on day 0, so the seeds pass on less
-    low = {"r0_measured": 1.2}
-    assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra=low))
-    engaged = params(**{"interventions": [{"type": "behavior_response", "scale": 0.5}]})
-    assert "r0_gap" not in ids(run(engaged, NORMAL, total=8600, seeds=500, stats_extra=low))
-    later = params(**{"interventions": [{"type": "behavior_response", "scale": 0.5, "start_day": 60}]})
-    assert "r0_gap" in ids(run(later, NORMAL, total=8600, seeds=500, stats_extra=low))               # the seeds had finished before it began
-
-
-def test_r0_gap_treats_a_calibrated_run_like_any_other():
-    # review of the follow-up's phase A: the calibration's target was returned before the stand-downs, the day-0 seasonal factor and
-    # the initial immunity, although the pilot measures without any of them and the live measurement with all of them
-    calibration = {"r0_calibration": {"target": 2.5, "measured": 2.48, "se": 0.08, "corrections": 1, "reached": True}}
-
-    def hybrid(**over):
-        return params(**{"network.network_type": "hybrid", **over})
-
-    def gap(p, measured):
-        return "r0_gap" in ids(run(p, NORMAL, total=8600, seeds=500, stats_extra={"r0_measured": measured, **calibration}))
-
-    assert gap(hybrid(), 1.7) and not gap(hybrid(), 2.4)
-    assert not gap(hybrid(interventions=[{"type": "behavior_response", "scale": 0.5}]), 1.7)            # the response was engaged from day 0
-    assert not gap(hybrid(interventions=[{"type": "treatment", "coverage": 1.0, "start_day": 0}]), 1.25)
-    seasonal = hybrid(interventions=[{"type": "seasonality", "scale": 0.3}])
-    assert not gap(seasonal, 3.2) and gap(seasonal, 2.3)                                                 # the seeds transmit at 1.3 times the target
-    immune = hybrid(**{"disease.initial_immune_frac": 0.3})
-    assert not gap(immune, 1.75) and gap(immune, 2.5)                                                    # the live measurement reads R_eff
-
-
-def test_r0_gap_stands_down_for_as_long_as_the_seeds_transmit_in_a_latent_model():
-    # a seed of a latent model is exposed first, so it transmits until about the latent plus the infectious period
-    latent = {"disease.model": "seir", "disease.dur_exp": {"mean_days": 6.0, "dist": "gamma", "sd_days": 2.0}}
-    low = {"r0_measured": 1.2}
-    during = params(**latent, interventions=[{"type": "behavior_response", "scale": 0.5, "start_day": 13}])
-    assert "r0_gap" not in ids(run(during, NORMAL, total=8600, seeds=500, stats_extra=low))
-    after = params(**latent, interventions=[{"type": "behavior_response", "scale": 0.5, "start_day": 40}])
-    assert "r0_gap" in ids(run(after, NORMAL, total=8600, seeds=500, stats_extra=low))
-
-
 def test_a_lever_may_carry_entries_and_a_label_and_serializes_as_before_without_them():
     # follow-up spec 7.1: a suggestion is a lever, so it travels where levers travel
     plain = dx.Lever({"disease.beta": 9.0}, {"disease.beta": 22.8}, "decrease", "why", "rule")
@@ -437,18 +348,6 @@ def test_a_lever_may_carry_entries_and_a_label_and_serializes_as_before_without_
     assert out[0] == {"patch": {"disease.beta": 9.0}, "current": {"disease.beta": 22.8}, "direction": "decrease", "rationale": "why", "basis": "rule"}
     assert out[1]["interventions"] == [{"type": "behavior_response", "scale": 0.5}] and out[1]["label"] == "Let people become careful and rerun"
     json.dumps(out)
-
-
-def test_r0_gap_stands_down_while_a_dated_reduction_covers_the_seeds():
-    # review of phase B: what_if's windows start the day 1% were infected, day 0 with 500 seeds, so the seeds pass on less
-    low = {"r0_measured": 1.5}
-    assert "r0_gap" in ids(run(params(), NORMAL, total=8600, seeds=500, stats_extra=low))
-    for entry in ({"type": "contact_reduction", "layer": "all", "scale": 0.3, "start_day": 0, "end_day": 56},
-                  {"type": "transmission_reduction", "scale": 0.2, "start_day": 1, "end_day": 91},
-                  {"type": "vaccine", "coverage": 0.7, "efficacy": 0.9, "kind": "campaign", "start_day": 0, "end_day": 30}):     # a campaign protects while the seeds transmit
-        assert "r0_gap" not in ids(run(params(interventions=[entry]), NORMAL, total=8600, seeds=500, stats_extra=low)), entry
-    later = params(interventions=[{"type": "transmission_reduction", "scale": 0.2, "start_day": 60, "end_day": 150}])
-    assert "r0_gap" in ids(run(later, NORMAL, total=8600, seeds=500, stats_extra=low))               # the seeds had finished before it began
 
 
 def test_well_mixed_stands_down_on_a_fitted_run():
