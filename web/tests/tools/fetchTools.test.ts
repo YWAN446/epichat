@@ -308,6 +308,24 @@ describe("fetch_demographics keeps what was set in chat (round-1 spec 1)", () =>
     expect(out.payload).toMatchObject({ kind: "data", population: { value: 2_000_000, national: false } });
   });
 
+  it("a fetch for another country clears the area, carrying the scenario over after a run (final review 6)", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 2_000_000 } });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "UGA" }, deps)).content);
+    expect(deps.scenario.area).toBeNull();
+    expect(out.applied.area_cleared).toBe(true);
+    expect(deps.scenario.seq).toBe(1);
+    const ran = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 2_000_000 } });
+    ran.scenario.hasRun = true;
+    await fetchDemographics({ country_iso3: "UGA" }, ran);
+    expect([ran.scenario.area, ran.scenario.seq, ran.starts]).toEqual([null, 2, 1]);
+  });
+
+  it("warns when an area set before the fetch is larger than the country (final review 6)", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 60_000_000 } });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    expect(out.warnings).toContain("Example County's population (60,000,000) is larger than Kenya's (55,000,000); check the figure.");
+  });
+
   it("fetch keeps a user-set household size", async () => {
     const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", household_size: 6 });
     const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);

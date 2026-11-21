@@ -8,7 +8,8 @@ import { detectDisease } from "@/lib/disease/db";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, paramWarnings, recordSources } from "./shared";
 import { populationView } from "./population";
 import { pruneReferences, scenarioReferences, scenarioSources, valueSources } from "./sources";
-import type { ToolDeps, ToolOutcome } from "./types";
+import { carryOverScenario, type ToolDeps, type ToolOutcome } from "./types";
+import { countryName } from "@/lib/client/format";
 
 export const FetchDemographicsInput = z.strictObject({ country_iso3: z.string() });
 export type FetchDemographicsArgs = z.infer<typeof FetchDemographicsInput>;
@@ -103,9 +104,23 @@ export async function fetchDemographics(input: FetchDemographicsArgs, deps: Tool
         applied.r0_unreachable_on_new_network = pyRound(r0Before, 2);
       }
     }
+    // final review 6: an area belongs to its country; data for another country clears it (a new scenario after a run, as configure does)
+    if (scenario.area?.countryIso3 && scenario.area.countryIso3.toUpperCase() !== iso3) {
+      if (scenario.hasRun) {
+        carryOverScenario(scenario);
+        deps.onScenarioStart();
+      }
+      scenario.area = null;
+      applied.area_cleared = true;
+    } else if (scenario.area && !scenario.area.countryIso3) {
+      scenario.area = { ...scenario.area, countryIso3: iso3 };
+    }
     scenario.params = params;
     scenario.countryIso3 = iso3;
     const warnings = paramWarnings(scenario, params, deps.contextText);
+    if (scenario.area && scenario.totalPopulation && scenario.area.population > scenario.totalPopulation) {
+      warnings.push(`${scenario.area.name}'s population (${commaInt(scenario.area.population)}) is larger than ${countryName(iso3)}'s (${commaInt(scenario.totalPopulation)}); check the figure.`);
+    }
     const citations = recordSources(scenario, fields);
     pruneReferences(scenario);                                        // a fetch can change what a chosen reference stood on (the network, say)
     const approx_r0 = pyRound(approxR0(params), 2);
