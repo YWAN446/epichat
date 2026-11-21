@@ -87,3 +87,22 @@ def test_runs_fork_from_a_server_that_has_imported_starsim(monkeypatch):
     monkeypatch.setattr(runner, "FORKS", False)
     spawned = run_params(_params(), _out(), timeout=120)
     assert spawned.ok and spawned.series == forked.series and spawned.stats == forked.stats
+
+
+def test_vercel_runs_each_simulation_as_a_subprocess():
+    """Hotfix 2026-11-21: forked children fail under Vercel's Python runtime; there each run is a subprocess, as before Starsim v4."""
+    import multiprocessing as mp
+    assert runner.forkserver_allowed({"VERCEL": "1"}) is False
+    assert runner.forkserver_allowed({"SIM_RUNNER": "subprocess"}) is False
+    assert runner.forkserver_allowed({}) is ("forkserver" in mp.get_all_start_methods())
+
+
+def test_a_child_that_fails_before_running_reports_why(monkeypatch):
+    """A forked child that cannot even import the runner sends its traceback instead of dying with a bare exit code 1."""
+    from types import SimpleNamespace
+    import pytest
+    sent = []
+    monkeypatch.setitem(sys.modules, "epichat.sim.run_params", None)        # makes the import fail as it would in a broken child
+    with pytest.raises(ImportError):
+        runner._child({}, "unused.json", SimpleNamespace(send=sent.append))
+    assert sent and "epichat.sim.run_params" in sent[0]
