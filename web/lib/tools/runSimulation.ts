@@ -6,7 +6,7 @@ import type { SimParams } from "@/lib/sim/params";
 import { changedPaths } from "@/lib/sim/paths";
 import { pyRound } from "@/lib/sim/pyformat";
 import { recommendSolver } from "@/lib/sim/solver";
-import { capacityAgents, leverToPeople, popScaleFor, scalingPopulation, toAgentUnits, toPeopleUnits } from "@/lib/sim/units";
+import { capacityAgents, leverToPeople, popScaleFor, scalingPopulation, seedAgents, toAgentUnits, toPeopleUnits } from "@/lib/sim/units";
 import { commaInt } from "@/lib/sim/pyformat";
 import { mergeBands } from "@/lib/sim/bands";
 import { errorOutcome, paramWarnings, runNotes } from "./shared";
@@ -65,6 +65,13 @@ export function countNotes(params: SimParams, popScale: number): string[] {
   const seed = params.disease.seed;
   if (seed.mode === "count" && seed.value < popScale) {
     notes.push(`${commaInt(seed.value)} initial cases is less than one agent at this run size; the run seeds 1 agent, about ${commaInt(Math.round(popScale))} people. More agents give a smaller seed.`);
+  } else if (seed.mode === "count") {
+    // final review: a count that rounding moves by more than a tenth is said too
+    const agents = seedAgents(seed.value, popScale, params.run.n_agents);
+    const people = Math.round(agents * popScale);
+    if (Math.abs(people - seed.value) > 0.1 * seed.value) {
+      notes.push(`${commaInt(seed.value)} initial cases runs as ${commaInt(agents)} ${agents === 1 ? "agent" : "agents"}, about ${commaInt(people)} people at this run size. More agents give a closer count.`);
+    }
   }
   for (const i of params.interventions) {
     if (i.type !== "treatment" || i.capacity === null) continue;

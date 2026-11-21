@@ -270,6 +270,13 @@ describe("run_simulation: counts in people (round-1 spec 3)", () => {
     expect((out.payload as { effective_params: { disease: { seed: { value: number } } } }).effective_params.disease.seed.value).toBe(20);   // the configured count is kept (final review 3)
   });
 
+  it("a seed that rounding moves far gets a note too (final review, re-graded)", async () => {
+    const far = await setUp(50_000_000, { seed_count: 7000 });            // 1.4 agents at 5,000 people each: 1 agent, about 5,000
+    expect(JSON.parse((await runSimulation({}, far)).content).count_notes).toContain("7,000 initial cases runs as 1 agent, about 5,000 people at this run size. More agents give a closer count.");
+    const exact = await setUp(50_000_000, { seed_count: 10_000 });        // 2 agents, exactly
+    expect(JSON.parse((await runSimulation({}, exact)).content).count_notes).toEqual([]);
+  });
+
   it("capacity is people a day", async () => {
     const deps = await setUp(2_000_000, { treatment_capacity: 300 });
     const out = await runSimulation({}, deps);
