@@ -115,6 +115,17 @@ describe("finish_turn", () => {
     expect((await one<{ title: string }>("select title from conversations where id = $1", [conversation])).title).toBe("Measles in Kenya");
   });
 
+  it("keeps the scenario's area on insert and update (round-1 spec 1)", async () => {
+    const area = { name: "Example County", population: 2000000, countryIso3: "KEN", source: { kind: "user" } };
+    const scenarioId = await finish(payload({ scenario: { ...payload().scenario, area } }));
+    expect((await one<{ area: unknown }>("select area from scenarios where id = $1", [scenarioId])).area).toEqual(area);
+    await finish(payload({
+      turn: { ...payload().turn, id: TURN_2 }, events: [], messages: [], step_events: [],
+      scenario: { ...payload().scenario, id: scenarioId, area: null },
+    }));
+    expect((await one<{ area: unknown }>("select area from scenarios where id = $1", [scenarioId])).area).toBeNull();
+  });
+
   it("appends no messages for a dropped turn but keeps the turn, its events, and the scenario", async () => {
     await finish(payload({ turn: { ...payload().turn, stop: "refusal", refusal_category: "bio" }, messages: null }));
     expect(await count("turns")).toBe(1);
@@ -128,6 +139,14 @@ describe("finish_turn", () => {
     await db.query("insert into runs (conversation_id, user_id, turn_id, params) values ($1, $2, $3, '{}'::jsonb)", [conversation, ALICE, TURN_1]);
     const scenarioId = await finish(payload());
     expect((await one<{ scenario_id: string }>("select scenario_id from runs where turn_id = $1", [TURN_1])).scenario_id).toBe(scenarioId);
+  });
+
+  it("claims only the runs of the scenario it saves (final review 5)", async () => {
+    // a scenario run and replaced by a carried-over one in the same turn: its run must not become the new scenario's
+    for (const seq of [1, 2, null]) await db.query("insert into runs (conversation_id, user_id, turn_id, params, scenario_seq) values ($1, $2, $3, '{}'::jsonb, $4)", [conversation, ALICE, TURN_1, seq]);
+    const scenarioId = await finish(payload({ scenario: { ...payload().scenario, seq: 2 } }));
+    const { rows } = await db.query<{ scenario_seq: number | null; scenario_id: string | null }>("select scenario_seq, scenario_id from runs where turn_id = $1 order by scenario_seq nulls last", [TURN_1]);
+    expect(rows.map((r) => [r.scenario_seq, r.scenario_id])).toEqual([[1, null], [2, scenarioId], [null, scenarioId]]);
   });
 
   it("refuses a scenario id from another conversation", async () => {

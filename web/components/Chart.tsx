@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, type PointerEvent } from "react";
-import { compact, linePath, nearestIndex, niceTicks, seriesFor, thinPoints, type ChartView, type Series } from "@/lib/client/chart";
+import { bandFor, bandPath, compact, linePath, nearestIndex, niceTicks, seriesFor, thinPoints, type ChartView, type Series } from "@/lib/client/chart";
 
 const PAD = { top: 12, right: 12, bottom: 28, left: 52 };
 const MAX_POINTS = 400;
 
-type Props = { series: Series; view: ChartView; height?: number; /** The viewBox width; pass the column's rendered width so text and strokes keep their size. */ width?: number };
+type Props = { series: Series; view: ChartView; height?: number; /** The viewBox width; pass the column's rendered width so text and strokes keep their size. */ width?: number; /** Round-1 spec 5: how many replicate runs the band spans. */ replicates?: number };
 
 /** An epidemic curve as inline SVG: axes, one path per line, a legend, and a readout of the day under the pointer. */
-export function Chart({ series, view, height = 240, width = 640 }: Props) {
+export function Chart({ series, view, height = 240, width = 640, replicates }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const lines = seriesFor(view, series);
   const days = Array.isArray(series.day) ? series.day : [];
@@ -18,12 +18,14 @@ export function Chart({ series, view, height = 240, width = 640 }: Props) {
   const plotW = width - PAD.left - PAD.right;
   const plotH = height - PAD.top - PAD.bottom;
   const xMax = days[days.length - 1] || 1;
-  const yTicks = niceTicks(Math.max(...lines.flatMap((line) => line.values)), 4);
+  const band = bandFor(view, series);
+  const yTicks = niceTicks(Math.max(...lines.flatMap((line) => line.values), ...(band ? band.p90 : [])), 4);
   const yTop = yTicks[yTicks.length - 1];
   const xTicks = niceTicks(xMax, 5).filter((tick) => tick <= xMax);
   const x = (day: number) => (day / xMax) * plotW;
   const y = (value: number) => plotH - (value / yTop) * plotH;
   const paths = lines.map((line) => ({ ...line, d: linePath(thinPoints(days, line.values, MAX_POINTS), plotW, plotH, xMax, yTop) }));
+  const bandD = band ? bandPath(days, band.p10, band.p90, plotW, plotH, xMax, yTop) : null;
 
   function onMove(event: PointerEvent<SVGSVGElement>) {
     const box = event.currentTarget.getBoundingClientRect();
@@ -56,6 +58,7 @@ export function Chart({ series, view, height = 240, width = 640 }: Props) {
               {tick}
             </text>
           ))}
+          {bandD && <path data-band={lines[0].key} d={bandD} fill={lines[0].color} fillOpacity={0.15} stroke="none" />}
           {paths.map((path) => (
             <path key={path.key} d={path.d} fill="none" stroke={path.color} strokeWidth={1.8} strokeLinejoin="round" />
           ))}
@@ -70,6 +73,12 @@ export function Chart({ series, view, height = 240, width = 640 }: Props) {
             {hover !== null && `: ${compact(line.values[hover] ?? 0)}`}
           </span>
         ))}
+        {band && (
+          <span>
+            <span aria-hidden="true" className="mr-1 inline-block h-2 w-3 align-middle opacity-30" style={{ background: lines[0].color }} />
+            {`10 to 90% of ${replicates ?? "the"} runs`}
+          </span>
+        )}
         <span>{hover === null ? "Days" : `Day ${days[hover]}`}</span>
       </figcaption>
     </figure>

@@ -12,6 +12,11 @@ import type { ParamSource } from "./sources";
 
 export type WebSource = { title: string; url: string };
 
+/** Where an area's population came from: the user, or a source the assistant found and cited (round-1 spec 1). */
+export type AreaSource = { kind: "user" } | { kind: "web"; title: string; url: string };
+/** An area smaller than the country, with its own population; ages, contacts and coverage stay the country's. */
+export type Area = { name: string; population: number; countryIso3: string | null; source: AreaSource };
+
 /** The deterministic simulation state (parent spec 9.4); replaces the Python AgentState. */
 export type Scenario = {
   id: string | null;
@@ -19,7 +24,10 @@ export type Scenario = {
   params: SimParams | null;
   disease: string | null;
   countryIso3: string | null;
+  /** The country's total population from fetch_demographics. */
   totalPopulation: number | null;
+  /** An area within the country; when set, counts are scaled to its population (see sim/units.ts). */
+  area: Area | null;
   dataSources: ResolvedField[];
   webSources: WebSource[];
   stage: Stage;
@@ -32,8 +40,16 @@ export type Scenario = {
 };
 
 export function emptyScenario(seq = 1): Scenario {
-  return { id: null, seq, params: null, disease: null, countryIso3: null, totalPopulation: null, dataSources: [], webSources: [], stage: "understand", stageReached: "understand", hasRun: false, hasReport: false, reportCurrent: false };
+  return { id: null, seq, params: null, disease: null, countryIso3: null, totalPopulation: null, area: null, dataSources: [], webSources: [], stage: "understand", stageReached: "understand", hasRun: false, hasReport: false, reportCurrent: false };
 }
+
+/** A change of area after a run (round-1 spec 1): the next scenario, carrying over everything but the runs and the report. */
+export function carryOverScenario(scenario: Scenario): void {
+  Object.assign(scenario, { id: null, seq: scenario.seq + 1, hasRun: false, hasReport: false, reportCurrent: false });
+}
+
+/** The population a scenario's counts are scaled to, as the panel and the report show it (round-1 spec 1). */
+export type PopulationView = { value: number; place: string; origin: string; url: string | null; national: boolean };
 
 /** start_new_scenario: the same object becomes the next, empty scenario. */
 export function resetScenario(scenario: Scenario): void {
@@ -50,6 +66,10 @@ export type ConfigPayload = {
   config: { disease: string | null; disease_type: string; country: string | null; n_agents: number; sim_dur_years: number; dur_inf: number; dur_exp: number | null; interventions: string[] };
   warnings: string[];
   new_scenario: boolean;
+  /** Round-1 spec 1: the new scenario kept the settings (a change of area); the panel keeps its data. */
+  carried_over?: boolean;
+  /** Round-1 spec 1: the population counts are scaled to; absent on payloads stored before it existed. */
+  population?: PopulationView | null;
   /** The scenario's full parameters after this step, for the panel's Parameters section; absent on payloads stored before it existed. */
   params?: SimParams;
   /** Follow-up spec 8.4: where each of those values came from, by registry path; absent on payloads stored before it existed. */
@@ -70,6 +90,8 @@ export type DataPayload = {
   params?: SimParams;
   /** Where each of those values came from (see ConfigPayload.sources). */
   sources?: Record<string, ParamSource>;
+  /** Round-1 spec 1: the population counts are scaled to, after this step (see ConfigPayload.population). */
+  population?: PopulationView | null;
   /** The chosen references behind the reference tags (see ConfigPayload.references). */
   references?: Record<string, string>;
 };
@@ -97,7 +119,7 @@ export type RunPayload = {
   cold_start: boolean;
   /** Only on the live stream event; stored without it (the runs row keeps it). */
   series?: Record<string, number[]>;
-  /** Per-replicate stats when a run as agents has run.n_replicates > 1 (spec 8.7); an ODE run runs once and has none. The bands wait for the workspace follow-up. */
+  /** Per-replicate stats when a run as agents has run.n_replicates > 1 (spec 8.7); an ODE run runs once and has none. The bands are in the stored series (round-1 spec 5). */
   replicates?: { n: number; seeds: number[]; representative: number; stats: SimStats[] };
   /** Spec 10: what the run's shape suggests about the configuration; absent on payloads stored before phase 4. */
   diagnostics?: Diagnostic[];
@@ -152,6 +174,8 @@ export type ToolDeps = {
   /** The disease database as the tools read it; tests substitute entries (Part 2, 7.4: the vaccine efficacy path). */
   lookupDisease?: (name: string) => DiseaseEntry | null;
   reports: ReportDeps;
+  /** The sim service's limits, so a configuration it would refuse is refused here first (round-1 spec 7). */
+  limits: { maxAgentYears: number };
   /** The participant's memory (profile spec, section 9); `added` counts this turn's remember calls. */
   memory: {
     enabled: boolean;

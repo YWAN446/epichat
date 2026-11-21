@@ -94,12 +94,32 @@ describe("system prompt", () => {
   it("is deterministic, dateless, and long enough to cache", () => {
     expect(SYSTEM_PROMPT).not.toMatch(/\b20\d\d-\d\d-\d\d\b/);
     expect(SYSTEM_PROMPT.length).toBeGreaterThan(5000);
-    expect(systemBlocks()).toEqual([{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }]);
+    expect(systemBlocks()).toEqual([{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral", ttl: "1h" } }]);   // round-1 spec 9
   });
 
   it("puts the date on the first line of the first user message, and the About block between the date and the text", () => {
     expect(firstUserMessage("2026-10-08", "Model measles in Kenya")).toBe("Today's date: 2026-10-08.\n\nModel measles in Kenya");
     expect(firstUserMessage("2026-10-08", "Model measles in Kenya", null)).toBe("Today's date: 2026-10-08.\n\nModel measles in Kenya");
     expect(firstUserMessage("2026-10-08", "Hi", "About this participant: x")).toBe("Today's date: 2026-10-08.\n\nAbout this participant: x\n\nHi");
+  });
+});
+
+describe("the round-1 rules (spec 2026-11-21)", () => {
+  it("prompt carries the round-1 rules", () => {
+    for (const phrase of [
+      "EpiChat cannot run code, notebooks or other models",
+      "an area within it (a county, state or city) with its own population",
+      "set it with configure_simulation's area",
+      "find its population with web_search",
+      "Never promise an area figure without setting it",
+      "stats.delivered",
+      "only from run_size",
+      "Initial cases, treatment capacity and a peak-size target are in people",
+      "Mention a band only when band_shown is true",
+      "Name runs by the Runs section's numbers, never letters",
+      "500,000 agent-years",
+      "Example County, Kenya: population 2 million (user's figure)",
+    ]) expect(SYSTEM_PROMPT).toContain(phrase);
+    expect(SYSTEM_PROMPT).not.toContain("Population 2 million (user's choice)");
   });
 });

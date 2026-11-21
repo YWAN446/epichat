@@ -9,6 +9,42 @@ import { makeDeps, params } from "./helpers";
 const run = (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown>) => configureSimulation(input as never, deps);
 
 describe("configure_simulation", () => {
+  it("refuses a run above the compute cap and names the largest that fits", async () => {
+    const deps = makeDeps();
+    await run(deps, { n_agents: 10000 });
+    const before = deps.scenario.params;
+    const out = await run(deps, { n_agents: 1_000_000, sim_dur_years: 2 });
+    expect(out.isError).toBe(true);
+    expect(out.content).toContain("500,000 agent-years");
+    expect(out.content).toContain("250,000 agents");
+    expect(deps.scenario.params).toEqual(before);
+  });
+
+  it("refuses more initial cases than the population (round-1 spec 3)", async () => {
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 2_000_000;
+    const out = await run(deps, { n_agents: 10000, seed_count: 3_000_000 });
+    expect(out.isError).toBe(true);
+    expect(out.content).toBe("CONFIG ERROR: 3,000,000 initial cases is more than the population (2,000,000).");
+    // in people, a seed above n_agents is fine when the population holds it
+    expect((await run(deps, { n_agents: 10000, seed_count: 50_000 })).isError).toBeFalsy();
+  });
+
+  it("a seed in people may exceed a million at a large country's scale (final review, re-graded)", async () => {
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 1_400_000_000;                       // about 140,000 people per agent: the fade-out lever's 10 agents
+    const out = await run(deps, { n_agents: 10000, advanced: { "disease.seed.mode": "count", "disease.seed.value": 1_400_000 } });
+    expect(out.isError).toBeFalsy();
+    expect(deps.scenario.params!.disease.seed.value).toBe(1_400_000);
+  });
+
+  it("solver advice counts seed agents, not people", async () => {
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 50_000_000; // 5,000 people per agent: 20 cases are 1 agent, which often dies out
+    const out = JSON.parse((await run(deps, { n_agents: 10000, r0: 1.5, seed_count: 20 })).content);
+    expect(out.solver.reasons.map((r: { code: string }) => r.code)).toContain("early_dieout");
+  });
+
   it("reports the run mode advice and sets the chosen mode", async () => {
     const deps = makeDeps();
     const codes = (out: { solver: { reasons: { code: string }[] } }) => out.solver.reasons.map((r) => r.code);
@@ -215,12 +251,14 @@ describe("configure_simulation: the spec's field names, advanced and changed", (
       [{ "demographics.use_demographics": "yes" }, "CONFIG ERROR: demographics.use_demographics must be true or false"],
       [{ "interventions[].coverage": 0.5 }, "CONFIG ERROR: interventions[].coverage is set through configure_simulation's interventions field, not through advanced"],
       [{ "disease.dur_inf.mean_days": null }, "CONFIG ERROR: disease.dur_inf.mean_days cannot be unset"],
-      [{ "run.n_agents": 20000, "disease.seed.mode": "count", "disease.seed.value": 50000 }, "schema"],
+      // round-1 spec 3: a count seed is people, checked against the population (the agents, without one)
+      [{ "run.n_agents": 20000, "disease.seed.mode": "count", "disease.seed.value": 50000 }, "CONFIG ERROR: 50,000 initial cases is more than the population (20,000)."],
+      [{ "run.sim_dur_years": 0.5, "disease.seed.day": 400 }, "schema"],
     ];
     for (const [advanced, message] of cases) {
       const out = await run(deps, { advanced });
       expect(out.isError).toBe(true);
-      if (message === "schema") expect(out.content).toMatch(/^CONFIG ERROR: 1 validation error for SimParams\n[\s\S]*must not exceed run\.n_agents \(20000\)/);
+      if (message === "schema") expect(out.content).toMatch(/^CONFIG ERROR: 1 validation error for SimParams\n[\s\S]*disease\.seed\.day \(400\) must be within the simulation \(182 days\)/);
       else expect(out.content).toBe(message);
     }
     expect(deps.scenario.params).toBe(before);
@@ -387,14 +425,14 @@ describe("configure_simulation interventions and fit (Part 2, 7.4, 7.7)", () => 
     expect(refused.content).toContain("layer school needs the hybrid network");
   });
 
-  it("sets and clears the fit, converting a peak size in people to agents when a population is known", async () => {
+  it("sets and clears the fit, keeping a peak size in people (round-1 spec 3: converted when a run starts)", async () => {
     const deps = makeDeps();
     await run(deps, { disease: "measles", n_agents: 10000, fit: { target: "attack_rate", value: 0.3 } });
     expect(deps.scenario.params!.run.fit).toEqual({ target: "attack_rate", value: 0.3, lever: "disease.beta" });
     deps.scenario.totalPopulation = 1_000_000;
     const out = JSON.parse((await run(deps, { fit: { target: "peak_infections", value: 50000 } })).content);
-    expect(deps.scenario.params!.run.fit).toEqual({ target: "peak_infections", value: 500, lever: "disease.beta" });
-    expect(out.applied.fit).toEqual({ target: "peak_infections", value: 50000, value_in_agents: 500 });
+    expect(deps.scenario.params!.run.fit).toEqual({ target: "peak_infections", value: 50000, lever: "disease.beta" });
+    expect(out.applied.fit).toEqual({ target: "peak_infections", value: 50000 });
     await run(deps, { fit: null });
     expect(deps.scenario.params!.run.fit).toBeNull();
     const bad = await run(deps, { fit: { target: "attack_rate", value: 3 } });
@@ -634,5 +672,112 @@ describe("configure_simulation sends where each value came from (follow-up spec 
     expect((typed.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBe("user");   // not the offered value: the user's own
     const none = await run(deps, { advanced: { "disease.rel_sus_cv": 0 } });
     expect((none.payload as { sources: Record<string, string> }).sources["disease.rel_sus_cv"]).toBeUndefined();
+  });
+});
+
+describe("a peak fit after a run (final review 2)", () => {
+  it("ends when the interventions change, at a scale that is not a whole multiple", async () => {
+    const { runSimulation } = await import("@/lib/tools/runSimulation");
+    const deps = makeDeps();
+    deps.scenario.totalPopulation = 55_000_000;                          // 5,500 people per agent
+    await run(deps, { disease: "measles", n_agents: 10000, fit: { target: "peak_infections", value: 20000 } });
+    const fitted = { target: "peak_infections", wanted: 4, achieved: 4, lever: "disease.beta", value: 9.5, runs: 4 };
+    const sent = deps.scenario.params!;
+    const effective = { ...sent, run: { ...sent.run, fit: { ...sent.run.fit!, value: 4 } } };   // what the service echoes, in agents
+    const ok = { ok: true as const, effective_params: effective, population: 55_000_000, stats: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366, fit: fitted },
+      stats_agents: { peak_infections: 1, peak_day: 1, total_infected: 1, total_deaths: 0, n_agents: 10000, sim_days: 366, fit: fitted }, series: { day: [0] }, pop_scale: 5500, repairs: [], attempts: 1, duration_ms: 1, cold_start: false, starsim_version: "4" };
+    deps.sim.simulate = async () => ok;
+    await runSimulation({}, deps);
+    const stored = deps.runs[0].result;
+    if (!stored.ok) throw new Error("run");
+    const previous = { id: "run-1", effectiveParams: stored.effective_params, stats: stored.stats, statsAgents: stored.stats_agents, popScale: 5500, diagnostics: [] };
+    deps.previousRun = async () => previous;
+    const out = JSON.parse((await run(deps, { interventions: [{ type: "contact_reduction", scale: 0.3, start_day: 10 }] })).content);
+    expect(deps.scenario.params!.run.fit).toBeNull();
+    expect(out.warnings.join(" ")).toContain("ended the fit");
+  });
+});
+
+describe("the area (round-1 spec 1)", () => {
+  const COUNTY = { name: "Example County", population: 2_000_000 };
+  async function kenya(ran: boolean) {
+    const deps = makeDeps();
+    await run(deps, { disease: "measles", country_iso3: "KEN", n_agents: 10000, treatment_capacity: 300 });
+    deps.scenario.totalPopulation = 55_000_000;
+    deps.scenario.dataSources = [{ field: "total_population", value: 55_000_000, citation: "UN WPP 2024", description: "", alternatives: [] }];
+    deps.scenario.hasRun = ran;
+    return deps;
+  }
+
+  it("area with a number after a run starts a carried-over scenario", async () => {
+    const deps = await kenya(true);
+    const before = deps.scenario.params;
+    const out = await run(deps, { area: COUNTY });
+    expect(out.isError).toBeFalsy();
+    const s = deps.scenario;
+    expect([s.seq, s.id, s.hasRun]).toEqual([2, null, false]);
+    expect(s.params).toEqual(before);
+    expect(s.disease).toBe("measles");
+    expect(s.dataSources).toHaveLength(1);
+    expect(s.area).toEqual({ name: "Example County", population: 2_000_000, countryIso3: "KEN", source: { kind: "user" } });
+    expect(deps.starts).toBe(1);
+    expect(out.payload).toMatchObject({ kind: "config", new_scenario: true, carried_over: true, population: { value: 2_000_000, national: false } });
+    expect(out.content).toContain("A new scenario started for Example County with the same settings; earlier runs stay under the previous scenario.");
+  });
+
+  it("area before any run stays in the scenario", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: COUNTY });
+    expect(deps.scenario.seq).toBe(1);
+    expect(deps.starts).toBe(0);
+    expect(deps.scenario.area?.population).toBe(2_000_000);
+  });
+
+  it("area from the web keeps its source", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: { ...COUNTY, source_title: "Census 2019", source_url: "https://example.org/census" } });
+    expect(deps.scenario.area?.source).toEqual({ kind: "web", title: "Census 2019", url: "https://example.org/census" });
+  });
+
+  it("area without a number is refused", async () => {
+    const deps = await kenya(true);
+    const out = await run(deps, { area: { name: "Example County" } });
+    expect(out.isError).toBe(true);
+    expect(out.content).toContain("needs its population");
+    expect(deps.scenario.area).toBeNull();
+    expect(deps.scenario.seq).toBe(1);
+  });
+
+  it("area larger than the country is refused", async () => {
+    const deps = await kenya(true);
+    const out = await run(deps, { area: { name: "Example County", population: 60_000_000 } });
+    expect(out.content).toBe("CONFIG ERROR: Example County's population (60,000,000) is larger than Kenya's (55,000,000).");
+  });
+
+  it("n_agents never exceeds the area", async () => {
+    const deps = await kenya(false);
+    const out = JSON.parse((await run(deps, { area: { name: "Small Town", population: 3000 } })).content);
+    expect(deps.scenario.params!.run.n_agents).toBe(3000);
+    expect(out.applied.n_agents_lowered_to_population).toBe(3000);
+    await run(deps, { n_agents: 20000 });
+    expect(deps.scenario.params!.run.n_agents).toBe(3000);
+  });
+
+  it("clear_area after a run starts a carried-over scenario", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: COUNTY });
+    deps.scenario.hasRun = true;
+    const out = await run(deps, { clear_area: true });
+    expect(deps.scenario.area).toBeNull();
+    expect(deps.scenario.seq).toBe(2);
+    expect(out.payload).toMatchObject({ carried_over: true, population: { value: 55_000_000, national: true } });
+  });
+
+  it("a change of country clears the area", async () => {
+    const deps = await kenya(false);
+    await run(deps, { area: COUNTY });
+    const out = JSON.parse((await run(deps, { country_iso3: "UGA" })).content);
+    expect(deps.scenario.area).toBeNull();
+    expect(out.applied.area_cleared).toBe(true);
   });
 });

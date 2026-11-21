@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, scenarioRows } from "@/lib/client/format";
+import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, nationalNote, parameterLabel, populationRow, scenarioRows } from "@/lib/client/format";
 import { defaultRows, parameterGroups } from "@/lib/client/parameters";
 import type { SimParams } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
@@ -54,7 +54,7 @@ describe("applied data fields", () => {
   it("names the demographic fields with their units", () => {
     expect(describeField("birth_rate", 28.3)).toEqual({ label: "Birth rate", value: "28.3 per 1,000 per year" });
     expect(describeField("death_rate", 7.9)).toEqual({ label: "Death rate", value: "7.9 per 1,000 per year" });
-    expect(describeField("total_population", 55100586)).toEqual({ label: "Population", value: "55,100,586" });
+    expect(describeField("total_population", 55100586)).toEqual({ label: "Country population", value: "55,100,586" });   // final review 7
     expect(describeField("age_structure_pct", { "0-17": 42.13, "18-64": 53.4, "65+": 4.47 })).toEqual({ label: "Age structure", value: "0–17: 42%, 18–64: 53%, 65+: 4%" });
     expect(describeField("network_type", "age_structured")).toEqual({ label: "Contact network", value: "age-structured" });
     expect(describeField("beta_recalibrated_to_hold_r0", 14.9)).toEqual({ label: "Transmission rate recalibrated to hold R₀", value: "14.9" });
@@ -62,7 +62,7 @@ describe("applied data fields", () => {
 
   it("names the health-system and vaccination fields", () => {
     expect(describeField("treatment_capacity", 1.4)).toEqual({ label: "Treatment capacity", value: "1.4 per 1,000 people" });
-    expect(describeField("applied_treatment_capacity", 14)).toEqual({ label: "Treatment capacity applied", value: "14 agents" });
+    expect(describeField("applied_treatment_capacity", 14)).toEqual({ label: "Treatment capacity applied", value: "14 people a day" });
     expect(describeField("uhc_coverage", 56)).toEqual({ label: "UHC service coverage index", value: "56 of 100" });
     expect(describeField("mcv1_coverage", 89)).toEqual({ label: "Measles, first dose (MCV1) coverage", value: "89%" });
     expect(describeField("mcv2_coverage", 52)).toEqual({ label: "Measles, second dose (MCV2) coverage", value: "52%" });
@@ -101,13 +101,13 @@ describe("parameter rows", () => {
     expect(parameterRows(params({ disease_type: "sir" })).map(([label]) => label)).not.toContain("Asymptomatic share");
     const v2 = params({ schema_version: 2, disease: { dur_inf: { mean_days: 8, dist: "gamma", sd_days: 2.4 }, seed: { mode: "count", value: 20, day: 5 }, initial_immune_frac: 0.4 }, run: { n_replicates: 3 } });
     expect(parameterRows(params({ schema_version: 2 }))).toContainEqual(["Initial infections", "0.05%"]);     // the default seeding, as a share
-    expect(parameterRows(v2)).toEqual(expect.arrayContaining([["Infectious period", "8 days, gamma (sd 2.4)"], ["Initial infections", "20 agents on day 5"], ["Initially immune", "40%"], ["Replicates", "3"]]));
+    expect(parameterRows(v2)).toEqual(expect.arrayContaining([["Infectious period", "8 days, gamma (sd 2.4)"], ["Initial infections", "20 people on day 5"], ["Initially immune", "40%"], ["Replicates", "3"]]));
   });
 
   it("writes each intervention as one line", () => {
     expect(interventionLines(params({ interventions: [{ type: "vaccine", coverage: 0.72, start_day: 60 }, { type: "treatment", coverage: 1, capacity: 252 }, { type: "seasonality", scale: 0.3 }] }))).toEqual([
       "Vaccination: 72% coverage from day 60",
-      "Treatment: 100% coverage, capacity 252 agents",
+      "Treatment: 100% coverage, capacity 252 people a day",
       "Seasonality: amplitude 0.3, shift 0",
     ]);
     // a vaccine from the start is initial immunity (spec 6.1): a Parameters row, not an intervention line
@@ -185,7 +185,7 @@ describe("intervention lines, the fit row and the applied-field labels (Part 2, 
     ] });
     expect(interventionLines(hybrid)).toEqual([
       "Vaccination campaign: 70% coverage, days 10\u201340, efficacy 80%, ages 5\u201317, protection 180 days",
-      "Treatment: 100% coverage, capacity 20 agents, after 3 days, efficacy 70%, half transmissibility while waiting, symptomatic only",
+      "Treatment: 100% coverage, capacity 20 people a day, after 3 days, efficacy 70%, half transmissibility while waiting, symptomatic only",
       "School contacts reduced by 100% from day 30 to day 72",
       "Transmission reduced by 30% from day 0 to day 90",
       "Seasonality: amplitude 0.3, shift 0",
@@ -211,7 +211,7 @@ describe("intervention lines, the fit row and the applied-field labels (Part 2, 
     const rows = parameterRows(fitted);
     expect(rows).toContainEqual(["Fitted to", "attack rate 30% by moving the transmission rate"]);
     expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_day", value: 60, lever: "network.network_beta" } } }))).toContainEqual(["Fitted to", "peak day 60 by moving the network multiplier"]);
-    expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_infections", value: 500 } } }))).toContainEqual(["Fitted to", "peak infections 500 agents by moving the transmission rate"]);
+    expect(parameterRows(params({ schema_version: 2, run: { fit: { target: "peak_infections", value: 500 } } }))).toContainEqual(["Fitted to", "peak infections 500 people by moving the transmission rate"]);
     expect(defaultRows(params({})).map(([label]) => label)).not.toContain("Fitted to");
     expect(describeField("applied_vaccine_efficacy", 0.93)).toEqual({ label: "Vaccine efficacy applied", value: "93%" });
     expect(describeField("fit", { target: "attack_rate", value: 0.3 })).toEqual({ label: "Fit", value: "attack rate 30%" });
@@ -262,5 +262,18 @@ describe("the data sources' names", () => {
   it("name UNICEF's WHO/UNICEF estimates and keep WHO's for conversations stored before its API was retired", () => {
     expect(SOURCE_LABELS.unicef).toBe("WHO/UNICEF immunization estimates");
     expect(SOURCE_LABELS.who_gho).toBe("WHO Global Health Observatory");
+  });
+});
+
+describe("the population line (round-1 spec 1)", () => {
+  const area = { value: 2_000_000, place: "Example County, Kenya", origin: "you set it", url: null, national: false };
+  const country = { value: 55_100_000, place: "Kenya", origin: "UN World Population Prospects", url: null, national: true };
+  it("populationRow", () => {
+    expect(populationRow(area)).toEqual(["Population", "2,000,000, Example County, Kenya (you set it)"]);
+    expect(populationRow(country)).toEqual(["Population", "55,100,000, Kenya (UN World Population Prospects)"]);
+  });
+  it("nationalNote", () => {
+    expect(nationalNote(area, "KEN")).toBe("Ages, contact patterns and vaccination coverage are Kenya's national figures.");
+    expect(nationalNote(country, "KEN")).toBeNull();
   });
 });

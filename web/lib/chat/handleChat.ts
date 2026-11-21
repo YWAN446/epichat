@@ -196,7 +196,7 @@ export async function handleChat(
       }
       let id: string | null = null;
       try {
-        id = await deps.runs.insert({ conversationId, userId: user.id, turnId, scenarioId: scenario.id, record });
+        id = await deps.runs.insert({ conversationId, userId: user.id, turnId, scenarioId: scenario.id, scenarioSeq: scenario.seq, record });
       } catch (error) {
         console.error("runs insert failed", failureText(error));
       }
@@ -204,12 +204,13 @@ export async function handleChat(
       if (shown.length > 0) step("diagnostic_shown", { tool: "run_simulation", meta: { run_id: id, ids: shown.join(",") } });
       return id;
     },
+    limits: { maxAgentYears: deps.settings.simMaxAgentYears },
     onScenarioStart() {
       step("new_scenario");
     },
     async previousRun() {
       try {
-        return await deps.runs.latest(conversationId, scenario.id, turnId);
+        return await deps.runs.latest(conversationId, scenario.id, turnId, scenario.seq);
       } catch (error) {
         console.error("runs read failed", failureText(error));
         return null;
@@ -220,7 +221,7 @@ export async function handleChat(
       step("option_chosen", { tool: "configure_simulation", meta: { run_id: runId, diagnostic_id: diagnosticId, patch: JSON.stringify(patch), ...(interventions ? { interventions: JSON.stringify(interventions) } : {}) } });
     },
     reports: {
-      runs: () => deps.runs.listForReport(conversationId, scenario.id, turnId),
+      runs: () => deps.runs.listForReport(conversationId, scenario.id, turnId, scenario.seq),
       recap: () => deps.turns.lastRecap(conversationId),
       nextVersion: async () => (await deps.reports.count(conversationId)) + 1,
       async insert(report) {
@@ -352,7 +353,7 @@ export async function handleChat(
   );
   // Priced at the configured model; a rerouted call is recorded by served_by for the researcher.
   const modelCost = apiCalls.reduce(
-    (sum, call) => sum + costUsd(deps.settings.model, { input_tokens: call.input_tokens, output_tokens: call.output_tokens, cache_read_input_tokens: call.cache_read_tokens, cache_creation_input_tokens: call.cache_write_tokens }),
+    (sum, call) => sum + costUsd(deps.settings.model, { input_tokens: call.input_tokens, output_tokens: call.output_tokens, cache_read_input_tokens: call.cache_read_tokens, cache_creation_input_tokens: call.cache_write_tokens, cache_creation_1h_input_tokens: call.cache_write_1h_tokens ?? 0 }),
     0,
   );
   const cost = modelCost + repairCost;

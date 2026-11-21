@@ -38,6 +38,16 @@ function setup(script: Step[], options: Partial<TurnArgs> & { outcome?: ToolOutc
   return { run, requests, requestOptions, events, toolCalls, apiCalls };
 }
 
+describe("runTurn and the one-hour cache (round-1 spec 9)", () => {
+  it("requests ask for the one-hour cache, and one-hour writes are recorded", async () => {
+    const usage = { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 0, cache_creation_input_tokens: 1234, cache_creation: { ephemeral_1h_input_tokens: 1234, ephemeral_5m_input_tokens: 0 } };
+    const { run, requests, apiCalls } = setup([{ message: message([textBlock("Hi")], "end_turn", { usage }), text: ["Hi"] }]);
+    await run();
+    expect((requests[0] as { cache_control: unknown }).cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
+    expect(apiCalls[0]).toMatchObject({ cache_write_tokens: 1234, cache_write_1h_tokens: 1234 });
+  });
+});
+
 describe("runTurn", () => {
   it("returns a plain answer, streams its text, and records the model call", async () => {
     const answer = message([textBlock("Hello there")]);
@@ -45,7 +55,7 @@ describe("runTurn", () => {
     const result = await run();
     expect(result).toEqual({ appended: [{ role: "assistant", content: answer.content }], stop: "end_turn", refusalCategory: null, firstTokenAt: new Date("2026-10-08T15:00:00.500Z") });
     expect(events).toEqual([{ type: "text", delta: "Hello " }, { type: "text", delta: "there" }]);
-    expect(apiCalls).toEqual([{ model: "claude-opus-5-5", input_tokens: 100, output_tokens: 20, cache_read_tokens: 0, cache_write_tokens: 0, stop_reason: "end_turn", latency_ms: 500, served_by: "claude-opus-5-5" }]);
+    expect(apiCalls).toEqual([{ model: "claude-opus-5-5", input_tokens: 100, output_tokens: 20, cache_read_tokens: 0, cache_write_tokens: 0, cache_write_1h_tokens: 0, stop_reason: "end_turn", latency_ms: 500, served_by: "claude-opus-5-5" }]);
   });
 
   it("runs a requested tool, reports it with its payload, and sends the result back", async () => {
@@ -173,7 +183,7 @@ describe("runTurn", () => {
     const { run, requests, requestOptions } = setup([{ message: CALL }, { message: message([textBlock("ok")]) }], { signal: controller.signal });
     await run();
     expect(requests[0]).toEqual({
-      model: "claude-opus-5-5", max_tokens: 4000, system: SYSTEM, cache_control: { type: "ephemeral" }, tools: TOOLS, messages: HISTORY,
+      model: "claude-opus-5-5", max_tokens: 4000, system: SYSTEM, cache_control: { type: "ephemeral", ttl: "1h" }, tools: TOOLS, messages: HISTORY,
       thinking: { type: "adaptive", display: "summarized" }, output_config: { effort: "medium" }, fallbacks: "default", betas: ["server-side-fallback-2026-07-01"],
     });
     expect(requestOptions).toEqual([{ signal: controller.signal }, { signal: controller.signal }]);

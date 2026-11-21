@@ -215,13 +215,10 @@ def test_success_carries_diagnostics_computed_on_the_full_series(client, main, m
     monkeypatch.setattr(main, "simulate", _fake_simulate(_success(params)))
     monkeypatch.setenv("SIM_SERIES_MAX_POINTS", "3")
     body = client.post("/simulate", json={"params": PARAMS, "pop_scale": 100}, headers=AUTH).json()
-    assert [d["id"] for d in body["diagnostics"]] == ["unfinished", "sharp_curve"]
-    unfinished = body["diagnostics"][0]
-    assert unfinished["severity"] == "warning" and unfinished["evidence"] == {"last_infectious": 1.0, "peak": 4.0, "still_rising": False}
-    assert unfinished["levers"] == [{"patch": {"run.sim_dur_years": 0.2}, "current": {"run.sim_dur_years": 0.1}, "direction": "increase",
-                                     "rationale": "The epidemic was still going when the run ended; a longer run shows how it ends.", "basis": "rule"}]
+    # round-1 spec 10: the fake run ends with one infectious agent, which is not an epidemic still going
+    assert [d["id"] for d in body["diagnostics"]] == ["sharp_curve"]
     # three of the five full days sit at or above half the peak; the thinned series the client gets has one
-    assert body["diagnostics"][1]["evidence"] == {"days_at_half_peak": 3, "dur_inf_mean_days": 10.0}
+    assert body["diagnostics"][0]["evidence"] == {"days_at_half_peak": 3, "dur_inf_mean_days": 10.0}
     assert body["series"]["day"] == [0, 2, 4]
 
 

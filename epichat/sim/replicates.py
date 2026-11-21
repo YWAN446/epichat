@@ -11,7 +11,7 @@ from .builder import build_sim
 from .fit import fit_lever
 from .outputs import extract
 
-BAND_KEYS = ("n_infectious", "cum_infections")
+BAND_KEYS = ("n_infectious", "cum_infections", "new_infections", "cum_deaths")   # the chart views that draw a band (round-1 spec 5)
 
 
 def run_replicates(params: SimParamsV2, n: int | None = None) -> dict:

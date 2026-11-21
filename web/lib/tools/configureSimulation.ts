@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { fitText } from "@/lib/client/format";
+import { countryName, fitText } from "@/lib/client/format";
 import type { PreviousRun } from "@/lib/db/runs";
 import { detectDisease } from "@/lib/disease/db";
 import { InterventionSchema, FitSchema, R0UnreachableError, approxR0, isV1Vaccine, recalibrateBeta, validateParams, withR0, type Duration, type Intervention, type SimParams } from "@/lib/sim/params";
 import { changedPaths, setPath, type PathChange } from "@/lib/sim/paths";
-import { fmtValue, pyRound } from "@/lib/sim/pyformat";
+import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { AGENT_CODES, recommendSolver } from "@/lib/sim/solver";
+import { agentYears, popScaleFor, scalingPopulation, toAgentUnits } from "@/lib/sim/units";
 import { referenceHref } from "@/lib/client/references";
 import { applyAdvanced } from "./advanced";
 import { REFERENCE_TARGETS, chosenReference, type ChosenReference } from "./chosenReference";
@@ -14,7 +15,8 @@ import { durationFor, type DurationName } from "./durations";
 import { matchedLevers } from "./options";
 import { errorOutcome, given, paramWarnings, upsertIntervention } from "./shared";
 import { near, pruneReferences, referenceNotes, scenarioReferences, scenarioSources } from "./sources";
-import { resetScenario, type ToolDeps, type ToolOutcome } from "./types";
+import { populationView } from "./population";
+import { carryOverScenario, resetScenario, type Area, type ToolDeps, type ToolOutcome } from "./types";
 
 const opt = <T extends z.ZodTypeAny>(t: T) => t.nullish();
 
@@ -46,6 +48,8 @@ export const ConfigureSimulationInput = z.strictObject({
   advanced: opt(z.record(z.string(), z.unknown())),
   start_new_scenario: opt(z.boolean()),
   solver: opt(z.enum(["abm", "ode"])),
+  area: opt(z.strictObject({ name: z.string(), population: opt(z.number()), source_title: opt(z.string()), source_url: opt(z.string()) })),
+  clear_area: opt(z.boolean()),
 });
 export type ConfigureSimulationArgs = z.infer<typeof ConfigureSimulationInput>;
 
@@ -122,6 +126,31 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const demographics = block(base, "demographics");
   const network = block(base, "network");
   const applied: Obj = {};
+
+  // Round-1 spec 1: an area within the country, checked here and written only when the call succeeds
+  let nextArea: Area | null = scenario.area;
+  if (given(input.country_iso3) && nextArea?.countryIso3 && !given(input.area) && input.country_iso3.trim().toUpperCase() !== nextArea.countryIso3.toUpperCase()) {
+    nextArea = null;
+    applied.area_cleared = true;
+  }
+  if (input.clear_area === true && nextArea) {
+    nextArea = null;
+    applied.area_cleared = true;
+  }
+  if (given(input.area)) {
+    const name = input.area.name.trim();
+    const population = given(input.area.population) ? Math.round(input.area.population) : null;
+    if (!name || population === null || population < 1) return errorOutcome("CONFIG ERROR: an area needs its population. Ask the user, or find it with web_search and pass it with source_title and source_url.");
+    if (scenario.totalPopulation && population > scenario.totalPopulation) {
+      const country = scenario.countryIso3 ? countryName(scenario.countryIso3) : "the country";
+      return errorOutcome(`CONFIG ERROR: ${name}'s population (${commaInt(population)}) is larger than ${country}'s (${commaInt(scenario.totalPopulation)}).`);
+    }
+    const url = given(input.area.source_url) ? input.area.source_url.trim() : "";
+    const iso3 = (given(input.country_iso3) ? input.country_iso3 : scenario.countryIso3)?.trim().toUpperCase() ?? null;
+    nextArea = { name, population, countryIso3: iso3, source: url ? { kind: "web", title: input.area.source_title?.trim() || name, url } : { kind: "user" } };
+    applied.area = { name, population, ...(nextArea.source.kind === "web" ? { source: nextArea.source.title } : {}) };
+  }
+  const areaChanged = (nextArea?.name ?? null) !== (scenario.area?.name ?? null) || (nextArea?.population ?? null) !== (scenario.area?.population ?? null);
 
   if (given(input.disease)) {
     scenario.disease = detectDisease(input.disease) ?? input.disease.toLowerCase();
@@ -279,23 +308,15 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   }
   base.interventions = interventions;
   if (input.fit !== undefined) {
-    // Part 2, 7.7: one outcome the user knows; a peak size in people becomes agents when the population is known
+    // Part 2, 7.7: one outcome the user knows; a peak size stays in people and becomes agents when a run starts (round-1 spec 3)
     if (input.fit === null) {
       run.fit = null;
       applied.fit = null;
     } else {
       const parsed = FitSchema.safeParse(input.fit);
       if (!parsed.success) return errorOutcome(`CONFIG ERROR: fit: ${parsed.error.issues.map((i) => i.message).join("; ")}`);
-      const fit = parsed.data;
-      const nAgents = Number(run.n_agents ?? before?.run.n_agents ?? 10000);
-      if (fit.target === "peak_infections" && scenario.totalPopulation) {
-        const agents = Math.max(1, Math.round(fit.value / (scenario.totalPopulation / nAgents)));
-        run.fit = { ...fit, value: agents };
-        applied.fit = { ...input.fit, value_in_agents: agents };
-      } else {
-        run.fit = fit;
-        applied.fit = input.fit;
-      }
+      run.fit = parsed.data;
+      applied.fit = input.fit;
     }
   }
 
@@ -314,6 +335,39 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const validated = validateParams(base);
   if (!validated.ok) return errorOutcome(`CONFIG ERROR: ${validated.error}`);
   let params: SimParams = validated.params;
+  // Round-1 spec 1: an agent never stands for less than one person, so a small area lowers the run size
+  const population = scalingPopulation({ area: nextArea, totalPopulation: scenario.totalPopulation });
+  if (population !== null && params.run.n_agents > population) {
+    const lowered = validateParams({ ...params, run: { ...params.run, n_agents: population } });
+    if (!lowered.ok) return errorOutcome(`CONFIG ERROR: ${lowered.error}`);
+    params = lowered.params;
+    applied.n_agents_lowered_to_population = population;
+  }
+  // Final review 4: a capacity the health-system data gave (per 1,000 people) follows a change of area; one the user typed stays
+  const rate = scenario.dataSources.find((f) => f.field === "treatment_capacity");
+  if (areaChanged && rate && Number.isFinite(Number(rate.value))) {
+    const fromData = (pop: number) => Math.max(1, pyRound((Number(rate.value) * pop) / 1000, 0));
+    const was = fromData(scalingPopulation(scenario) ?? params.run.n_agents);
+    const now = fromData(population ?? params.run.n_agents);
+    if (params.interventions.some((i) => i.type === "treatment" && i.capacity === was) && now !== was) {
+      const rescaled = validateParams({ ...params, interventions: params.interventions.map((i) => (i.type === "treatment" && i.capacity === was ? { ...i, capacity: now } : i)) });
+      if (!rescaled.ok) return errorOutcome(`CONFIG ERROR: ${rescaled.error}`);
+      params = rescaled.params;
+      applied.treatment_capacity_rescaled_to_area = now;
+    }
+  }
+  // Round-1 spec 3: initial cases are people, so they are checked against the population (the agents, without one)
+  if (params.disease.seed.mode === "count") {
+    const limit = population ?? params.run.n_agents;
+    if (params.disease.seed.value > limit) return errorOutcome(`CONFIG ERROR: ${commaInt(params.disease.seed.value)} initial cases is more than the population (${commaInt(limit)}).`);
+  }
+  // Round-1 spec 7: the service refuses a run above its cap, so refuse the configuration and name the largest run that fits
+  const cost = agentYears(params);
+  if (cost > deps.limits.maxAgentYears) {
+    const { n_agents, sim_dur_years, n_replicates } = params.run;
+    const largest = Math.floor(deps.limits.maxAgentYears / (sim_dur_years * n_replicates));
+    return errorOutcome(`CONFIG ERROR: ${commaInt(n_agents)} agents × ${fmtValue(sim_dur_years)} years × ${n_replicates} replicates = ${commaInt(Math.round(cost))} agent-years, above the simulation service's cap of ${commaInt(deps.limits.maxAgentYears)} agent-years. The largest run that fits is ${commaInt(largest)} agents. Offer that or a shorter run.`);
+  }
   if (before && r0Target === undefined) {
     // Part 2, 5.9: a change of the network's structure (its type, its matrix, the age shares) alters what R0 a beta implies; hold the R0
     // the user confirmed when the new network can carry it. A change of contact counts or multipliers keeps beta, as in Part 1.
@@ -358,6 +412,16 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
     }
   }
 
+  // Round-1 spec 1: after a run, a change of area starts the next scenario with the same settings
+  let carried = false;
+  if (areaChanged) {
+    if (scenario.hasRun && !newScenario) {
+      carryOverScenario(scenario);
+      deps.onScenarioStart();
+      carried = true;
+    }
+    scenario.area = nextArea;
+  }
   scenario.params = params;
   scenario.countryIso3 = params.demographics.country;
   const warnings = paramWarnings(scenario, params, deps.contextText);
@@ -392,12 +456,16 @@ async function configure(input: ConfigureSimulationArgs, deps: ToolDeps): Promis
   const config = configView(params, scenario.disease);
   // The run mode (spec 2026-11-20): what the rule recommends and why, and which reasons for agents this change added, so EpiChat
   // knows whether to ask, and whether to ask again after a compartmental choice
-  const advice = recommendSolver(params);
+  // round-1 spec 3: the rule counts seed agents, so it reads the scenario at the run's scale
+  const inAgents = (p: SimParams) => toAgentUnits(p, popScaleFor(scalingPopulation(scenario), p.run.n_agents));
+  const advice = recommendSolver(inAgents(params));
   const agentCodes = (a: typeof advice) => a.reasons.map((r) => r.code).filter((c) => (AGENT_CODES as readonly string[]).includes(c));
-  const earlier = before ? agentCodes(recommendSolver(before)) : null;
+  const earlier = before ? agentCodes(recommendSolver(inAgents(before))) : null;
   const solver = { chosen: params.run.solver, ...advice, new_reasons: earlier ? agentCodes(advice).filter((c) => !earlier.includes(c)) : [] };
+  const place = nextArea ? nextArea.name : `${scenario.countryIso3 ? countryName(scenario.countryIso3) : "the country"} as a whole`;
+  const started = carried ? { new_scenario: `A new scenario started for ${place} with the same settings; earlier runs stay under the previous scenario.` } : {};
   return {
-    content: JSON.stringify({ applied, changed, approx_r0, config, warnings, solver }),
-    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario, params, sources: scenarioSources(scenario, deps.contextText), ...noted(scenarioReferences(scenario)) },
+    content: JSON.stringify({ applied, changed, approx_r0, config, warnings, solver, ...started }),
+    payload: { kind: "config", applied, changed, approx_r0, config, warnings, new_scenario: newScenario || carried, ...(carried ? { carried_over: true } : {}), population: populationView(scenario), params, sources: scenarioSources(scenario, deps.contextText), ...noted(scenarioReferences(scenario)) },
   };
 }

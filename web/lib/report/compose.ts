@@ -3,7 +3,7 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { SOLVER_LABELS, SOURCE_LABELS, configurationRows, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { SOLVER_LABELS, configurationRows, nationalNote, sourceOfCitation, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import { parameterTable } from "@/lib/client/parameters";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
@@ -11,6 +11,7 @@ import { DOCUMENT_VERSION, SECTION_HEADINGS, figureLine, narrativeBlocks, type R
 import { approxR0 } from "@/lib/sim/params";
 import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { configView } from "@/lib/tools/configView";
+import { populationView } from "@/lib/tools/population";
 import type { DiseasePayload, Scenario } from "@/lib/tools/types";
 
 export type ComposeInput = {
@@ -36,9 +37,11 @@ function diseaseName(scenario: Scenario, literature: DiseasePayload | null): str
   return scenario.disease ? scenario.disease.charAt(0).toUpperCase() + scenario.disease.slice(1) : "Epidemic";
 }
 
-/** "Measles in Kenya, SIR model, 1 year". */
+/** "Measles in Kenya, SIR model, 1 year", or "Measles in Example County, Kenya, …" for an area (round-1 spec 1). */
 export function scenarioTitle(scenario: Scenario, name: string): string {
-  const where = scenario.countryIso3 ? ` in ${countryName(scenario.countryIso3)}` : "";
+  const country = scenario.countryIso3 ? countryName(scenario.countryIso3) : null;
+  const place = scenario.area ? (country ? `${scenario.area.name}, ${country}` : scenario.area.name) : country;
+  const where = place ? ` in ${place}` : "";
   const model = scenario.params ? `, ${scenario.params.disease.model.toUpperCase()} model` : "";
   const years = scenario.params ? `, ${formatQuantity(scenario.params.run.sim_dur_years, "years")}` : "";
   return `${name}${where}${model}${years}`;
@@ -54,10 +57,10 @@ function immunity(run: ReportRun): number | undefined {
   return frac > 0 ? frac : undefined;
 }
 
-/** "Run 1", then "Run 2, vaccine coverage 90%" when something a reader cares about changed from the previous run. */
+/** "Run 1", then "Run 2, vaccine coverage 90%" when something a reader cares about changed from the previous run; numbered as the Runs section numbers them (round-1 spec 8). */
 export function runLabels(runs: ReportRun[]): string[] {
   return runs.map((run, i) => {
-    const base = `Run ${i + 1}`;
+    const base = `Run ${run.index}`;
     if (i === 0) return base;
     const prev = runs[i - 1];
     const changes: string[] = [];
@@ -67,7 +70,7 @@ export function runLabels(runs: ReportRun[]): string[] {
     else if (cov === undefined && typeof prevCov === "number") changes.push("no vaccine");
     const cap = intervention(run, "treatment")?.capacity;
     const prevCap = intervention(prev, "treatment")?.capacity;
-    if (typeof cap === "number" && cap !== prevCap) changes.push(`treatment capacity ${commaInt(cap)}`);
+    if (typeof cap === "number" && cap !== prevCap) changes.push(`treatment capacity ${commaInt(cap)} people a day`);
     else if (cap === undefined && typeof prevCap === "number") changes.push("no treatment");
     // follow-up spec 4 and 5: the variation between people and the behaviour response, the two limits on spread
     const cv = run.effectiveParams.disease?.rel_sus_cv ?? 0;
@@ -91,13 +94,21 @@ const attackRate = (run: ReportRun): string => `${pyRound((run.statsAgents.total
 const curve = (run: ReportRun): number[] | undefined => run.series?.n_infectious ?? run.series?.n_infected;
 const hasCurve = (run: ReportRun): boolean => Array.isArray(run.series?.day) && Array.isArray(curve(run));
 
+/** Round-1 spec 4: a run's doses (or treatments) given, summed over its vaccine (or treatment) interventions; null when it has none. */
+function delivered(run: ReportRun, type: "vaccine" | "treatment"): number | null {
+  const entries = Object.entries(run.stats.delivered ?? {}).filter(([name]) => name.startsWith(`${type}_`));
+  return entries.length > 0 ? entries.reduce((sum, [, n]) => sum + n, 0) : null;
+}
+
 function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
+  const extra = ([["vaccine", "Doses"], ["treatment", "Treatments given"]] as const).filter(([type]) => runs.some((run) => delivered(run, type) !== null));
   const blocks: ReportBlock[] = [
     {
       kind: "table",
       caption: "Results by run",
-      columns: ["Run", "Peak day", "Peak infections", "Attack rate", "Disease deaths"],
-      rows: runs.map((run, i) => [labels[i], `Day ${run.stats.peak_day}`, commaInt(run.stats.peak_infections), attackRate(run), commaInt(run.stats.total_deaths ?? 0)]),
+      columns: ["Run", "Peak day", "Peak infections", "Attack rate", "Disease deaths", ...extra.map(([, column]) => column)],
+      rows: runs.map((run, i) => [labels[i], `Day ${run.stats.peak_day}`, commaInt(run.stats.peak_infections), attackRate(run), commaInt(run.stats.total_deaths ?? 0),
+        ...extra.map(([type]) => { const n = delivered(run, type); return n === null ? "—" : commaInt(n); })]),
     },
   ];
   const lines = runs.flatMap((run, i) => (hasCurve(run) ? [figureLine(labels[i], run.series!.day, curve(run)!)] : []));
@@ -108,21 +119,14 @@ function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
   return blocks;
 }
 
-/** Which data source a citation came from, by its address. */
-function sourceOf(citation: string): string {
-  const url = citation.toLowerCase();
-  if (url.includes("population.un.org") || url.includes("un wpp")) return SOURCE_LABELS.un_wpp;
-  if (url.includes("unicef")) return SOURCE_LABELS.unicef;
-  if (url.includes("who.int")) return SOURCE_LABELS.who_gho;
-  if (url.includes("worldbank") || url.includes("data360") || url.startsWith("wb ")) return SOURCE_LABELS.wb_data360;
-  return "Source";
-}
-
 function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBlock[] {
   const blocks: ReportBlock[] = [];
   if (scenario.params) {
     const rows = configurationRows(configView(scenario.params, scenario.disease), approxR0(scenario.params), name);
-    if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
+    // round-1 spec 1: an area's population and where it came from; otherwise the country's total
+    const view = populationView(scenario);
+    if (view && !view.national && scenario.area) rows.splice(3, 0, ["Population", `${commaInt(view.value)}, ${scenario.area.name} (${view.origin})`]);
+    else if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
     // Part 2, 7.7: the latest run's fit, after the R0 rows: what was asked for, what the search reached, in how many runs.
     const fit = runs.at(-1)?.stats.fit;
     if (fit) {
@@ -141,7 +145,7 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
       columns: ["Source", "Field", "Value", "Citation"],
       rows: scenario.dataSources.map((f) => {
         const d = describeField(f.field, f.value);
-        return [f.field.startsWith("ref:") ? "Literature" : sourceOf(f.citation), d.label, d.value, f.citation];
+        return [f.field.startsWith("ref:") ? "Literature" : sourceOfCitation(f.citation), d.label, d.value, f.citation];
       }),
     });
   }
@@ -175,6 +179,13 @@ function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayloa
   return blocks;
 }
 
+/** Round-1 spec 1: an area scenario's limitations always say what stays national. */
+function nationalBlock(scenario: Scenario): ReportBlock[] {
+  const view = populationView(scenario);
+  const note = view && scenario.countryIso3 ? nationalNote(view, scenario.countryIso3) : null;
+  return note ? [{ kind: "paragraph", text: note }] : [];
+}
+
 const DATE = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 
 export function composeReport(input: ComposeInput, now: Date): ReportDocument {
@@ -193,7 +204,7 @@ export function composeReport(input: ComposeInput, now: Date): ReportDocument {
       section("meaning", narrativeBlocks(input.narrative.meaning)),
       section("modelled", modelled(input.scenario, name, input.runs)),
       section("decisions", input.recap.length > 0 ? [{ kind: "bullets", items: input.recap }] : [{ kind: "paragraph", text: "The conversation recorded no decisions." }]),
-      section("limitations", narrativeBlocks(input.narrative.limitations)),
+      section("limitations", [...narrativeBlocks(input.narrative.limitations), ...nationalBlock(input.scenario)]),
       section("next_steps", narrativeBlocks(input.narrative.next_steps)),
       section("appendix", appendix(input.runs, labels, input.literature, input.starsimVersion)),
     ],

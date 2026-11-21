@@ -58,6 +58,7 @@ export function makeDeps(over: Partial<{
     options: [],
     previousReads: 0,
     async onRun(run) { deps.runs.push(run); return over.runId === undefined ? "run-1" : over.runId; },
+    limits: { maxAgentYears: 500_000 },
     onScenarioStart() { deps.starts++; },
     async previousRun() { deps.previousReads++; return over.previousRun ?? null; },
     onOptionChosen(runId, diagnosticId, patch, interventions) { deps.options.push({ runId, diagnosticId, patch, ...(interventions ? { interventions } : {}) }); },

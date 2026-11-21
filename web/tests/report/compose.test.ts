@@ -6,6 +6,9 @@ import { FIXTURE } from "./fixture";
 
 const NOW = new Date("2026-10-09T15:00:00Z");
 
+/** These label tests are about what changed; number the runs by position, as the Runs section would. */
+const numbered = <T extends object>(runs: T[]) => runs.map((r, i) => ({ ...r, index: i + 1 }));
+
 describe("composeReport", () => {
   const doc = composeReport(FIXTURE, NOW);
   const section = (id: string) => doc.sections.find((s) => s.id === id)!;
@@ -87,13 +90,54 @@ describe("composeReport", () => {
     expect(appendix.blocks.at(-1)).toMatchObject({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", "unknown"], ["Report format", "1"]] });
   });
 
+  it("names the area in the title, the Population row and the limitations (round-1 spec 1)", () => {
+    const area = { name: "Example County", population: 2_000_000, countryIso3: "KEN", source: { kind: "user" as const } };
+    const doc = composeReport({ ...FIXTURE, scenario: { ...FIXTURE.scenario, area } }, NOW);
+    expect(doc.title).toBe("Measles in Example County, Kenya, SIR model, 1 year");
+    const rows = doc.sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (rows.kind !== "keyValues") throw new Error("kv");
+    expect(rows.items).toContainEqual(["Population", "2,000,000, Example County (you set it)"]);
+    const limitations = doc.sections.find((s) => s.id === "limitations")!.blocks;
+    expect(limitations.at(-1)).toEqual({ kind: "paragraph", text: "Ages, contact patterns and vaccination coverage are Kenya's national figures." });
+    const sources = doc.sections.find((s) => s.id === "modelled")!.blocks.find((b) => b.kind === "table" && b.caption === "Data sources");
+    if (sources?.kind !== "table") throw new Error("sources");
+    expect(sources.rows.map((r) => r[1])).toContain("Country population");   // final review 7: never a bare "Population" beside the area's
+    const national = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "limitations")!.blocks;
+    expect(national.some((b) => b.kind === "paragraph" && b.text.includes("national figures"))).toBe(false);
+  });
+
+  it("report shows doses and treatments given (round-1 spec 4)", () => {
+    const base = FIXTURE.runs[0];
+    const dosed = { ...base, stats: { ...base.stats, delivered: { vaccine_0: 2_500_000, treatment_1: 1_200 } } };
+    const doc = composeReport({ ...FIXTURE, runs: [base, dosed] }, NOW);
+    const table = doc.sections.find((s) => s.id === "results")!.blocks[0];
+    if (table.kind !== "table") throw new Error("table");
+    expect(table.columns).toEqual(["Run", "Peak day", "Peak infections", "Attack rate", "Disease deaths", "Doses", "Treatments given"]);
+    expect(table.rows[1].slice(-2)).toEqual(["2,500,000", "1,200"]);
+    expect(table.rows[0].slice(-2)).toEqual(["—", "—"]);
+    const plain = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "results")!.blocks[0];
+    if (plain.kind !== "table") throw new Error("table");
+    expect(plain.columns).not.toContain("Doses");
+  });
+
+  it("labels use panel numbers (round-1 spec 8)", () => {
+    const [a, b] = FIXTURE.runs;
+    expect(runLabels([{ ...a, index: 4 }, { ...b, index: 6 }])).toEqual(["Run 4", "Run 6, vaccine coverage 90%"]);
+  });
+
+  it("report label says people a day (round-1 spec 3)", () => {
+    const base = FIXTURE.runs[0];
+    const treated = { ...base, effectiveParams: { ...base.effectiveParams, interventions: [...base.effectiveParams.interventions, { type: "treatment", capacity: 300 } as never] } };
+    expect(runLabels(numbered([base, treated]))[1]).toBe("Run 2, treatment capacity 300 people a day");
+  });
+
   it("labels runs by what changed from the previous one", () => {
     expect(runLabels(FIXTURE.runs)).toEqual(["Run 1", "Run 2, vaccine coverage 90%", "Run 3, no vaccine"]);
     expect(runLabels([FIXTURE.runs[0]])).toEqual(["Run 1"]);
-    expect(runLabels([FIXTURE.runs[0], FIXTURE.runs[0]])).toEqual(["Run 1", "Run 2"]);
+    expect(runLabels(numbered([FIXTURE.runs[0], FIXTURE.runs[0]]))).toEqual(["Run 1", "Run 2"]);
     const as = (solver: "abm" | "ode") => ({ ...FIXTURE.runs[0], stats: { ...FIXTURE.runs[0].stats, solver } });
-    expect(runLabels([as("ode"), as("abm"), as("abm"), as("ode")])).toEqual(["Run 1", "Run 2, as agents", "Run 3", "Run 4, as a compartmental model"]);
-    expect(runLabels([FIXTURE.runs[0], as("abm")])).toEqual(["Run 1", "Run 2"]);       // a run stored without its mode names no change
+    expect(runLabels(numbered([as("ode"), as("abm"), as("abm"), as("ode")]))).toEqual(["Run 1", "Run 2, as agents", "Run 3", "Run 4, as a compartmental model"]);
+    expect(runLabels(numbered([FIXTURE.runs[0], as("abm")]))).toEqual(["Run 1", "Run 2"]);       // a run stored without its mode names no change
   });
 });
 
@@ -141,10 +185,10 @@ describe("run labels and the limits on spread (follow-up spec 4 and 5)", () => {
     const response = { type: "behavior_response", coverage: null, start_day: 0, end_day: null, efficacy: 1, kind: "routine", leaky: true, age_min: null, age_max: null, protection_days: null,
       capacity: null, delay_days: 0, rel_trans_treated: 1, symptomatic_only: false, scale: 0.5, shift: 0, layer: "all", half_prevalence: 0.01, memory_days: 7 } as (typeof base.effectiveParams.interventions)[number];
     const withResponse = { ...base, effectiveParams: { ...base.effectiveParams, interventions: [response] } };
-    expect(runLabels([base, withCv])).toEqual(["Run 1", "Run 2, variation CV 1"]);
-    expect(runLabels([withCv, base])).toEqual(["Run 1", "Run 2, no variation"]);
-    expect(runLabels([base, withResponse])).toEqual(["Run 1", "Run 2, behaviour response"]);
-    expect(runLabels([withResponse, base])).toEqual(["Run 1", "Run 2, no behaviour response"]);
+    expect(runLabels(numbered([base, withCv]))).toEqual(["Run 1", "Run 2, variation CV 1"]);
+    expect(runLabels(numbered([withCv, base]))).toEqual(["Run 1", "Run 2, no variation"]);
+    expect(runLabels(numbered([base, withResponse]))).toEqual(["Run 1", "Run 2, behaviour response"]);
+    expect(runLabels(numbered([withResponse, base]))).toEqual(["Run 1", "Run 2, no behaviour response"]);
   });
 });
 

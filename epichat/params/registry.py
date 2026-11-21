@@ -134,8 +134,8 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
     ParamSpec("disease.seed.mode", "disease", "Seeding mode", "fraction: a share value of the people start infected; count: exactly "
               "value people start infected.", "enum", None, "fraction", None, ("fraction", "count"), (), "advanced", None,
               "ss.Disease(init=dict(I=...)) or ss.Disease(init_n=dict(I=...))", ("stochasticity",)),
-    ParamSpec("disease.seed.value", "disease", "Seed size", "A fraction between 0 and 1 (mode fraction) or a whole number of agents from 1 "
-              "to n_agents (mode count).", "number", None, 0.0005, (0.0, 1_000_000.0), None, (), "core", None,
+    ParamSpec("disease.seed.value", "disease", "Seed size", "A fraction between 0 and 1 of the agents (mode fraction), or a whole number "
+              "of people (mode count) that the web app converts to agents at the run's scale.", "number", None, 0.0005, (0.0, 10_000_000_000.0), None, (), "core", None,
               "the disease's init or init_n, or ss.Delivery(move=S >> I) when day > 0", ("timing", "stochasticity")),
     ParamSpec("disease.seed.day", "disease", "Seeding day", "Day the seed infections happen; 0 means at the start.", "integer", "days", 0,
               (0, 7300), None, (), "advanced", None, "ss.Delivery(move=S >> I, at=ss.days(day))", ("timing",)),
@@ -235,13 +235,15 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               "rises and recovers as it falls: people being careful, not a measure).", "enum", None, None, None,
               ("vaccine", "treatment", "seasonality", "contact_reduction", "transmission_reduction", "behavior_response"), (), "core", None,
               "ss.vaccinate, ss.treat, ss.Delivery and ss.modify", ("peak", "final_size", "timing")),
-    ParamSpec("interventions[].coverage", "interventions", "Coverage", "Vaccine: yearly probability each susceptible person is vaccinated; "
-              "treatment: share of infectious people treated each day.", "number", "fraction", None, (0.0, 1.0), None, (), "core", None,
+    ParamSpec("interventions[].coverage", "interventions", "Coverage", "Vaccine, routine: the share of everyone in the eligible ages "
+              "vaccinated each year; vaccine, campaign: the share of everyone in the eligible ages reached over the campaign, including "
+              "people already immune. Treatment: share of infectious people treated each day.", "number", "fraction", None, (0.0, 1.0), None, (), "core", None,
               "ss.vaccinate(coverage=...) or ss.treat(coverage=...)", ("peak", "final_size")),
     ParamSpec("interventions[].start_day", "interventions", "Start day", "Day the intervention begins. A vaccine starting on day 0 is "
               "stored as disease.initial_immune_frac instead.", "integer", "days", 0, (0, 7300), None, (), "core", None,
               "the delivery's or modifier's start=ss.days(start_day)", ("timing",)),
-    ParamSpec("interventions[].capacity", "interventions", "Treatment capacity", "Most people treated per day.", "integer", "agents per day",
+    ParamSpec("interventions[].capacity", "interventions", "Treatment capacity", "Most people treated per day; the web app converts it to agents at the run's "
+              "scale.", "integer", "people per day",
               None, (1, 1_000_000), None, (), "core", None, "ss.treat(capacity=ss.perday(...))", ("peak", "final_size")),
     ParamSpec("interventions[].scale", "interventions", "Scale", "Seasonality: size of the yearly cycle (0.2 means transmission moves "
               "between 80% and 120% of beta); contact_reduction and transmission_reduction: the fraction removed over the window (0.3 "
@@ -286,7 +288,8 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               (10, 1_000_000), None, (), "core", None, "ss.Sim(solver='abm', n_agents=...) or ss.Sim(solver='ode', total_pop=...)", ("stochasticity",)),
     ParamSpec("run.sim_dur_years", "run", "Duration", "Length of the run in years.", "number", "years", 1.0, (0.01, 20.0), None, (), "core",
               None, "ss.Sim(stop=ss.days(round(365 * years)))", ("duration",)),
-    ParamSpec("run.n_replicates", "run", "Replicates", "How many seeds to run as agents; the result shows the median run with 10 to 90% bands. An "
+    ParamSpec("run.n_replicates", "run", "Replicates", "How many times to run as agents, each with its own random seed; the chart shows "
+              "the run with the median total infected and a shaded band from the 10th to the 90th percentile of the runs. A "
               "compartmental run is deterministic and runs once.",
               "integer", None, 1, (1, 5), None, (), "advanced", None, "run_replicates", ("stochasticity",)),
     ParamSpec("run.solver", "run", "Run as", "abm: simulated individual people (agents); ode: a compartmental model, one "

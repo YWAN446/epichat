@@ -109,6 +109,21 @@ describe("fetch_demographics", () => {
   });
 });
 
+describe("an area and the health-system data (final review 4)", () => {
+  it("an area change rescales a capacity from the health-system data, not one the user typed", async () => {
+    const deps = await configured(makeDeps({ wbData360: [rf("treatment_capacity", 2.0, "WB WDI, KEN, 2021")] }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, treatment_capacity: 10 });
+    deps.scenario.totalPopulation = 55_000_000;
+    await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(110_000);
+    const out = JSON.parse((await configureSimulation({ area: { name: "Example County", population: 2_000_000 } } as never, deps)).content);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(4_000);
+    expect(out.applied.treatment_capacity_rescaled_to_area).toBe(4_000);
+    await configureSimulation({ treatment_capacity: 300 } as never, deps);
+    await configureSimulation({ area: { name: "Other County", population: 1_000_000 } } as never, deps);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(300);
+  });
+});
+
 describe("fetch_health_system", () => {
   const fields = [
     { ...rf("treatment_capacity", 2.52, "WB WDI, KEN, 2021"), description: "hospital beds/1,000", alternatives: [{ ...rf("treatment_capacity", 0.2, "WB WDI, KEN, 2021"), description: "physicians/1,000" }] },
@@ -122,6 +137,13 @@ describe("fetch_health_system", () => {
     expect(out.applied).toEqual({ treatment_capacity: 2.52, uhc_coverage: 56, applied_treatment_capacity: 252 });
     expect(out.citations).toEqual(["WB WDI, KEN, 2021", "WB WDI, KEN, 2022"]);
     expect(deps.queries[0]).toEqual({ source: "wb_data360", indicatorCodes: ["WB_WDI_SH_MED_BEDS_ZS", "WB_WDI_SH_MED_PHYS_ZS", "WB_WDI_SH_MED_NUMW_P3", "WB_WDI_SH_UHC_SRVS_CV_XD"], locationCode: "KEN" });
+  });
+
+  it("health-system capacity uses the population (round-1 spec 3: people a day)", async () => {
+    const deps = await configured(makeDeps({ wbData360: [rf("treatment_capacity", 2.0, "WB WDI, KEN, 2021")] }), { disease: "measles", n_agents: 10000, treatment_capacity: 10 });
+    deps.scenario.totalPopulation = 2_000_000;
+    await fetchHealthSystem({ country_iso3: "KEN" }, deps);
+    expect(getTreatment(deps.scenario.params!)?.capacity).toBe(4000);
   });
 
   it("records only when there is no treatment intervention", async () => {
@@ -270,5 +292,45 @@ describe("the fetch tools send where each value came from (follow-up spec 8.4)",
     const treated = await configured(makeDeps({ wbData360: beds }), { disease: "measles", n_agents: 5000, treatment_capacity: 10 });
     const health = (await fetchHealthSystem({ country_iso3: "KEN" } as never, treated)).payload as { sources?: Record<string, string> };
     expect(health.sources).toMatchObject({ "run.n_agents": "user" });
+  });
+});
+
+describe("fetch_demographics keeps what was set in chat (round-1 spec 1)", () => {
+  const kenya = [rf("total_population", 55_000_000, "UN WPP 2024"), rf("birth_rate", 12.3, "UN WPP 2024"), rf("death_rate", 7.1, "UN WPP 2024")];
+
+  it("fetch keeps an area", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 2_000_000 } });
+    const out = await fetchDemographics({ country_iso3: "KEN" }, deps);
+    expect(deps.scenario.area?.population).toBe(2_000_000);
+    expect(deps.scenario.params!.run.n_agents).toBe(10000);
+    expect(deps.scenario.totalPopulation).toBe(55_000_000);
+    expect(out.content).toContain("Area population kept: 2,000,000 (Example County)");
+    expect(out.payload).toMatchObject({ kind: "data", population: { value: 2_000_000, national: false } });
+  });
+
+  it("a fetch for another country clears the area, carrying the scenario over after a run (final review 6)", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 2_000_000 } });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "UGA" }, deps)).content);
+    expect(deps.scenario.area).toBeNull();
+    expect(out.applied.area_cleared).toBe(true);
+    expect(deps.scenario.seq).toBe(1);
+    const ran = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 2_000_000 } });
+    ran.scenario.hasRun = true;
+    await fetchDemographics({ country_iso3: "UGA" }, ran);
+    expect([ran.scenario.area, ran.scenario.seq, ran.starts]).toEqual([null, 2, 1]);
+  });
+
+  it("warns when an area set before the fetch is larger than the country (final review 6)", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", country_iso3: "KEN", n_agents: 10000, area: { name: "Example County", population: 60_000_000 } });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    expect(out.warnings).toContain("Example County's population (60,000,000) is larger than Kenya's (55,000,000); check the figure.");
+  });
+
+  it("fetch keeps a user-set household size", async () => {
+    const deps = await configured(makeDeps({ unWpp: kenya }), { disease: "measles", household_size: 6 });
+    const out = JSON.parse((await fetchDemographics({ country_iso3: "KEN" }, deps)).content);
+    expect(deps.scenario.params!.network.household_size).toBe(6);
+    expect(out.applied.household_size_kept).toBe(6);
+    expect(out.applied.household_size).toBeUndefined();
   });
 });

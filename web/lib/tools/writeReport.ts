@@ -10,6 +10,8 @@ export const WriteReportInput = z.strictObject({
   meaning: z.string().trim().min(40).max(4000),
   limitations: z.string().trim().min(40).max(4000),
   next_steps: z.string().trim().min(20).max(2000),
+  /** Round-1 spec 8: the Runs section's numbers of the runs to cover; absent for every run of the scenario. */
+  runs: z.array(z.number().int().min(1)).min(1).max(12).refine((r) => new Set(r).size === r.length, "no duplicates").optional(),
 });
 export type WriteReportArgs = z.infer<typeof WriteReportInput>;
 
@@ -28,12 +30,21 @@ function literatureFor(disease: string | null): DiseasePayload | null {
   return { kind: "disease", canonical_name: entry.key, display_name: entry.display_name, parameters };
 }
 
+/** "3", "3 and 5", "3, 4 and 5". */
+const listText = (n: number[]): string => (n.length <= 1 ? n.join("") : `${n.slice(0, -1).join(", ")} and ${n.at(-1)}`);
+
 /** Report spec, section 6: the model narrates, code assembles, the store keeps every version. */
 export async function writeReport(input: WriteReportArgs, deps: ToolDeps): Promise<ToolOutcome> {
   const scenario = deps.scenario;
   if (!scenario.hasRun) return { content: NOT_READY };
-  const runs = await deps.reports.runs();
-  if (runs.length === 0) return { content: NOT_READY };
+  const all = await deps.reports.runs();
+  if (all.length === 0) return { content: NOT_READY };
+  // round-1 spec 8: only the runs asked for, by the panel's numbers
+  const missing = (input.runs ?? []).filter((n) => !all.some((r) => r.index === n));
+  if (missing.length > 0) {
+    return { content: `REPORT NOT WRITTEN: run ${listText(missing)} ${missing.length === 1 ? "is" : "are"} not one of this scenario's runs; its runs are ${listText(all.map((r) => r.index))}.` };
+  }
+  const runs = input.runs ? all.filter((r) => input.runs!.includes(r.index)) : all;
   const [recap, version] = await Promise.all([deps.reports.recap(), deps.reports.nextVersion()]);
   const document = composeReport(
     { scenario, runs, recap, literature: literatureFor(scenario.disease), narrative: input, version, conversationTitle: deps.reports.conversationTitle, starsimVersion: null },

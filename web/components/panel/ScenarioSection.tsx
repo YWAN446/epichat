@@ -1,7 +1,7 @@
-import { scenarioRows } from "@/lib/client/format";
-import type { ConfigPayload, DiseasePayload } from "@/lib/tools/types";
+import { populationRow, scenarioRows } from "@/lib/client/format";
+import type { ConfigPayload, DiseasePayload, PopulationView } from "@/lib/tools/types";
 
-type Props = { config: ConfigPayload | null; disease: DiseasePayload | null };
+type Props = { config: ConfigPayload | null; disease: DiseasePayload | null; /** Round-1 spec 1: the population counts are scaled to. */ population?: PopulationView | null };
 
 /** The disease's display name when the lookup matches the configuration; the key in sentence case otherwise. */
 function diseaseName(key: string | null, disease: DiseasePayload | null): string {
@@ -11,9 +11,10 @@ function diseaseName(key: string | null, disease: DiseasePayload | null): string
 }
 
 /** What is being modelled, in words, and the configuration's warnings. The literature lives in Data, the values in Parameters. */
-export function ScenarioSection({ config, disease }: Props) {
+export function ScenarioSection({ config, disease, population }: Props) {
   if (!config) return <p className="text-ink-faint">The configuration appears here once a scenario is set up.</p>;
   const rows = scenarioRows(config.config, diseaseName(config.config.disease, disease));
+  if (population) rows.splice(rows.findIndex(([label]) => label === "Country") + 1, 0, populationRow(population));
   return (
     <div className="space-y-3">
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">

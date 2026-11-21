@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compact, linePath, nearestIndex, niceTicks, seriesFor, thinPoints } from "@/lib/client/chart";
+import { bandFor, bandPath, compact, linePath, nearestIndex, niceTicks, seriesFor, thinPoints } from "@/lib/client/chart";
 
 describe("chart math", () => {
   it("maps each view to the lines the series has", () => {
@@ -43,5 +43,18 @@ describe("chart math", () => {
     expect(nearestIndex([0, 4, 8, 12], 7)).toBe(2);
     expect(nearestIndex([0, 4, 8, 12], 99)).toBe(3);
     expect(nearestIndex([], 3)).toBe(0);
+  });
+});
+
+describe("the replicate band (round-1 spec 5)", () => {
+  const series = { day: [0, 1], n_infectious: [5, 6], n_infectious_p10: [4, 5], n_infectious_p90: [7, 9], new_infections: [1, 1], cum_deaths: [0, 1], cum_deaths_p10: [0, 0], cum_deaths_p90: [0, 2] };
+  it("bandFor picks the view's band, none for compartments or without keys", () => {
+    expect(bandFor("infected", series)).toEqual({ p10: [4, 5], p90: [7, 9] });
+    expect(bandFor("deaths", series)).toEqual({ p10: [0, 0], p90: [0, 2] });
+    expect(bandFor("compartments", series)).toBeNull();
+    expect(bandFor("incidence", series)).toBeNull();                // series without band keys draws no band
+  });
+  it("bandPath runs along p90 and back along p10", () => {
+    expect(bandPath([0, 1], [0, 0], [10, 10], 100, 50, 1, 10)).toBe("M0 0 L100 0 L100 50 L0 50 Z");
   });
 });

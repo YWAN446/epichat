@@ -148,6 +148,14 @@ def test_unfinished_fires_on_a_tail_or_a_rising_incidence_and_doubles_the_durati
     assert "unfinished" not in ids(run(p, NORMAL, total=8600, seeds=100))
 
 
+def test_unfinished_ignores_a_handful_of_agents():
+    """Round-1 spec 10: one agent still infectious, or one new infection after none, is not an epidemic still going."""
+    p = params()
+    assert "unfinished" not in ids(run(p, curve(2, 10, 5, tail=1), total=3, seeds=1))
+    sirs = params(**{"disease.model": "sirs", "disease.dur_immune": {"mean_days": 60}})
+    assert "unfinished" not in ids(run(sirs, NORMAL, total=8600, seeds=100, new=[0.0] * 340 + [1.0] + [0.0] * 25))
+
+
 def test_final_size_gap_fires_on_a_simple_run_whose_attack_rate_misses_the_final_size():
     p = params()
     z = final_size(approx_r0(p))

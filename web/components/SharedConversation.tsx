@@ -46,10 +46,10 @@ export function SharedConversation({ snapshot, token, takenAt }: Props) {
         </main>
         <aside aria-label="Details" className="text-sm">
           <Section id="shared-scenario" title="Scenario" open={open.scenario} onToggle={toggle("scenario")}>
-            <ScenarioSection config={artifacts.config} disease={artifacts.disease} />
+            <ScenarioSection config={artifacts.config} disease={artifacts.disease} population={artifacts.population} />
           </Section>
           <Section id="shared-data" title="Data" count={artifacts.data.length} open={open.data} onToggle={toggle("data")}>
-            <DataSection data={artifacts.data} disease={artifacts.disease} references={false} />
+            <DataSection data={artifacts.data} disease={artifacts.disease} references={false} population={artifacts.population} countryIso3={artifacts.config?.config.country ?? null} />
           </Section>
           <Section id="shared-parameters" title="Parameters" open={open.parameters} onToggle={toggle("parameters")}>
             <ParametersSection params={artifacts.params} sources={artifacts.sources} references={artifacts.references} configured={artifacts.config !== null} />

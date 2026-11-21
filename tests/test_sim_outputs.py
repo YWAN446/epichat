@@ -108,3 +108,26 @@ def test_the_behaviour_response_reports_its_lowest_factor():
     b = out["stats"]["behavior"]
     assert 0.4 < b["min_factor"] < 1 and 0 <= b["min_day"] <= 60
     assert "behavior" not in run()[0]["stats"]
+
+
+@pytest.mark.parametrize("solver", ["abm", "ode"])
+def test_campaign_delivered_counts_doses(solver):
+    """Round-1 spec 4: a campaign's doses come from Starsim's delivered result, everyone eligible counted once."""
+    body = {"disease": {"model": "sir", "beta": 0.01, "seed": {"mode": "count", "value": 2}},
+            "interventions": [{"type": "vaccine", "kind": "campaign", "coverage": 0.5, "start_day": 0, "end_day": 30}],
+            "run": {"n_agents": 10_000, "sim_dur_years": 60 / 365, "rand_seed": 1, "solver": solver}}
+    p = SimParamsV2.model_validate(body)
+    sim = build_sim(p)
+    sim.run()
+    stats = extract(sim, p)["stats"]
+    assert 4_500 <= stats["delivered"]["vaccine_0"] <= 5_500
+
+
+def test_treatment_delivered():
+    out, _ = run("sir", days=60, interventions=[{"type": "treatment", "coverage": 1.0, "efficacy": 0.5}])
+    assert out["stats"]["delivered"]["treatment_0"] > 0
+
+
+def test_no_delivered_without_vaccine_or_treatment():
+    out, _ = run("sir")
+    assert "delivered" not in out["stats"]

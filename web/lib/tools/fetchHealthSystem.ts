@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getTreatment, validateParams } from "@/lib/sim/params";
 import { pyRound } from "@/lib/sim/pyformat";
+import { scalingPopulation } from "@/lib/sim/units";
 import { NEEDS_CONFIG, errorMessage, errorOutcome, recordSources } from "./shared";
 import { pruneReferences, scenarioReferences, scenarioSources } from "./sources";
 import type { ToolDeps, ToolOutcome } from "./types";
@@ -21,7 +22,8 @@ export async function fetchHealthSystem(input: FetchHealthSystemArgs, deps: Tool
     const applied: Record<string, unknown> = Object.fromEntries(fields.map((f) => [f.field, f.value]));
     const cap = fields.find((f) => f.field === "treatment_capacity");
     if (cap && getTreatment(scenario.params)) {
-      const capacity = Math.max(1, pyRound((Number(cap.value) * scenario.params.run.n_agents) / 1000, 0));
+      // per 1,000 people, applied to the population as people a day (round-1 spec 3); the agents stand in without a population
+      const capacity = Math.max(1, pyRound((Number(cap.value) * (scalingPopulation(scenario) ?? scenario.params.run.n_agents)) / 1000, 0));
       const validated = validateParams({
         ...scenario.params,
         interventions: scenario.params.interventions.map((i) => (i.type === "treatment" ? { ...i, capacity } : i)),

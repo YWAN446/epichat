@@ -4,12 +4,15 @@ import type { Diagnostic, RepairRecord, SimStats } from "@/lib/sim/client";
 import { coerceParams, type SimParams } from "@/lib/sim/params";
 import type { RunRecord } from "@/lib/tools/types";
 
-export type RunInsert = { conversationId: string; userId: string; turnId: string; scenarioId: string | null; record: RunRecord };
+/** scenarioSeq: the seq of the scenario the run was made for, so a turn that starts another scenario keeps the runs apart (final review 5). */
+export type RunInsert = { conversationId: string; userId: string; turnId: string; scenarioId: string | null; scenarioSeq?: number | null; record: RunRecord };
 
 /** One successful run as the report reads it back (report spec, section 5). */
 export type ReportRun = {
   id: string;
   createdAt: string;
+  /** Round-1 spec 8: the run's number in the Runs section, its place among the conversation's successful runs, from 1. */
+  index: number;
   effectiveParams: SimParams;
   stats: SimStats;
   statsAgents: SimStats;
@@ -27,26 +30,30 @@ export interface RunStore {
   /** Insert the row and return its id. Throws when the database refuses; onRun swallows it. */
   insert(run: RunInsert): Promise<string>;
   /** The scenario's successful runs plus this turn's not-yet-linked ones, oldest first, with their series (the report). */
-  listForReport(conversationId: string, scenarioId: string | null, turnId: string): Promise<ReportRun[]>;
+  listForReport(conversationId: string, scenarioId: string | null, turnId: string, scenarioSeq?: number): Promise<ReportRun[]>;
   /** The stored series of the given runs, by id; runs without one are left out (the share's snapshot). */
   seriesFor(ids: string[]): Promise<Map<string, Record<string, number[]>>>;
   /** The newest successful run of the scenario (this turn's unlinked ones included), or null. Throws when the database refuses. */
-  latest(conversationId: string, scenarioId: string | null, turnId: string): Promise<PreviousRun | null>;
+  latest(conversationId: string, scenarioId: string | null, turnId: string, scenarioSeq?: number): Promise<PreviousRun | null>;
 }
 
 type ReportRunRow = {
-  id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: unknown; stats: SimStats; stats_agents: SimStats;
+  id: string; created_at: string; scenario_id: string | null; scenario_seq?: number | null; turn_id: string | null; effective_params: unknown; stats: SimStats; stats_agents: SimStats;
   pop_scale: number | string | null; series: Record<string, number[]> | null; repairs: RepairRecord[] | null; warnings: string[] | null; data_sources: ResolvedField[] | null;
 };
 
 type PreviousRow = {
-  id: string; created_at: string; scenario_id: string | null; turn_id: string | null; effective_params: unknown; stats: SimStats; stats_agents: SimStats;
+  id: string; created_at: string; scenario_id: string | null; scenario_seq?: number | null; turn_id: string | null; effective_params: unknown; stats: SimStats; stats_agents: SimStats;
   pop_scale: number | string | null; diagnostics: Diagnostic[] | null;
 };
 
-/** The stored scenario's runs, plus this turn's not-yet-linked ones; never an earlier turn's orphan when the scenario is new. */
-function belongs(row: { scenario_id: string | null; turn_id: string | null }, scenarioId: string | null, turnId: string): boolean {
-  return (scenarioId !== null && row.scenario_id === scenarioId) || (row.scenario_id === null && row.turn_id === turnId);
+/**
+ * The stored scenario's runs, plus this turn's not-yet-linked ones of the same scenario seq; never an earlier turn's orphan when
+ * the scenario is new, nor a run of a scenario the turn replaced (final review 5).
+ */
+function belongs(row: { scenario_id: string | null; scenario_seq?: number | null; turn_id: string | null }, scenarioId: string | null, turnId: string, seq?: number): boolean {
+  if (scenarioId !== null && row.scenario_id === scenarioId) return true;
+  return row.scenario_id === null && row.turn_id === turnId && (seq === undefined || row.scenario_seq === null || row.scenario_seq === undefined || row.scenario_seq === seq);
 }
 
 /** The runs columns for one simulation, finished or failed. */
@@ -58,6 +65,7 @@ export function runRow(run: RunInsert): Record<string, unknown> {
     user_id: run.userId,
     turn_id: run.turnId,
     scenario_id: run.scenarioId,
+    scenario_seq: run.scenarioSeq ?? null,
     params: record.params,
     pop_scale: record.popScale,
     warnings: record.warnings,
@@ -96,17 +104,19 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
       if (error || !data) throw new Error(`runs insert failed: ${error?.message ?? "no row"}`);
       return (data as { id: string }).id;
     },
-    async listForReport(conversationId, scenarioId, turnId) {
+    async listForReport(conversationId, scenarioId, turnId, scenarioSeq) {
       const { data, error } = await admin
         .from("runs")
-        .select("id, created_at, scenario_id, turn_id, effective_params, stats, stats_agents, pop_scale, series, repairs, warnings, data_sources")
+        .select("id, created_at, scenario_id, scenario_seq, turn_id, effective_params, stats, stats_agents, pop_scale, series, repairs, warnings, data_sources")
         .eq("conversation_id", conversationId)
         .is("error", null)
         .order("created_at", { ascending: true });
       if (error) throw new Error(`runs read failed: ${error.message}`);
+      // numbered before the scenario filter, as the Runs section numbers every successful run of the conversation
       return ((data ?? []) as ReportRunRow[])
-        .filter((row) => belongs(row, scenarioId, turnId))
-        .flatMap((row) => {
+        .map((row, i) => ({ row, index: i + 1 }))
+        .filter(({ row }) => belongs(row, scenarioId, turnId, scenarioSeq))
+        .flatMap(({ row, index }) => {
           // Stored rows may be v1; a row whose parameters no longer validate is left out of the report.
           const effectiveParams = coerceParams(row.effective_params);
           if (!effectiveParams) {
@@ -116,6 +126,7 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
           return [{
             id: row.id,
             createdAt: row.created_at,
+            index,
             effectiveParams,
             stats: row.stats,
             statsAgents: row.stats_agents,
@@ -135,16 +146,16 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
       for (const row of (data ?? []) as { id: string; series: Record<string, number[]> | null }[]) if (row.series) out.set(row.id, row.series);
       return out;
     },
-    async latest(conversationId, scenarioId, turnId) {
+    async latest(conversationId, scenarioId, turnId, scenarioSeq) {
       const { data, error } = await admin
         .from("runs")
-        .select("id, created_at, scenario_id, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics")
+        .select("id, created_at, scenario_id, scenario_seq, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics")
         .eq("conversation_id", conversationId)
         .is("error", null)
         .order("created_at", { ascending: false });
       if (error) throw new Error(`runs read failed: ${error.message}`);
       for (const row of (data ?? []) as PreviousRow[]) {
-        if (!belongs(row, scenarioId, turnId)) continue;
+        if (!belongs(row, scenarioId, turnId, scenarioSeq)) continue;
         const effectiveParams = coerceParams(row.effective_params);
         if (!effectiveParams) continue; // an unusable row is no comparison; the next older one may be
         return {

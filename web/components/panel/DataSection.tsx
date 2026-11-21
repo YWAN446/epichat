@@ -1,5 +1,5 @@
-import { SOURCE_LABELS, countryName, describeField } from "@/lib/client/format";
-import type { DataPayload, DiseasePayload } from "@/lib/tools/types";
+import { SOURCE_LABELS, countryName, describeField, nationalNote } from "@/lib/client/format";
+import type { DataPayload, DiseasePayload, PopulationView } from "@/lib/tools/types";
 import { LiteratureTable } from "./LiteratureTable";
 
 export { SOURCE_LABELS };
@@ -15,12 +15,17 @@ type Props = {
   onUseReference?: (message: string) => void;
   /** A reply is streaming. */
   busy?: boolean;
+  /** Round-1 spec 1: for an area, the section says what stays national. */
+  population?: PopulationView | null;
+  countryIso3?: string | null;
 };
 
 /** The literature behind the disease, then every data fetch applied to the current scenario, each field in words with its unit. */
-export function DataSection({ data, disease, onReferencesOpen, references, onUseReference, busy }: Props) {
+export function DataSection({ data, disease, onReferencesOpen, references, onUseReference, busy, population, countryIso3 }: Props) {
+  const note = population && countryIso3 ? nationalNote(population, countryIso3) : null;
   return (
     <div className="space-y-4">
+      {note && <p className="rounded-r-lg border-l-[3px] border-accent bg-accent-wash px-3 py-2 text-ink-soft">{note}</p>}
       {disease && <LiteratureTable disease={disease} onReferencesOpen={onReferencesOpen} references={references} onUseReference={onUseReference} busy={busy} />}
       {data.length === 0 ? (
         <p className="text-ink-faint">Real data appears here once it is fetched.</p>

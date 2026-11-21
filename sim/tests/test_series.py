@@ -90,3 +90,8 @@ def test_stats_from_reads_n_infectious_with_the_n_infected_fallback():
 def test_scale_stats_scales_the_seed_counts_and_leaves_days_alone():
     scaled = scale_stats({"seeds": 3, "seeds_day0": 2, "peak_day": 7, "total_infected": 10}, 100)
     assert scaled == {"seeds": 300, "seeds_day0": 200, "peak_day": 7, "total_infected": 1000}
+
+
+def test_scale_stats_scales_delivered():
+    """Round-1 spec 4: doses and treatments scale like the other counts."""
+    assert scale_stats({"delivered": {"vaccine_0": 50, "treatment_1": 3}}, 200.0)["delivered"] == {"vaccine_0": 10_000, "treatment_1": 600}

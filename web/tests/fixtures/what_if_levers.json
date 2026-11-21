@@ -169,7 +169,7 @@
        "patch": {},
        "current": {},
        "direction": "change",
-       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "rationale": "A campaign reaching 70% of everyone eligible, vaccinated or not, from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
        "basis": "rule",
        "interventions": [
         {
@@ -292,7 +292,7 @@
        "patch": {},
        "current": {},
        "direction": "change",
-       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "rationale": "A campaign reaching 70% of everyone eligible, vaccinated or not, from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
        "basis": "rule",
        "interventions": [
         {
@@ -412,7 +412,7 @@
        "patch": {},
        "current": {},
        "direction": "change",
-       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "rationale": "A campaign reaching 70% of everyone eligible, vaccinated or not, from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
        "basis": "rule",
        "interventions": [
         {
@@ -547,7 +547,7 @@
        "patch": {},
        "current": {},
        "direction": "change",
-       "rationale": "A campaign reaching 70% of the susceptible from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
+       "rationale": "A campaign reaching 70% of everyone eligible, vaccinated or not, from the day 1% had been infected; the coverage and the efficacy (0.9) are illustrative.",
        "basis": "rule",
        "interventions": [
         {

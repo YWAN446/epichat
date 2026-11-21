@@ -6,7 +6,7 @@
 import names from "@/data/country_names.json";
 import type { Duration, Seed, SimParams } from "@/lib/sim/params";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
-import type { ConfigPayload, DataPayload } from "@/lib/tools/types";
+import type { ConfigPayload, DataPayload, PopulationView } from "@/lib/tools/types";
 
 const NAMES = names as Record<string, string>;
 
@@ -20,6 +20,16 @@ export const SOURCE_LABELS: Record<DataPayload["source"], string> = {
 };
 
 /** The UN's English name for an ISO3 code; the code itself when it is not a UN location. */
+/** Which data source a citation came from, by its address. */
+export function sourceOfCitation(citation: string): string {
+  const url = citation.toLowerCase();
+  if (url.includes("population.un.org") || url.includes("un wpp")) return SOURCE_LABELS.un_wpp;
+  if (url.includes("unicef")) return SOURCE_LABELS.unicef;
+  if (url.includes("who.int")) return SOURCE_LABELS.who_gho;
+  if (url.includes("worldbank") || url.includes("data360") || url.startsWith("wb ")) return SOURCE_LABELS.wb_data360;
+  return "Source";
+}
+
 export function countryName(iso3: string): string {
   return NAMES[iso3.trim().toUpperCase()] ?? iso3;
 }
@@ -82,15 +92,25 @@ export function scenarioRows(c: ConfigPayload["config"], diseaseName: string): [
   ];
 }
 
+/** Round-1 spec 1: "2,000,000, Example County, Kenya (you set it)", or the country's total and its source. */
+export function populationRow(view: PopulationView): [string, string] {
+  return ["Population", `${commaInt(view.value)}, ${view.place} (${view.origin})`];
+}
+
+/** Round-1 spec 1: what stays national in an area scenario; null for the whole country. */
+export function nationalNote(view: PopulationView, iso3: string): string | null {
+  return view.national ? null : `Ages, contact patterns and vaccination coverage are ${countryName(iso3)}'s national figures.`;
+}
+
 /** "8 days", or "8 days, gamma (sd 2.4)" for a distributed period. */
 export function durationText(d: Duration): string {
   const mean = formatQuantity(d.mean_days, "days");
   return d.dist === "constant" ? mean : `${mean}, ${d.dist} (sd ${fmtValue(d.sd_days ?? 0)})`;
 }
 
-/** "1%", "20 agents", "20 agents on day 5". */
+/** "1%", "20 people", "20 people on day 5" (round-1 spec 3: a count is people). */
 export function seedText(s: Seed): string {
-  const size = s.mode === "count" ? `${commaInt(s.value)} agents` : formatQuantity(s.value, "fraction");
+  const size = s.mode === "count" ? `${commaInt(s.value)} people` : formatQuantity(s.value, "fraction");
   return s.day > 0 ? `${size} on day ${fmtValue(s.day)}` : size;
 }
 
@@ -125,7 +145,7 @@ const LAYER_WORDS: Record<string, string> = { all: "All", household: "Household"
 export function fitValueText(target: string, value: number): string {
   if (target === "attack_rate") return formatQuantity(value, "fraction");
   if (target === "peak_day") return fmtValue(value);
-  return `${commaInt(value)} agents`;
+  return `${commaInt(value)} people`;                                 // round-1 spec 3: a peak-size target is people
 }
 
 /** "attack rate 30%", "peak day 60", "peak infections 500 agents". */
@@ -151,7 +171,7 @@ function spanText(start: number, end: number | null): string {
 
 /**
  * One line per intervention (Part 2, 7.1): "Vaccination campaign: 70% coverage, days 10–40, efficacy 80%, ages 5–17, protection 180 days",
- * "Treatment: 100% coverage, capacity 20 agents, after 3 days, efficacy 70%, half transmissibility while waiting, symptomatic only",
+ * "Treatment: 100% coverage, capacity 20 people a day, after 3 days, efficacy 70%, half transmissibility while waiting, symptomatic only",
  * "School contacts reduced by 100% from day 30 to day 72", "Transmission reduced by 30% from day 0 to day 90", "Seasonality: amplitude 0.3, shift 0".
  */
 export function interventionLines(p: SimParams): string[] {
@@ -173,7 +193,7 @@ export function interventionLines(p: SimParams): string[] {
       const waiting = i.rel_trans_treated < 1 ? [`${i.rel_trans_treated === 0.5 ? "half" : `×${fmtValue(i.rel_trans_treated)}`} transmissibility while waiting`] : [];
       const parts = [
         `Treatment: ${coverage}`,
-        i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} agents`,
+        i.capacity === null ? "no capacity limit" : `capacity ${fmtValue(i.capacity)} people a day`,
         ...(i.delay_days > 0 ? [`after ${formatQuantity(i.delay_days, "days")}`] : []),
         ...efficacy,
         ...waiting,
@@ -226,7 +246,7 @@ const VACCINES: Record<string, string> = {
 const FIELDS: Record<string, FieldSpec> = {
   birth_rate: { label: "Birth rate", unit: "per 1,000 per year" },
   death_rate: { label: "Death rate", unit: "per 1,000 per year" },
-  total_population: { label: "Population" },
+  total_population: { label: "Country population" },
   age_structure_pct: { label: "Age structure", kind: "age" },
   network_type: { label: "Contact network", kind: "network" },
   beta_recalibrated_to_hold_r0: { label: "Transmission rate recalibrated to hold R₀" },
@@ -234,7 +254,7 @@ const FIELDS: Record<string, FieldSpec> = {
   contact_matrix: { label: "Contact matrix", kind: "contacts" },
   age_source: { label: "Age source", kind: "age_source" },
   treatment_capacity: { label: "Treatment capacity", unit: "per 1,000 people" },
-  applied_treatment_capacity: { label: "Treatment capacity applied", unit: "agents" },
+  applied_treatment_capacity: { label: "Treatment capacity applied", unit: "people a day" },
   uhc_coverage: { label: "UHC service coverage index", unit: "of 100" },
   applied_vaccine_coverage: { label: "Vaccine coverage applied", kind: "percent_of_one" },
   applied_vaccine_efficacy: { label: "Vaccine efficacy applied", kind: "percent_of_one" },

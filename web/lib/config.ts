@@ -25,6 +25,8 @@ export type Settings = {
   evalBearerToken: string;
   /** The bearer Vercel sends to cron routes when this is set. */
   cronSecret: string;
+  /** The sim service's cap on n_agents × sim_dur_years × n_replicates (sim/settings.py, same variable and default). */
+  simMaxAgentYears: number;
 };
 
 type Env = Record<string, string | undefined>;
@@ -81,6 +83,7 @@ export function loadSettings(env: Env = process.env): Settings {
     unApiKey: env.UN_API_KEY ?? "",
     evalBearerToken: env.EVAL_BEARER_TOKEN ?? "",
     cronSecret: env.CRON_SECRET ?? "",
+    simMaxAgentYears: numberSetting(env, "SIM_MAX_AGENT_YEARS", 500000),
   };
 }
 

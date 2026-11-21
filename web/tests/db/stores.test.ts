@@ -39,11 +39,11 @@ describe("scenario store", () => {
     const { client, recorded } = fakeAdmin({ scenarios: [{ data: row }] });
     const scenario = await supabaseScenarioStore(client).get("s1");
     expect(scenario).toEqual({
-      id: "s1", seq: 2, params: params({ n_agents: 500 }), disease: "measles", countryIso3: "KEN", totalPopulation: 54027487,
+      id: "s1", seq: 2, params: params({ n_agents: 500 }), disease: "measles", countryIso3: "KEN", totalPopulation: 54027487, area: null,
       dataSources: [rf("birth_rate", 0.028)], webSources: [{ title: "WHO", url: "https://www.who.int" }], stage: "ground", stageReached: "ground", hasRun: false, hasReport: false, reportCurrent: false,
     });
     expect(callOn(recorded, "scenarios", "eq")).toEqual(["id", "s1"]);
-    expect(scenarioToJson(scenario!)).toEqual(row);
+    expect(scenarioToJson(scenario!)).toEqual({ ...row, area: null });
     expect(scenarioToJson(emptyScenario())).toMatchObject({ id: null, seq: 1, params: null, stage: "understand", stage_reached: "understand", has_run: false });
   });
 
@@ -57,6 +57,19 @@ describe("scenario store", () => {
     logged.mockRestore();
     expect(scenarioFromRow({ ...row, stage: "later", data_sources: null }).stage).toBe("understand");
     expect(scenarioFromRow({ ...row, data_sources: null }).dataSources).toEqual([]);
+  });
+
+  it("area round-trips, an old row reads null, and a malformed area reads null (round-1 spec 1)", () => {
+    const area = { name: "Example County", population: 2000000, countryIso3: "KEN", source: { kind: "user" as const } };
+    const scenario = scenarioFromRow({ ...row, area });
+    expect(scenario.area).toEqual(area);
+    expect(scenarioToJson(scenario).area).toEqual(area);
+    expect(scenarioFromRow(row).area).toBeNull();                       // a row stored before the column
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(scenarioFromRow({ ...row, area: { name: "", population: 2000000 } as never }).area).toBeNull();
+    expect(scenarioFromRow({ ...row, area: { name: "X", population: -3 } as never }).area).toBeNull();
+    expect(logged).toHaveBeenCalledTimes(2);
+    logged.mockRestore();
   });
 
   it("returns null for a missing row", async () => {
@@ -178,6 +191,7 @@ describe("report store and the report reads", () => {
     const admin = fakeAdmin({ runs: [{ data: [row("run-1", "s1", "t1"), row("run-2", "s0", "t0"), row("run-3", null, "t9"), row("run-4", null, "t2")] }] });
     const runs = await supabaseRunStore(admin.client).listForReport("c1", "s1", "t9");
     expect(runs.map((r) => r.id)).toEqual(["run-1", "run-3"]);
+    expect(runs.map((r) => r.index)).toEqual([1, 3]);                    // the panel's numbers: every successful run of the conversation
     expect(runs[0]).toMatchObject({ popScale: 2, series: { day: [0] }, repairs: [], warnings: [], dataSources: [] });
     expect(callOn(admin.recorded, "runs", "eq")).toEqual(["conversation_id", "c1"]);
     expect(callOn(admin.recorded, "runs", "is")).toEqual(["error", null]);
@@ -187,6 +201,27 @@ describe("report store and the report reads", () => {
     const admin = fakeAdmin({ turns: [{ data: { id: "t2", turn_events: [{ kind: "text", payload: { text: "hi" } }, { kind: "recap", payload: { items: ["Measles in Kenya", "Run 1 done"] } }] } }] });
     expect(await supabaseTurnStore(admin.client).lastRecap("c1")).toEqual(["Measles in Kenya", "Run 1 done"]);
     expect(await supabaseTurnStore(fakeAdmin({ turns: [{ data: null }] }).client).lastRecap("c1")).toEqual([]);
+  });
+});
+
+describe("listForReport numbers runs as the panel does (round-1 spec 8)", () => {
+  it("rows without a stored index still get panel numbers", async () => {
+    const row = (id: string, scenario_id: string) => ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id: "t1", effective_params: {}, stats: {}, stats_agents: {}, pop_scale: 1, series: null, repairs: [], warnings: [], data_sources: [] });
+    const admin = fakeAdmin({ runs: [{ data: [row("run-1", "s0"), row("run-2", "s0"), row("run-3", "s1"), row("run-4", "s1"), row("run-5", "s1")] }] });
+    const runs = await supabaseRunStore(admin.client).listForReport("c1", "s1", "t9");
+    expect(runs.map((r) => r.index)).toEqual([3, 4, 5]);
+  });
+});
+
+describe("unlinked runs belong to their scenario's seq (final review 5)", () => {
+  const row = (id: string, scenario_seq: number | null) => ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id: null, scenario_seq, turn_id: "t9", effective_params: {}, stats: {}, stats_agents: {}, pop_scale: 1, series: null, repairs: [], warnings: [], data_sources: [], diagnostics: [] });
+  it("listForReport and latest take only this scenario's unlinked runs", async () => {
+    const data = [row("run-1", 1), row("run-2", 2), row("run-3", null)];
+    expect((await supabaseRunStore(fakeAdmin({ runs: [{ data }] }).client).listForReport("c1", null, "t9", 2)).map((r) => r.id)).toEqual(["run-2", "run-3"]);
+    expect((await supabaseRunStore(fakeAdmin({ runs: [{ data: [row("run-2", 2), row("run-1", 1)] }] }).client).latest("c1", null, "t9", 1))?.id).toBe("run-1");   // newest first
+  });
+  it("runRow stores the scenario's seq", () => {
+    expect(runRow({ conversationId: "c1", userId: "u1", turnId: "t9", scenarioId: null, scenarioSeq: 2, record: { params: params({}), popScale: 1, result: { ok: false, kind: "timeout", detail: "x", status: 504, attempts: 1, repairs: [] }, warnings: [], dataSources: [] } } as never).scenario_seq).toBe(2);
   });
 });
 
@@ -311,7 +346,7 @@ describe("the previous run", () => {
     const admin = fakeAdmin({ runs: [{ data: [row("run-3", null, "t9", { diagnostics }), row("run-2", "s0", "t0"), row("run-1", "s1", "t1")] }] });
     const previous = await supabaseRunStore(admin.client).latest("c1", "s1", "t9");
     expect(previous).toMatchObject({ id: "run-3", diagnostics, stats: STATS, statsAgents: STATS, popScale: 2 });
-    expect(callOn(admin.recorded, "runs", "select")).toEqual(["id, created_at, scenario_id, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics"]);
+    expect(callOn(admin.recorded, "runs", "select")).toEqual(["id, created_at, scenario_id, scenario_seq, turn_id, effective_params, stats, stats_agents, pop_scale, diagnostics"]);
     expect(previous?.effectiveParams.run.n_agents).toBe(10000);
     expect(callOn(admin.recorded, "runs", "order")).toEqual(["created_at", { ascending: false }]);
     expect(callOn(admin.recorded, "runs", "is")).toEqual(["error", null]);

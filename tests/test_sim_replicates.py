@@ -43,3 +43,9 @@ def test_two_replicates_take_the_lower_and_a_null_seed_starts_at_one():
     assert out["replicates"]["seeds"] == [1, 2]
     assert out["stats"]["total_infected"] == min(s["total_infected"] for s in out["replicates"]["stats"])
     assert out == run_replicates(scenario(2, rand_seed=None, network=HYBRID))
+
+
+def test_bands_cover_incidence_and_deaths():
+    """Round-1 spec 5: the incidence and deaths views get a band too."""
+    rep = run_replicates(scenario(3, network=HYBRID))["replicates"]
+    assert set(rep["bands"]) == {"n_infectious", "cum_infections", "new_infections", "cum_deaths"}

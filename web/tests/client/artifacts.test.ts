@@ -20,6 +20,16 @@ const RUN: RunPayload = {
 const result = (name: string, payload: CardPayload, ok = true): Block => ({ kind: "tool_result", id: "tu", name, ok, payload });
 
 describe("deriveArtifacts", () => {
+  it("artifacts keep data across a carried-over scenario (round-1 spec 1)", () => {
+    const population = { value: 2_000_000, place: "Example County, Kenya", origin: "you set it", url: null, national: false };
+    const carried = { ...CONFIG(true), carried_over: true, population };
+    const a = deriveArtifacts([{ id: "t1", blocks: [result("configure_simulation", CONFIG(true)), result("fetch_demographics", DATA)] }, { id: "t2", blocks: [result("configure_simulation", carried)] }]);
+    expect(a.data).toEqual([DATA]);
+    expect(a.population).toEqual(population);
+    const reset = deriveArtifacts([{ id: "t1", blocks: [result("fetch_demographics", DATA), result("configure_simulation", { ...CONFIG(true), population })] }]);
+    expect(reset.data).toEqual([]);
+  });
+
   it("starts empty", () => {
     expect(deriveArtifacts([])).toEqual(emptyArtifacts());
   });
