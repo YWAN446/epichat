@@ -6,7 +6,7 @@
 import type { Block } from "@/lib/chat/events";
 import type { ReportPayload } from "@/lib/report/document";
 import { coerceParams, type SimParams } from "@/lib/sim/params";
-import type { ConfigPayload, DataPayload, DiseasePayload, RunPayload } from "@/lib/tools/types";
+import type { ConfigPayload, DataPayload, DiseasePayload, PopulationView, RunPayload } from "@/lib/tools/types";
 import { toolLabel, toolLine } from "./toolLine";
 
 /** effective: the run's parameters as today's schema reads them, or null for a stored run they no longer validate against (the payload then keeps its stored form, which nothing may read as SimParams). */
@@ -47,10 +47,12 @@ export type Artifacts = {
   report: ReportPayload | null;
   /** Successful remember calls so far; the Profile tab re-reads its list when this grows. */
   memoryWrites: number;
+  /** Round-1 spec 1: the population counts are scaled to, from the latest payload that carried it. */
+  population: PopulationView | null;
 };
 
 export function emptyArtifacts(): Artifacts {
-  return { disease: null, config: null, data: [], params: null, sources: null, references: null, runs: [], activity: [], report: null, memoryWrites: 0 };
+  return { disease: null, config: null, data: [], params: null, sources: null, references: null, runs: [], activity: [], report: null, memoryWrites: 0, population: null };
 }
 
 export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artifacts {
@@ -77,12 +79,12 @@ export function deriveArtifacts(turns: { id: string; blocks: Block[] }[]): Artif
         out.params = coerceParams(payload.params ?? null);
         out.sources = out.params ? (payload.sources ?? null) : null;
         out.references = out.params ? (payload.references ?? null) : null;
-        if (payload.new_scenario) {
-          out.data = [];
-          out.report = null;
-        }
+        if (payload.new_scenario && !payload.carried_over) out.data = [];      // a change of area keeps the country's data (round-1 spec 1)
+        if (payload.new_scenario) out.report = null;
+        if (payload.population !== undefined) out.population = payload.population;
       } else if (payload.kind === "data") {
         out.data.push(payload);
+        if (payload.population !== undefined) out.population = payload.population;
         const p = coerceParams(payload.params ?? null);
         if (p) {
           out.params = p;

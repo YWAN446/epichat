@@ -3,7 +3,7 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { SOLVER_LABELS, configurationRows, sourceOfCitation, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { SOLVER_LABELS, configurationRows, nationalNote, sourceOfCitation, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import { parameterTable } from "@/lib/client/parameters";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
@@ -11,6 +11,7 @@ import { DOCUMENT_VERSION, SECTION_HEADINGS, figureLine, narrativeBlocks, type R
 import { approxR0 } from "@/lib/sim/params";
 import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { configView } from "@/lib/tools/configView";
+import { populationView } from "@/lib/tools/population";
 import type { DiseasePayload, Scenario } from "@/lib/tools/types";
 
 export type ComposeInput = {
@@ -36,9 +37,11 @@ function diseaseName(scenario: Scenario, literature: DiseasePayload | null): str
   return scenario.disease ? scenario.disease.charAt(0).toUpperCase() + scenario.disease.slice(1) : "Epidemic";
 }
 
-/** "Measles in Kenya, SIR model, 1 year". */
+/** "Measles in Kenya, SIR model, 1 year", or "Measles in Example County, Kenya, …" for an area (round-1 spec 1). */
 export function scenarioTitle(scenario: Scenario, name: string): string {
-  const where = scenario.countryIso3 ? ` in ${countryName(scenario.countryIso3)}` : "";
+  const country = scenario.countryIso3 ? countryName(scenario.countryIso3) : null;
+  const place = scenario.area ? (country ? `${scenario.area.name}, ${country}` : scenario.area.name) : country;
+  const where = place ? ` in ${place}` : "";
   const model = scenario.params ? `, ${scenario.params.disease.model.toUpperCase()} model` : "";
   const years = scenario.params ? `, ${formatQuantity(scenario.params.run.sim_dur_years, "years")}` : "";
   return `${name}${where}${model}${years}`;
@@ -112,7 +115,10 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
   const blocks: ReportBlock[] = [];
   if (scenario.params) {
     const rows = configurationRows(configView(scenario.params, scenario.disease), approxR0(scenario.params), name);
-    if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
+    // round-1 spec 1: an area's population and where it came from; otherwise the country's total
+    const view = populationView(scenario);
+    if (view && !view.national && scenario.area) rows.splice(3, 0, ["Population", `${commaInt(view.value)}, ${scenario.area.name} (${view.origin})`]);
+    else if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
     // Part 2, 7.7: the latest run's fit, after the R0 rows: what was asked for, what the search reached, in how many runs.
     const fit = runs.at(-1)?.stats.fit;
     if (fit) {
@@ -165,6 +171,13 @@ function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayloa
   return blocks;
 }
 
+/** Round-1 spec 1: an area scenario's limitations always say what stays national. */
+function nationalBlock(scenario: Scenario): ReportBlock[] {
+  const view = populationView(scenario);
+  const note = view && scenario.countryIso3 ? nationalNote(view, scenario.countryIso3) : null;
+  return note ? [{ kind: "paragraph", text: note }] : [];
+}
+
 const DATE = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 
 export function composeReport(input: ComposeInput, now: Date): ReportDocument {
@@ -183,7 +196,7 @@ export function composeReport(input: ComposeInput, now: Date): ReportDocument {
       section("meaning", narrativeBlocks(input.narrative.meaning)),
       section("modelled", modelled(input.scenario, name, input.runs)),
       section("decisions", input.recap.length > 0 ? [{ kind: "bullets", items: input.recap }] : [{ kind: "paragraph", text: "The conversation recorded no decisions." }]),
-      section("limitations", narrativeBlocks(input.narrative.limitations)),
+      section("limitations", [...narrativeBlocks(input.narrative.limitations), ...nationalBlock(input.scenario)]),
       section("next_steps", narrativeBlocks(input.narrative.next_steps)),
       section("appendix", appendix(input.runs, labels, input.literature, input.starsimVersion)),
     ],

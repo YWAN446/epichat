@@ -67,12 +67,14 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
   return (
     <div className="text-sm">
       <Section id="panel-scenario" title="Scenario" open={open.scenario} onToggle={toggle("scenario")}>
-        <ScenarioSection config={artifacts.config} disease={artifacts.disease} />
+        <ScenarioSection config={artifacts.config} disease={artifacts.disease} population={artifacts.population} />
       </Section>
       <Section id="panel-data" title="Data" count={artifacts.data.length} open={open.data} onToggle={toggle("data")}>
         <DataSection
           data={artifacts.data}
           disease={artifacts.disease}
+          population={artifacts.population}
+          countryIso3={artifacts.config?.config.country ?? null}
           onReferencesOpen={onReferencesOpen}
           // the list on show is the last disease looked up; its values are this scenario's to apply only when that is the scenario's disease
           onUseReference={canUseReferences(artifacts.disease?.canonical_name ?? null, artifacts.config?.config.disease ?? null) ? onUseReference : undefined}

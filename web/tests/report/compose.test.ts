@@ -87,6 +87,19 @@ describe("composeReport", () => {
     expect(appendix.blocks.at(-1)).toMatchObject({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", "unknown"], ["Report format", "1"]] });
   });
 
+  it("names the area in the title, the Population row and the limitations (round-1 spec 1)", () => {
+    const area = { name: "Example County", population: 2_000_000, countryIso3: "KEN", source: { kind: "user" as const } };
+    const doc = composeReport({ ...FIXTURE, scenario: { ...FIXTURE.scenario, area } }, NOW);
+    expect(doc.title).toBe("Measles in Example County, Kenya, SIR model, 1 year");
+    const rows = doc.sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (rows.kind !== "keyValues") throw new Error("kv");
+    expect(rows.items).toContainEqual(["Population", "2,000,000, Example County (you set it)"]);
+    const limitations = doc.sections.find((s) => s.id === "limitations")!.blocks;
+    expect(limitations.at(-1)).toEqual({ kind: "paragraph", text: "Ages, contact patterns and vaccination coverage are Kenya's national figures." });
+    const national = composeReport(FIXTURE, NOW).sections.find((s) => s.id === "limitations")!.blocks;
+    expect(national.some((b) => b.kind === "paragraph" && b.text.includes("national figures"))).toBe(false);
+  });
+
   it("report label says people a day (round-1 spec 3)", () => {
     const base = FIXTURE.runs[0];
     const treated = { ...base, effectiveParams: { ...base.effectiveParams, interventions: [...base.effectiveParams.interventions, { type: "treatment", capacity: 300 } as never] } };

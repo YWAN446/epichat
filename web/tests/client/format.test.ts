@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, parameterLabel, scenarioRows } from "@/lib/client/format";
+import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, nationalNote, parameterLabel, populationRow, scenarioRows } from "@/lib/client/format";
 import { defaultRows, parameterGroups } from "@/lib/client/parameters";
 import type { SimParams } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
@@ -262,5 +262,18 @@ describe("the data sources' names", () => {
   it("name UNICEF's WHO/UNICEF estimates and keep WHO's for conversations stored before its API was retired", () => {
     expect(SOURCE_LABELS.unicef).toBe("WHO/UNICEF immunization estimates");
     expect(SOURCE_LABELS.who_gho).toBe("WHO Global Health Observatory");
+  });
+});
+
+describe("the population line (round-1 spec 1)", () => {
+  const area = { value: 2_000_000, place: "Example County, Kenya", origin: "you set it", url: null, national: false };
+  const country = { value: 55_100_000, place: "Kenya", origin: "UN World Population Prospects", url: null, national: true };
+  it("populationRow", () => {
+    expect(populationRow(area)).toEqual(["Population", "2,000,000, Example County, Kenya (you set it)"]);
+    expect(populationRow(country)).toEqual(["Population", "55,100,000, Kenya (UN World Population Prospects)"]);
+  });
+  it("nationalNote", () => {
+    expect(nationalNote(area, "KEN")).toBe("Ages, contact patterns and vaccination coverage are Kenya's national figures.");
+    expect(nationalNote(country, "KEN")).toBeNull();
   });
 });

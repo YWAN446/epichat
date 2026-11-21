@@ -6,7 +6,7 @@
 import names from "@/data/country_names.json";
 import type { Duration, Seed, SimParams } from "@/lib/sim/params";
 import { commaInt, fmtValue } from "@/lib/sim/pyformat";
-import type { ConfigPayload, DataPayload } from "@/lib/tools/types";
+import type { ConfigPayload, DataPayload, PopulationView } from "@/lib/tools/types";
 
 const NAMES = names as Record<string, string>;
 
@@ -90,6 +90,16 @@ export function scenarioRows(c: ConfigPayload["config"], diseaseName: string): [
     ["Duration", formatQuantity(c.sim_dur_years, "years")],
     ["Interventions", c.interventions.length > 0 ? c.interventions.join(", ") : "none"],
   ];
+}
+
+/** Round-1 spec 1: "2,000,000, Example County, Kenya (you set it)", or the country's total and its source. */
+export function populationRow(view: PopulationView): [string, string] {
+  return ["Population", `${commaInt(view.value)}, ${view.place} (${view.origin})`];
+}
+
+/** Round-1 spec 1: what stays national in an area scenario; null for the whole country. */
+export function nationalNote(view: PopulationView, iso3: string): string | null {
+  return view.national ? null : `Ages, contact patterns and vaccination coverage are ${countryName(iso3)}'s national figures.`;
 }
 
 /** "8 days", or "8 days, gamma (sd 2.4)" for a distributed period. */
