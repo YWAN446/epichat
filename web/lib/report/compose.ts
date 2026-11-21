@@ -57,10 +57,10 @@ function immunity(run: ReportRun): number | undefined {
   return frac > 0 ? frac : undefined;
 }
 
-/** "Run 1", then "Run 2, vaccine coverage 90%" when something a reader cares about changed from the previous run. */
+/** "Run 1", then "Run 2, vaccine coverage 90%" when something a reader cares about changed from the previous run; numbered as the Runs section numbers them (round-1 spec 8). */
 export function runLabels(runs: ReportRun[]): string[] {
   return runs.map((run, i) => {
-    const base = `Run ${i + 1}`;
+    const base = `Run ${run.index}`;
     if (i === 0) return base;
     const prev = runs[i - 1];
     const changes: string[] = [];

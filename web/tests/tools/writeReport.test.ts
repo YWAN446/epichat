@@ -9,6 +9,23 @@ const NARRATIVE = FIXTURE.narrative;
 const SECTIONS = ["summary", "results", "meaning", "modelled", "decisions", "limitations", "next_steps", "appendix"];
 
 describe("write_report", () => {
+  it("report covers chosen runs, by the panel's numbers (round-1 spec 8)", async () => {
+    const reportRuns = FIXTURE.runs.map((r, i) => ({ ...r, index: i + 3 }));
+    const deps = makeDeps({ scenario: { ...FIXTURE.scenario }, reportRuns, recap: FIXTURE.recap });
+    await writeReport({ ...NARRATIVE, runs: [3, 5] }, deps);
+    const table = deps.reportsWritten[0].document.sections.find((s) => s.id === "results")!.blocks[0];
+    if (table.kind !== "table") throw new Error("table");
+    expect(table.rows.map((row) => row[0])).toEqual(["Run 3", "Run 5"]);
+  });
+
+  it("report refuses a run outside the scenario", async () => {
+    const reportRuns = FIXTURE.runs.map((r, i) => ({ ...r, index: i + 3 }));
+    const deps = makeDeps({ scenario: { ...FIXTURE.scenario }, reportRuns, recap: FIXTURE.recap });
+    const out = await writeReport({ ...NARRATIVE, runs: [2] }, deps);
+    expect(out.content).toBe("REPORT NOT WRITTEN: run 2 is not one of this scenario's runs; its runs are 3, 4 and 5.");
+    expect(deps.reportsWritten).toHaveLength(0);
+  });
+
   it("refuses before a run", async () => {
     const deps = makeDeps();
     const out = await writeReport(NARRATIVE, deps);

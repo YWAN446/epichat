@@ -14,6 +14,7 @@ function run(id: string, createdAt: string, over: Partial<ReportRun> = {}): Repo
   return {
     id,
     createdAt,
+    index: Number(id.split("-").at(-1)) || 1,
     effectiveParams: params({ n_agents: 10000, sim_dur_years: 1 }),
     stats: stats(900, 40, 4000, 12),
     statsAgents: stats(900, 40, 4000, 12),

@@ -10,6 +10,8 @@ export type RunInsert = { conversationId: string; userId: string; turnId: string
 export type ReportRun = {
   id: string;
   createdAt: string;
+  /** Round-1 spec 8: the run's number in the Runs section, its place among the conversation's successful runs, from 1. */
+  index: number;
   effectiveParams: SimParams;
   stats: SimStats;
   statsAgents: SimStats;
@@ -104,9 +106,11 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
         .is("error", null)
         .order("created_at", { ascending: true });
       if (error) throw new Error(`runs read failed: ${error.message}`);
+      // numbered before the scenario filter, as the Runs section numbers every successful run of the conversation
       return ((data ?? []) as ReportRunRow[])
-        .filter((row) => belongs(row, scenarioId, turnId))
-        .flatMap((row) => {
+        .map((row, i) => ({ row, index: i + 1 }))
+        .filter(({ row }) => belongs(row, scenarioId, turnId))
+        .flatMap(({ row, index }) => {
           // Stored rows may be v1; a row whose parameters no longer validate is left out of the report.
           const effectiveParams = coerceParams(row.effective_params);
           if (!effectiveParams) {
@@ -116,6 +120,7 @@ export function supabaseRunStore(admin: SupabaseClient): RunStore {
           return [{
             id: row.id,
             createdAt: row.created_at,
+            index,
             effectiveParams,
             stats: row.stats,
             statsAgents: row.stats_agents,

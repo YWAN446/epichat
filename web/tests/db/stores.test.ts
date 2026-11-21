@@ -191,6 +191,7 @@ describe("report store and the report reads", () => {
     const admin = fakeAdmin({ runs: [{ data: [row("run-1", "s1", "t1"), row("run-2", "s0", "t0"), row("run-3", null, "t9"), row("run-4", null, "t2")] }] });
     const runs = await supabaseRunStore(admin.client).listForReport("c1", "s1", "t9");
     expect(runs.map((r) => r.id)).toEqual(["run-1", "run-3"]);
+    expect(runs.map((r) => r.index)).toEqual([1, 3]);                    // the panel's numbers: every successful run of the conversation
     expect(runs[0]).toMatchObject({ popScale: 2, series: { day: [0] }, repairs: [], warnings: [], dataSources: [] });
     expect(callOn(admin.recorded, "runs", "eq")).toEqual(["conversation_id", "c1"]);
     expect(callOn(admin.recorded, "runs", "is")).toEqual(["error", null]);
@@ -200,6 +201,15 @@ describe("report store and the report reads", () => {
     const admin = fakeAdmin({ turns: [{ data: { id: "t2", turn_events: [{ kind: "text", payload: { text: "hi" } }, { kind: "recap", payload: { items: ["Measles in Kenya", "Run 1 done"] } }] } }] });
     expect(await supabaseTurnStore(admin.client).lastRecap("c1")).toEqual(["Measles in Kenya", "Run 1 done"]);
     expect(await supabaseTurnStore(fakeAdmin({ turns: [{ data: null }] }).client).lastRecap("c1")).toEqual([]);
+  });
+});
+
+describe("listForReport numbers runs as the panel does (round-1 spec 8)", () => {
+  it("rows without a stored index still get panel numbers", async () => {
+    const row = (id: string, scenario_id: string) => ({ id, created_at: `2026-10-09T0${id.at(-1)}:00:00Z`, scenario_id, turn_id: "t1", effective_params: {}, stats: {}, stats_agents: {}, pop_scale: 1, series: null, repairs: [], warnings: [], data_sources: [] });
+    const admin = fakeAdmin({ runs: [{ data: [row("run-1", "s0"), row("run-2", "s0"), row("run-3", "s1"), row("run-4", "s1"), row("run-5", "s1")] }] });
+    const runs = await supabaseRunStore(admin.client).listForReport("c1", "s1", "t9");
+    expect(runs.map((r) => r.index)).toEqual([3, 4, 5]);
   });
 });
 

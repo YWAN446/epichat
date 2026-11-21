@@ -155,12 +155,13 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "write_report",
     description:
-      "Write the report for the current scenario. Call this when the user asks for a report, or when they accept your offer after interpreting a run. Give the narrative sections only; the report's tables and figures are filled from the stored results, so do not repeat numbers.\n\nsummary: five to eight sentences for a decision-maker. meaning: what the results show, comparing runs when there are several. limitations: the model's limits and every assumption that came from neither a tool nor the user. next_steps: scenarios worth running and data worth checking. Call it again, with the full text of every section, to produce a new version after changes.",
+      "Write the report for the current scenario. Call this when the user asks for a report, or when they accept your offer after interpreting a run. Give the narrative sections only; the report's tables and figures are filled from the stored results, so do not repeat numbers.\n\nsummary: five to eight sentences for a decision-maker. meaning: what the results show, comparing runs when there are several. limitations: the model's limits and every assumption that came from neither a tool nor the user. next_steps: scenarios worth running and data worth checking. Call it again, with the full text of every section, to produce a new version after changes. Pass runs (the Runs section's numbers) to cover only those runs; omit it for all of this scenario's runs.",
     eager_input_streaming: true,
     input_schema: {
       type: "object",
       properties: {
-        title: { type: "string", description: "Optional title; the default names the disease, the country, the model, and the duration." },
+        title: { type: "string", description: "Optional title; the default names the disease, the area or country, the model, and the duration." },
+        runs: { type: "array", items: { type: "integer", minimum: 1 }, description: "The Runs section's numbers of the runs to cover, e.g. [3, 5]; omit for every run of this scenario." },
         summary: { type: "string", description: "Five to eight sentences a decision-maker can act on." },
         meaning: { type: "string", description: "What the results show; compare runs when there are several. Blank lines separate paragraphs; lines starting with '- ' are bullets." },
         limitations: { type: "string", description: "The model's limits and every illustrative assumption." },
