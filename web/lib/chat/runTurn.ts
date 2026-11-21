@@ -89,6 +89,7 @@ function apiCallOf(model: string, message: Anthropic.Beta.BetaMessage, latency_m
     output_tokens: usage.output_tokens,
     cache_read_tokens: usage.cache_read_input_tokens ?? 0,
     cache_write_tokens: usage.cache_creation_input_tokens ?? 0,
+    cache_write_1h_tokens: usage.cache_creation?.ephemeral_1h_input_tokens ?? 0,
     stop_reason: message.stop_reason,
     latency_ms,
     served_by: fallback ? String(fallback.model) : model,
@@ -125,7 +126,7 @@ export async function runTurn(args: TurnArgs): Promise<TurnResult> {
         model: args.model,
         max_tokens: args.maxOutputTokens,
         system: args.system,
-        cache_control: { type: "ephemeral" },
+        cache_control: { type: "ephemeral", ttl: "1h" },     // round-1 spec 9: a turn after a think-aloud pause still reads the cache
         tools: args.tools,
         messages: working,
         thinking: { type: "adaptive", display: args.thinkingDisplay },

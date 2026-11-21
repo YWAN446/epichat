@@ -6,12 +6,14 @@ export type ModelProfile = {
   outputPerMTok: number;
   cacheReadPerMTok: number;
   cacheWritePerMTok: number;
+  /** A one-hour cache write: twice the input price (round-1 spec 9). */
+  cacheWrite1hPerMTok: number;
 };
 
 export const MODEL_PROFILES: Record<ModelId, ModelProfile> = {
-  "claude-opus-5-5": { inputPerMTok: 4, outputPerMTok: 20, cacheReadPerMTok: 0.2, cacheWritePerMTok: 5 },
-  "claude-opus-5": { inputPerMTok: 5, outputPerMTok: 25, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25 },
-  "claude-sonnet-5-5": { inputPerMTok: 2, outputPerMTok: 10, cacheReadPerMTok: 0.2, cacheWritePerMTok: 2.5 },
+  "claude-opus-5-5": { inputPerMTok: 4, outputPerMTok: 20, cacheReadPerMTok: 0.2, cacheWritePerMTok: 5, cacheWrite1hPerMTok: 8 },
+  "claude-opus-5": { inputPerMTok: 5, outputPerMTok: 25, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, cacheWrite1hPerMTok: 10 },
+  "claude-sonnet-5-5": { inputPerMTok: 2, outputPerMTok: 10, cacheReadPerMTok: 0.2, cacheWritePerMTok: 2.5, cacheWrite1hPerMTok: 4 },
 };
 
 /** The token counts on an API response's `usage` object. */
@@ -20,6 +22,8 @@ export type UsageLike = {
   output_tokens: number;
   cache_creation_input_tokens?: number | null;
   cache_read_input_tokens?: number | null;
+  /** The part of cache_creation_input_tokens written with the one-hour TTL (the API's total counts both). */
+  cache_creation_1h_input_tokens?: number | null;
 };
 
 export function costUsd(model: ModelId, usage: UsageLike): number {
@@ -28,7 +32,8 @@ export function costUsd(model: ModelId, usage: UsageLike): number {
     usage.input_tokens * p.inputPerMTok +
     usage.output_tokens * p.outputPerMTok +
     (usage.cache_read_input_tokens ?? 0) * p.cacheReadPerMTok +
-    (usage.cache_creation_input_tokens ?? 0) * p.cacheWritePerMTok;
+    ((usage.cache_creation_input_tokens ?? 0) - (usage.cache_creation_1h_input_tokens ?? 0)) * p.cacheWritePerMTok +
+    (usage.cache_creation_1h_input_tokens ?? 0) * p.cacheWrite1hPerMTok;
   return perMillion / 1_000_000;
 }
 

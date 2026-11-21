@@ -14,6 +14,8 @@ export type ApiCall = {
   output_tokens: number;
   cache_read_tokens: number;
   cache_write_tokens: number;
+  /** Of those, the one-hour writes (round-1 spec 9); absent on calls stored before it. */
+  cache_write_1h_tokens?: number;
   stop_reason: string | null;
   latency_ms: number;
   /** The model that answered: the fallback when the refusal fallback rerouted the call. */

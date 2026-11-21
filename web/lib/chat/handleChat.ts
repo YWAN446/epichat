@@ -353,7 +353,7 @@ export async function handleChat(
   );
   // Priced at the configured model; a rerouted call is recorded by served_by for the researcher.
   const modelCost = apiCalls.reduce(
-    (sum, call) => sum + costUsd(deps.settings.model, { input_tokens: call.input_tokens, output_tokens: call.output_tokens, cache_read_input_tokens: call.cache_read_tokens, cache_creation_input_tokens: call.cache_write_tokens }),
+    (sum, call) => sum + costUsd(deps.settings.model, { input_tokens: call.input_tokens, output_tokens: call.output_tokens, cache_read_input_tokens: call.cache_read_tokens, cache_creation_input_tokens: call.cache_write_tokens, cache_creation_1h_input_tokens: call.cache_write_1h_tokens ?? 0 }),
     0,
   );
   const cost = modelCost + repairCost;

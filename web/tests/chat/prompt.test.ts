@@ -94,7 +94,7 @@ describe("system prompt", () => {
   it("is deterministic, dateless, and long enough to cache", () => {
     expect(SYSTEM_PROMPT).not.toMatch(/\b20\d\d-\d\d-\d\d\b/);
     expect(SYSTEM_PROMPT.length).toBeGreaterThan(5000);
-    expect(systemBlocks()).toEqual([{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }]);
+    expect(systemBlocks()).toEqual([{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral", ttl: "1h" } }]);   // round-1 spec 9
   });
 
   it("puts the date on the first line of the first user message, and the About block between the date and the text", () => {

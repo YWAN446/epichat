@@ -129,7 +129,7 @@ Run it
 export const SYSTEM_PROMPT = PYTHON_SYSTEM + ADDITIONS;
 
 export function systemBlocks(): Anthropic.Beta.BetaTextBlockParam[] {
-  return [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }];
+  return [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral", ttl: "1h" } }];
 }
 
 /** The first message of a conversation carries the date and the About block (profile spec, section 8), so the system prompt stays byte-stable. */
