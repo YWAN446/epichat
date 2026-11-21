@@ -18,7 +18,8 @@ export const SECTION_HEADINGS: Record<SectionId, string> = {
   appendix: "Appendix",
 };
 
-export type FigureLine = { label: string; x: number[]; y: number[] };
+/** `band`: a replicate run's 10th and 90th percentiles on the same days as the line, drawn as shading under it. */
+export type FigureLine = { label: string; x: number[]; y: number[]; band?: { lower: number[]; upper: number[] } };
 
 export type ReportBlock =
   | { kind: "paragraph"; text: string }
@@ -62,10 +63,15 @@ export function narrativeBlocks(text: string): ReportBlock[] {
   return blocks;
 }
 
-/** One line of a figure, thinned so a long run cannot bloat the document. */
-export function figureLine(label: string, x: number[], y: number[]): FigureLine {
+/** One line of a figure, thinned so a long run cannot bloat the document; a band the same length is thinned on the same days. */
+export function figureLine(label: string, x: number[], y: number[], band?: { lower: number[]; upper: number[] }): FigureLine {
   const points = thinPoints(x, y, MAX_FIGURE_POINTS);
-  return { label, x: points.map((p) => p.x), y: points.map((p) => p.y) };
+  const line: FigureLine = { label, x: points.map((p) => p.x), y: points.map((p) => p.y) };
+  if (band && band.lower.length === y.length && band.upper.length === y.length && x.length === y.length) {
+    const thin = (values: number[]) => thinPoints(x, values, MAX_FIGURE_POINTS).map((p) => p.y);
+    line.band = { lower: thin(band.lower), upper: thin(band.upper) };
+  }
+  return line;
 }
 
 export function wordCount(narrative: ReportNarrative): number {

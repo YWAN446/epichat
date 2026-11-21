@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { SOLVER_LABELS } from "@/lib/client/format";
 import { composeReport, runLabels } from "@/lib/report/compose";
 import { params } from "../tools/helpers";
 import { FIXTURE } from "./fixture";
@@ -82,12 +83,13 @@ describe("composeReport", () => {
   });
 
   it("says so when there is no data and no recap, and omits the literature when unknown", () => {
-    const bare = composeReport({ ...FIXTURE, scenario: { ...FIXTURE.scenario, dataSources: [] }, recap: [], literature: null, starsimVersion: null }, NOW);
+    const unversioned = FIXTURE.runs.map((run) => ({ ...run, stats: { ...run.stats, starsim_version: undefined } }));   // runs stored before 2026-11-21
+    const bare = composeReport({ ...FIXTURE, scenario: { ...FIXTURE.scenario, dataSources: [] }, recap: [], literature: null, runs: unversioned }, NOW);
     expect(bare.sections.find((s) => s.id === "modelled")!.blocks[1]).toEqual({ kind: "paragraph", text: "No real data was fetched; every value is a literature value or an assumption." });
     expect(bare.sections.find((s) => s.id === "decisions")!.blocks).toEqual([{ kind: "paragraph", text: "The conversation recorded no decisions." }]);
     const appendix = bare.sections.find((s) => s.id === "appendix")!;
     expect(appendix.blocks.some((b) => b.kind === "table" && b.caption === "Literature parameters")).toBe(false);
-    expect(appendix.blocks.at(-1)).toMatchObject({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", "unknown"], ["Report format", "1"]] });
+    expect(appendix.blocks.at(-1)).toMatchObject({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", "not recorded"], ["Report format", "1"]] });
   });
 
   it("names the area in the title, the Population row and the limitations (round-1 spec 1)", () => {
@@ -142,18 +144,20 @@ describe("composeReport", () => {
 });
 
 describe("the solver in the report", () => {
-  it("says how the latest run ran, and nothing for a run stored without it", () => {
+  it("says how each covered run ran, once when they agree, and nothing when no run recorded it", () => {
     const modelled = (runs: typeof FIXTURE.runs) => {
       const rows = composeReport({ ...FIXTURE, runs }, NOW).sections.find((s) => s.id === "modelled")!.blocks[0];
       if (rows.kind !== "keyValues") throw new Error("kv");
       return rows.items;
     };
     const last = FIXTURE.runs.length - 1;
-    const ode = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "ode" as const } } : { ...r, stats: { ...r.stats, solver: "abm" as const } }));
-    expect(modelled(ode)).toContainEqual(["Ran as", "a compartmental model"]);
-    expect(modelled(ode)).not.toContainEqual(["Ran as", "agents (simulated people)"]);       // the latest run's, never an earlier one's
-    const abm = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "abm" as const } } : r));
-    expect(modelled(abm)).toContainEqual(["Ran as", "agents (simulated people)"]);
+    const allAbm = FIXTURE.runs.map((r) => ({ ...r, stats: { ...r.stats, solver: "abm" as const } }));
+    expect(modelled(allAbm)).toContainEqual(["Ran as", "agents (simulated people)"]);
+    // live test 2026-11-21: runs that ran differently each say how, rather than the latest run speaking for all of them
+    const ode = allAbm.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "ode" as const } } : r));
+    expect(modelled(ode)).toContainEqual(["Ran as", "Run 1: agents (simulated people); Run 2: agents (simulated people); Run 3: a compartmental model"]);
+    const onlyLast = FIXTURE.runs.map((r, i) => (i === last ? { ...r, stats: { ...r.stats, solver: "abm" as const } } : r));
+    expect(modelled(onlyLast)).toContainEqual(["Ran as", "Run 1: —; Run 2: —; Run 3: agents (simulated people)"]);
     expect(modelled(FIXTURE.runs).map(([label]) => label)).not.toContain("Ran as");
   });
 });
@@ -252,5 +256,70 @@ describe("a chosen reference alone is not real data (review of phase D)", () => 
     if (!table || table.kind !== "table") throw new Error("table");
     expect(table.rows).toEqual([["Literature", "R₀ (literature)", "14", citation]]);
     expect(blocks).toContainEqual({ kind: "paragraph", text: "No real data was fetched; every value is a literature value or an assumption." });
+  });
+});
+
+describe("report fixes from the 2026-11-21 live test", () => {
+  const section = (doc: ReturnType<typeof composeReport>, id: string) => doc.sections.find((s) => s.id === id)!;
+  const figureOf = (doc: ReturnType<typeof composeReport>) => {
+    const figure = section(doc, "results").blocks.find((b) => b.kind === "figure");
+    if (!figure || figure.kind !== "figure") throw new Error("figure");
+    return figure;
+  };
+  const kv = (doc: ReturnType<typeof composeReport>) => {
+    const rows = section(doc, "modelled").blocks[0];
+    if (rows.kind !== "keyValues") throw new Error("kv");
+    return rows.items;
+  };
+  const withReplicates = (run: (typeof FIXTURE.runs)[number], n: number) => ({ ...run, effectiveParams: { ...run.effectiveParams, run: { ...run.effectiveParams.run, n_replicates: n } } });
+
+  it("shades a replicate run's 10th to 90th percentile band and says whose replicates it shows", () => {
+    const middle = FIXTURE.runs[1];
+    const y = middle.series!.n_infected;
+    const lower = y.map((v) => v * 0.9);
+    const upper = y.map((v) => v * 1.1);
+    const banded = { ...withReplicates(middle, 5), series: { ...middle.series!, n_infected_p10: lower, n_infected_p90: upper } };
+    const figure = figureOf(composeReport({ ...FIXTURE, runs: [FIXTURE.runs[0], banded] }, NOW));
+    expect(figure.lines[0].band).toBeUndefined();
+    expect(figure.lines[1].band).toEqual({ lower, upper });
+    expect(figure.caption).toBe("People infected over time, every run. The shaded band is the 10th to 90th percentile of Run 2's 5 replicates.");
+    expect(figureOf(composeReport(FIXTURE, NOW)).caption).toBe("People infected over time, every run");
+  });
+
+  it("thins a band with its line, so the two keep the same days", () => {
+    const days = Array.from({ length: 1000 }, (_, i) => i);
+    const y = days.map((d) => d % 50);
+    const series = { day: days, n_infected: y, n_infected_p10: y.map((v) => v - 1), n_infected_p90: y.map((v) => v + 1) };
+    const line = figureOf(composeReport({ ...FIXTURE, runs: [{ ...withReplicates(FIXTURE.runs[0], 3), series }] }, NOW)).lines[0];
+    expect(line.x.length).toBeLessThan(1000);
+    expect(line.band!.lower).toHaveLength(line.x.length);
+    expect(line.band!.upper).toEqual(line.y.map((v) => v + 1));
+  });
+
+  it("names the Starsim version that ran the runs, each run's when they differ, from the runs themselves", () => {
+    const versions = (doc: ReturnType<typeof composeReport>) => {
+      const last = section(doc, "appendix").blocks.at(-1);
+      if (!last || last.kind !== "keyValues") throw new Error("kv");
+      return last.items.find(([key]) => key === "Starsim")![1];
+    };
+    expect(versions(composeReport(FIXTURE, NOW))).toBe("3.3.2");
+    const [a, b, c] = FIXTURE.runs;
+    const mixed = [{ ...a, stats: { ...a.stats, starsim_version: "3.7.2" } }, { ...b, stats: { ...b.stats, starsim_version: "4.0.0rc5" } }, { ...c, stats: { ...c.stats, starsim_version: undefined } }];
+    expect(versions(composeReport({ ...FIXTURE, runs: mixed }, NOW))).toBe("3.7.2 (Run 1); 4.0.0rc5 (Run 2); not recorded (Run 3)");
+  });
+
+  it("describes what was modelled from the runs it covers, each run's value where they differ", () => {
+    const [a, , c] = FIXTURE.runs;
+    const big = { ...a, effectiveParams: params({ n_agents: 500000, sim_dur_years: 1 }), stats: { ...a.stats, solver: "abm" as const } };
+    const small = { ...c, effectiveParams: params({ n_agents: 100000, sim_dur_years: 1 }), stats: { ...c.stats, solver: "abm" as const } };
+    const scenario = { ...FIXTURE.scenario, params: params({ n_agents: 20000, sim_dur_years: 1, country: "KEN" }) };   // configured since, never run
+    const items = kv(composeReport({ ...FIXTURE, scenario, runs: [big, small] }, NOW));
+    expect(items).toContainEqual(["Agents", "Run 1: 500,000; Run 3: 100,000"]);
+    expect(items).toContainEqual(["Disease", "Measles"]);
+    expect(items).toContainEqual(["Ran as", SOLVER_LABELS.abm]);
+    const same = kv(composeReport({ ...FIXTURE, scenario, runs: [a, c] }, NOW));
+    expect(same).toContainEqual(["Agents", "10,000"]);
+    const mixedMode = kv(composeReport({ ...FIXTURE, runs: [big, { ...small, stats: { ...small.stats, solver: "ode" as const } }] }, NOW));
+    expect(mixedMode).toContainEqual(["Ran as", `Run 1: ${SOLVER_LABELS.abm}; Run 3: ${SOLVER_LABELS.ode}`]);
   });
 });

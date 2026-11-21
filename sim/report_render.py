@@ -100,19 +100,28 @@ def validate_document(doc: Any) -> list[str]:
                         x, y = line.get("x"), line.get("y")
                         if not isinstance(x, list) or not isinstance(y, list) or len(x) != len(y):
                             problems.append(f"{where}: x and y must be lists of equal length")
+                        band = line.get("band")
+                        if band is not None and not (isinstance(band, dict) and isinstance(x, list)
+                                                     and all(isinstance(band.get(k), list) and len(band[k]) == len(x) for k in ("lower", "upper"))):
+                            problems.append(f"{where}: a band's lower and upper must be lists as long as its line")
     if not problems and len(json.dumps(doc)) > MAX_BYTES:
         problems.append(f"document larger than {MAX_BYTES} bytes")
     return problems
 
 
 def figure_png(figure: dict) -> bytes:
-    """The figure at 1600x700 px, one line per entry, with a legend and axis labels."""
+    """The figure at 1600x700 px, one line per entry, with a legend and axis labels; a line's replicate band is shaded under it."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(10.67, 4.67), dpi=150)
-    for i, line in enumerate(figure.get("lines", [])):
+    lines = figure.get("lines", [])
+    for i, line in enumerate(lines):                 # bands first, so every line stays on top of every band
+        band = line.get("band")
+        if band:
+            ax.fill_between(line["x"], band["lower"], band["upper"], color=COLORS[i % len(COLORS)], alpha=0.18, linewidth=0)
+    for i, line in enumerate(lines):
         ax.plot(line["x"], line["y"], label=line.get("label", ""), color=COLORS[i % len(COLORS)], linewidth=1.8)
     ax.set_xlabel(figure.get("xLabel", ""))
     ax.set_ylabel(figure.get("yLabel", ""))

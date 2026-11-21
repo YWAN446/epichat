@@ -99,3 +99,27 @@ def test_pdf_keeps_non_latin1_text_in_a_unicode_font():
     assert data.startswith(b"%PDF")
     assert b"DejaVuSans" in data
     assert b"DejaVuSans" in render.render_pdf(SAMPLE)
+
+
+def _banded_figure(lower, upper):
+    return {"kind": "figure", "id": "infected", "caption": "c", "xLabel": "Day", "yLabel": "People infected",
+            "lines": [{"label": "Run 3", "x": [0, 1, 2], "y": [0, 10, 5], "band": {"lower": lower, "upper": upper}}]}
+
+
+def test_figure_png_shades_a_band(monkeypatch):
+    """Live test 2026-11-21: the Word and PDF figures shade a replicate run's 10th to 90th percentile, like the HTML one."""
+    import matplotlib.axes
+    shaded = []
+    original = matplotlib.axes.Axes.fill_between
+    monkeypatch.setattr(matplotlib.axes.Axes, "fill_between",
+                        lambda self, x, y1, y2=0, **kw: shaded.append((list(x), list(y1), list(y2))) or original(self, x, y1, y2, **kw))
+    png = render.figure_png(_banded_figure([0, 8, 4], [0, 12, 6]))
+    assert png.startswith(b"\x89PNG")
+    assert shaded == [([0, 1, 2], [0, 8, 4], [0, 12, 6])]
+
+
+def test_validate_document_checks_a_band_against_its_line():
+    doc = {**SAMPLE, "sections": [{"heading": "Results", "blocks": [_banded_figure([0, 8], [0, 12, 6])]}]}
+    assert any("band" in p for p in render.validate_document(doc))
+    ok = {**SAMPLE, "sections": [{"heading": "Results", "blocks": [_banded_figure([0, 8, 4], [0, 12, 6])]}]}
+    assert render.validate_document(ok) == []

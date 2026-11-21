@@ -8,7 +8,7 @@ import { parameterTable } from "@/lib/client/parameters";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
 import { DOCUMENT_VERSION, SECTION_HEADINGS, figureLine, narrativeBlocks, type ReportBlock, type ReportDocument, type ReportNarrative, type ReportSection, type SectionId } from "@/lib/report/document";
-import { approxR0 } from "@/lib/sim/params";
+import { approxR0, type SimParams } from "@/lib/sim/params";
 import { commaInt, fmtValue, pyRound } from "@/lib/sim/pyformat";
 import { configView } from "@/lib/tools/configView";
 import { populationView } from "@/lib/tools/population";
@@ -25,7 +25,6 @@ export type ComposeInput = {
   narrative: ReportNarrative;
   version: number;
   conversationTitle: string;
-  starsimVersion: string | null;
 };
 
 type Intervention = { type?: string; coverage?: number; capacity?: number };
@@ -91,8 +90,32 @@ export function runLabels(runs: ReportRun[]): string[] {
 
 const attackRate = (run: ReportRun): string => `${pyRound((run.statsAgents.total_infected / (run.statsAgents.n_agents || 1)) * 100, 1).toFixed(1)}%`;
 
-const curve = (run: ReportRun): number[] | undefined => run.series?.n_infectious ?? run.series?.n_infected;
+const curveKey = (run: ReportRun): "n_infectious" | "n_infected" => (run.series?.n_infectious ? "n_infectious" : "n_infected");
+const curve = (run: ReportRun): number[] | undefined => run.series?.[curveKey(run)];
 const hasCurve = (run: ReportRun): boolean => Array.isArray(run.series?.day) && Array.isArray(curve(run));
+
+/** A replicate run's 10th and 90th percentiles of its curve, stored beside it as `<key>_p10` and `<key>_p90` (round-1 spec 6). */
+function band(run: ReportRun): { lower: number[]; upper: number[] } | undefined {
+  const key = curveKey(run);
+  const lower = run.series?.[`${key}_p10`];
+  const upper = run.series?.[`${key}_p90`];
+  return Array.isArray(lower) && Array.isArray(upper) ? { lower, upper } : undefined;
+}
+
+/** "Run 3", "Run 3 and Run 5", "Run 1, Run 3 and Run 5". */
+const andList = (items: string[]): string => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+
+const FIGURE_CAPTION = "People infected over time, every run";
+
+/** Live test 2026-11-21: the caption says whose replicates a shaded band shows. */
+function figureCaption(banded: ReportRun[]): string {
+  if (banded.length === 0) return FIGURE_CAPTION;
+  const whose = banded.map((run) => {
+    const n = run.effectiveParams.run.n_replicates;
+    return typeof n === "number" && n > 1 ? `Run ${run.index}'s ${n} replicates` : `Run ${run.index}'s replicates`;
+  });
+  return `${FIGURE_CAPTION}. The shaded band is the 10th to 90th percentile of ${andList(whose)}.`;
+}
 
 /** Round-1 spec 4: a run's doses (or treatments) given, summed over its vaccine (or treatment) interventions; null when it has none. */
 function delivered(run: ReportRun, type: "vaccine" | "treatment"): number | null {
@@ -111,18 +134,46 @@ function results(runs: ReportRun[], labels: string[]): ReportBlock[] {
         ...extra.map(([type]) => { const n = delivered(run, type); return n === null ? "—" : commaInt(n); })]),
     },
   ];
-  const lines = runs.flatMap((run, i) => (hasCurve(run) ? [figureLine(labels[i], run.series!.day, curve(run)!)] : []));
-  if (lines.length > 0) blocks.push({ kind: "figure", id: "infected", caption: "People infected over time, every run", xLabel: "Day", yLabel: "People infected", lines });
+  const drawn = runs.flatMap((run, i) => (hasCurve(run) ? [{ run, line: figureLine(labels[i], run.series!.day, curve(run)!, band(run)) }] : []));
+  const lines = drawn.map((d) => d.line);
+  const caption = figureCaption(drawn.filter((d) => d.line.band).map((d) => d.run));
+  if (lines.length > 0) blocks.push({ kind: "figure", id: "infected", caption, xLabel: "Day", yLabel: "People infected", lines });
   runs.forEach((run, i) => {
     if (!hasCurve(run)) blocks.push({ kind: "note", text: `${labels[i]}'s curve is not available.` });
   });
   return blocks;
 }
 
+/**
+ * Live test 2026-11-21: one row per label, in the order the runs give them; a value every run shares once, otherwise each
+ * run's ("Run 1: 500,000; Run 3: 100,000"), "—" for a run without the row.
+ */
+function mergeRows(perRun: { name: string; rows: [string, string][] }[]): [string, string][] {
+  const labels: string[] = [];
+  for (const { rows } of perRun) {
+    rows.forEach(([label], j) => {
+      if (labels.includes(label)) return;
+      labels.splice(j > 0 ? labels.indexOf(rows[j - 1][0]) + 1 : 0, 0, label);
+    });
+  }
+  return labels.map((label) => {
+    const values = perRun.map(({ rows }) => rows.find(([l]) => l === label)?.[1] ?? "—");
+    return [label, values.every((v) => v === values[0]) ? values[0] : perRun.map(({ name }, i) => `${name}: ${values[i]}`).join("; ")];
+  });
+}
+
 function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBlock[] {
   const blocks: ReportBlock[] = [];
-  if (scenario.params) {
-    const rows = configurationRows(configView(scenario.params, scenario.disease), approxR0(scenario.params), name);
+  const rowsFor = (p: SimParams, solver?: "ode" | "abm"): [string, string][] => {
+    const rows = configurationRows(configView(p, scenario.disease), approxR0(p), name);
+    // how Starsim ran it: compartments (deterministic, one run) or agents on a network
+    if (solver) rows.push(["Ran as", SOLVER_LABELS[solver]]);
+    return rows;
+  };
+  // live test 2026-11-21: what the covered runs ran, not the configuration as it stands now
+  const merged = runs.length > 0 ? mergeRows(runs.map((run) => ({ name: `Run ${run.index}`, rows: rowsFor(run.effectiveParams, run.stats.solver) }))) : null;
+  const rows = merged ?? (scenario.params ? rowsFor(scenario.params) : null);
+  if (rows) {
     // round-1 spec 1: an area's population and where it came from; otherwise the country's total
     const view = populationView(scenario);
     if (view && !view.national && scenario.area) rows.splice(3, 0, ["Population", `${commaInt(view.value)}, ${scenario.area.name} (${view.origin})`]);
@@ -133,9 +184,6 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
       const after = rows.map(([label]) => label.startsWith("R₀")).lastIndexOf(true) + 1;
       rows.splice(after, 0, ["Fitted to", `${fitText(fit.target, fit.wanted)} (reached ${fitValueText(fit.target, fit.achieved)} in ${fit.runs} runs)`]);
     }
-    // how Starsim ran the latest run: compartments (deterministic, one run) or agents on a network
-    const solver = runs.at(-1)?.stats.solver;
-    if (solver) rows.push(["Ran as", SOLVER_LABELS[solver]]);
     blocks.push({ kind: "keyValues", items: rows });
   }
   if (scenario.dataSources.length > 0) {
@@ -156,7 +204,19 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
   return blocks;
 }
 
-function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayload | null, starsimVersion: string | null): ReportBlock[] {
+/** Live test 2026-11-21: the version each covered run was stored with; one value when they agree, else grouped by run. */
+function starsimText(runs: ReportRun[]): string {
+  const groups = new Map<string, number[]>();
+  for (const run of runs) {
+    const version = run.stats.starsim_version ?? "not recorded";
+    groups.set(version, [...(groups.get(version) ?? []), run.index]);
+  }
+  if (groups.size === 0) return "not recorded";
+  if (groups.size === 1) return [...groups.keys()][0];
+  return [...groups].map(([version, indexes]) => `${version} (${indexes.map((i) => `Run ${i}`).join(", ")})`).join("; ");
+}
+
+function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayload | null): ReportBlock[] {
   const blocks: ReportBlock[] = [];
   if (runs.length > 0) {
     // follow-up spec 8.5: the Parameters section's rows (core, and whatever a run changed from the defaults), not a fixed list of paths
@@ -175,7 +235,7 @@ function appendix(runs: ReportRun[], labels: string[], literature: DiseasePayloa
     ]);
     if (rows.length > 0) blocks.push({ kind: "table", caption: "Literature parameters", columns: ["Parameter", "Typical", "Range", "Status", "Consensus source"], rows });
   }
-  blocks.push({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", starsimVersion ?? "unknown"], ["Report format", String(DOCUMENT_VERSION)]] });
+  blocks.push({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", starsimText(runs)], ["Report format", String(DOCUMENT_VERSION)]] });
   return blocks;
 }
 
@@ -206,7 +266,7 @@ export function composeReport(input: ComposeInput, now: Date): ReportDocument {
       section("decisions", input.recap.length > 0 ? [{ kind: "bullets", items: input.recap }] : [{ kind: "paragraph", text: "The conversation recorded no decisions." }]),
       section("limitations", [...narrativeBlocks(input.narrative.limitations), ...nationalBlock(input.scenario)]),
       section("next_steps", narrativeBlocks(input.narrative.next_steps)),
-      section("appendix", appendix(input.runs, labels, input.literature, input.starsimVersion)),
+      section("appendix", appendix(input.runs, labels, input.literature)),
     ],
   };
 }
