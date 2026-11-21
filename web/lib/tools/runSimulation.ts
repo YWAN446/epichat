@@ -8,6 +8,7 @@ import { pyRound } from "@/lib/sim/pyformat";
 import { recommendSolver } from "@/lib/sim/solver";
 import { capacityAgents, leverToPeople, popScaleFor, scalingPopulation, toAgentUnits, toPeopleUnits } from "@/lib/sim/units";
 import { commaInt } from "@/lib/sim/pyformat";
+import { mergeBands } from "@/lib/sim/bands";
 import { errorOutcome, paramWarnings, runNotes } from "./shared";
 import { scenarioReferences, scenarioSources } from "./sources";
 import type { RunCompare, RunPayload, ToolDeps, ToolOutcome } from "./types";
@@ -48,7 +49,9 @@ function inPeople(result: SimResult, popScale: number): SimResult {
   }
   const mode = result.effective_params.disease.seed.mode;
   const diagnostics = result.diagnostics?.map((d) => ({ ...d, levers: d.levers.map((l) => ({ ...l, patch: leverToPeople(l.patch, popScale, mode), current: leverToPeople(l.current, popScale, mode) })) }));
-  return { ...result, effective_params: effective, ...(diagnostics ? { diagnostics } : {}) };
+  // round-1 spec 5: the replicate bands are stored with the series the chart reads
+  const series = mergeBands(result.series, result.replicates?.bands);
+  return { ...result, series, effective_params: effective, ...(diagnostics ? { diagnostics } : {}) };
 }
 
 /** What a count in people became at this run's scale, when that is not what was asked (round-1 spec 3). */
@@ -111,8 +114,9 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   const pop_scale = pyRound(popScale, 2);
   const run_size = { agents: n, people_per_agent: pop_scale, population: result.population };
   const count_notes = countNotes(params, popScale);
+  const band_shown = (result.replicates?.n ?? 0) > 1;
   const sources = dataSources.map((f) => ({ field: f.field, value: f.value, citation: f.citation }));
-  // The per-replicate stats travel; the per-day bands wait for the workspace follow-up that draws them. An ODE run has none.
+  // The per-replicate stats travel; the bands went into the series the chart draws (round-1 spec 5). An ODE run has none.
   const replicates = result.replicates ? { n: result.replicates.n, seeds: result.replicates.seeds, representative: result.replicates.representative, stats: result.replicates.stats } : undefined;
   const diagnostics = result.diagnostics ?? [];
   const compare = previous ? compareRuns(previous, result, popScale) : null;
@@ -150,7 +154,7 @@ export async function runSimulation(_input: RunSimulationArgs, deps: ToolDeps): 
   };
   return {
     content: JSON.stringify({
-      stats: result.stats, attack_rate_pct, pop_scale, run_size, count_notes, effective_params: result.effective_params,
+      stats: result.stats, attack_rate_pct, pop_scale, run_size, count_notes, band_shown, effective_params: result.effective_params,
       warnings, repairs: result.repairs, data_sources: sources, diagnostics, compare, ...(applied ? { applied } : {}), ...(replicates ? { replicates } : {}),
     }),
     payload,

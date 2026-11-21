@@ -119,7 +119,7 @@ export type RunPayload = {
   cold_start: boolean;
   /** Only on the live stream event; stored without it (the runs row keeps it). */
   series?: Record<string, number[]>;
-  /** Per-replicate stats when a run as agents has run.n_replicates > 1 (spec 8.7); an ODE run runs once and has none. The bands wait for the workspace follow-up. */
+  /** Per-replicate stats when a run as agents has run.n_replicates > 1 (spec 8.7); an ODE run runs once and has none. The bands are in the stored series (round-1 spec 5). */
   replicates?: { n: number; seeds: number[]; representative: number; stats: SimStats[] };
   /** Spec 10: what the run's shape suggests about the configuration; absent on payloads stored before phase 4. */
   diagnostics?: Diagnostic[];

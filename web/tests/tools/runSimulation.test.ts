@@ -306,3 +306,18 @@ describe("run_simulation: counts in people (round-1 spec 3)", () => {
     expect(body.diagnostics[0].levers[0].current).toEqual({ "disease.seed.mode": "count", "disease.seed.value": 200 });
   });
 });
+
+describe("run_simulation: the replicate band (round-1 spec 5)", () => {
+  it("run with replicates stores bands and says so", async () => {
+    const replicates = { n: 3, seeds: [1, 2, 3], representative: 2, stats: [STATS, STATS, STATS], bands: { n_infectious: { p10: [400, 500], p90: [600, 700] } } };
+    const deps = makeDeps({ simulate: success({ replicates }) });
+    await configureSimulation({ n_agents: 50000 } as never, deps);
+    const body = JSON.parse((await runSimulation({}, deps)).content);
+    expect(body.band_shown).toBe(true);
+    const stored = deps.runs[0].result;
+    expect(stored.ok && stored.series.n_infectious_p10).toEqual([400, 500]);
+    const single = makeDeps({ simulate: success() });
+    await configureSimulation({ n_agents: 50000 } as never, single);
+    expect(JSON.parse((await runSimulation({}, single)).content).band_shown).toBe(false);
+  });
+});

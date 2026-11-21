@@ -288,7 +288,8 @@ REGISTRY: tuple[ParamSpec, ...] = tuple([
               (10, 1_000_000), None, (), "core", None, "ss.Sim(solver='abm', n_agents=...) or ss.Sim(solver='ode', total_pop=...)", ("stochasticity",)),
     ParamSpec("run.sim_dur_years", "run", "Duration", "Length of the run in years.", "number", "years", 1.0, (0.01, 20.0), None, (), "core",
               None, "ss.Sim(stop=ss.days(round(365 * years)))", ("duration",)),
-    ParamSpec("run.n_replicates", "run", "Replicates", "How many seeds to run as agents; the result shows the median run with 10 to 90% bands. An "
+    ParamSpec("run.n_replicates", "run", "Replicates", "How many times to run as agents, each with its own random seed; the chart shows "
+              "the run with the median total infected and a shaded band from the 10th to the 90th percentile of the runs. A "
               "compartmental run is deterministic and runs once.",
               "integer", None, 1, (1, 5), None, (), "advanced", None, "run_replicates", ("stochasticity",)),
     ParamSpec("run.solver", "run", "Run as", "abm: simulated individual people (agents); ode: a compartmental model, one "

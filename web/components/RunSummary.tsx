@@ -54,7 +54,7 @@ export function RunSummary({ payload, options, onPick }: { payload: RunPayload; 
         {series === "loading" ? (
           <p className="text-sm text-ink-faint">Loading the curve…</p>
         ) : series ? (
-          <Chart series={series} view="infected" height={200} />
+          <Chart series={series} view="infected" height={200} replicates={payload.replicates?.n} />
         ) : (
           <p className="text-sm text-ink-faint">Series unavailable.</p>
         )}

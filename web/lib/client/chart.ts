@@ -24,6 +24,33 @@ const LINES: Record<ChartView, LineSpec[]> = {
 
 const present = (values: unknown): values is number[] => Array.isArray(values) && values.length > 0;
 
+/** Round-1 spec 5: the series each view's band is drawn around; the compartments view has none. */
+const BAND_KEYS: Partial<Record<ChartView, string>> = { infected: "n_infectious", incidence: "new_infections", cumulative: "cum_infections", deaths: "cum_deaths" };
+
+/** The view's 10 to 90% replicate band, or null for a view without one or a series stored without it. */
+export function bandFor(view: ChartView, series: Series): { p10: number[]; p90: number[] } | null {
+  const key = BAND_KEYS[view];
+  if (!key) return null;
+  const p10 = series[`${key}_p10`];
+  const p90 = series[`${key}_p90`];
+  return present(p10) && present(p90) ? { p10, p90 } : null;
+}
+
+/** A closed SVG path along p90 forward and p10 back, on the same scales as linePath. */
+export function bandPath(days: number[], p10: number[], p90: number[], width: number, height: number, xMax: number, yMax: number): string {
+  const n = Math.min(days.length, p10.length, p90.length);
+  const upper: Point[] = [];
+  const lower: Point[] = [];
+  for (let i = 0; i < n; i++) {
+    upper.push({ x: days[i], y: p90[i] });
+    lower.push({ x: days[i], y: p10[i] });
+  }
+  if (n === 0) return "";
+  const forward = linePath(upper, width, height, xMax, yMax);
+  const back = linePath(lower.reverse(), width, height, xMax, yMax).replace(/^M/, "L");
+  return `${forward} ${back} Z`;
+}
+
 /** The view's lines that the series actually has, in display order; a stored run's n_infected still draws the n_infectious line. */
 export function seriesFor(view: ChartView, series: Series): Line[] {
   return LINES[view].flatMap((line) => {

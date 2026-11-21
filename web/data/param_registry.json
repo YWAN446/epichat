@@ -2173,7 +2173,7 @@
    "path": "run.n_replicates",
    "module": "run",
    "label": "Replicates",
-   "description": "How many seeds to run as agents; the result shows the median run with 10 to 90% bands. An compartmental run is deterministic and runs once.",
+   "description": "How many times to run as agents, each with its own random seed; the chart shows the run with the median total infected and a shaded band from the 10th to the 90th percentile of the runs. A compartmental run is deterministic and runs once.",
    "kind": "integer",
    "unit": null,
    "default": 1,
