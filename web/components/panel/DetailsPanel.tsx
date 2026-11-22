@@ -35,7 +35,7 @@ type Props = {
    * The tutorial's practice run: the sections are open exactly as given and never open by themselves, a press is
    * reported instead of acted on, and the report block is the practice one (nothing here reaches the database).
    */
-  practice?: { open: Record<DetailsSection, boolean>; onToggle: (section: DetailsSection, next: boolean) => void; report: ReactNode };
+  practice?: { open: Record<DetailsSection, boolean>; onToggle: (section: DetailsSection, next: boolean) => void; report: ReactNode; /** The chart view every run shows, set by the tutorial. */ view?: ChartView };
 };
 
 /** The Details tab: the present scenario, the literature and the data applied, the current parameters, every run, the report, and every step. The newest run opens its section. */
@@ -93,7 +93,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
         <ParametersSection params={artifacts.params} sources={artifacts.sources} references={artifacts.references} configured={artifacts.config !== null} />
       </Section>
       <Section id="panel-runs" title="Runs" count={artifacts.runs.length} open={open.runs} onToggle={toggle("runs")}>
-        <RunsSection runs={artifacts.runs} onChartView={onChartView} />
+        <RunsSection runs={artifacts.runs} onChartView={onChartView} view={practice?.view} />
       </Section>
       <Section id="panel-report" title="Report" open={open.report} onToggle={toggle("report")}>
         {practice ? practice.report : <ReportSection report={artifacts.report} onExport={onExport} preferredFormat={preferredFormat} />}

@@ -12,11 +12,12 @@ import { StatTiles, useRunSeries } from "../RunSummary";
 
 const VIEW_LABELS: Record<ChartView, string> = { infected: "Currently infected", compartments: "Compartments", incidence: "Incidence", cumulative: "Cumulative", deaths: "Disease deaths" };
 
-type Props = { runs: RunArtifact[]; onChartView: (view: ChartView, turnId: string) => void };
+type Props = { runs: RunArtifact[]; onChartView: (view: ChartView, turnId: string) => void; /** The tutorial: the view every run shows; a press is reported and the tutorial decides. */ view?: ChartView };
 
-function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact; open: boolean; onChartView: Props["onChartView"] }) {
+function RunEntry({ run, open: initiallyOpen, onChartView, view: forced }: { run: RunArtifact; open: boolean; onChartView: Props["onChartView"]; view?: ChartView }) {
   const [open, setOpen] = useState(initiallyOpen);
-  const [view, setView] = useState<ChartView>("infected");
+  const [own, setView] = useState<ChartView>("infected");
+  const view = forced ?? own;
   const series = useRunSeries(run.payload);
   const p = run.payload;
   return (
@@ -110,13 +111,13 @@ function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact;
 }
 
 /** Every run of the conversation, newest first and open. */
-export function RunsSection({ runs, onChartView }: Props) {
+export function RunsSection({ runs, onChartView, view }: Props) {
   if (runs.length === 0) return <p className="text-ink-faint">Each simulation you run appears here with its key numbers and chart.</p>;
   const newest = runs[runs.length - 1];
   return (
     <ul className="space-y-2">
       {[...runs].reverse().map((run) => (
-        <RunEntry key={run.turnId + run.index} run={run} open={run === newest} onChartView={onChartView} />
+        <RunEntry key={run.turnId + run.index} run={run} open={run === newest} onChartView={onChartView} view={view} />
       ))}
     </ul>
   );

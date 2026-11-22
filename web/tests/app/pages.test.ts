@@ -30,6 +30,14 @@ describe("protected pages", () => {
     expect(readFileSync("components/admin/SuggestionUseTable.tsx", "utf8")).not.toMatch(/user_text|userText|email/);
   });
 
+  it("the tutorial page is for enrolled participants and falls back to the chat without a recording", () => {
+    const source = readFileSync("app/tutorial/page.tsx", "utf8");
+    for (const piece of ["loadParticipant()", "redirectFor(", "loadRecording()", 'redirect("/chat")', "tutorialSeenAt", "<TutorialWorkspace", "searchParams", "TUTORIAL_ENTRIES"]) expect(source).toContain(piece);
+    expect(source.indexOf("redirectFor(")).toBeLessThan(source.indexOf("loadRecording()"));
+    const route = readFileSync("app/tutorial/report/route.ts", "utf8");
+    for (const piece of ["requireParticipant()", "renderHtml(", "renderMarkdown(", "loadRecording()"]) expect(route).toContain(piece);
+  });
+
   it("the home page sends a signed-in user to the chat and everyone else to sign in", () => {
     const source = readFileSync("app/page.tsx", "utf8");
     expect(source).toContain('redirect(user ? "/chat" : "/sign-in")');
