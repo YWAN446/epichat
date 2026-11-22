@@ -7,7 +7,7 @@ import { ReportLine } from "./ReportLine";
 import { RunSummary } from "./RunSummary";
 
 /** One turn's blocks in order: prose, the run summary, the report line, notices. Tool and web steps live in the activity line; stage, suggestions, and recap blocks render nothing here. */
-export function TurnBlocks({ blocks, onExport, turnId, tryNext }: { blocks: Block[]; onExport?: (format: ExportFormat) => void; turnId?: string; tryNext?: TryNext }) {
+export function TurnBlocks({ blocks, onExport, turnId, tryNext, optionTarget, practice }: { blocks: Block[]; onExport?: (format: ExportFormat) => void; turnId?: string; tryNext?: TryNext; /** The tutorial: the Try next option to mark, and a report line without downloads. */ optionTarget?: string; practice?: boolean }) {
   return (
     <>
       {blocks.map((block, index) => {
@@ -21,9 +21,9 @@ export function TurnBlocks({ blocks, onExport, turnId, tryNext }: { blocks: Bloc
             if (block.payload.kind === "run") {
               // follow-up spec 7.4: the latest run offers what_if's replies; every other run is the summary alone
               const offered = tryNext?.key === `${turnId}:${index}` ? tryNext : undefined;
-              return <RunSummary key={index} payload={block.payload} options={offered ? tryNextLabels(block.payload) : undefined} onPick={offered?.onPick} />;
+              return <RunSummary key={index} payload={block.payload} options={offered ? tryNextLabels(block.payload) : undefined} onPick={offered?.onPick} optionTarget={offered ? optionTarget : undefined} />;
             }
-            if (block.payload.kind === "report") return <ReportLine key={index} payload={block.payload} onExport={onExport} />;
+            if (block.payload.kind === "report") return <ReportLine key={index} payload={block.payload} onExport={onExport} practice={practice} />;
             return null;
           case "notice":
             return (

@@ -45,7 +45,7 @@ export function StatTiles({ payload }: { payload: RunPayload }) {
 }
 
 /** Inline under the run's tool call: the tiles and the infected curve. The panel carries the rest. With options (the latest run only; follow-up spec 7.4) the interventions to try are buttons that send the reply. */
-export function RunSummary({ payload, options, onPick }: { payload: RunPayload; options?: string[]; onPick?: (label: string) => void }) {
+export function RunSummary({ payload, options, onPick, optionTarget }: { payload: RunPayload; options?: string[]; onPick?: (label: string) => void; /** The tutorial: the option it asks the participant to press. */ optionTarget?: string }) {
   const series = useRunSeries(payload);
   return (
     <section aria-label="Simulation results" className="my-3 rounded-xl border border-line bg-surface p-3">
@@ -67,6 +67,7 @@ export function RunSummary({ payload, options, onPick }: { payload: RunPayload; 
             <button
               key={label}
               type="button"
+              data-tutorial={label === optionTarget ? "option" : undefined}
               onClick={() => onPick(label)}
               className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-left text-sm font-medium text-accent hover:border-accent hover:bg-accent-wash"
             >

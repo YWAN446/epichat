@@ -9,7 +9,7 @@ export function Section({ id, title, open, count, onToggle, children }: Props) {
   return (
     <section className="border-b border-line">
       <h3>
-        <button type="button" aria-expanded={open} aria-controls={id} onClick={() => onToggle(!open)} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold hover:bg-paper-2">
+        <button type="button" data-tutorial={id} aria-expanded={open} aria-controls={id} onClick={() => onToggle(!open)} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold hover:bg-paper-2">
           <span className="flex-1">{title}</span>
           {count !== undefined && count > 0 && <span className="rounded-full bg-paper-2 px-2 text-xs font-medium text-ink-soft">{count}</span>}
           <span aria-hidden="true" className="text-ink-faint">

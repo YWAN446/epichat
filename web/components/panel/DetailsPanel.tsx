@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Artifacts } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
 import { canUseReferences } from "@/lib/client/references";
@@ -14,7 +14,7 @@ import { ScenarioSection } from "./ScenarioSection";
 import { Section } from "./Section";
 
 /** The sections of this panel; the Profile tab reports its own. */
-type DetailsSection = Exclude<PanelSection, "profile">;
+export type DetailsSection = Exclude<PanelSection, "profile">;
 
 /** The tools that change the parameters the next run uses. */
 const PARAMETER_TOOLS = new Set(["configure_simulation", "fetch_demographics", "fetch_vaccination_coverage", "fetch_health_system"]);
@@ -31,11 +31,17 @@ type Props = {
   onExport: (format: ExportFormat) => void;
   /** The participant's preferred report format, offered first. */
   preferredFormat: ExportFormat;
+  /**
+   * The tutorial's practice run: the sections are open exactly as given and never open by themselves, a press is
+   * reported instead of acted on, and the report block is the practice one (nothing here reaches the database).
+   */
+  practice?: { open: Record<DetailsSection, boolean>; onToggle: (section: DetailsSection, next: boolean) => void; report: ReactNode };
 };
 
 /** The Details tab: the present scenario, the literature and the data applied, the current parameters, every run, the report, and every step. The newest run opens its section. */
-export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onUseReference, busy, onExport, preferredFormat }: Props) {
-  const [open, setOpen] = useState<Record<DetailsSection, boolean>>({ scenario: true, data: false, parameters: false, runs: true, report: false, activity: false });
+export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferencesOpen, onUseReference, busy, onExport, preferredFormat, practice }: Props) {
+  const [ownOpen, setOpen] = useState<Record<DetailsSection, boolean>>({ scenario: true, data: false, parameters: false, runs: true, report: false, activity: false });
+  const open = practice ? practice.open : ownOpen;
   const runCount = useRef(artifacts.runs.length);
   const reportId = useRef(artifacts.report?.report_id ?? null);
   const revisions = artifacts.activity.filter((step) => step.ok && PARAMETER_TOOLS.has(step.name)).length;
@@ -60,6 +66,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
   }, [artifacts.report]);
 
   const toggle = (section: DetailsSection) => (next: boolean) => {
+    if (practice) return practice.onToggle(section, next);
     setOpen((state) => ({ ...state, [section]: next }));
     if (next) onSectionOpen(section);
   };
@@ -89,7 +96,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
         <RunsSection runs={artifacts.runs} onChartView={onChartView} />
       </Section>
       <Section id="panel-report" title="Report" open={open.report} onToggle={toggle("report")}>
-        <ReportSection report={artifacts.report} onExport={onExport} preferredFormat={preferredFormat} />
+        {practice ? practice.report : <ReportSection report={artifacts.report} onExport={onExport} preferredFormat={preferredFormat} />}
       </Section>
       <Section id="panel-activity" title="Activity" count={artifacts.activity.length} open={open.activity} onToggle={toggle("activity")}>
         <ActivitySection items={artifacts.activity} />

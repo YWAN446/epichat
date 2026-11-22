@@ -29,7 +29,7 @@ export function ChatHeader({ busy, onShare, canShare, onMenu, onDashboard, menuO
         <Brand />
         <nav aria-label="Chat" className="ml-auto flex items-center gap-1">
           {canShare && <button type="button" onClick={onShare} disabled={busy} className={QUIET}>Share</button>}
-          <button type="button" onClick={onDashboard} aria-expanded={dashboardOpen} aria-label="Dashboard" className={ICON}>
+          <button type="button" data-tutorial="dashboard-button" onClick={onDashboard} aria-expanded={dashboardOpen} aria-label="Dashboard" className={ICON}>
             <span>Dashboard</span>
             {unseen && <span aria-hidden="true" className="absolute top-1 right-1 h-2 w-2 rounded-full bg-accent" />}
           </button>

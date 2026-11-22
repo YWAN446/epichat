@@ -12,10 +12,12 @@ type Props = {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   /** The welcome's composer: taller, centered, no footer padding. */
   large?: boolean;
+  /** What the empty box says; by default "Message EpiChat", or "Working…" while disabled. */
+  placeholder?: string;
 };
 
 /** The message box and Send, shared by the welcome and the footer. */
-export function Composer({ value, onChange, onSubmit, onKeyDown, disabled, maxLength, inputRef, large = false }: Props) {
+export function Composer({ value, onChange, onSubmit, onKeyDown, disabled, maxLength, inputRef, large = false, placeholder }: Props) {
   return (
     <form className={`mx-auto flex w-full max-w-[46rem] items-end gap-2 ${large ? "" : "px-4 pb-3"}`} onSubmit={onSubmit}>
       <textarea
@@ -26,7 +28,7 @@ export function Composer({ value, onChange, onSubmit, onKeyDown, disabled, maxLe
         disabled={disabled}
         rows={large ? 2 : 1}
         maxLength={maxLength}
-        placeholder={disabled ? "Working…" : "Message EpiChat"}
+        placeholder={placeholder ?? (disabled ? "Working…" : "Message EpiChat")}
         aria-label="Message"
         className={`flex-1 resize-none rounded-xl border border-line bg-surface px-3.5 py-2.5 disabled:text-ink-faint ${large ? "min-h-16 text-base shadow-sm" : "min-h-11"}`}
       />

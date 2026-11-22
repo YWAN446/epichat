@@ -36,6 +36,7 @@ function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact;
               <button
                 key={candidate}
                 type="button"
+                data-tutorial={`view-${candidate}`}
                 aria-pressed={view === candidate}
                 onClick={() => {
                   setView(candidate);
