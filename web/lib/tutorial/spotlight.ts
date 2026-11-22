@@ -58,3 +58,14 @@ export function cardPosition(target: Rect, card: Size, viewport: Size): { top: n
 export function selectorFor(target: Exclude<Target, "centre">): string {
   return target === "tab-profile" ? "#tab-profile" : `[data-tutorial="${target}"]`;
 }
+
+/**
+ * How far a scrolling column must move so a target that is not fully inside it sits at its middle; 0 when the target
+ * is already fully in view. The column is scrolled itself: asking the browser to scroll the target into view would
+ * also move the page.
+ */
+export function scrollToCentre(target: Rect, column: Rect): number {
+  const inView = target.top >= column.top && target.top + target.height <= column.top + column.height;
+  if (inView) return 0;
+  return Math.round(target.top + target.height / 2 - (column.top + column.height / 2));
+}

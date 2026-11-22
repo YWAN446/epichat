@@ -1,9 +1,10 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { StepCard } from "@/components/tutorial/StepCard";
-import { CARD_GAP, CARD_WIDTH, HOLE_PAD, TARGET_WAIT_MS, cardPosition, dimPanels, selectorFor } from "@/lib/tutorial/spotlight";
+import { CARD_GAP, CARD_WIDTH, HOLE_PAD, TARGET_WAIT_MS, cardPosition, dimPanels, scrollToCentre, selectorFor } from "@/lib/tutorial/spotlight";
 
 const VIEW = { width: 1280, height: 720 };
 const inside = (rect: { top: number; left: number; width: number; height: number }, view = VIEW) => rect.left >= 0 && rect.top >= 0 && rect.left + rect.width <= view.width && rect.top + rect.height <= view.height;
@@ -42,6 +43,15 @@ describe("the spotlight's geometry", () => {
     const at = cardPosition(target, card, VIEW);
     const overlaps = at.left < target.left + target.width && at.left + card.width > target.left && at.top < target.top + target.height && at.top + card.height > target.top;
     expect(overlaps).toBe(false);
+  });
+
+  it("brings a hidden target to the middle of its own scrolling column, and never scrolls the page (preview check)", () => {
+    const column = { top: 60, left: 900, width: 380, height: 640 };
+    expect(scrollToCentre({ top: 900, left: 910, width: 360, height: 40 }, column)).toBe(900 + 20 - (60 + 320));
+    expect(scrollToCentre({ top: -200, left: 910, width: 360, height: 40 }, column)).toBe(-200 + 20 - 380);
+    expect(scrollToCentre({ top: 100, left: 910, width: 360, height: 40 }, column)).toBe(0); // already in view: stay put
+    expect(scrollToCentre({ top: 680, left: 910, width: 360, height: 40 }, column)).not.toBe(0); // cut off at the bottom edge
+    expect(readFileSync("components/tutorial/Spotlight.tsx", "utf8")).not.toContain("scrollIntoView");
   });
 
   it("finds targets by attribute, and the Profile tab by its id", () => {

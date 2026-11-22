@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CARD_WIDTH, TARGET_WAIT_MS, cardPosition, dimPanels, selectorFor, type Rect } from "@/lib/tutorial/spotlight";
+import { CARD_WIDTH, TARGET_WAIT_MS, cardPosition, dimPanels, scrollToCentre, selectorFor, type Rect } from "@/lib/tutorial/spotlight";
 import type { Target } from "@/lib/tutorial/steps";
 import { StepCard, type StepCardProps } from "./StepCard";
 
@@ -23,6 +23,15 @@ const START: Measured = { rect: null, missing: false, viewport: { width: 0, heig
 const sameRect = (a: Rect | null, b: Rect | null) => a === b || (a !== null && b !== null && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height);
 const same = (a: Measured, b: Measured) =>
   sameRect(a.rect, b.rect) && a.missing === b.missing && a.viewport.width === b.viewport.width && a.viewport.height === b.viewport.height && a.card.width === b.card.width && a.card.height === b.card.height;
+
+/** The nearest ancestor that scrolls up and down: the conversation column or the Dashboard. */
+function scrollParent(element: HTMLElement): HTMLElement | null {
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    const overflow = window.getComputedStyle(node).overflowY;
+    if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight) return node;
+  }
+  return null;
+}
 
 /**
  * The tutorial's dimming: everything but the target is covered by four panels that swallow presses; the target shows
@@ -48,10 +57,17 @@ export function Spotlight({ target, card, onMissing }: Props) {
         if (!element || !box || (box.width === 0 && box.height === 0)) missing = Date.now() - started >= TARGET_WAIT_MS;
         else {
           // Brought back into view whenever it leaves it (an answer can push it away), at most once a second.
-          if ((box.top < 0 || box.bottom > viewport.height || box.right < 0 || box.left > viewport.width) && Date.now() - scrolledAt > RESCROLL_MS) {
-            scrolledAt = Date.now();
-            element.scrollIntoView({ block: "center", inline: "nearest" });
+          // Only its own column is scrolled; the page itself must stay where it is.
+          const column = scrollParent(element);
+          if (column && Date.now() - scrolledAt > RESCROLL_MS) {
+            const frame = column.getBoundingClientRect();
+            const delta = scrollToCentre({ top: box.top, left: box.left, width: box.width, height: box.height }, { top: frame.top, left: frame.left, width: frame.width, height: frame.height });
+            if (delta !== 0) {
+              scrolledAt = Date.now();
+              column.scrollTop += delta;
+            }
           }
+          if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
           rect = { top: box.top, left: box.left, width: box.width, height: box.height };
         }
       }
