@@ -44,6 +44,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
         initialShare={share ? { token: share.token, url: `/s/${share.token}`, takenAt: share.taken_at, turnCount: share.turn_count } : null}
         initialProfile={participant.profile?.fields ?? EMPTY_PROFILE}
         diseases={diseaseOptions()}
+        tutorialOffer={false}
       />
     </SessionProvider>
   );

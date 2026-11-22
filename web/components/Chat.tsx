@@ -51,10 +51,13 @@ type Props = {
   initialProfile: ProfileFields;
   /** The database's diseases for the tab's suggestion list. */
   diseases: DiseaseOption[];
+  /** The one-time offer of the first-use tutorial on the start page, for a participant who has conversations but has never seen it. */
+  tutorialOffer: boolean;
 };
 
 /** The workspace: the list and the account menu on the left, the conversation and its bottom stack in the middle, the dashboard on the right. Owns the conversation state. */
-export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail, websiteUrl, initialShare, initialProfile, diseases }: Props) {
+export function Chat({ email, conversations: initialConversations, initial, maxMessageChars, contactEmail, websiteUrl, initialShare, initialProfile, diseases, tutorialOffer }: Props) {
+  const [offered, setOffered] = useState(tutorialOffer);
   const router = useRouter();
   const sessionId = useSessionId();
   const [conversationId, setConversationId] = useState<string | null>(initial?.id ?? null);
@@ -358,7 +361,23 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     >
       {empty ? (
         <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">
-          <Welcome disabled={live !== null} contactEmail={contactEmail} error={error} onPick={(text, source) => void send(text, source)}>
+          <Welcome
+            disabled={live !== null}
+            contactEmail={contactEmail}
+            error={error}
+            onPick={(text, source) => void send(text, source)}
+            offer={
+              offered
+                ? {
+                    onTake: () => router.push("/tutorial?entry=offer"),
+                    onDecline: () => {
+                      track({ kind: "tutorial_offer_declined", sessionId: session });
+                      setOffered(false);
+                    },
+                  }
+                : undefined
+            }
+          >
             <Composer value={input} onChange={setInput} onSubmit={submit} onKeyDown={onKeyDown} disabled={live !== null} maxLength={maxMessageChars} inputRef={inputBox} large />
           </Welcome>
         </div>

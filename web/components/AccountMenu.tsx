@@ -90,6 +90,7 @@ export function AccountMenu({ email, contactEmail, websiteUrl, onProfile }: Prop
       {open && (
         <div ref={list} role="menu" aria-label="Account" onKeyDown={onKeyDown} className="absolute right-2 bottom-full left-2 mb-1 rounded-xl border border-line bg-surface p-1 shadow-lg">
           <button type="button" role="menuitem" onClick={choose(onProfile)} className={ITEM}>Profile</button>
+          <Link role="menuitem" href="/tutorial?entry=menu" onClick={close} className={ITEM}>Tutorial</Link>
           {contactEmail && (
             <a role="menuitem" href={`mailto:${contactEmail}`} onClick={close} className={ITEM}>Contact support</a>
           )}
