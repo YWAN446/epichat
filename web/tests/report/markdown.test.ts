@@ -45,6 +45,6 @@ describe("renderMarkdown", () => {
   it("keeps pipes and markup literal", () => {
     const doc = composeReport({ ...FIXTURE, narrative: { ...FIXTURE.narrative, summary: "A | B and **now bold** and 2 * 3 <b>x</b>" } }, new Date());
     const text = renderMarkdown(doc);
-    expect(text).toContain("A \| B and **now bold** and 2 \* 3 \<b\>x\</b\>");   // round-1 UI cleanup: paired bold marks are bold; a lone star stays literal
+    expect(text).toContain("A \\| B and **now bold** and 2 \\* 3 \\<b\\>x\\</b\\>");   // round-1 UI cleanup: paired bold marks are bold; a lone star stays literal
   });
 });
