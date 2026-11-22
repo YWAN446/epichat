@@ -47,7 +47,7 @@ describe("the practice hooks in the workspace components (tutorial spec)", () =>
     const suggestions = (props: Record<string, unknown>) => renderToStaticMarkup(createElement(Suggestions, { items: ["Run it", "Change something"], disabled: false, onPick: () => {}, ...props }));
     expect(suggestions({ target: "Run it" }).match(/data-tutorial="reply"/g)).toHaveLength(1);
     expect(suggestions({})).not.toContain("data-tutorial");
-    const welcome = (props: Record<string, unknown>) => renderToStaticMarkup(createElement(Welcome, { disabled: false, contactEmail: "", error: null, onPick: () => {}, ...props } as Parameters<typeof Welcome>[0], "COMPOSER"));
+    const welcome = (props: Record<string, unknown>) => renderToStaticMarkup(createElement(Welcome, { disabled: false, contactEmail: "", error: null, onPick: () => {}, ...props } as unknown as Parameters<typeof Welcome>[0], "COMPOSER"));
     expect(welcome({ target: "Model a measles outbreak in Kenya" }).match(/data-tutorial="example"/g)).toHaveLength(1);
     expect(welcome({})).not.toContain("data-tutorial");
     const summary = (props: Record<string, unknown>) => renderToStaticMarkup(createElement(RunSummary, { payload: run, options: ["Add a vaccination campaign", "Close schools"], onPick: () => {}, ...props }));
