@@ -45,6 +45,10 @@ describe("the columns by screen width (round-1 UI cleanup)", () => {
     expect(shell({})).not.toContain('aria-label="Close"');
   });
 
+  it("lets the drawer's backdrop cover the Dashboard column: no stacking order of its own from lg (final review 1)", () => {
+    expect(aside(shell({ drawerOpen: true }), "Dashboard")).toContain("lg:z-auto");
+  });
+
   it("collapses the Dashboard column when it is closed, and sizes each handle at its own breakpoint", () => {
     const html = shell({ layout: { ...DEFAULT_LAYOUT, right: { open: false, width: 384 } } });
     expect(aside(html, "Dashboard")).toContain("lg:hidden");

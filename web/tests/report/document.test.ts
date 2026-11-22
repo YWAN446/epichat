@@ -21,7 +21,7 @@ describe("narrative text", () => {
   });
 
   it("leaves unmatched or empty marks as typed", () => {
-    for (const literal of ["a ** b", "****", "**open", "2 ** 3 ** 4", "** spaced **"]) expect(textRuns(literal)).toEqual({ text: literal });
+    for (const literal of ["a ** b", "****", "**open", "2 ** 3 ** 4", "** spaced **", "2**3 and 4**5", "***x***", "****a****"]) expect(textRuns(literal)).toEqual({ text: literal });
   });
 
   it("makes a list of dash lines that follow a lead-in line", () => {

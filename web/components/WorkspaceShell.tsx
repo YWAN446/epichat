@@ -19,7 +19,7 @@ type Props = {
 };
 
 const DRAWER = "absolute inset-y-0 left-0 z-20 w-72 max-w-[85vw] flex-col overflow-y-auto border-r border-line bg-paper xl:static xl:w-(--column) xl:max-w-none";
-const SHEET = "absolute inset-y-0 right-0 z-20 w-96 max-w-[92vw] flex-col overflow-y-auto border-l border-line bg-paper lg:static lg:w-(--column) lg:max-w-[calc(100vw-30rem)]";
+const SHEET = "absolute inset-y-0 right-0 z-20 w-96 max-w-[92vw] flex-col overflow-y-auto border-l border-line bg-paper lg:static lg:z-auto lg:w-(--column) lg:max-w-[calc(100vw-30rem)]";
 const HANDLE_BASE = "hidden w-1.5 shrink-0 cursor-col-resize hover:bg-accent-wash focus-visible:bg-accent-wash focus-visible:outline-none";
 /** Each handle appears where its column does. */
 const HANDLE: Record<Side, string> = { left: `${HANDLE_BASE} xl:block`, right: `${HANDLE_BASE} lg:block` };

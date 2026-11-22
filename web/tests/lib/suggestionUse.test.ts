@@ -74,8 +74,17 @@ describe("reading the events", () => {
     const calls = { range: [] as [number, number][], select: "" };
     const events = await loadUseEvents(fakeAdmin([Array.from({ length: 1000 }, (_, i) => row(i)), Array.from({ length: 3 }, (_, i) => row(1000 + i))], calls), new Date("2026-08-31T00:00:00Z"));
     expect(events).toHaveLength(1003);
-    expect(calls.range).toEqual([[0, 999], [1000, 1999]]);
+    expect(calls.range).toEqual([[0, 999], [1000, 1999], [1003, 2002]]);
     expect(events[0]).toEqual({ userId: "u0", at: "2026-11-17T10:00:00Z", kind: "suggestion_used", source: "model" });
+  });
+
+  it("keeps reading when the server caps a page below a thousand rows, and stops on an empty page (final review 3)", async () => {
+    const half = (start: number) => Array.from({ length: 500 }, (_, i) => row(start + i));
+    const capped = { from: () => capped, select: () => capped, in: () => capped, gte: () => capped, order: () => capped, range: async (from: number) => ({ data: from === 0 ? half(0) : from === 500 ? half(500) : from === 1000 ? [row(1)] : [], error: null }) } as unknown as SupabaseClient;
+    expect(await loadUseEvents(capped, new Date("2026-08-31T00:00:00Z"))).toHaveLength(1001);
+    const users = [[{ id: "a", email: "a@example.org" }], [{ id: "r", email: "lead@example.org" }], []];
+    const admin = { auth: { admin: { listUsers: async ({ page }: { page: number }) => ({ data: { users: users[page - 1] ?? [] }, error: null }) } } } as unknown as SupabaseClient;
+    expect(await researcherUserIds(admin, ["lead@example.org"])).toEqual(new Set(["r"]));
   });
 
   it("asks only for ids, times, kinds and the button's kind: no typed text", async () => {

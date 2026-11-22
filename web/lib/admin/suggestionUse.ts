@@ -81,10 +81,11 @@ export function weeklySuggestionUse(events: UseEvent[], now: Date, excludeUserId
 
 type EventRow = { user_id: string; at: string; kind: "turn" | "suggestion_used"; source: string | null };
 
-/** Every turn and button press since a moment, a thousand rows at a time until a short page. */
+/** Every turn and button press since a moment, up to a thousand rows at a time until an empty page. */
 export async function loadUseEvents(admin: SupabaseClient, since: Date): Promise<UseEvent[]> {
   const events: UseEvent[] = [];
-  for (let from = 0; ; from += PAGE) {
+  // The server may cap a page below what was asked for, so only an empty page ends the read.
+  for (let from = 0; ; ) {
     const { data, error } = await admin
       .from("step_events")
       .select("user_id, at, kind, source:meta->>source")
@@ -95,7 +96,8 @@ export async function loadUseEvents(admin: SupabaseClient, since: Date): Promise
     if (error) throw new Error(`step_events read failed: ${error.message}`);
     const rows = (data ?? []) as unknown as EventRow[];
     for (const row of rows) events.push({ userId: row.user_id, at: row.at, kind: row.kind, source: row.source });
-    if (rows.length < PAGE) return events;
+    if (rows.length === 0) return events;
+    from += rows.length;
   }
 }
 
@@ -108,6 +110,6 @@ export async function researcherUserIds(admin: SupabaseClient, emails: string[])
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: PAGE });
     if (error) throw new Error(`user list failed: ${error.message}`);
     for (const user of data.users) if (user.email && wanted.has(user.email.trim().toLowerCase())) ids.add(user.id);
-    if (data.users.length < PAGE) return ids;
+    if (data.users.length === 0) return ids;
   }
 }

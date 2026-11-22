@@ -53,8 +53,11 @@ export type ReportPayload = { kind: "report"; report_id: string | null; version:
 const BULLET = /^\s*[-*]\s+/;
 
 const NUMBERED = /^\d+[.)]\s+/;
-/** `**bold**`: the bold text is not empty and neither starts nor ends with a space. */
-const BOLD = /\*\*(?!\s)((?:(?!\*\*).)+?)(?<!\s)\*\*/g;
+/**
+ * `**bold**`: the bold text is not empty and neither starts nor ends with a space, and the marks do not
+ * touch a Latin letter, a digit or another star on their outer side, so `2**3 and 4**5` and `***x***` stay as typed.
+ */
+const BOLD = /(?<![\w*])\*\*(?!\s)((?:(?!\*\*).)+?)(?<!\s)\*\*(?![\w*])/g;
 
 /** The text without its bold marks, and the runs when any of it is bold. Marks that do not pair up stay as typed. */
 export function textRuns(source: string): { text: string; runs?: TextRun[] } {
