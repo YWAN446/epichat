@@ -11,7 +11,6 @@ import { renderHtml } from "@/lib/report/html";
 import { renderMarkdown } from "@/lib/report/markdown";
 import { loadRecording, readRecording, type Recording } from "@/lib/tutorial/recording";
 import { STEPS } from "@/lib/tutorial/steps";
-// @ts-expect-error a plain Node module shared with the export script; it has no type declarations
 import { toRecording } from "../../scripts/recordingLib.mjs";
 
 const FILE = "data/tutorial/recording.json";
