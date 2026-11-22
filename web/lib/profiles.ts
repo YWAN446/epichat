@@ -10,6 +10,8 @@ export type Profile = {
   consentedAt: string | null;
   /** The questionnaire and the preferences (profile spec, section 4); defaults until saved. */
   fields: ProfileFields;
+  /** When the first-use tutorial was first started or its offer declined; null until then. */
+  tutorialSeenAt: string | null;
 };
 
 export interface ProfileStore {
@@ -20,6 +22,8 @@ export interface ProfileStore {
   saveProfile(userId: string, input: SetupArgs, now: Date): Promise<{ first: boolean }>;
   /** Change only the given fields. */
   patchProfile(userId: string, patch: ProfilePatchArgs, now: Date): Promise<void>;
+  /** Record that the tutorial was started or declined; a time already recorded is kept. */
+  markTutorialSeen(userId: string, now: Date): Promise<void>;
 }
 
 type Row = {
@@ -38,10 +42,11 @@ type Row = {
   report_format?: ExportFormat | null;
   memory_enabled?: boolean | null;
   profile_completed_at?: string | null;
+  tutorial_seen_at?: string | null;
 };
 
 const COLUMNS =
-  "user_id, email, participant_type, consent_version, consented_at, role, experience, goals, disease_interest, country_interest, decisions, results_pref, report_format, memory_enabled, profile_completed_at";
+  "user_id, email, participant_type, consent_version, consented_at, role, experience, goals, disease_interest, country_interest, decisions, results_pref, report_format, memory_enabled, profile_completed_at, tutorial_seen_at";
 
 function fieldsFrom(row: Row): ProfileFields {
   return {
@@ -93,6 +98,7 @@ export function supabaseProfileStore(admin: SupabaseClient): ProfileStore {
         consentVersion: row.consent_version,
         consentedAt: row.consented_at,
         fields: fieldsFrom(row),
+        tutorialSeenAt: row.tutorial_seen_at ?? null,
       };
     },
 
@@ -109,6 +115,11 @@ export function supabaseProfileStore(admin: SupabaseClient): ProfileStore {
         { onConflict: "user_id" },
       );
       if (error) throw new Error(`profiles upsert failed: ${error.message}`);
+    },
+
+    async markTutorialSeen(userId, now) {
+      const { error } = await admin.from("profiles").update({ tutorial_seen_at: now.toISOString() }).eq("user_id", userId).is("tutorial_seen_at", null);
+      if (error) throw new Error(`profiles tutorial update failed: ${error.message}`);
     },
 
     async touch(userId, now) {

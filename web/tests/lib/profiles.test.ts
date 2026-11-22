@@ -17,7 +17,8 @@ describe("supabaseProfileStore", () => {
       profiles: [{ data: { user_id: USER, email: "a@emory.edu", participant_type: "other", consent_version: "v1", consented_at: "2026-10-02T00:00:00Z" } }],
     });
     const profile = await supabaseProfileStore(client).get(USER);
-    expect(profile).toEqual({ userId: USER, email: "a@emory.edu", participantType: "other", consentVersion: "v1", consentedAt: "2026-10-02T00:00:00Z", fields: EMPTY_PROFILE });
+    expect(profile).toEqual({ userId: USER, email: "a@emory.edu", participantType: "other", consentVersion: "v1", consentedAt: "2026-10-02T00:00:00Z", fields: EMPTY_PROFILE, tutorialSeenAt: null });
+    expect(String(callOn(recorded, "profiles", "select")?.[0])).toContain("tutorial_seen_at");
     expect(callOn(recorded, "profiles", "eq")).toEqual(["user_id", USER]);
     expect(callOn(recorded, "profiles", "maybeSingle")).toEqual([]);
     expect(String(callOn(recorded, "profiles", "select")?.[0])).toContain("profile_completed_at");
@@ -47,6 +48,18 @@ describe("supabaseProfileStore", () => {
     expect(payload.profile_updated_at).toBe(NOW.toISOString());
     const failing = fakeAdmin({ profiles: [{ data: ROW }, { data: null, error: { message: "down" } }] });
     await expect(supabaseProfileStore(failing.client).saveProfile(USER, input, NOW)).rejects.toThrow(/down/);
+  });
+
+  it("reads the tutorial-seen time and marks it once only", async () => {
+    const seen = fakeAdmin({ profiles: [{ data: { ...ROW, tutorial_seen_at: "2026-11-22T10:00:00Z" } }] });
+    expect((await supabaseProfileStore(seen.client).get(USER))?.tutorialSeenAt).toBe("2026-11-22T10:00:00Z");
+    const { client, recorded } = fakeAdmin();
+    await supabaseProfileStore(client).markTutorialSeen(USER, NOW);
+    expect(callOn(recorded, "profiles", "update")).toEqual([{ tutorial_seen_at: NOW.toISOString() }]);
+    expect(callOn(recorded, "profiles", "eq")).toEqual(["user_id", USER]);
+    expect(callOn(recorded, "profiles", "is")).toEqual(["tutorial_seen_at", null]);
+    const failing = fakeAdmin({ profiles: [{ data: null, error: { message: "down" } }] });
+    await expect(supabaseProfileStore(failing.client).markTutorialSeen(USER, NOW)).rejects.toThrow(/down/);
   });
 
   it("patches only the given fields", async () => {

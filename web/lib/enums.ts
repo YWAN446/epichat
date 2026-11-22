@@ -102,7 +102,22 @@ export const CLIENT_EVENT_KINDS = [
   "export",
   "feedback_given",
   "scenario_panel_opened",
+  "tutorial_started",
+  "tutorial_step",
+  "tutorial_finished",
+  "tutorial_ended",
+  "tutorial_offer_declined",
 ] as const;
+
+/** The first-use tutorial's countable events (tutorial spec, "Researcher counts"). */
+export const TUTORIAL_EVENT_KINDS = ["tutorial_started", "tutorial_step", "tutorial_finished", "tutorial_ended", "tutorial_offer_declined"] as const;
+/** How a participant came to the tutorial. */
+export const TUTORIAL_ENTRIES = ["first_visit", "offer", "menu"] as const;
+export type TutorialEntry = (typeof TUTORIAL_ENTRIES)[number];
+/** A step was done by the participant, or skipped. */
+export const TUTORIAL_HOWS = ["done", "skipped"] as const;
+export type TutorialHow = (typeof TUTORIAL_HOWS)[number];
+export const TUTORIAL_LAST_STEP = 10;
 
 export const STEP_EVENT_KINDS = [...SERVER_EVENT_KINDS, ...CLIENT_EVENT_KINDS] as const;
 export type StepEventKind = (typeof STEP_EVENT_KINDS)[number];

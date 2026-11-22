@@ -26,7 +26,8 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const admin = adminClient();
-  const profile = await supabaseProfileStore(admin).get(user.id).catch(() => null);
+  const profiles = supabaseProfileStore(admin);
+  const profile = await profiles.get(user.id).catch(() => null);
   const { version } = await loadConsent();
   const status = participantStatus(user, profile ? { consent_version: profile.consentVersion, consented_at: profile.consentedAt, profile_completed_at: profile.fields.completedAt } : null, settings, version);
   if (status !== "ok") return new Response(null, { status: 403 });
@@ -55,6 +56,14 @@ export async function POST(request: Request): Promise<Response> {
     if (action.kind === "session_end") {
       await sessions.end(action.sessionId, user.id);
       await events.log(user.id, [{ kind: "session_end", sessionId: action.sessionId }]);
+      return new Response(null, { status: 204 });
+    }
+
+    if (action.kind === "tutorial_started" || action.kind === "tutorial_step" || action.kind === "tutorial_finished" || action.kind === "tutorial_ended" || action.kind === "tutorial_offer_declined") {
+      const { kind, sessionId, ...meta } = action;
+      // Seen once it has started or been declined, so it never comes back uninvited (tutorial spec).
+      if (kind === "tutorial_started" || kind === "tutorial_offer_declined") await profiles.markTutorialSeen(user.id, new Date());
+      await events.log(user.id, [{ kind, sessionId: sessionId ?? null, conversationId: null, meta }]);
       return new Response(null, { status: 204 });
     }
 
