@@ -3,6 +3,18 @@ import { describe, expect, it } from "vitest";
 
 const read = (file: string) => readFileSync(file, "utf8");
 
+describe("the Dashboard's name (round-1 UI cleanup)", () => {
+  it("calls the right-hand panel the Dashboard, with tabs This conversation and Profile", () => {
+    const tabs = read("components/panel/PanelTabs.tsx");
+    expect(tabs).toContain(">This conversation</Tab>");
+    expect(tabs).toContain('aria-label="Dashboard"');
+    expect(tabs).not.toContain(">Details</Tab>");
+    expect(read("components/SharedConversation.tsx")).toContain('<aside aria-label="Dashboard"');
+    expect(read("components/Welcome.tsx")).toContain("Edit it in the Dashboard's Profile tab.");
+    expect(read("components/ProfileSetup.tsx")).toContain("the Dashboard's Profile tab");
+  });
+});
+
 describe("the reply in the middle column", () => {
   it("has no thumbs and no typing animation (round-1 UI cleanup)", () => {
     expect(existsSync("components/FeedbackControl.tsx")).toBe(false);

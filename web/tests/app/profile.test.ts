@@ -34,7 +34,7 @@ describe("the profile page", () => {
 describe("the Profile tab", () => {
   it("is a real tab list beside Details, with the arrow keys moving the selection", () => {
     const tabs = read("components/panel/PanelTabs.tsx");
-    for (const piece of ['role="tablist"', 'role="tab"', "aria-selected", 'role="tabpanel"', "aria-controls", '"ArrowRight"', '"ArrowLeft"', ">Details<", ">Profile<"]) expect(tabs).toContain(piece);
+    for (const piece of ['role="tablist"', 'role="tab"', "aria-selected", 'role="tabpanel"', "aria-controls", '"ArrowRight"', '"ArrowLeft"', ">This conversation<", ">Profile<"]) expect(tabs).toContain(piece);
   });
 
   it("keeps both panels mounted, so a half-edited profile and the Details sections survive a tab switch", () => {
