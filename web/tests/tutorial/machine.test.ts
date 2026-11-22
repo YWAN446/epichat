@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { INITIAL, advance, completedStep, currentPart, restore, skip, type TutorialState } from "@/lib/tutorial/machine";
 import { DASHBOARD_TARGETS, OPEN_DASHBOARD_TEXT, STEPS, type TutorialAction } from "@/lib/tutorial/steps";
 
-/** The completing action of every part, in order: 0 start, 1 example, 2 Scenario, 3 Data, 4 reply, 5 Runs, 6 Incidence, 7 option, 8 Parameters, 9 reply, 10 Report, 11 Profile, 12 finish. */
+/** The completing action of every part, in order: 0 start, 1 example, 2 Scenario, 3 reply (data), 4 Data, 5 reply (run), 6 Runs, 7 Incidence, 8 option, 9 Parameters, 10 reply (report), 11 Report, 12 Profile, 13 finish. */
 const WALK: TutorialAction[] = STEPS.flatMap((step) => step.parts.map((part) => part.completes));
 const run = (actions: TutorialAction[], narrow = false): TutorialState => actions.reduce((state, action) => advance(state, action, narrow), INITIAL);
 
@@ -11,12 +11,12 @@ describe("the tutorial's steps", () => {
   it("are numbered 0 to 10 with the spec's targets, seven of them in the Dashboard", () => {
     expect(STEPS.map((s) => s.number)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(STEPS.map((s) => s.parts.map((p) => p.target))).toEqual([
-      ["centre"], ["example"], ["panel-scenario"], ["panel-data"], ["reply", "panel-runs"], ["view-incidence"], ["option"], ["panel-parameters"], ["reply", "panel-report"], ["tab-profile"], ["centre"],
+      ["centre"], ["example"], ["panel-scenario"], ["reply", "panel-data"], ["reply", "panel-runs"], ["view-incidence"], ["option"], ["panel-parameters"], ["reply", "panel-report"], ["tab-profile"], ["centre"],
     ]);
     expect(STEPS.flatMap((s) => s.parts).filter((p) => DASHBOARD_TARGETS.has(p.target))).toHaveLength(7);
     expect(STEPS[2].parts[0].text).toContain("This is the Dashboard. The conversation is where you ask; the Dashboard keeps the record");
     expect(STEPS[0].parts[0].text).toContain("Nothing here is sent or saved.");
-    expect(STEPS.flatMap((s) => s.parts).map((p) => p.press).filter(Boolean)).toEqual(["example", "runReply", "option", "reportReply"]);
+    expect(STEPS.flatMap((s) => s.parts).map((p) => p.press).filter(Boolean)).toEqual(["example", "dataReply", "runReply", "option", "reportReply"]);
   });
 });
 
@@ -32,7 +32,7 @@ describe("the tutorial's state machine", () => {
     expect(end.open).toEqual({ scenario: true, data: true, runs: true, parameters: true, report: true, activity: false });
     expect(end.view).toBe("incidence");
     expect(end.tab).toBe("profile");
-    expect(end.turnsShown).toBe(4);
+    expect(end.turnsShown).toBe(5);
   });
 
   it("reaches the same end when every step is skipped", () => {
@@ -50,13 +50,13 @@ describe("the tutorial's state machine", () => {
 
   it("shows more of the recording only as steps complete, never less", () => {
     const shown = WALK.map((_, i) => run(WALK.slice(0, i + 1)).turnsShown);
-    expect(shown).toEqual([0, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 4, 4]);
+    expect(shown).toEqual([0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 5]);
   });
 
   it("ignores a press that is not the current step's action", () => {
-    const atData = run(WALK.slice(0, 3)); // step 3: open Data
-    expect(atData.step).toBe(3);
-    const strays: TutorialAction[] = [{ type: "reply" }, { type: "section", section: "runs", open: true }, { type: "section", section: "data", open: false }, { type: "view", view: "deaths" }, { type: "start" }, { type: "dashboard" }, { type: "next" }, { type: "finish" }];
+    const atData = run(WALK.slice(0, 4)); // step 3, second part: open Data
+    expect(atData).toMatchObject({ step: 3, part: 1 });
+    const strays: TutorialAction[] = [{ type: "reply" }, { type: "example" }, { type: "section", section: "runs", open: true }, { type: "section", section: "data", open: false }, { type: "view", view: "deaths" }, { type: "start" }, { type: "dashboard" }, { type: "next" }, { type: "finish" }];
     for (const stray of strays) expect(advance(atData, stray, false)).toBe(atData);
     const done = advance(atData, { type: "section", section: "data", open: true }, false);
     expect(done.step).toBe(4);
@@ -74,26 +74,30 @@ describe("the tutorial's state machine", () => {
     expect(opened.sheetOpen).toBe(true);
     expect(opened.step).toBe(2);
     expect(currentPart(opened, true).target).toBe("panel-scenario");
-    const atData = advance(opened, { type: "section", section: "scenario", open: true }, true);
-    expect(atData.sheetOpen).toBe(true); // Data is in the Dashboard too
-    const afterData = advance(atData, { type: "section", section: "data", open: true }, true);
-    expect(afterData.sheetOpen).toBe(false); // step 4 starts with a reply, in the conversation
+    const atReply = advance(opened, { type: "section", section: "scenario", open: true }, true);
+    expect(atReply.sheetOpen).toBe(false); // step 3 starts with a reply, in the conversation
+    expect(currentPart(atReply, true).target).toBe("reply");
+    const atData = advance(atReply, { type: "reply" }, true);
+    expect(currentPart(atData, true).target).toBe("dashboard-button"); // Data is behind the button again
+    const inData = advance(atData, { type: "dashboard" }, true);
+    const afterData = advance(inData, { type: "section", section: "data", open: true }, true);
+    expect(afterData.sheetOpen).toBe(false); // step 4 starts with a reply
     expect(currentPart(afterData, true).target).toBe("reply");
   });
 
   it("when the window narrows in the middle of a Dashboard step, asks for the Dashboard button", () => {
-    const wide = run(WALK.slice(0, 3)); // at Data, on a wide screen
+    const wide = run(WALK.slice(0, 4)); // at Data, on a wide screen
     expect(currentPart(wide, false).target).toBe("panel-data");
     expect(currentPart(wide, true).target).toBe("dashboard-button");
   });
 
   it("names the step that was just completed, once per step", () => {
-    const before = run(WALK.slice(0, 4)); // step 4, part 0
-    const mid = advance(before, WALK[4], false);
+    const before = run(WALK.slice(0, 5)); // step 4, part 0
+    const mid = advance(before, WALK[5], false);
     expect(completedStep(before, mid)).toBeNull(); // only the first part
-    expect(completedStep(mid, advance(mid, WALK[5], false))).toBe(4);
+    expect(completedStep(mid, advance(mid, WALK[6], false))).toBe(4);
     expect(completedStep(INITIAL, advance(INITIAL, { type: "start" }, false))).toBe(0);
-    const last = run(WALK.slice(0, 12));
+    const last = run(WALK.slice(0, 13));
     expect(completedStep(last, advance(last, { type: "finish" }, false))).toBe(10);
     expect(completedStep(before, before)).toBeNull();
   });

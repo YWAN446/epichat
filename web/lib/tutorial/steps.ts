@@ -39,7 +39,7 @@ export type Part = {
   /** Turns of the recording on show once the part is complete; absent: unchanged. */
   showTurns?: number;
   /** Which of the recording's chip texts this part presses. */
-  press?: "example" | "runReply" | "option" | "reportReply";
+  press?: "example" | "dataReply" | "runReply" | "option" | "reportReply";
 };
 
 export type Step = { number: number; parts: Part[] };
@@ -67,12 +67,15 @@ export const STEPS: Step[] = [
   },
   {
     number: 3,
-    parts: [{ target: "panel-data", text: "Every number has a source. Open Data to see where the population, birth rate and vaccine coverage came from.", completes: open("data") }],
+    parts: [
+      { target: "reply", text: "The assistant asks before it looks anything up. Press this reply to fetch real data for Kenya.", completes: { type: "reply" }, showTurns: 2, press: "dataReply" },
+      { target: "panel-data", text: "Every number has a source. Open Data to see where the population, birth rate and vaccine coverage came from.", completes: open("data") },
+    ],
   },
   {
     number: 4,
     parts: [
-      { target: "reply", text: "Suggested replies save typing. Press this one to run the simulation.", completes: { type: "reply" }, showTurns: 2, press: "runReply" },
+      { target: "reply", text: "Suggested replies save typing. Press this one to run the simulation.", completes: { type: "reply" }, showTurns: 3, press: "runReply" },
       { target: "panel-runs", text: "The run is in the Dashboard. Open Runs for its key numbers and chart.", completes: open("runs") },
     ],
   },
@@ -87,7 +90,7 @@ export const STEPS: Step[] = [
         target: "option",
         text: "Try a what-if. This adds a vaccination campaign and runs again; the Dashboard shows both runs so you can compare.",
         completes: { type: "option" },
-        showTurns: 3,
+        showTurns: 4,
         press: "option",
       },
     ],
@@ -99,7 +102,7 @@ export const STEPS: Step[] = [
   {
     number: 8,
     parts: [
-      { target: "reply", text: "Ask for a report when you're done.", completes: { type: "reply" }, showTurns: 4, press: "reportReply" },
+      { target: "reply", text: "Ask for a report when you're done.", completes: { type: "reply" }, showTurns: 5, press: "reportReply" },
       { target: "panel-report", text: "Your report and its downloads live in the Dashboard.", completes: open("report") },
     ],
   },
