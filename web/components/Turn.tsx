@@ -2,7 +2,6 @@
 
 import type { Block } from "@/lib/chat/events";
 import { ActivityLine } from "./ActivityLine";
-import { FeedbackControl } from "./FeedbackControl";
 import type { TryNext } from "@/lib/client/tryNext";
 import type { ExportFormat } from "@/lib/enums";
 import { TurnBlocks } from "./TurnBlocks";
@@ -14,14 +13,13 @@ type Props = {
   turn: DisplayTurn;
   /** The live status text, or null once the reply is complete. */
   status: string | null;
-  feedback: { conversationId: string; sessionId: string | null } | null;
   onActivityExpand?: () => void;
   onExport?: (format: ExportFormat) => void;
   /** The Try next buttons under the latest run (follow-up spec 7.4); absent on the share page and on the live turn. */
   tryNext?: TryNext;
 };
 
-export function Turn({ turn, status, feedback, onActivityExpand, onExport, tryNext }: Props) {
+export function Turn({ turn, status, onActivityExpand, onExport, tryNext }: Props) {
   return (
     <article className="py-4">
       <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-accent-wash px-4 py-2.5 whitespace-pre-wrap">{turn.userText}</p>
@@ -33,7 +31,6 @@ export function Turn({ turn, status, feedback, onActivityExpand, onExport, tryNe
             {turn.notice}
           </p>
         )}
-        {feedback && <FeedbackControl conversationId={feedback.conversationId} turnId={turn.id} sessionId={feedback.sessionId} />}
       </div>
     </article>
   );

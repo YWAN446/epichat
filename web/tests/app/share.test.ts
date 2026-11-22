@@ -17,7 +17,7 @@ describe("the public share page", () => {
   it("shows the turns and the panel with nothing to type, press, or sign in to", () => {
     const shared = read("components/SharedConversation.tsx");
     for (const piece of [
-      "<Turn", "feedback={null}", "<ScenarioSection", "references={false}", "<RunsSection", "<DataSection", "<ParametersSection", "<ActivitySection", "deriveArtifacts(",
+      "<Turn", "<ScenarioSection", "references={false}", "<RunsSection", "<DataSection", "<ParametersSection", "<ActivitySection", "deriveArtifacts(",
       "View report", "No report was written.", "A frozen copy of an EpiChat conversation, shared by a study participant on", "EpiChat is a research prototype from Emory University.",
     ]) {
       expect(shared).toContain(piece);

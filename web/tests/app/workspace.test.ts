@@ -4,9 +4,17 @@ import { describe, expect, it } from "vitest";
 const read = (file: string) => readFileSync(file, "utf8");
 
 describe("the reply in the middle column", () => {
+  it("has no thumbs and no typing animation (round-1 UI cleanup)", () => {
+    expect(existsSync("components/FeedbackControl.tsx")).toBe(false);
+    expect(read("components/Turn.tsx")).not.toContain("FeedbackControl");
+    const welcome = read("components/Welcome.tsx");
+    for (const gone of ["useTypewriter", "animate-pulse", "WELCOME_PHRASES", "prefers-reduced-motion"]) expect(welcome).not.toContain(gone);
+    expect(welcome).toContain("{WELCOME_HEADING}");
+  });
+
   it("renders the user's bubble, one activity line, the blocks, and the thumbs", () => {
     const turn = read("components/Turn.tsx");
-    for (const piece of ["<ActivityLine", "<TurnBlocks", "<FeedbackControl", "turn.userText", "export type DisplayTurn"]) expect(turn).toContain(piece);
+    for (const piece of ["<ActivityLine", "<TurnBlocks", "turn.userText", "export type DisplayTurn"]) expect(turn).toContain(piece);
   });
 
   it("offers what_if's replies under the latest run only, never while a reply streams and never on the share page (follow-up spec 7.4)", () => {

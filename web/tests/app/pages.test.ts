@@ -45,7 +45,7 @@ describe("protected pages", () => {
     expect(existsSync("components/ChatShell.tsx")).toBe(false);
   });
 
-  it("the chat component streams from the chat route, reports suggestion use, and asks for feedback", () => {
+  it("the chat component streams from the chat route, and reports suggestion use", () => {
     const source = readFileSync("components/Chat.tsx", "utf8");
     expect(source).toContain('fetch("/api/chat"');
     expect(source).toContain("readEvents<ChatStreamEvent>");
@@ -53,9 +53,7 @@ describe("protected pages", () => {
     expect(source).toContain('kind: "suggestion_used"');
     expect(source).toContain('kind: "conversation_resumed"');
     expect(source).toContain("useSessionId()");
-    expect(readFileSync("components/Turn.tsx", "utf8")).toContain("<FeedbackControl");
     expect(source).toContain("<Suggestions");
-    expect(readFileSync("components/FeedbackControl.tsx", "utf8")).toContain('fetch("/api/feedback"');
     expect(readFileSync("components/ConversationList.tsx", "utf8")).toContain('method: "DELETE"');
   });
 

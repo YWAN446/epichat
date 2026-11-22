@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CARD_KINDS, CHART_VIEWS, EXPORT_FORMATS, PANEL_SECTIONS, RATINGS, STAGES, SUGGESTION_SOURCES } from "./enums";
+import { CARD_KINDS, CHART_VIEWS, EXPORT_FORMATS, PANEL_SECTIONS, STAGES, SUGGESTION_SOURCES } from "./enums";
 
 /**
  * What the browser may report about what a participant did. Every field is a
@@ -25,7 +25,6 @@ const ClientEvent = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("chart_view_changed"), sessionId, conversationId: id, turnId: id, view: z.enum(CHART_VIEWS) }),
   z.strictObject({ kind: z.literal("series_downloaded"), sessionId, conversationId: id, runId: id }),
   z.strictObject({ kind: z.literal("export"), sessionId, conversationId: id, format: z.enum(EXPORT_FORMATS) }),
-  z.strictObject({ kind: z.literal("feedback_given"), sessionId, conversationId: id, turnId: id, rating: z.enum(RATINGS) }),
   z.strictObject({ kind: z.literal("scenario_panel_opened"), sessionId, conversationId: id, section: z.enum(PANEL_SECTIONS).optional() }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEvent>;

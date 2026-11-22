@@ -41,7 +41,7 @@ export function SharedConversation({ snapshot, token, takenAt }: Props) {
         <main className="min-w-0">
           <h1 className="mb-4 text-xl font-semibold">{snapshot.title}</h1>
           {snapshot.turns.map((turn) => (
-            <Turn key={turn.id} turn={turn} status={null} feedback={null} />
+            <Turn key={turn.id} turn={turn} status={null} />
           ))}
         </main>
         <aside aria-label="Details" className="text-sm">
