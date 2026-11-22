@@ -22,6 +22,14 @@ describe("protected pages", () => {
     expect(source).toContain("notFound()");
   });
 
+  it("the admin page shows the weekly suggested-reply table behind the researcher check (round-1 UI cleanup)", () => {
+    const source = readFileSync("app/admin/page.tsx", "utf8");
+    for (const piece of ["<SuggestionUseTable", "weeklySuggestionUse(", "researcherUserIds(", "loadUseEvents(", "Researcher accounts are left out."]) expect(source).toContain(piece);
+    expect(source.indexOf("notFound()")).toBeLessThan(source.indexOf("loadUseEvents("));
+    expect(source).not.toContain("sub-project 4");
+    expect(readFileSync("components/admin/SuggestionUseTable.tsx", "utf8")).not.toMatch(/user_text|userText|email/);
+  });
+
   it("the home page sends a signed-in user to the chat and everyone else to sign in", () => {
     const source = readFileSync("app/page.tsx", "utf8");
     expect(source).toContain('redirect(user ? "/chat" : "/sign-in")');
@@ -45,7 +53,7 @@ describe("protected pages", () => {
     expect(existsSync("components/ChatShell.tsx")).toBe(false);
   });
 
-  it("the chat component streams from the chat route, reports suggestion use, and asks for feedback", () => {
+  it("the chat component streams from the chat route, and reports suggestion use", () => {
     const source = readFileSync("components/Chat.tsx", "utf8");
     expect(source).toContain('fetch("/api/chat"');
     expect(source).toContain("readEvents<ChatStreamEvent>");
@@ -53,9 +61,7 @@ describe("protected pages", () => {
     expect(source).toContain('kind: "suggestion_used"');
     expect(source).toContain('kind: "conversation_resumed"');
     expect(source).toContain("useSessionId()");
-    expect(readFileSync("components/Turn.tsx", "utf8")).toContain("<FeedbackControl");
     expect(source).toContain("<Suggestions");
-    expect(readFileSync("components/FeedbackControl.tsx", "utf8")).toContain('fetch("/api/feedback"');
     expect(readFileSync("components/ConversationList.tsx", "utf8")).toContain('method: "DELETE"');
   });
 

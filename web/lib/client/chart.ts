@@ -1,7 +1,7 @@
 /** Pure chart math for the SVG epidemic curves (workspace spec, section 9). */
 import type { CHART_VIEWS } from "@/lib/enums";
 
-export type ChartView = "infected" | (typeof CHART_VIEWS)[number];
+export type ChartView = (typeof CHART_VIEWS)[number];
 export type Series = Record<string, number[]>;
 export type Line = { key: string; label: string; color: string; values: number[] };
 type LineSpec = { key: string; label: string; color: string; alt?: string };

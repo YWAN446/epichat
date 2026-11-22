@@ -135,14 +135,21 @@ export function useLayout(): Layout {
   return useSyncExternalStore(layoutStore.subscribe, layoutStore.getSnapshot, layoutStore.getServerSnapshot);
 }
 
-const WIDE = "(min-width: 80rem)";
-const subscribeWide = (notify: () => void) => {
-  const query = window.matchMedia(WIDE);
-  query.addEventListener("change", notify);
-  return () => query.removeEventListener("change", notify);
-};
+/** Where each side becomes a column rather than an overlay: the Dashboard from Tailwind's lg (1024 px), the conversation list from xl (1280 px). */
+export const COLUMN_FROM: Record<Side, string> = { left: "(min-width: 80rem)", right: "(min-width: 64rem)" };
+/** The width the Dashboard column always leaves the conversation, in rem (480 px); the shell's max-width class carries the same number. */
+export const MIN_CONVERSATION_REM = 30;
 
-/** True from Tailwind's xl breakpoint, where the sides are columns rather than overlays; false on the server and until hydrated. */
-export function useWide(): boolean {
-  return useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE).matches, () => false);
+const SUBSCRIBE: Record<Side, (notify: () => void) => () => void> = { left: subscribeTo(COLUMN_FROM.left), right: subscribeTo(COLUMN_FROM.right) };
+function subscribeTo(media: string) {
+  return (notify: () => void) => {
+    const query = window.matchMedia(media);
+    query.addEventListener("change", notify);
+    return () => query.removeEventListener("change", notify);
+  };
+}
+
+/** True where that side is a column rather than an overlay; false on the server and until hydrated. */
+export function useColumn(side: Side): boolean {
+  return useSyncExternalStore(SUBSCRIBE[side], () => window.matchMedia(COLUMN_FROM[side]).matches, () => false);
 }

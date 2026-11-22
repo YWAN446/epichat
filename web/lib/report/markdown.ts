@@ -1,9 +1,15 @@
 /** The report as Markdown: headings, paragraphs, bullets, GitHub tables; figures become a one-line note (report spec, section 11). */
-import type { ReportBlock, ReportDocument } from "./document";
+import type { ReportBlock, ReportDocument, TextRun } from "./document";
 
 /** Markdown-significant characters become literal text. */
 function plain(text: string): string {
   return text.replace(/([\\|*_`#<>[\]])/g, "\\$1");
+}
+
+/** The text as literal Markdown, with its bold runs between the bold marks; the plain text when it has no runs. */
+function rich(text: string, runs?: TextRun[]): string {
+  if (!runs) return plain(text);
+  return runs.map((run) => (run.bold ? `**${plain(run.text)}**` : plain(run.text))).join("");
 }
 
 /** A table cell: one line, or the table breaks. */
@@ -20,9 +26,9 @@ function table(columns: string[], rows: string[][], caption?: string): string {
 function block(b: ReportBlock): string {
   switch (b.kind) {
     case "paragraph":
-      return plain(b.text);
+      return rich(b.text, b.runs);
     case "bullets":
-      return b.items.map((item) => `- ${plain(item)}`).join("\n");
+      return b.items.map((item, i) => `- ${rich(item, b.itemRuns?.[i])}`).join("\n");
     case "note":
       return `*${plain(b.text)}*`;
     case "keyValues":

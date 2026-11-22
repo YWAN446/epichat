@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { BOUNDS, DEFAULT_LAYOUT, LAYOUT_KEY, STEP, clampWidth, createLayoutStore, dragWidth, nudgeWidth, readLayout, writeLayout } from "@/lib/client/layout";
+import { BOUNDS, COLUMN_FROM, DEFAULT_LAYOUT, MIN_CONVERSATION_REM, LAYOUT_KEY, STEP, clampWidth, createLayoutStore, dragWidth, nudgeWidth, readLayout, writeLayout } from "@/lib/client/layout";
 
 function fakeStorage(initial: Record<string, string> = {}) {
   const items = new Map(Object.entries(initial));
@@ -10,6 +10,13 @@ function fakeStorage(initial: Record<string, string> = {}) {
     items,
   };
 }
+
+describe("the breakpoints (round-1 UI cleanup)", () => {
+  it("makes the Dashboard a column from 1024 px and the list from 1280 px", () => {
+    expect(COLUMN_FROM).toEqual({ left: "(min-width: 80rem)", right: "(min-width: 64rem)" });
+    expect(MIN_CONVERSATION_REM).toBe(30);
+  });
+});
 
 describe("column widths", () => {
   it("keeps each side within its bounds and falls back to the initial width for nonsense", () => {

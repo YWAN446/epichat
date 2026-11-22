@@ -41,10 +41,10 @@ export function SharedConversation({ snapshot, token, takenAt }: Props) {
         <main className="min-w-0">
           <h1 className="mb-4 text-xl font-semibold">{snapshot.title}</h1>
           {snapshot.turns.map((turn) => (
-            <Turn key={turn.id} turn={turn} status={null} feedback={null} />
+            <Turn key={turn.id} turn={turn} status={null} />
           ))}
         </main>
-        <aside aria-label="Details" className="text-sm">
+        <aside aria-label="Dashboard" className="text-sm">
           <Section id="shared-scenario" title="Scenario" open={open.scenario} onToggle={toggle("scenario")}>
             <ScenarioSection config={artifacts.config} disease={artifacts.disease} population={artifacts.population} />
           </Section>

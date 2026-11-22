@@ -33,7 +33,7 @@ type Props = {
   profile: ReactNode;
 };
 
-/** The right column's two tabs (profile spec, section 11): a real tab list, the arrow keys moving the selection. */
+/** The Dashboard's two tabs (profile spec, section 11): a real tab list, the arrow keys moving the selection. */
 export function PanelTabs({ tab, onTab, details, profile }: Props) {
   const buttons = useRef<Record<PanelTab, HTMLButtonElement | null>>({ details: null, profile: null });
   const setRef = (id: PanelTab, element: HTMLButtonElement | null) => {
@@ -56,13 +56,13 @@ export function PanelTabs({ tab, onTab, details, profile }: Props) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div role="tablist" aria-label="Right column" onKeyDown={onKeyDown} className="flex shrink-0 border-b border-line px-2 pt-1">
+      <div role="tablist" aria-label="Dashboard" onKeyDown={onKeyDown} className="flex shrink-0 border-b border-line px-2 pt-1">
         {/* prettier-ignore */}
-        <Tab id="details" selected={tab === "details"} onSelect={onTab} setRef={setRef}>Details</Tab>
+        <Tab id="details" selected={tab === "details"} onSelect={onTab} setRef={setRef}>This conversation</Tab>
         {/* prettier-ignore */}
         <Tab id="profile" selected={tab === "profile"} onSelect={onTab} setRef={setRef}>Profile</Tab>
       </div>
-      {/* Both panels stay mounted: a half-edited profile and the Details sections survive a tab switch. */}
+      {/* Both panels stay mounted: a half-edited profile and the This conversation sections survive a tab switch. */}
       <div role="tabpanel" id="panel-details" aria-labelledby="tab-details" hidden={tab !== "details"} className="min-h-0 flex-1">
         {details}
       </div>

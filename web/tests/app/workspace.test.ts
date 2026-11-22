@@ -1,12 +1,96 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+
+import { Suggestions } from "@/components/Suggestions";
+import { WorkspaceShell } from "@/components/WorkspaceShell";
+import { DEFAULT_LAYOUT } from "@/lib/client/layout";
 
 const read = (file: string) => readFileSync(file, "utf8");
 
+describe("the Dashboard's name (round-1 UI cleanup)", () => {
+  it("calls the right-hand panel the Dashboard, with tabs This conversation and Profile", () => {
+    const tabs = read("components/panel/PanelTabs.tsx");
+    expect(tabs).toContain(">This conversation</Tab>");
+    expect(tabs).toContain('aria-label="Dashboard"');
+    expect(tabs).not.toContain(">Details</Tab>");
+    expect(read("components/SharedConversation.tsx")).toContain('<aside aria-label="Dashboard"');
+    expect(read("components/Welcome.tsx")).toContain("Edit it in the Dashboard&apos;s Profile tab.");
+    expect(read("components/ProfileSetup.tsx")).toContain("the Dashboard&apos;s Profile tab");
+  });
+});
+
+describe("the columns by screen width (round-1 UI cleanup)", () => {
+  const shell = (over: Partial<Parameters<typeof WorkspaceShell>[0]>) =>
+    renderToStaticMarkup(createElement(WorkspaceShell, { header: null, sidebar: "LIST", panel: "DASH", drawerOpen: false, sheetOpen: false, onClose: () => {}, columnRef: { current: null }, layout: DEFAULT_LAYOUT, onResize: () => {}, ...over } as Parameters<typeof WorkspaceShell>[0], "MAIN"));
+  const aside = (html: string, label: string) => html.match(new RegExp(`<aside aria-label="${label}"[^>]*>`))![0];
+
+  it("shows the Dashboard as a column from lg and the list from xl", () => {
+    const html = shell({});
+    expect(aside(html, "Dashboard")).toContain("lg:flex");
+    expect(aside(html, "Dashboard")).toContain("lg:static");
+    expect(aside(html, "Dashboard")).not.toContain("xl:");
+    expect(aside(html, "Conversations")).toContain("xl:flex");
+    expect(aside(html, "Conversations")).not.toContain("lg:");
+  });
+
+  it("keeps 480 px for the conversation however wide the Dashboard was left", () => {
+    expect(aside(shell({ layout: { ...DEFAULT_LAYOUT, right: { open: true, width: 640 } } }), "Dashboard")).toContain("lg:max-w-[calc(100vw-30rem)]");
+  });
+
+  it("puts a backdrop behind the list drawer up to xl, and behind the Dashboard sheet only below lg", () => {
+    expect(shell({ drawerOpen: true })).toMatch(/aria-label="Close"[^>]*xl:hidden/);
+    expect(shell({ sheetOpen: true })).toMatch(/aria-label="Close"[^>]*lg:hidden/);
+    expect(shell({})).not.toContain('aria-label="Close"');
+  });
+
+  it("lets the drawer's backdrop cover the Dashboard column: no stacking order of its own from lg (final review 1)", () => {
+    expect(aside(shell({ drawerOpen: true }), "Dashboard")).toContain("lg:z-auto");
+  });
+
+  it("collapses the Dashboard column when it is closed, and sizes each handle at its own breakpoint", () => {
+    const html = shell({ layout: { ...DEFAULT_LAYOUT, right: { open: false, width: 384 } } });
+    expect(aside(html, "Dashboard")).toContain("lg:hidden");
+    const open = shell({});
+    expect(open).toMatch(/aria-label="Resize the conversations column"[^>]*xl:block/);
+    expect(open).toMatch(/aria-label="Resize the dashboard column"[^>]*lg:block/);
+  });
+
+  it("reads each side's own breakpoint in the chat", () => {
+    const chat = read("components/Chat.tsx");
+    expect(chat).toContain('useColumn("left")');
+    expect(chat).toContain('useColumn("right")');
+    expect(chat).not.toContain("useWide");
+  });
+});
+
+describe("the suggested replies (round-1 UI cleanup)", () => {
+  it("wrap instead of scrolling sideways", () => {
+    const html = renderToStaticMarkup(createElement(Suggestions, { items: ["Run it with a school closure from day 30 and compare the peaks"], disabled: false, onPick: () => {} }));
+    for (const gone of ["overflow-x-auto", "whitespace-nowrap", "shrink-0"]) expect(html).not.toContain(gone);
+    expect(html).toContain("flex-wrap");
+    expect(html).toContain("text-left");
+    expect(html).toContain("max-w-full");
+  });
+
+  it("reports every chart view, the infected one included", () => {
+    expect(read("components/Chat.tsx")).not.toContain('view !== "infected"');
+  });
+});
+
 describe("the reply in the middle column", () => {
+  it("has no thumbs and no typing animation (round-1 UI cleanup)", () => {
+    expect(existsSync("components/FeedbackControl.tsx")).toBe(false);
+    expect(read("components/Turn.tsx")).not.toContain("FeedbackControl");
+    const welcome = read("components/Welcome.tsx");
+    for (const gone of ["useTypewriter", "animate-pulse", "WELCOME_PHRASES", "prefers-reduced-motion"]) expect(welcome).not.toContain(gone);
+    expect(welcome).toContain("{WELCOME_HEADING}");
+  });
+
   it("renders the user's bubble, one activity line, the blocks, and the thumbs", () => {
     const turn = read("components/Turn.tsx");
-    for (const piece of ["<ActivityLine", "<TurnBlocks", "<FeedbackControl", "turn.userText", "export type DisplayTurn"]) expect(turn).toContain(piece);
+    for (const piece of ["<ActivityLine", "<TurnBlocks", "turn.userText", "export type DisplayTurn"]) expect(turn).toContain(piece);
   });
 
   it("offers what_if's replies under the latest run only, never while a reply streams and never on the share page (follow-up spec 7.4)", () => {
@@ -128,7 +212,7 @@ describe("the bottom stack, the sidebar, and the header", () => {
 describe("the shell", () => {
   it("lays out three regions, overlays on narrow screens, and closes them on Escape", () => {
     const shell = read("components/WorkspaceShell.tsx");
-    for (const piece of ['aria-label="Conversations"', 'aria-label="Dashboard"', "<main", "xl:static", "xl:hidden", '"Escape"', "overflow-y-auto", "h-dvh"]) expect(shell).toContain(piece);
+    for (const piece of ['aria-label="Conversations"', 'aria-label="Dashboard"', "<main", "xl:static", "lg:static", "xl:hidden", "lg:hidden", '"Escape"', "overflow-y-auto", "h-dvh"]) expect(shell).toContain(piece);
   });
 
   it("composes the chat from the shell, the panel, the strip, the recap, and the chips, and reports the panel events", () => {
@@ -219,9 +303,9 @@ describe("references behind a parameter", () => {
 });
 
 describe("the welcome", () => {
-  it("centers the typewriter line, the composer, the four introduction questions, and the examples while the conversation is empty", () => {
+  it("centers the heading, the composer, the four introduction questions, and the examples while the conversation is empty", () => {
     const welcome = read("components/Welcome.tsx");
-    for (const piece of ["WELCOME_PHRASES", "INTRO_QUESTIONS", "DRAFTS.understand", "typewriterStep(", "typewriterText(", "prefers-reduced-motion", "aria-hidden", "sr-only", "Or try an example", "justify-center"]) {
+    for (const piece of ["WELCOME_HEADING", "INTRO_QUESTIONS", "DRAFTS.understand", "Or try an example", "justify-center"]) {
       expect(welcome).toContain(piece);
     }
     expect(welcome).toContain('"intro"');
@@ -255,7 +339,7 @@ describe("collapsible, resizable columns", () => {
 
   it("remembers the layout per browser and routes the header toggles by screen width", () => {
     const chat = read("components/Chat.tsx");
-    for (const piece of ["useLayout(", "useWide(", "layoutStore.toggle(", "layoutStore.resize(", "wide ?"]) expect(chat).toContain(piece);
+    for (const piece of ["useLayout(", "useColumn(", "layoutStore.toggle(", "layoutStore.resize(", "rightColumn ?", "leftColumn ?"]) expect(chat).toContain(piece);
     expect(chat).toContain("panelVisible");
   });
 });

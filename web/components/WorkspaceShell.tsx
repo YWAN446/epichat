@@ -19,8 +19,10 @@ type Props = {
 };
 
 const DRAWER = "absolute inset-y-0 left-0 z-20 w-72 max-w-[85vw] flex-col overflow-y-auto border-r border-line bg-paper xl:static xl:w-(--column) xl:max-w-none";
-const SHEET = "absolute inset-y-0 right-0 z-20 w-96 max-w-[92vw] flex-col overflow-y-auto border-l border-line bg-paper xl:static xl:w-(--column) xl:max-w-none";
-const HANDLE = "hidden w-1.5 shrink-0 cursor-col-resize hover:bg-accent-wash focus-visible:bg-accent-wash focus-visible:outline-none xl:block";
+const SHEET = "absolute inset-y-0 right-0 z-20 w-96 max-w-[92vw] flex-col overflow-y-auto border-l border-line bg-paper lg:static lg:z-auto lg:w-(--column) lg:max-w-[calc(100vw-30rem)]";
+const HANDLE_BASE = "hidden w-1.5 shrink-0 cursor-col-resize hover:bg-accent-wash focus-visible:bg-accent-wash focus-visible:outline-none";
+/** Each handle appears where its column does. */
+const HANDLE: Record<Side, string> = { left: `${HANDLE_BASE} xl:block`, right: `${HANDLE_BASE} lg:block` };
 
 type HandleProps = {
   side: Side;
@@ -75,14 +77,15 @@ function Handle({ side, width, label, onDrag, onDrop }: HandleProps) {
       tabIndex={0}
       onPointerDown={onPointerDown}
       onKeyDown={onKeyDown}
-      className={HANDLE}
+      className={HANDLE[side]}
     />
   );
 }
 
 /**
- * Three columns from xl, each side collapsible and resizable; below that the
- * sides are overlays with a backdrop, closed by Escape or a press outside.
+ * The Dashboard is a column from lg and the conversation list from xl, each
+ * collapsible and resizable; below that each is an overlay with a backdrop,
+ * closed by Escape or a press outside.
  */
 export function WorkspaceShell({ header, sidebar, panel, children, drawerOpen, sheetOpen, onClose, columnRef, layout, onResize }: Props) {
   const overlay = drawerOpen || sheetOpen;
@@ -119,10 +122,10 @@ export function WorkspaceShell({ header, sidebar, panel, children, drawerOpen, s
           {children}
         </main>
         {layout.right.open && <Handle side="right" width={widthOf("right")} label="Resize the dashboard column" onDrag={onDrag} onDrop={onDrop} />}
-        <aside aria-label="Dashboard" style={rightStyle} className={`${sheetOpen ? "flex" : "hidden"} ${layout.right.open ? "xl:flex" : "xl:hidden"} ${SHEET}`}>
+        <aside aria-label="Dashboard" style={rightStyle} className={`${sheetOpen ? "flex" : "hidden"} ${layout.right.open ? "lg:flex" : "lg:hidden"} ${SHEET}`}>
           {panel}
         </aside>
-        {overlay && <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 z-10 bg-ink/20 xl:hidden" />}
+        {overlay && <button type="button" aria-label="Close" onClick={onClose} className={`absolute inset-0 z-10 bg-ink/20 ${drawerOpen ? "xl:hidden" : "lg:hidden"}`} />}
       </div>
     </div>
   );

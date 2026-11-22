@@ -7,7 +7,7 @@ import { deriveArtifacts } from "@/lib/client/artifacts";
 import type { ChartView } from "@/lib/client/chart";
 import { summaryFor } from "@/lib/client/conversations";
 import { chipsFor, type ChipSource } from "@/lib/client/drafts";
-import { layoutStore, useLayout, useWide, type Side } from "@/lib/client/layout";
+import { layoutStore, useColumn, useLayout, type Side } from "@/lib/client/layout";
 import type { ShareState } from "@/lib/client/share";
 import { keepFollowing } from "@/lib/client/scroll";
 import { readEvents } from "@/lib/client/sse";
@@ -70,7 +70,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const [tab, setTab] = useState<PanelTab>("details");
   const [profile, setProfile] = useState<ProfileFields>(initialProfile);
   const layout = useLayout();
-  const wide = useWide();
+  const leftColumn = useColumn("left");
+  const rightColumn = useColumn("right");
   const [unseen, setUnseen] = useState(false);
   const inputBox = useRef<HTMLTextAreaElement>(null);
   const column = useRef<HTMLElement>(null);
@@ -107,8 +108,8 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const artifacts = useMemo(() => deriveArtifacts(live ? [...turns, { id: "live", blocks: live.progress.blocks }] : turns), [turns, live]);
   const artifactCount = artifacts.runs.length + artifacts.data.length + (artifacts.config ? 1 : 0) + (artifacts.report ? 1 : 0);
   const seen = useRef(artifactCount);
-  // On a wide screen the panel is a column that may be collapsed; below that it is the sheet.
-  const panelVisible = wide ? layout.right.open : sheet;
+  // From 1024 px the Dashboard is a column that may be collapsed; below that it is the sheet.
+  const panelVisible = rightColumn ? layout.right.open : sheet;
   useEffect(() => {
     if (artifactCount > seen.current && !panelVisible) setUnseen(true);
     seen.current = artifactCount;
@@ -120,7 +121,6 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   const recap = lastRecap(turns);
   // Follow-up spec 7.4: what_if's replies as buttons under the latest run; none while a reply streams.
   const tryNext = { key: tryNextKey(turns, live !== null), onPick: (label: string) => void send(label, "option") };
-  const feedback = conversationId ? { conversationId, sessionId } : null;
   const session = sessionId ?? undefined;
 
   function panelOpened() {
@@ -128,11 +128,11 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     if (conversationId) track({ kind: "scenario_panel_opened", sessionId: session, conversationId });
   }
   function onMenu() {
-    if (wide) layoutStore.toggle("left");
+    if (leftColumn) layoutStore.toggle("left");
     else setDrawer((open) => !open);
   }
   function onDashboard() {
-    if (wide) {
+    if (rightColumn) {
       const opening = !layout.right.open;
       layoutStore.toggle("right");
       if (opening) panelOpened();
@@ -147,7 +147,9 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
   function openProfile() {
     setTab("profile");
     onSectionOpen("profile");
-    if (wide) {
+    if (rightColumn) {
+      // Between 1024 and 1280 px the account menu sits in the list's drawer, which would cover the column.
+      setDrawer(false);
       if (!layout.right.open) {
         layoutStore.toggle("right");
         panelOpened();
@@ -164,7 +166,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     if (conversationId) track({ kind: "scenario_panel_opened", sessionId: session, conversationId, section });
   }
   function onChartView(view: ChartView, turnId: string) {
-    if (conversationId && turnId !== "live" && view !== "infected") track({ kind: "chart_view_changed", sessionId: session, conversationId, turnId, view });
+    if (conversationId && turnId !== "live") track({ kind: "chart_view_changed", sessionId: session, conversationId, turnId, view });
   }
   function onActivityExpand(turnId: string) {
     if (conversationId && turnId !== "live") track({ kind: "card_expanded", sessionId: session, conversationId, turnId, card: "activity" });
@@ -320,7 +322,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
           canShare={conversationId !== null && turns.length > 0}
           onMenu={onMenu}
           onDashboard={onDashboard}
-          menuOpen={wide ? layout.left.open : drawer}
+          menuOpen={leftColumn ? layout.left.open : drawer}
           dashboardOpen={panelVisible}
           unseen={unseen}
         />
@@ -363,9 +365,9 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
       ) : (
         <div className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 py-6">
           {turns.map((turn) => (
-            <Turn key={turn.id} turn={turn} status={null} feedback={feedback} onActivityExpand={() => onActivityExpand(turn.id)} onExport={onExport} tryNext={tryNext} />
+            <Turn key={turn.id} turn={turn} status={null} onActivityExpand={() => onActivityExpand(turn.id)} onExport={onExport} tryNext={tryNext} />
           ))}
-          {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} feedback={null} onExport={onExport} />}
+          {live && <Turn turn={{ id: "live", userText: live.userText, blocks: live.progress.blocks, notice: null }} status={live.progress.status} onExport={onExport} />}
         </div>
       )}
 

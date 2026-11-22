@@ -56,6 +56,26 @@ COLORS = ["#8c3b2a", "#2b5f8a", "#3b7d4f", "#b8860b", "#6a4c93", "#c0392b",
           "#16a085", "#7f8c8d", "#d35400", "#2c3e50", "#8e44ad", "#27ae60"]
 
 
+def _runs_ok(runs: Any) -> bool:
+    """A block's bold runs: a list of {text: str} with an optional bold that can only be true."""
+    return isinstance(runs, list) and all(
+        isinstance(run, dict) and isinstance(run.get("text"), str) and run.get("bold", True) is True for run in runs)
+
+
+def _runs_of(text: str, runs: list[dict] | None) -> list[dict]:
+    """The runs to draw: the block's own, or its plain text as one run."""
+    return runs if runs else [{"text": text}]
+
+
+def pdf_markup(text: str, runs: list[dict] | None, cjk: bool, bold_font: str) -> str:
+    """ReportLab paragraph markup: every run escaped and font-safe, the bold ones in the bold face."""
+    parts = []
+    for run in _runs_of(text, runs):
+        safe = _escape(pdf_text(run["text"], cjk))
+        parts.append(f'<font name="{bold_font}">{safe}</font>' if run.get("bold") else safe)
+    return "".join(parts)
+
+
 def validate_document(doc: Any) -> list[str]:
     """Everything the renderers rely on; the route answers 422 with these."""
     if not isinstance(doc, dict):
@@ -85,6 +105,12 @@ def validate_document(doc: Any) -> list[str]:
                 problems.append(f"{where}: text must be a string")
             if kind == "bullets" and not all(isinstance(i, str) for i in block.get("items", [])):
                 problems.append(f"{where}: items must be strings")
+            if kind == "paragraph" and "runs" in block and not _runs_ok(block["runs"]):
+                problems.append(f"{where}: runs must be a list of {{text, bold?: true}}")
+            if kind == "bullets" and "itemRuns" in block:
+                item_runs = block["itemRuns"]
+                if not (isinstance(item_runs, list) and len(item_runs) == len(block.get("items", [])) and all(_runs_ok(r) for r in item_runs)):
+                    problems.append(f"{where}: itemRuns must hold one list of runs per item")
             if kind == "keyValues" and not all(isinstance(i, list) and len(i) == 2 for i in block.get("items", [])):
                 problems.append(f"{where}: items must be pairs")
             if kind == "table":
@@ -143,6 +169,13 @@ def _table_rows(block: dict) -> tuple[list[str], list[list[str]], str | None]:
     return ["Setting", "Value"], block["items"], None
 
 
+def _docx_runs(paragraph: Any, text: str, runs: list[dict] | None) -> None:
+    for run in _runs_of(text, runs):
+        added = paragraph.add_run(run["text"])
+        if run.get("bold"):
+            added.bold = True
+
+
 def render_docx(doc: dict) -> bytes:
     from docx import Document
     from docx.shared import Inches
@@ -155,12 +188,13 @@ def render_docx(doc: dict) -> bytes:
         for block in section["blocks"]:
             kind = block["kind"]
             if kind == "paragraph":
-                document.add_paragraph(block["text"])
+                _docx_runs(document.add_paragraph(), block["text"], block.get("runs"))
             elif kind == "note":
                 document.add_paragraph().add_run(block["text"]).italic = True
             elif kind == "bullets":
-                for item in block["items"]:
-                    document.add_paragraph(item, style="List Bullet")
+                item_runs = block.get("itemRuns")
+                for i, item in enumerate(block["items"]):
+                    _docx_runs(document.add_paragraph(style="List Bullet"), item, item_runs[i] if item_runs else None)
             elif kind in ("table", "keyValues"):
                 columns, rows, caption = _table_rows(block)
                 if caption:
@@ -241,11 +275,13 @@ def render_pdf(doc: dict) -> bytes:
         for block in section["blocks"]:
             kind = block["kind"]
             if kind == "paragraph":
-                story.append(Paragraph(text(block["text"]), styles["body"]))
+                story.append(Paragraph(pdf_markup(block["text"], block.get("runs"), cjk, bold), styles["body"]))
             elif kind == "note":
                 story.append(Paragraph(text(block["text"]), styles["note"]))
             elif kind == "bullets":
-                items = [ListItem(Paragraph(text(i), styles["body"])) for i in block["items"]]
+                item_runs = block.get("itemRuns")
+                items = [ListItem(Paragraph(pdf_markup(item, item_runs[i] if item_runs else None, cjk, bold), styles["body"]))
+                         for i, item in enumerate(block["items"])]
                 story.append(ListFlowable(items, bulletType="bullet", bulletFontName=font))
             elif kind in ("table", "keyValues"):
                 columns, rows, caption = _table_rows(block)

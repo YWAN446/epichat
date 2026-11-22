@@ -5,6 +5,14 @@ import { TOOLS } from "@/lib/tools";
 import promptFile from "@/data/system_prompt.json";
 
 describe("system prompt", () => {
+  it("calls the right-hand panel the Dashboard and names its tabs (round-1 UI cleanup)", () => {
+    expect(SYSTEM_PROMPT).toContain("shown in the Dashboard beside the conversation");
+    expect(SYSTEM_PROMPT).toContain('"This conversation" tab');
+    expect(SYSTEM_PROMPT).toContain("point to the Dashboard's chart views");
+    expect(SYSTEM_PROMPT).toContain('Call it the Dashboard when you point the participant to it; the profile lives in its "Profile" tab.');
+    expect(SYSTEM_PROMPT).not.toMatch(/in a panel|the panel's/);
+  });
+
   it("starts with the Python agent's prompt verbatim and adds the four sections", () => {
     expect(SYSTEM_PROMPT.startsWith((promptFile as { system: string }).system)).toBe(true);
     for (const heading of ["## About EpiChat", "## Decisions recap", "## Suggested replies", "## The interface", "## Report", "## Repairs", "## Limits on spread", "## Interventions", "## Contact networks"]) expect(SYSTEM_PROMPT).toContain(heading);
@@ -31,7 +39,7 @@ describe("system prompt", () => {
     expect(SYSTEM_PROMPT).not.toContain("## Cards");
     expect(SYSTEM_PROMPT.indexOf("```recap")).toBeLessThan(SYSTEM_PROMPT.indexOf("```next"));
     expect(SYSTEM_PROMPT).toContain("three to eight lines");
-    expect(SYSTEM_PROMPT).toContain("panel beside the conversation");
+    expect(SYSTEM_PROMPT).toContain("Dashboard beside the conversation");
     expect(SYSTEM_PROMPT).toContain("in the Dashboard");
     expect(SYSTEM_PROMPT).not.toContain("Details panel");
   });

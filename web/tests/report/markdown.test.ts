@@ -1,8 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import { composeReport } from "@/lib/report/compose";
+import { narrativeBlocks, type ReportBlock, type ReportDocument } from "@/lib/report/document";
 import { renderMarkdown } from "@/lib/report/markdown";
 import { FIXTURE } from "./fixture";
+
+const docOf = (blocks: ReportBlock[]): ReportDocument => ({ version: 1, title: "T", subtitle: "S", generatedAt: "2026-11-21T00:00:00Z", language: "en", sections: [{ id: "summary", heading: "Summary", blocks }] });
+
+describe("bold runs in Markdown (round-1 UI cleanup)", () => {
+  it("keeps the bold marks and the list", () => {
+    const md = renderMarkdown(docOf(narrativeBlocks("**Peak:** day 40\n\nOptions:\n- close schools\n- **vaccinate** early")));
+    expect(md).toContain("**Peak:** day 40");
+    expect(md).toContain("Options:\n\n- close schools\n- **vaccinate** early");
+  });
+
+  it("escapes inside runs and leaves a block without runs as it was", () => {
+    expect(renderMarkdown(docOf([{ kind: "paragraph", text: "2 * 3" }]))).toContain("2 \\* 3");
+    expect(renderMarkdown(docOf([{ kind: "paragraph", text: "a*b", runs: [{ text: "a*b", bold: true }] }]))).toContain("**a\\*b**");
+  });
+});
 
 describe("renderMarkdown", () => {
   const md = renderMarkdown(composeReport(FIXTURE, new Date("2026-10-09T15:00:00Z")));
@@ -27,8 +43,8 @@ describe("renderMarkdown", () => {
   });
 
   it("keeps pipes and markup literal", () => {
-    const doc = composeReport({ ...FIXTURE, narrative: { ...FIXTURE.narrative, summary: "A | B and **not bold** <b>x</b>" } }, new Date());
+    const doc = composeReport({ ...FIXTURE, narrative: { ...FIXTURE.narrative, summary: "A | B and **now bold** and 2 * 3 <b>x</b>" } }, new Date());
     const text = renderMarkdown(doc);
-    expect(text).toContain("A \\| B and \\*\\*not bold\\*\\* \\<b\\>x\\</b\\>");
+    expect(text).toContain("A \\| B and **now bold** and 2 \\* 3 \\<b\\>x\\</b\\>");   // round-1 UI cleanup: paired bold marks are bold; a lone star stays literal
   });
 });

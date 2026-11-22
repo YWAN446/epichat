@@ -1,5 +1,5 @@
 /** The report as one self-contained HTML page: no script, no external resource, prints cleanly (report spec, section 11). */
-import type { ReportBlock, ReportDocument } from "./document";
+import type { ReportBlock, ReportDocument, TextRun } from "./document";
 import { escapeHtml } from "./escape";
 import { figureSvg } from "./svg";
 
@@ -32,12 +32,18 @@ figcaption { color: var(--faint); font-size: .85rem; }
 }
 `;
 
+/** The text, escaped, with its bold runs in strong; the plain text when it has no runs. */
+function rich(text: string, runs?: TextRun[]): string {
+  if (!runs) return escapeHtml(text);
+  return runs.map((run) => (run.bold ? `<strong>${escapeHtml(run.text)}</strong>` : escapeHtml(run.text))).join("");
+}
+
 function block(b: ReportBlock): string {
   switch (b.kind) {
     case "paragraph":
-      return `<p>${escapeHtml(b.text)}</p>`;
+      return `<p>${rich(b.text, b.runs)}</p>`;
     case "bullets":
-      return `<ul>${b.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+      return `<ul>${b.items.map((item, i) => `<li>${rich(item, b.itemRuns?.[i])}</li>`).join("")}</ul>`;
     case "note":
       return `<p class="note">${escapeHtml(b.text)}</p>`;
     case "keyValues":

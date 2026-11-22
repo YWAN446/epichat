@@ -96,7 +96,7 @@ export function ProfileSetup({ initial, prefillRole, diseases, completed }: Prop
     <form onSubmit={submit} noValidate className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Tell us about yourself</h1>
-        <p className="mt-2 text-sm text-ink-soft">Your answers shape how much detail the assistant gives and how it frames results. You can change them any time in the Profile tab.</p>
+        <p className="mt-2 text-sm text-ink-soft">Your answers shape how much detail the assistant gives and how it frames results. You can change them any time in the Dashboard&apos;s Profile tab.</p>
       </div>
 
       <div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, nationalNote, parameterLabel, populationRow, scenarioRows } from "@/lib/client/format";
+import { SOURCE_LABELS, configurationRows, countryName, describeField, formatQuantity, formatRange, interventionLines, nationalNote, populationText, parameterLabel, populationRow, scenarioRows } from "@/lib/client/format";
 import { defaultRows, parameterGroups } from "@/lib/client/parameters";
 import type { SimParams } from "@/lib/sim/params";
 import { params } from "../tools/helpers";
@@ -271,6 +271,11 @@ describe("the population line (round-1 spec 1)", () => {
   it("populationRow", () => {
     expect(populationRow(area)).toEqual(["Population", "2,000,000, Example County, Kenya (you set it)"]);
     expect(populationRow(country)).toEqual(["Population", "55,100,000, Kenya (UN World Population Prospects)"]);
+  });
+  it("writes the population without nesting brackets (round-1 UI cleanup)", () => {
+    expect(populationText(2000000, "Example County, Kenya", "you set it")).toBe("2,000,000, Example County, Kenya (you set it)");
+    expect(populationText(3271616, "Utah", "Census Bureau QuickFacts (2020 census)")).toBe("3,271,616, Utah; source: Census Bureau QuickFacts (2020 census)");
+    expect(populationRow({ value: 3271616, place: "Utah, United States", origin: "QuickFacts (2020)", url: "https://example.org", national: false })[1]).toBe("3,271,616, Utah, United States; source: QuickFacts (2020)");
   });
   it("nationalNote", () => {
     expect(nationalNote(area, "KEN")).toBe("Ages, contact patterns and vaccination coverage are Kenya's national figures.");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_FIGURE_POINTS, SECTION_HEADINGS, figureLine, narrativeBlocks, wordCount } from "@/lib/report/document";
+import { MAX_FIGURE_POINTS, SECTION_HEADINGS, figureLine, narrativeBlocks, textRuns, wordCount } from "@/lib/report/document";
 
 describe("narrative text", () => {
   it("splits on blank lines into paragraphs, and a block of dash lines into bullets", () => {
@@ -12,6 +12,36 @@ describe("narrative text", () => {
     ]);
     expect(narrativeBlocks("  \n\n ")).toEqual([]);
     expect(narrativeBlocks("* star\n* bullets")).toEqual([{ kind: "bullets", items: ["star", "bullets"] }]);
+  });
+
+  it("turns **bold** into runs and drops the marks from the text (round-1 UI cleanup)", () => {
+    expect(textRuns("**Peak:** day 40")).toEqual({ text: "Peak: day 40", runs: [{ text: "Peak:", bold: true }, { text: " day 40" }] });
+    expect(textRuns("The **peak** and the **end**.")).toEqual({ text: "The peak and the end.", runs: [{ text: "The " }, { text: "peak", bold: true }, { text: " and the " }, { text: "end", bold: true }, { text: "." }] });
+    expect(textRuns("no marks")).toEqual({ text: "no marks" });
+  });
+
+  it("leaves unmatched or empty marks as typed", () => {
+    for (const literal of ["a ** b", "****", "**open", "2 ** 3 ** 4", "** spaced **", "2**3 and 4**5", "***x***", "****a****"]) expect(textRuns(literal)).toEqual({ text: literal });
+  });
+
+  it("makes a list of dash lines that follow a lead-in line", () => {
+    expect(narrativeBlocks("Two options:\n- close schools\n- **vaccinate** early")).toEqual([
+      { kind: "paragraph", text: "Two options:" },
+      { kind: "bullets", items: ["close schools", "vaccinate early"], itemRuns: [[{ text: "close schools" }], [{ text: "vaccinate", bold: true }, { text: " early" }]] },
+    ]);
+    expect(narrativeBlocks("- a\n- b\nThen prose\ncontinues.")).toEqual([{ kind: "bullets", items: ["a", "b"] }, { kind: "paragraph", text: "Then prose continues." }]);
+  });
+
+  it("keeps numbered lines apart", () => {
+    expect(narrativeBlocks("1. Rerun with 70% coverage.\n2. Compare the peaks.")).toEqual([
+      { kind: "paragraph", text: "1. Rerun with 70% coverage." },
+      { kind: "paragraph", text: "2. Compare the peaks." },
+    ]);
+    expect(narrativeBlocks("In 2020. the count rose\nand fell.")).toEqual([{ kind: "paragraph", text: "In 2020. the count rose and fell." }]);
+  });
+
+  it("carries bold in a paragraph", () => {
+    expect(narrativeBlocks("**Peak:** day 40")).toEqual([{ kind: "paragraph", text: "Peak: day 40", runs: [{ text: "Peak:", bold: true }, { text: " day 40" }] }]);
   });
 
   it("counts the words of the four sections", () => {
