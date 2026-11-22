@@ -1,8 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import { composeReport } from "@/lib/report/compose";
+import { narrativeBlocks, type ReportBlock, type ReportDocument } from "@/lib/report/document";
 import { escapeHtml, renderHtml } from "@/lib/report/html";
 import { FIXTURE } from "./fixture";
+
+const docOf = (blocks: ReportBlock[]): ReportDocument => ({ version: 1, title: "T", subtitle: "S", generatedAt: "2026-11-21T00:00:00Z", language: "en", sections: [{ id: "summary", heading: "Summary", blocks }] });
+
+describe("bold runs in HTML (round-1 UI cleanup)", () => {
+  it("renders bold runs as strong, in paragraphs and list items", () => {
+    const html = renderHtml(docOf(narrativeBlocks("**Peak:** day 40\n\nOptions:\n- close schools\n- **vaccinate** early")));
+    expect(html).toContain("<p><strong>Peak:</strong> day 40</p>");
+    expect(html).toContain("<p>Options:</p><ul><li>close schools</li><li><strong>vaccinate</strong> early</li></ul>");
+  });
+
+  it("escapes inside runs and leaves a block without runs as it was", () => {
+    expect(renderHtml(docOf([{ kind: "paragraph", text: "a <b> & **c**" }]))).toContain("<p>a &lt;b&gt; &amp; **c**</p>");
+    expect(renderHtml(docOf([{ kind: "paragraph", text: "x<y", runs: [{ text: "x<y", bold: true }] }]))).toContain("<p><strong>x&lt;y</strong></p>");
+  });
+});
 
 describe("renderHtml", () => {
   const html = renderHtml(composeReport(FIXTURE, new Date("2026-10-09T15:00:00Z")));
