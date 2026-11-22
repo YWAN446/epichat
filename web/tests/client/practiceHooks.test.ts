@@ -66,6 +66,7 @@ describe("the practice hooks in the workspace components (tutorial spec)", () =>
   it("shows a practice report with two working formats and no database links", () => {
     const html = renderToStaticMarkup(createElement(PracticeReport, { title: "Measles in Kenya", subtitle: "Practice report" }));
     expect(html).toContain("Measles in Kenya");
+    expect(html).toContain('data-tutorial="practice-report"');
     expect(html).toContain('href="/tutorial/report?format=html"');
     expect(html).toContain('href="/tutorial/report?format=md"');
     expect(html.match(/disabled=""/g)).toHaveLength(2);

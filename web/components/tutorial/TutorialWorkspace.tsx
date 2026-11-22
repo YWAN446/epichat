@@ -75,6 +75,8 @@ export function TutorialWorkspace({ recording, profile, diseases, replay, entry,
     const saved = loadProgress();
     if (!saved) {
       track({ kind: "tutorial_started", sessionId, replay: isReplay.current, entry });
+      // Saved from the first card on, so a reload there is not counted as a second start.
+      saveProgress(INITIAL, isReplay.current);
       return;
     }
     isReplay.current = saved.replay;
@@ -106,7 +108,8 @@ export function TutorialWorkspace({ recording, profile, diseases, replay, entry,
 
   function leave() {
     clearProgress();
-    router.push("/chat");
+    // The chat never sends anyone who arrives from here back in.
+    router.push("/chat?from=tutorial");
   }
 
   function settle(next: TutorialState, how: "done" | "skipped") {
@@ -136,12 +139,16 @@ export function TutorialWorkspace({ recording, profile, diseases, replay, entry,
     leave();
   }
 
-  const card: StepCardProps =
-    state.step === 0
+  const card: StepCardProps = appearing
+    ? // The next card waits for the answer: its target may not be there yet, and a press would be lost.
+      { step: state.step, text: "The assistant is answering…", onEnd: end }
+    : state.step === 0
       ? { step: 0, text: part.text, onEnd: end, endLabel: "Skip the tutorial", primary: { label: "Start", onPress: () => did({ type: "start" }) } }
       : part.completes.type === "finish"
         ? { step: state.step, text: part.text, onEnd: end, primary: { label: "Start my own conversation", onPress: () => did({ type: "finish" }) } }
-        : { step: state.step, text: part.text, onSkip: skipStep, onEnd: end };
+        : part.completes.type === "next"
+          ? { step: state.step, text: part.text, onSkip: skipStep, onEnd: end, primary: { label: "Next", onPress: () => did({ type: "next" }) } }
+          : { step: state.step, text: part.text, onSkip: skipStep, onEnd: end };
 
   const stage = lastStage(settled);
   const chips = appearing || state.turnsShown === 0 ? [] : chipsFor(stage, lastSuggestions(settled)).items;
@@ -231,7 +238,7 @@ export function TutorialWorkspace({ recording, profile, diseases, replay, entry,
           </footer>
         )}
       </WorkspaceShell>
-      {!state.finished && <Spotlight key={`${state.step}.${state.part}.${part.target}`} target={part.target} card={card} onMissing={skipStep} />}
+      {!state.finished && (appearing ? <Spotlight key="answering" target="centre" card={card} onMissing={skipStep} /> : <Spotlight key={`${state.step}.${state.part}.${part.target}`} target={part.target} card={card} onMissing={skipStep} />)}
     </>
   );
 }

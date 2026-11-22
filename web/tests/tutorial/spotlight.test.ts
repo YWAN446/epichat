@@ -49,6 +49,7 @@ describe("the spotlight's geometry", () => {
     expect(selectorFor("reply")).toBe('[data-tutorial="reply"]');
     expect(selectorFor("dashboard-button")).toBe('[data-tutorial="dashboard-button"]');
     expect(selectorFor("tab-profile")).toBe("#tab-profile");
+    expect(selectorFor("practice-report")).toBe('[data-tutorial="practice-report"]');
     expect(TARGET_WAIT_MS).toBe(2000);
   });
 });

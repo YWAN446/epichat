@@ -37,12 +37,17 @@ describe("the practice page", () => {
     for (const gone of [">Share<", "Sign out", 'aria-expanded="true" aria-controls="panel-'] ) expect(html).not.toContain(gone);
   });
 
+  it("keeps its card out of sight until it knows where it goes (final review: no flash at the corner)", () => {
+    const html = renderToStaticMarkup(createElement(TutorialWorkspace, { recording: loadRecording()!, profile: EMPTY_PROFILE, diseases: [], replay: false, entry: "first_visit", contactEmail: "" }));
+    expect(html).toMatch(/role="dialog"[^>]*visibility:hidden/);
+  });
+
   it("is built from the workspace's own components and the machine", () => {
     const source = read("components/tutorial/TutorialWorkspace.tsx");
     for (const piece of [
       "<WorkspaceShell", "<ChatHeader", "<Welcome", "<Turn", "<Suggestions", "<StageStrip", "<RecapBar", "<Composer", "<PanelTabs", "<DetailsPanel", "<ProfileSummary", "<PracticeReport", "<Spotlight",
       "practice=", "advance(", "skip(", "completedStep(", "currentPart(", "saveProgress(", "loadProgress(", "clearProgress(",
-      'kind: "tutorial_started"', 'kind: "tutorial_step"', 'kind: "tutorial_finished"', 'kind: "tutorial_ended"', "prefers-reduced-motion", "Typing is off in the practice run.", 'useColumn("right")', 'router.push("/chat")',
+      'kind: "tutorial_started"', 'kind: "tutorial_step"', 'kind: "tutorial_finished"', 'kind: "tutorial_ended"', "prefers-reduced-motion", "Typing is off in the practice run.", 'useColumn("right")', 'router.push("/chat?from=tutorial")', "saveProgress(INITIAL, isReplay.current)", "The assistant is answering…",
     ]) expect(source).toContain(piece);
   });
 });

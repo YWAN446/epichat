@@ -17,6 +17,7 @@ type Measured = { rect: Rect | null; missing: boolean; viewport: { width: number
 const DIM = "fixed z-40 bg-ink/45";
 /** How often the target is measured: it moves when a section opens, a turn appears, or the window changes. */
 const MEASURE_MS = 200;
+const RESCROLL_MS = 1000;
 const START: Measured = { rect: null, missing: false, viewport: { width: 0, height: 0 }, card: { width: CARD_WIDTH, height: 200 } };
 
 const sameRect = (a: Rect | null, b: Rect | null) => a === b || (a !== null && b !== null && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height);
@@ -34,7 +35,7 @@ export function Spotlight({ target, card, onMissing }: Props) {
 
   useEffect(() => {
     const started = Date.now();
-    let scrolled = false;
+    let scrolledAt = 0;
     const measure = () => {
       const viewport = { width: window.innerWidth, height: window.innerHeight };
       const cardBox = cardRef.current;
@@ -46,8 +47,9 @@ export function Spotlight({ target, card, onMissing }: Props) {
         const box = element?.getBoundingClientRect();
         if (!element || !box || (box.width === 0 && box.height === 0)) missing = Date.now() - started >= TARGET_WAIT_MS;
         else {
-          if ((box.top < 0 || box.bottom > viewport.height || box.right < 0 || box.left > viewport.width) && !scrolled) {
-            scrolled = true;
+          // Brought back into view whenever it leaves it (an answer can push it away), at most once a second.
+          if ((box.top < 0 || box.bottom > viewport.height || box.right < 0 || box.left > viewport.width) && Date.now() - scrolledAt > RESCROLL_MS) {
+            scrolledAt = Date.now();
             element.scrollIntoView({ block: "center", inline: "nearest" });
           }
           rect = { top: box.top, left: box.left, width: box.width, height: box.height };
@@ -81,7 +83,8 @@ export function Spotlight({ target, card, onMissing }: Props) {
       {panels.map((panel, index) => (
         <div key={index} aria-hidden="true" className={DIM} style={{ top: panel.top, left: panel.left, width: panel.width, height: panel.height }} />
       ))}
-      <StepCard {...shown} cardRef={cardRef} style={{ top: at.top, left: at.left }} />
+      {/* Out of sight until the first measurement, so the card never flashes at the corner. */}
+      <StepCard {...shown} cardRef={cardRef} style={{ top: at.top, left: at.left, visibility: viewport.width === 0 ? "hidden" : "visible" }} />
     </>
   );
 }

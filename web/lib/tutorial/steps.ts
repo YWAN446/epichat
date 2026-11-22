@@ -29,6 +29,7 @@ export type Target =
   | "panel-parameters"
   | "panel-runs"
   | "panel-report"
+  | "practice-report"
   | "view-incidence";
 
 export type Part = {
@@ -104,6 +105,7 @@ export const STEPS: Step[] = [
     parts: [
       { target: "reply", text: "Ask for a report when you're done.", completes: { type: "reply" }, showTurns: 5, press: "reportReply" },
       { target: "panel-report", text: "Your report and its downloads live in the Dashboard.", completes: open("report") },
+      { target: "practice-report", text: "Open the practice report as HTML or Markdown if you like, then press Next.", completes: { type: "next" } },
     ],
   },
   {
@@ -117,6 +119,6 @@ export const STEPS: Step[] = [
 ];
 
 /** The targets that live in the Dashboard, hidden behind its button below 1024 px. */
-export const DASHBOARD_TARGETS: ReadonlySet<Target> = new Set<Target>(["panel-scenario", "panel-data", "panel-parameters", "panel-runs", "panel-report", "view-incidence", "tab-profile"]);
+export const DASHBOARD_TARGETS: ReadonlySet<Target> = new Set<Target>(["panel-scenario", "panel-data", "panel-parameters", "panel-runs", "panel-report", "practice-report", "view-incidence", "tab-profile"]);
 
 export const OPEN_DASHBOARD_TEXT = "Press Dashboard to open it.";

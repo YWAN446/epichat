@@ -121,7 +121,7 @@ export function ReportSection({ report, onExport, preferredFormat }: Props) {
  */
 export function PracticeReport({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="space-y-3">
+    <div data-tutorial="practice-report" className="space-y-3">
       <div>
         <p className="font-medium">{title}</p>
         <p className="text-xs text-ink-faint">{subtitle}</p>

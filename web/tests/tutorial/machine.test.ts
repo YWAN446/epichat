@@ -11,9 +11,10 @@ describe("the tutorial's steps", () => {
   it("are numbered 0 to 10 with the spec's targets, seven of them in the Dashboard", () => {
     expect(STEPS.map((s) => s.number)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(STEPS.map((s) => s.parts.map((p) => p.target))).toEqual([
-      ["centre"], ["example"], ["panel-scenario"], ["reply", "panel-data"], ["reply", "panel-runs"], ["view-incidence"], ["option"], ["panel-parameters"], ["reply", "panel-report"], ["tab-profile"], ["centre"],
+      ["centre"], ["example"], ["panel-scenario"], ["reply", "panel-data"], ["reply", "panel-runs"], ["view-incidence"], ["option"], ["panel-parameters"], ["reply", "panel-report", "practice-report"], ["tab-profile"], ["centre"],
     ]);
-    expect(STEPS.flatMap((s) => s.parts).filter((p) => DASHBOARD_TARGETS.has(p.target))).toHaveLength(7);
+    expect(STEPS.flatMap((s) => s.parts).filter((p) => DASHBOARD_TARGETS.has(p.target))).toHaveLength(8);
+    expect(STEPS[8].parts[2]).toMatchObject({ target: "practice-report", completes: { type: "next" } });
     expect(STEPS[2].parts[0].text).toContain("This is the Dashboard. The conversation is where you ask; the Dashboard keeps the record");
     expect(STEPS[0].parts[0].text).toContain("Nothing here is sent or saved.");
     expect(STEPS.flatMap((s) => s.parts).map((p) => p.press).filter(Boolean)).toEqual(["example", "dataReply", "runReply", "option", "reportReply"]);
@@ -50,7 +51,7 @@ describe("the tutorial's state machine", () => {
 
   it("shows more of the recording only as steps complete, never less", () => {
     const shown = WALK.map((_, i) => run(WALK.slice(0, i + 1)).turnsShown);
-    expect(shown).toEqual([0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 5]);
+    expect(shown).toEqual([0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 5, 5]);
   });
 
   it("ignores a press that is not the current step's action", () => {
@@ -97,7 +98,7 @@ describe("the tutorial's state machine", () => {
     expect(completedStep(before, mid)).toBeNull(); // only the first part
     expect(completedStep(mid, advance(mid, WALK[6], false))).toBe(4);
     expect(completedStep(INITIAL, advance(INITIAL, { type: "start" }, false))).toBe(0);
-    const last = run(WALK.slice(0, 13));
+    const last = run(WALK.slice(0, 14));
     expect(completedStep(last, advance(last, { type: "finish" }, false))).toBe(10);
     expect(completedStep(before, before)).toBeNull();
   });
