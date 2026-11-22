@@ -22,6 +22,14 @@ describe("protected pages", () => {
     expect(source).toContain("notFound()");
   });
 
+  it("the admin page shows the weekly suggested-reply table behind the researcher check (round-1 UI cleanup)", () => {
+    const source = readFileSync("app/admin/page.tsx", "utf8");
+    for (const piece of ["<SuggestionUseTable", "weeklySuggestionUse(", "researcherUserIds(", "loadUseEvents(", "Researcher accounts are left out."]) expect(source).toContain(piece);
+    expect(source.indexOf("notFound()")).toBeLessThan(source.indexOf("loadUseEvents("));
+    expect(source).not.toContain("sub-project 4");
+    expect(readFileSync("components/admin/SuggestionUseTable.tsx", "utf8")).not.toMatch(/user_text|userText|email/);
+  });
+
   it("the home page sends a signed-in user to the chat and everyone else to sign in", () => {
     const source = readFileSync("app/page.tsx", "utf8");
     expect(source).toContain('redirect(user ? "/chat" : "/sign-in")');
