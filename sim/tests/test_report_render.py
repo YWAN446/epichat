@@ -123,3 +123,54 @@ def test_validate_document_checks_a_band_against_its_line():
     assert any("band" in p for p in render.validate_document(doc))
     ok = {**SAMPLE, "sections": [{"heading": "Results", "blocks": [_banded_figure([0, 8, 4], [0, 12, 6])]}]}
     assert render.validate_document(ok) == []
+
+
+# Round-1 UI cleanup: bold runs from the report document reach Word and PDF.
+BOLD_BLOCKS = [
+    {"kind": "paragraph", "text": "Peak: day 40", "runs": [{"text": "Peak:", "bold": True}, {"text": " day 40"}]},
+    {"kind": "bullets", "items": ["close schools", "vaccinate early"],
+     "itemRuns": [[{"text": "close schools"}], [{"text": "vaccinate", "bold": True}, {"text": " early"}]]},
+]
+
+
+def _with_blocks(blocks):
+    return {**SAMPLE, "sections": [{"id": "summary", "heading": "Summary", "blocks": blocks}]}
+
+
+def test_bold_runs_reach_the_word_file():
+    word = Document(io.BytesIO(render.render_docx(_with_blocks(BOLD_BLOCKS))))
+    para = next(p for p in word.paragraphs if p.text == "Peak: day 40")
+    assert [(r.text, bool(r.bold)) for r in para.runs] == [("Peak:", True), (" day 40", False)]
+    item = next(p for p in word.paragraphs if p.text == "vaccinate early")
+    assert item.style.name == "List Bullet"
+    assert [(r.text, bool(r.bold)) for r in item.runs] == [("vaccinate", True), (" early", False)]
+    plain_item = next(p for p in word.paragraphs if p.text == "close schools")
+    assert plain_item.style.name == "List Bullet" and not any(r.bold for r in plain_item.runs)
+
+
+def test_bold_runs_become_pdf_markup_in_the_bold_face_and_stay_escaped():
+    runs = [{"text": "R₀ <high>:", "bold": True}, {"text": " 15 & rising"}]
+    assert render.pdf_markup("R₀ <high>: 15 & rising", runs, cjk=False, bold_font="DejaVuSans-Bold") == \
+        '<font name="DejaVuSans-Bold">R0 &lt;high&gt;:</font> 15 &amp; rising'
+    assert render.pdf_markup("a ** b & c", None, cjk=False, bold_font="DejaVuSans-Bold") == "a ** b &amp; c"
+    assert render.validate_document(_with_blocks(BOLD_BLOCKS)) == []
+    assert render.render_pdf(_with_blocks(BOLD_BLOCKS)).startswith(b"%PDF")
+    cjk = _with_blocks([{"kind": "paragraph", "text": "峰值：第40天", "runs": [{"text": "峰值：", "bold": True}, {"text": "第40天"}]}])
+    assert render.render_pdf(cjk).startswith(b"%PDF")
+
+
+def test_a_document_without_runs_renders_as_before():
+    word = Document(io.BytesIO(render.render_docx(_with_blocks([{"kind": "paragraph", "text": "a ** b"}]))))
+    para = next(p for p in word.paragraphs if p.text == "a ** b")
+    assert len(para.runs) == 1 and not para.runs[0].bold
+
+
+@pytest.mark.parametrize("block", [
+    {"kind": "paragraph", "text": "x", "runs": [{"text": 1}]},
+    {"kind": "paragraph", "text": "x", "runs": [{"text": "x", "bold": "yes"}]},
+    {"kind": "paragraph", "text": "x", "runs": "x"},
+    {"kind": "bullets", "items": ["a", "b"], "itemRuns": [[{"text": "a"}]]},
+    {"kind": "bullets", "items": ["a"], "itemRuns": [[{"text": "a", "bold": False}]]},
+])
+def test_malformed_runs_are_refused(block):
+    assert any("runs" in problem for problem in render.validate_document(_with_blocks([block])))
