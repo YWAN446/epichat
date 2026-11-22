@@ -3,7 +3,7 @@ import type { ActivityItem } from "@/lib/client/artifacts";
 
 /** Every tool and web step of the conversation, in order. */
 export function ActivitySection({ items }: { items: ActivityItem[] }) {
-  if (items.length === 0) return <p className="text-ink-faint">Steps appear here as the assistant works.</p>;
+  if (items.length === 0) return <p className="text-ink-faint">Each step the assistant takes is listed here as it works.</p>;
   return (
     <ol className="space-y-1.5">
       {items.map((item, index) => (

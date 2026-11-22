@@ -28,7 +28,7 @@ export function DataSection({ data, disease, onReferencesOpen, references, onUse
       {note && <p className="rounded-r-lg border-l-[3px] border-accent bg-accent-wash px-3 py-2 text-ink-soft">{note}</p>}
       {disease && <LiteratureTable disease={disease} onReferencesOpen={onReferencesOpen} references={references} onUseReference={onUseReference} busy={busy} />}
       {data.length === 0 ? (
-        <p className="text-ink-faint">Real data appears here once it is fetched.</p>
+        <p className="text-ink-faint">Once the assistant looks up real data, each figure and its source is listed here.</p>
       ) : (
         <ul className="space-y-3">
           {data.map((entry, index) => (

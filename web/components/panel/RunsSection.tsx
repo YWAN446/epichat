@@ -110,7 +110,7 @@ function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact;
 
 /** Every run of the conversation, newest first and open. */
 export function RunsSection({ runs, onChartView }: Props) {
-  if (runs.length === 0) return <p className="text-ink-faint">Results appear here after the first run.</p>;
+  if (runs.length === 0) return <p className="text-ink-faint">Each simulation you run appears here with its key numbers and chart.</p>;
   const newest = runs[runs.length - 1];
   return (
     <ul className="space-y-2">

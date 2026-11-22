@@ -79,6 +79,16 @@ describe("the suggested replies (round-1 UI cleanup)", () => {
   });
 });
 
+describe("the Dashboard says what it is (tutorial spec, outside the tutorial)", () => {
+  it("describes itself above its sections, once, and its old empty-state lines are gone", () => {
+    const panel = read("components/panel/DetailsPanel.tsx");
+    expect(panel.match(/What this conversation has set up and produced: the scenario, its data, every run, and the report\./g)).toHaveLength(1);
+    expect(panel.indexOf("What this conversation has set up and produced")).toBeLessThan(panel.indexOf('title="Scenario"'));
+    const sources = ["ScenarioSection", "DataSection", "ParametersSection", "RunsSection", "ReportSection", "ActivitySection"].map((name) => read(`components/panel/${name}.tsx`)).join("");
+    for (const old of ["The configuration appears here once", "Real data appears here once it is fetched", "Parameters appear here once a scenario", "Results appear here after the first run", "The report appears here once you ask", "Steps appear here as the assistant works"]) expect(sources).not.toContain(old);
+  });
+});
+
 describe("the reply in the middle column", () => {
   it("has no thumbs and no typing animation (round-1 UI cleanup)", () => {
     expect(existsSync("components/FeedbackControl.tsx")).toBe(false);
@@ -141,11 +151,11 @@ describe("the details panel", () => {
     const order = ['title="Scenario"', 'title="Data"', 'title="Parameters"', 'title="Runs"', 'title="Report"', 'title="Activity"'].map((title) => panel.indexOf(title));
     expect(order.every((at) => at >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
-    expect(read("components/panel/ScenarioSection.tsx")).toContain("The configuration appears here once a scenario is set up.");
-    expect(read("components/panel/DataSection.tsx")).toContain("Real data appears here once it is fetched.");
-    expect(read("components/panel/ParametersSection.tsx")).toContain("Parameters appear here once a scenario is set up.");
-    expect(read("components/panel/RunsSection.tsx")).toContain("Results appear here after the first run.");
-    expect(read("components/panel/ActivitySection.tsx")).toContain("Steps appear here as the assistant works.");
+    expect(read("components/panel/ScenarioSection.tsx")).toContain("The outbreak you describe appears here: the disease, the place, the population and any interventions.");
+    expect(read("components/panel/DataSection.tsx")).toContain("Once the assistant looks up real data, each figure and its source is listed here.");
+    expect(read("components/panel/ParametersSection.tsx")).toContain("The exact values a run will use appear here once a scenario is set up.");
+    expect(read("components/panel/RunsSection.tsx")).toContain("Each simulation you run appears here with its key numbers and chart.");
+    expect(read("components/panel/ActivitySection.tsx")).toContain("Each step the assistant takes is listed here as it works.");
     const section = read("components/panel/Section.tsx");
     expect(section).toContain("aria-expanded");
     expect(section).toContain("aria-controls");
@@ -176,7 +186,7 @@ describe("the details panel", () => {
     for (const piece of ["in the literature", "<ReferenceList", "referenceButtonLabel(", "references = true"]) expect(literature).toContain(piece);
     const data = read("components/panel/DataSection.tsx");
     expect(data).toContain("<LiteratureTable");
-    expect(data.indexOf("<LiteratureTable")).toBeLessThan(data.indexOf("Real data appears here once it is fetched."));
+    expect(data.indexOf("<LiteratureTable")).toBeLessThan(data.indexOf("Once the assistant looks up real data, each figure and its source is listed here."));
   });
 
   it("gives every run its tiles, a chart with the four views, its parameters, repairs, and sources", () => {
@@ -355,7 +365,7 @@ describe("review fixes", () => {
 describe("the report in the panel", () => {
   it("shows the latest report with four downloads and Open, and the empty state", () => {
     const section = read("components/panel/ReportSection.tsx");
-    for (const piece of ["The report appears here once you ask for one.", 'format: "md"', 'format: "html"', 'format: "docx"', 'format: "pdf"', "?format=${format}", "download", 'target="_blank"', "onExport(", "Version"]) {
+    for (const piece of ["Ask the assistant for a report and it appears here, with downloads.", 'format: "md"', 'format: "html"', 'format: "docx"', 'format: "pdf"', "?format=${format}", "download", 'target="_blank"', "onExport(", "Version"]) {
       expect(section).toContain(piece);
     }
     const panel = read("components/panel/DetailsPanel.tsx");

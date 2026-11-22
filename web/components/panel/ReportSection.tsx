@@ -96,7 +96,7 @@ type Props = { report: ReportPayload | null; onExport: (format: ExportFormat) =>
 
 /** The latest report: its title and version, its sections, and the four downloads (report spec, section 10), the preferred one first. */
 export function ReportSection({ report, onExport, preferredFormat }: Props) {
-  if (!report || !report.report_id) return <p className="text-ink-faint">The report appears here once you ask for one.</p>;
+  if (!report || !report.report_id) return <p className="text-ink-faint">Ask the assistant for a report and it appears here, with downloads.</p>;
   return (
     <div className="space-y-3">
       <div>

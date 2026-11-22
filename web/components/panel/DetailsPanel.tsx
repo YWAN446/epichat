@@ -66,6 +66,7 @@ export function DetailsPanel({ artifacts, onSectionOpen, onChartView, onReferenc
 
   return (
     <div className="text-sm">
+      <p className="border-b border-line px-4 py-2.5 text-xs text-ink-faint">What this conversation has set up and produced: the scenario, its data, every run, and the report.</p>
       <Section id="panel-scenario" title="Scenario" open={open.scenario} onToggle={toggle("scenario")}>
         <ScenarioSection config={artifacts.config} disease={artifacts.disease} population={artifacts.population} />
       </Section>
