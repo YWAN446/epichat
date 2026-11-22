@@ -227,9 +227,9 @@ describe("references behind a parameter", () => {
 });
 
 describe("the welcome", () => {
-  it("centers the typewriter line, the composer, the four introduction questions, and the examples while the conversation is empty", () => {
+  it("centers the heading, the composer, the four introduction questions, and the examples while the conversation is empty", () => {
     const welcome = read("components/Welcome.tsx");
-    for (const piece of ["WELCOME_PHRASES", "INTRO_QUESTIONS", "DRAFTS.understand", "typewriterStep(", "typewriterText(", "prefers-reduced-motion", "aria-hidden", "sr-only", "Or try an example", "justify-center"]) {
+    for (const piece of ["WELCOME_HEADING", "INTRO_QUESTIONS", "DRAFTS.understand", "Or try an example", "justify-center"]) {
       expect(welcome).toContain(piece);
     }
     expect(welcome).toContain('"intro"');
