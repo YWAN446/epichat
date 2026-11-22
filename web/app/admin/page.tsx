@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { SuggestionUseTable } from "@/components/admin/SuggestionUseTable";
+import { TutorialTable } from "@/components/admin/TutorialTable";
 import { Brand } from "@/components/Brand";
 import { loadUseEvents, researcherUserIds, sinceFor, weeklySuggestionUse } from "@/lib/admin/suggestionUse";
+import { loadTutorialEvents, summarizeTutorial } from "@/lib/admin/tutorialUse";
 import { isResearcher } from "@/lib/config";
 import { loadParticipant, redirectFor } from "@/lib/participant.server";
 import { adminClient } from "@/lib/supabase/admin";
@@ -16,10 +18,11 @@ export default async function AdminPage() {
 
   const admin = adminClient();
   const now = new Date();
-  const [{ count }, events, researchers] = await Promise.all([
+  const [{ count }, events, researchers, tutorialEvents] = await Promise.all([
     admin.from("profiles").select("user_id", { count: "exact", head: true }),
     loadUseEvents(admin, sinceFor(now)),
     researcherUserIds(admin, participant.settings.researcherEmails),
+    loadTutorialEvents(admin),
   ]);
   const weeks = weeklySuggestionUse(events, now, researchers);
 
@@ -35,6 +38,9 @@ export default async function AdminPage() {
         Turns sent, and how many of them came from pressing a button rather than typing. Weeks start on Monday (UTC). Researcher accounts are left out.
       </p>
       <SuggestionUseTable rows={weeks} />
+      <h3 className="mt-10 text-lg font-semibold">Tutorial</h3>
+      <p className="mt-1 mb-3 text-sm text-ink-soft">Participants on their first run-through. Researcher accounts are left out. A participant reaches a step by completing the one before it.</p>
+      <TutorialTable summary={summarizeTutorial(tutorialEvents, researchers)} />
     </main>
   );
 }

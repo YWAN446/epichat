@@ -30,6 +30,12 @@ describe("protected pages", () => {
     expect(readFileSync("components/admin/SuggestionUseTable.tsx", "utf8")).not.toMatch(/user_text|userText|email/);
   });
 
+  it("the admin page shows the tutorial's counts behind the researcher check", () => {
+    const source = readFileSync("app/admin/page.tsx", "utf8");
+    for (const piece of ["<TutorialTable", "summarizeTutorial(", "loadTutorialEvents(", "Participants on their first run-through. Researcher accounts are left out."]) expect(source).toContain(piece);
+    expect(source.indexOf("notFound()")).toBeLessThan(source.indexOf("loadTutorialEvents("));
+  });
+
   it("the tutorial page is for enrolled participants and falls back to the chat without a recording", () => {
     const source = readFileSync("app/tutorial/page.tsx", "utf8");
     for (const piece of ["loadParticipant()", "redirectFor(", "loadRecording()", 'redirect("/chat")', "tutorialSeenAt", "<TutorialWorkspace", "searchParams", "TUTORIAL_ENTRIES"]) expect(source).toContain(piece);
