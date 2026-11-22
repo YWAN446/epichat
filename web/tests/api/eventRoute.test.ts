@@ -56,6 +56,30 @@ describe("POST /api/event", () => {
     expect(events[0]).toMatchObject({ kind: "session_end", session_id: SESSION });
   });
 
+  it("logs the tutorial's events without a conversation, and marks the tutorial seen when it starts or is declined", async () => {
+    expect((await post({ kind: "tutorial_started", replay: false, entry: "offer", sessionId: SESSION })).status).toBe(204);
+    let events = callOn(admin.recorded, "step_events", "insert")?.[0] as Record<string, unknown>[];
+    expect(events[0]).toMatchObject({ kind: "tutorial_started", session_id: SESSION, conversation_id: null, meta: { replay: false, entry: "offer" } });
+    expect(admin.recorded.filter((r) => r.table === "profiles" && r.calls.some(([m]) => m === "update"))).toHaveLength(1);
+    expect(admin.recorded.find((r) => r.table === "profiles" && r.calls.some(([m]) => m === "update"))?.calls.find(([m]) => m === "is")?.[1]).toEqual(["tutorial_seen_at", null]);
+
+    admin.recorded.length = 0;
+    expect((await post({ kind: "tutorial_step", replay: false, step: 3, how: "done" })).status).toBe(204);
+    events = callOn(admin.recorded, "step_events", "insert")?.[0] as Record<string, unknown>[];
+    expect(events[0]).toMatchObject({ kind: "tutorial_step", conversation_id: null, meta: { replay: false, step: 3, how: "done" } });
+    expect(admin.recorded.filter((r) => r.table === "profiles" && r.calls.some(([m]) => m === "update"))).toHaveLength(0);
+
+    admin.recorded.length = 0;
+    expect((await post({ kind: "tutorial_ended", replay: true, step: 6 })).status).toBe(204);
+    events = callOn(admin.recorded, "step_events", "insert")?.[0] as Record<string, unknown>[];
+    expect(events[0]).toMatchObject({ kind: "tutorial_ended", meta: { replay: true, step: 6 } });
+
+    admin.recorded.length = 0;
+    expect((await post({ kind: "tutorial_offer_declined" })).status).toBe(204);
+    expect(admin.recorded.filter((r) => r.table === "profiles" && r.calls.some(([m]) => m === "update"))).toHaveLength(1);
+    expect((await post({ kind: "tutorial_step", replay: false, step: 99, how: "done" })).status).toBe(400);
+  });
+
   it("logs an interaction with its conversation and stage", async () => {
     const response = await post({ kind: "suggestion_used", sessionId: SESSION, conversationId: CONVERSATION, stage: "configure" });
     expect(response.status).toBe(204);

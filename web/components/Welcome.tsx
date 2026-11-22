@@ -11,14 +11,31 @@ type Props = {
   contactEmail: string;
   error: string | null;
   onPick: (text: string, source: ChipSource) => void;
+  /** The tutorial: the question or example it asks the participant to press. */
+  target?: string;
+  /** The one-time offer of the first-use tutorial, above the heading. */
+  offer?: { onTake: () => void; onDecline: () => void };
   /** The composer, centered under the line. */
   children: ReactNode;
 };
 
 /** The empty conversation: the heading, the composer, four introduction questions, and the examples. */
-export function Welcome({ disabled, contactEmail, error, onPick, children }: Props) {
+export function Welcome({ disabled, contactEmail, error, onPick, target, offer, children }: Props) {
   return (
     <section aria-labelledby="welcome-heading" className="flex flex-1 flex-col justify-center">
+      {offer && (
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-xl border border-accent bg-accent-wash px-4 py-3 text-sm">
+          <p className="text-ink">New: a 3-minute practice run that shows what the Dashboard does.</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={offer.onTake} className="rounded-full bg-accent px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-accent-deep">
+              Take the tutorial
+            </button>
+            <button type="button" onClick={offer.onDecline} className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-ink-soft hover:border-accent">
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
       <h1 id="welcome-heading" className="mb-6 text-center text-2xl font-semibold text-ink sm:text-3xl">{WELCOME_HEADING}</h1>
       {error && (
         <p role="alert" className="mb-3 rounded-r-lg border-l-[3px] border-warn bg-warn-wash px-3.5 py-2.5 text-sm text-warn-ink">
@@ -28,7 +45,7 @@ export function Welcome({ disabled, contactEmail, error, onPick, children }: Pro
       {children}
       <div className="mt-4 flex flex-wrap justify-center gap-2">
         {INTRO_QUESTIONS.map((question) => (
-          <button key={question} type="button" disabled={disabled} onClick={() => onPick(question, "intro")} className={CHIP}>
+          <button key={question} type="button" data-tutorial={question === target ? "example" : undefined} disabled={disabled} onClick={() => onPick(question, "intro")} className={CHIP}>
             {question}
           </button>
         ))}
@@ -36,7 +53,7 @@ export function Welcome({ disabled, contactEmail, error, onPick, children }: Pro
       <p className="mt-6 text-center text-xs font-semibold tracking-wide text-ink-faint uppercase">Or try an example</p>
       <div className="mt-2 flex flex-wrap justify-center gap-2">
         {DRAFTS.understand.map((draft) => (
-          <button key={draft} type="button" disabled={disabled} onClick={() => onPick(draft, "draft")} className={CHIP}>
+          <button key={draft} type="button" data-tutorial={draft === target ? "example" : undefined} disabled={disabled} onClick={() => onPick(draft, "draft")} className={CHIP}>
             {draft}
           </button>
         ))}

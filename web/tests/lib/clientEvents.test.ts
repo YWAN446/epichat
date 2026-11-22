@@ -6,6 +6,25 @@ const CONVERSATION = "33333333-3333-4333-8333-333333333333";
 const TURN = "55555555-5555-4555-8555-555555555555";
 
 describe("readClientEvent", () => {
+  it("accepts the tutorial's events and refuses anything loose", () => {
+    const ok = (e: object) => expect(readClientEvent(JSON.stringify(e))).toMatchObject(e);
+    const no = (e: object) => expect(readClientEvent(JSON.stringify(e))).toBeNull();
+    ok({ kind: "tutorial_started", replay: false, entry: "first_visit" });
+    ok({ kind: "tutorial_started", replay: true, entry: "menu", sessionId: SESSION });
+    ok({ kind: "tutorial_step", replay: false, step: 4, how: "skipped" });
+    ok({ kind: "tutorial_step", replay: false, step: 0, how: "done" });
+    ok({ kind: "tutorial_finished", replay: true });
+    ok({ kind: "tutorial_ended", replay: false, step: 0 });
+    ok({ kind: "tutorial_offer_declined" });
+    no({ kind: "tutorial_step", replay: false, step: 11, how: "done" });
+    no({ kind: "tutorial_step", replay: false, step: -1, how: "done" });
+    no({ kind: "tutorial_step", replay: false, step: 2.5, how: "done" });
+    no({ kind: "tutorial_step", replay: false, step: 2, how: "typed text" });
+    no({ kind: "tutorial_step", step: 2, how: "done" });
+    no({ kind: "tutorial_started", replay: false, entry: "elsewhere" });
+    no({ kind: "tutorial_started", replay: false, entry: "menu", note: "hello" });
+  });
+
   it("accepts each fixed shape", () => {
     expect(readClientEvent(JSON.stringify({ kind: "session_start", viewport: "390x844", language: "en-US", timezone: "America/New_York" }))).toEqual({
       kind: "session_start", viewport: "390x844", language: "en-US", timezone: "America/New_York",

@@ -87,7 +87,7 @@ export function ParametersSection({ params, sources, references, configured }: P
   if (!params) {
     return (
       <p className="text-ink-faint">
-        {configured ? "This scenario's parameters were not recorded; they appear after the next change or run." : "Parameters appear here once a scenario is set up."}
+        {configured ? "This scenario's parameters were not recorded; they appear after the next change or run." : "The exact values a run will use appear here once a scenario is set up."}
       </p>
     );
   }

@@ -17,15 +17,18 @@ type Props = {
   onExport?: (format: ExportFormat) => void;
   /** The Try next buttons under the latest run (follow-up spec 7.4); absent on the share page and on the live turn. */
   tryNext?: TryNext;
+  /** The tutorial's practice run: the Try next option to mark, and no report downloads. */
+  optionTarget?: string;
+  practice?: boolean;
 };
 
-export function Turn({ turn, status, onActivityExpand, onExport, tryNext }: Props) {
+export function Turn({ turn, status, onActivityExpand, onExport, tryNext, optionTarget, practice }: Props) {
   return (
     <article className="py-4">
       <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-accent-wash px-4 py-2.5 whitespace-pre-wrap">{turn.userText}</p>
       <div className="mt-4">
         <ActivityLine blocks={turn.blocks} status={status} onExpand={onActivityExpand} />
-        <TurnBlocks blocks={turn.blocks} onExport={onExport} turnId={turn.id} tryNext={tryNext} />
+        <TurnBlocks blocks={turn.blocks} onExport={onExport} turnId={turn.id} tryNext={tryNext} optionTarget={optionTarget} practice={practice} />
         {turn.notice && (
           <p role="status" className="my-2 rounded-r-lg border-l-[3px] border-warn bg-warn-wash px-3.5 py-2 text-sm text-warn-ink">
             {turn.notice}

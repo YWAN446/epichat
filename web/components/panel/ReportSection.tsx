@@ -96,7 +96,7 @@ type Props = { report: ReportPayload | null; onExport: (format: ExportFormat) =>
 
 /** The latest report: its title and version, its sections, and the four downloads (report spec, section 10), the preferred one first. */
 export function ReportSection({ report, onExport, preferredFormat }: Props) {
-  if (!report || !report.report_id) return <p className="text-ink-faint">The report appears here once you ask for one.</p>;
+  if (!report || !report.report_id) return <p className="text-ink-faint">Ask the assistant for a report and it appears here, with downloads.</p>;
   return (
     <div className="space-y-3">
       <div>
@@ -111,6 +111,36 @@ export function ReportSection({ report, onExport, preferredFormat }: Props) {
         ))}
       </ol>
       <ReportDownloads reportId={report.report_id} onExport={onExport} preferredFormat={preferredFormat} />
+    </div>
+  );
+}
+
+/**
+ * The tutorial's report block: the recorded report's title and the four formats. Markdown and HTML open the recorded
+ * report from the practice route; Word and PDF need the simulation service, which a practice run never calls.
+ */
+export function PracticeReport({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div data-tutorial="practice-report" className="space-y-3">
+      <div>
+        <p className="font-medium">{title}</p>
+        <p className="text-xs text-ink-faint">{subtitle}</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <a href="/tutorial/report?format=md" target="_blank" rel="noreferrer" className={LINK}>
+          Markdown
+        </a>
+        <a href="/tutorial/report?format=html" target="_blank" rel="noreferrer" className={LINK}>
+          HTML
+        </a>
+        <button type="button" disabled className={LINK}>
+          Word
+        </button>
+        <button type="button" disabled className={LINK}>
+          PDF
+        </button>
+      </div>
+      <p className="text-xs text-ink-faint">Word and PDF are available in your own conversations.</p>
     </div>
   );
 }

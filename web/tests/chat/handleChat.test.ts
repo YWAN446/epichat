@@ -99,12 +99,13 @@ function setup(script: Step[], over: Over = {}, env: Record<string, string> = {}
   const profiles: ProfileStore = {
     async get() {
       if (over.profileError) throw over.profileError;
-      return { userId: USER.id, email: "student@emory.edu", participantType: "graduate_student", consentVersion: "2026-10-10", consentedAt: "2026-10-10T00:00:00Z", fields: over.profile ?? EMPTY_PROFILE };
+      return { userId: USER.id, email: "student@emory.edu", participantType: "graduate_student", consentVersion: "2026-10-10", consentedAt: "2026-10-10T00:00:00Z", tutorialSeenAt: null, fields: over.profile ?? EMPTY_PROFILE };
     },
     async recordConsent() {},
     async touch() {},
     async saveProfile() { return { first: false }; },
-    async patchProfile() {},
+    async patchProfile() {},
+    async markTutorialSeen() {},
   };
   const memories: MemoryStore = {
     async list() { return over.memories ?? []; },

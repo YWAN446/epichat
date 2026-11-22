@@ -6,12 +6,14 @@ import { loadParticipant, redirectFor } from "@/lib/participant.server";
 import { diseaseOptions } from "@/lib/profile/options";
 import { EMPTY_PROFILE } from "@/lib/profile/schema";
 import { supabaseProfileStore } from "@/lib/profiles";
+import { tutorialEntry } from "@/lib/tutorial/entry";
+import { loadRecording } from "@/lib/tutorial/recording";
 import { adminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 /** A new conversation, with the list of earlier ones. */
-export default async function ChatPage() {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ from?: string | string[] }> }) {
   const participant = await loadParticipant();
   const destination = redirectFor(participant.status);
   if (destination || !participant.user) redirect(destination ?? "/sign-in");
@@ -20,6 +22,11 @@ export default async function ChatPage() {
   // Seen today. A failure here must not keep the page from opening.
   void supabaseProfileStore(admin).touch(participant.user.id, new Date()).catch(() => {});
   const conversations = await listConversations(admin, participant.user.id);
+  // The first-use tutorial: a newcomer goes straight in; someone with conversations is offered it once.
+  // Never for someone who has just left it, or when its recording cannot be played: the chat must always open.
+  const { from } = await searchParams;
+  const tutorial = tutorialEntry(participant.profile?.tutorialSeenAt ?? null, conversations.length, { fromTutorial: from === "tutorial", playable: loadRecording() !== null });
+  if (tutorial === "redirect") redirect("/tutorial?entry=first_visit");
 
   return (
     <SessionProvider>
@@ -33,6 +40,7 @@ export default async function ChatPage() {
         initialShare={null}
         initialProfile={participant.profile?.fields ?? EMPTY_PROFILE}
         diseases={diseaseOptions()}
+        tutorialOffer={tutorial === "offer"}
       />
     </SessionProvider>
   );

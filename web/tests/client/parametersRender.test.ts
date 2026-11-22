@@ -38,7 +38,7 @@ describe("the Parameters section as it renders (follow-up spec 8)", () => {
     expect(html).not.toContain("source: ");
     expect(html).toContain("R₀ (approx.)");
     expect(html).toContain("No interventions.");
-    expect(render({ params: null, sources: null, configured: false })).toContain("Parameters appear here once a scenario is set up.");
+    expect(render({ params: null, sources: null, configured: false })).toContain("The exact values a run will use appear here once a scenario is set up.");
     expect(render({ params: null, sources: null, configured: true })).toContain("were not recorded");
   });
 });

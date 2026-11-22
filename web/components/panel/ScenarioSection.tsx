@@ -12,7 +12,7 @@ function diseaseName(key: string | null, disease: DiseasePayload | null): string
 
 /** What is being modelled, in words, and the configuration's warnings. The literature lives in Data, the values in Parameters. */
 export function ScenarioSection({ config, disease, population }: Props) {
-  if (!config) return <p className="text-ink-faint">The configuration appears here once a scenario is set up.</p>;
+  if (!config) return <p className="text-ink-faint">The outbreak you describe appears here: the disease, the place, the population and any interventions.</p>;
   const rows = scenarioRows(config.config, diseaseName(config.config.disease, disease));
   if (population) rows.splice(rows.findIndex(([label]) => label === "Country") + 1, 0, populationRow(population));
   return (

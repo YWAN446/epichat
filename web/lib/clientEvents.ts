@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CARD_KINDS, CHART_VIEWS, EXPORT_FORMATS, PANEL_SECTIONS, STAGES, SUGGESTION_SOURCES } from "./enums";
+import { CARD_KINDS, CHART_VIEWS, EXPORT_FORMATS, PANEL_SECTIONS, STAGES, SUGGESTION_SOURCES, TUTORIAL_ENTRIES, TUTORIAL_HOWS, TUTORIAL_LAST_STEP } from "./enums";
 
 /**
  * What the browser may report about what a participant did. Every field is a
@@ -14,6 +14,8 @@ const device = {
   timezone: z.string().max(64).regex(/^[A-Za-z0-9_/+-]+$/).optional(),
 };
 
+const tutorialStep = z.number().int().min(0).max(TUTORIAL_LAST_STEP);
+
 const ClientEvent = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("session_start"), ...device }),
   z.strictObject({ kind: z.literal("session_ping"), sessionId: id }),
@@ -26,6 +28,12 @@ const ClientEvent = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("series_downloaded"), sessionId, conversationId: id, runId: id }),
   z.strictObject({ kind: z.literal("export"), sessionId, conversationId: id, format: z.enum(EXPORT_FORMATS) }),
   z.strictObject({ kind: z.literal("scenario_panel_opened"), sessionId, conversationId: id, section: z.enum(PANEL_SECTIONS).optional() }),
+  // The tutorial has no conversation: a practice run saves nothing.
+  z.strictObject({ kind: z.literal("tutorial_started"), sessionId, replay: z.boolean(), entry: z.enum(TUTORIAL_ENTRIES) }),
+  z.strictObject({ kind: z.literal("tutorial_step"), sessionId, replay: z.boolean(), step: tutorialStep, how: z.enum(TUTORIAL_HOWS) }),
+  z.strictObject({ kind: z.literal("tutorial_finished"), sessionId, replay: z.boolean() }),
+  z.strictObject({ kind: z.literal("tutorial_ended"), sessionId, replay: z.boolean(), step: tutorialStep }),
+  z.strictObject({ kind: z.literal("tutorial_offer_declined"), sessionId }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEvent>;
 
