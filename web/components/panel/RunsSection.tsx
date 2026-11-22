@@ -10,13 +10,13 @@ import { fmtValue } from "@/lib/sim/pyformat";
 import { Chart } from "../Chart";
 import { StatTiles, useRunSeries } from "../RunSummary";
 
-const VIEW_LABELS: Record<(typeof CHART_VIEWS)[number], string> = { compartments: "Compartments", incidence: "Incidence", cumulative: "Cumulative", deaths: "Disease deaths" };
+const VIEW_LABELS: Record<ChartView, string> = { infected: "Currently infected", compartments: "Compartments", incidence: "Incidence", cumulative: "Cumulative", deaths: "Disease deaths" };
 
 type Props = { runs: RunArtifact[]; onChartView: (view: ChartView, turnId: string) => void };
 
 function RunEntry({ run, open: initiallyOpen, onChartView }: { run: RunArtifact; open: boolean; onChartView: Props["onChartView"] }) {
   const [open, setOpen] = useState(initiallyOpen);
-  const [view, setView] = useState<ChartView>("compartments");
+  const [view, setView] = useState<ChartView>("infected");
   const series = useRunSeries(run.payload);
   const p = run.payload;
   return (

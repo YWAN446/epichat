@@ -3,7 +3,7 @@
  * summaries, and the model's narrative (report spec, section 5). Pure: numbers
  * are formatted here, once, and the renderers never touch them again.
  */
-import { SOLVER_LABELS, configurationRows, nationalNote, sourceOfCitation, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
+import { SOLVER_LABELS, configurationRows, nationalNote, populationText, sourceOfCitation, countryName, describeField, fitText, fitValueText, formatQuantity, formatRange, parameterLabel } from "@/lib/client/format";
 import { parameterTable } from "@/lib/client/parameters";
 import type { ReportRun } from "@/lib/db/runs";
 import { lookup } from "@/lib/disease/db";
@@ -176,7 +176,7 @@ function modelled(scenario: Scenario, name: string, runs: ReportRun[]): ReportBl
   if (rows) {
     // round-1 spec 1: an area's population and where it came from; otherwise the country's total
     const view = populationView(scenario);
-    if (view && !view.national && scenario.area) rows.splice(3, 0, ["Population", `${commaInt(view.value)}, ${scenario.area.name} (${view.origin})`]);
+    if (view && !view.national && scenario.area) rows.splice(3, 0, ["Population", populationText(view.value, scenario.area.name, view.origin)]);
     else if (scenario.totalPopulation) rows.splice(3, 0, ["Population", commaInt(scenario.totalPopulation)]);
     // Part 2, 7.7: the latest run's fit, after the R0 rows: what was asked for, what the search reached, in how many runs.
     const fit = runs.at(-1)?.stats.fit;

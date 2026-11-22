@@ -94,7 +94,12 @@ export function scenarioRows(c: ConfigPayload["config"], diseaseName: string): [
 
 /** Round-1 spec 1: "2,000,000, Example County, Kenya (you set it)", or the country's total and its source. */
 export function populationRow(view: PopulationView): [string, string] {
-  return ["Population", `${commaInt(view.value)}, ${view.place} (${view.origin})`];
+  return ["Population", populationText(view.value, view.place, view.origin)];
+}
+
+/** The population, its place and where it came from. A source title with brackets of its own follows "; source:" so brackets never nest. */
+export function populationText(value: number, place: string, origin: string): string {
+  return /[()]/.test(origin) ? `${commaInt(value)}, ${place}; source: ${origin}` : `${commaInt(value)}, ${place} (${origin})`;
 }
 
 /** Round-1 spec 1: what stays national in an area scenario; null for the whole country. */

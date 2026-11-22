@@ -15,6 +15,14 @@ const run = (effective_params: unknown): Block => ({
 const render = (blocks: Block[]) => renderToStaticMarkup(createElement(RunsSection, { runs: deriveArtifacts([{ id: "t1", blocks }]).runs, onChartView: () => {} }));
 
 describe("the runs panel as it renders (review of phase C)", () => {
+  it("opens the chart on Currently infected, first of five views (round-1 UI cleanup)", () => {
+    const html = render([run(params({ schema_version: 2 }))]);
+    const pressed = html.match(/<button[^>]*aria-pressed="true"[^>]*>([^<]*)</)!;
+    expect(pressed[1]).toBe("Currently infected");
+    expect(html.indexOf(">Currently infected<")).toBeLessThan(html.indexOf(">Compartments<"));
+    expect(html.match(/aria-pressed=/g)).toHaveLength(5);
+  });
+
   it("lists a run's parameters by the Parameters section's rows", () => {
     const html = render([run(params({ schema_version: 2, disease: { rel_sus_cv: 1 }, interventions: [{ type: "seasonality", scale: 0.3 }] }))]);
     expect(html).toContain("Effective parameters");

@@ -114,7 +114,8 @@ export type PanelSection = (typeof PANEL_SECTIONS)[number];
 /** Where a pressed chip came from. */
 /** Where a pressed reply came from; option is a Try next button under a run, reference a "Use this value" button (follow-up spec 7.4, 9.2). */
 export const SUGGESTION_SOURCES = ["model", "draft", "intro", "option", "reference"] as const;
-export const CHART_VIEWS = ["compartments", "incidence", "cumulative", "deaths"] as const;
+/** The Dashboard chart's views, in button order; a run opens on the first. */
+export const CHART_VIEWS = ["infected", "compartments", "incidence", "cumulative", "deaths"] as const;
 export const EXPORT_FORMATS = ["md", "html", "docx", "pdf"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
 export const RATINGS = ["up", "down"] as const;

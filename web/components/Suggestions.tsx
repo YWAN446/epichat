@@ -6,14 +6,14 @@ type Props = { items: string[]; disabled: boolean; onPick: (reply: string) => vo
 export function Suggestions({ items, disabled, onPick }: Props) {
   if (items.length === 0) return null;
   return (
-    <div aria-label="Suggested replies" className="mb-2.5 flex gap-2 overflow-x-auto px-1 pb-0.5">
+    <div aria-label="Suggested replies" className="mb-2.5 flex flex-wrap gap-2 px-1 pb-0.5">
       {items.map((reply) => (
         <button
           key={reply}
           type="button"
           disabled={disabled}
           onClick={() => onPick(reply)}
-          className="shrink-0 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium whitespace-nowrap text-accent hover:border-accent hover:bg-accent-wash disabled:opacity-50"
+          className="max-w-full rounded-2xl border border-line bg-surface px-3.5 py-1.5 text-left text-sm font-medium text-accent hover:border-accent hover:bg-accent-wash disabled:opacity-50"
         >
           {reply}
         </button>

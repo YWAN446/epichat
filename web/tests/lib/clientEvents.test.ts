@@ -15,6 +15,7 @@ describe("readClientEvent", () => {
     expect(readClientEvent(JSON.stringify({ kind: "suggestion_used", sessionId: SESSION, conversationId: CONVERSATION, turnId: TURN, stage: "configure" }))).toMatchObject({ kind: "suggestion_used", stage: "configure" });
     expect(readClientEvent(JSON.stringify({ kind: "card_expanded", conversationId: CONVERSATION, turnId: TURN, card: "run" }))).toMatchObject({ card: "run" });
     expect(readClientEvent(JSON.stringify({ kind: "chart_view_changed", conversationId: CONVERSATION, turnId: TURN, view: "incidence" }))).toMatchObject({ view: "incidence" });
+    expect(readClientEvent(JSON.stringify({ kind: "chart_view_changed", conversationId: CONVERSATION, turnId: TURN, view: "infected" }))).toMatchObject({ view: "infected" });
     expect(readClientEvent(JSON.stringify({ kind: "feedback_given", conversationId: CONVERSATION, turnId: TURN, rating: "up" }))).toBeNull();   // the thumbs are gone (round-1 UI cleanup)
     expect(readClientEvent(JSON.stringify({ kind: "export", conversationId: CONVERSATION, format: "pdf" }))).toMatchObject({ format: "pdf" });
     expect(readClientEvent(JSON.stringify({ kind: "export", conversationId: CONVERSATION, format: "md" }))).toMatchObject({ format: "md" });

@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { Suggestions } from "@/components/Suggestions";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
 import { DEFAULT_LAYOUT } from "@/lib/client/layout";
 
@@ -22,7 +23,7 @@ describe("the Dashboard's name (round-1 UI cleanup)", () => {
 
 describe("the columns by screen width (round-1 UI cleanup)", () => {
   const shell = (over: Partial<Parameters<typeof WorkspaceShell>[0]>) =>
-    renderToStaticMarkup(createElement(WorkspaceShell, { header: null, sidebar: "LIST", panel: "DASH", drawerOpen: false, sheetOpen: false, onClose: () => {}, columnRef: { current: null }, layout: DEFAULT_LAYOUT, onResize: () => {}, ...over }, "MAIN"));
+    renderToStaticMarkup(createElement(WorkspaceShell, { header: null, sidebar: "LIST", panel: "DASH", drawerOpen: false, sheetOpen: false, onClose: () => {}, columnRef: { current: null }, layout: DEFAULT_LAYOUT, onResize: () => {}, ...over } as Parameters<typeof WorkspaceShell>[0], "MAIN"));
   const aside = (html: string, label: string) => html.match(new RegExp(`<aside aria-label="${label}"[^>]*>`))![0];
 
   it("shows the Dashboard as a column from lg and the list from xl", () => {
@@ -57,6 +58,20 @@ describe("the columns by screen width (round-1 UI cleanup)", () => {
     expect(chat).toContain('useColumn("left")');
     expect(chat).toContain('useColumn("right")');
     expect(chat).not.toContain("useWide");
+  });
+});
+
+describe("the suggested replies (round-1 UI cleanup)", () => {
+  it("wrap instead of scrolling sideways", () => {
+    const html = renderToStaticMarkup(createElement(Suggestions, { items: ["Run it with a school closure from day 30 and compare the peaks"], disabled: false, onPick: () => {} }));
+    for (const gone of ["overflow-x-auto", "whitespace-nowrap", "shrink-0"]) expect(html).not.toContain(gone);
+    expect(html).toContain("flex-wrap");
+    expect(html).toContain("text-left");
+    expect(html).toContain("max-w-full");
+  });
+
+  it("reports every chart view, the infected one included", () => {
+    expect(read("components/Chat.tsx")).not.toContain('view !== "infected"');
   });
 });
 

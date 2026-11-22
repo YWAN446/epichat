@@ -166,7 +166,7 @@ export function Chat({ email, conversations: initialConversations, initial, maxM
     if (conversationId) track({ kind: "scenario_panel_opened", sessionId: session, conversationId, section });
   }
   function onChartView(view: ChartView, turnId: string) {
-    if (conversationId && turnId !== "live" && view !== "infected") track({ kind: "chart_view_changed", sessionId: session, conversationId, turnId, view });
+    if (conversationId && turnId !== "live") track({ kind: "chart_view_changed", sessionId: session, conversationId, turnId, view });
   }
   function onActivityExpand(turnId: string) {
     if (conversationId && turnId !== "live") track({ kind: "card_expanded", sessionId: session, conversationId, turnId, card: "activity" });

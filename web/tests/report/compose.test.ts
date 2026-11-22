@@ -92,6 +92,14 @@ describe("composeReport", () => {
     expect(appendix.blocks.at(-1)).toMatchObject({ kind: "keyValues", items: [["EpiChat", "web"], ["Starsim", "not recorded"], ["Report format", "1"]] });
   });
 
+  it("writes a web-sourced population without nesting brackets (round-1 UI cleanup)", () => {
+    const area = { name: "Utah", population: 3_271_616, countryIso3: "USA", source: { kind: "web" as const, title: "QuickFacts (2020)", url: "https://example.org/utah" } };
+    const doc = composeReport({ ...FIXTURE, scenario: { ...FIXTURE.scenario, area } }, NOW);
+    const rows = doc.sections.find((s) => s.id === "modelled")!.blocks[0];
+    if (rows.kind !== "keyValues") throw new Error("kv");
+    expect(rows.items).toContainEqual(["Population", "3,271,616, Utah; source: QuickFacts (2020)"]);
+  });
+
   it("names the area in the title, the Population row and the limitations (round-1 spec 1)", () => {
     const area = { name: "Example County", population: 2_000_000, countryIso3: "KEN", source: { kind: "user" as const } };
     const doc = composeReport({ ...FIXTURE, scenario: { ...FIXTURE.scenario, area } }, NOW);
